@@ -5,6 +5,59 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+// Helper function to check if a date string is in the 2025-2026 range
+function isDateIn2025_2026(dateStr) {
+  if (!dateStr || typeof dateStr !== 'string') return false;
+  const cleanStr = dateStr.trim();
+  
+  // Format check for YYYY-MM-DD (REDCap default)
+  if (/^\d{4}-\d{2}-\d{2}/.test(cleanStr)) {
+    const year = parseInt(cleanStr.substring(0, 4), 10);
+    return year === 2025 || year === 2026;
+  }
+  
+  // Format check for DD-MM-YYYY (Censo / Cuadratura default)
+  if (/^\d{2}-\d{2}-\d{4}/.test(cleanStr)) {
+    const year = parseInt(cleanStr.substring(6, 10), 10);
+    return year === 2025 || year === 2026;
+  }
+
+  // Fallback parsing
+  try {
+    const d = new Date(cleanStr);
+    if (!isNaN(d.getTime())) {
+      const year = d.getFullYear();
+      return year === 2025 || year === 2026;
+    }
+  } catch (e) {}
+
+  return false;
+}
+
+// Helper to filter records array to only include years 2025 and 2026
+function filterRecordsForYears(records, name) {
+  const dateFields = ['fecha_de_atenci_n', 'fecha_ingreso', 'fecha_egreso', 'fecha'];
+  
+  const filtered = records.filter(r => {
+    // If no fields, keep by default so we don't lose data
+    if (!r || typeof r !== 'object') return false;
+    
+    // Check if any of the common date fields belong to 2025 or 2026
+    for (const field of dateFields) {
+      if (r[field] && isDateIn2025_2026(r[field])) {
+        return true;
+      }
+    }
+    
+    // Fallback: If it's a record with absolutely no date fields, we keep it to be safe
+    const hasAnyDateField = dateFields.some(field => Object.prototype.hasOwnProperty.call(r, field));
+    return !hasAnyDateField;
+  });
+
+  console.log(`[${name}] Filtered from ${records.length} to ${filtered.length} records (Years 2025-2026).`);
+  return filtered;
+}
+
 async function fetchAndCache(name, token, cacheFileName) {
   try {
     console.log(`Fetching live records from REDCap for ${name}...`);
@@ -28,8 +81,11 @@ async function fetchAndCache(name, token, cacheFileName) {
       throw new Error(`Failed to fetch: ${res.statusText}`);
     }
 
-    const records = await res.json();
-    console.log(`[${name}] Successfully fetched ${records.length} records.`);
+    const rawRecords = await res.json();
+    console.log(`[${name}] Successfully fetched ${rawRecords.length} records.`);
+
+    // Filter only 2025-2026 records to optimize size
+    const records = filterRecordsForYears(rawRecords, name);
 
     // Create the cached JSON object
     const cacheDir = path.join(__dirname, 'public', 'data');
@@ -49,7 +105,8 @@ async function fetchAndCache(name, token, cacheFileName) {
     };
 
     const cacheFilePath = path.join(cacheDir, cacheFileName);
-    fs.writeFileSync(cacheFilePath, JSON.stringify(cacheData, null, 2), 'utf-8');
+    // Minify JSON to optimize file transfer size
+    fs.writeFileSync(cacheFilePath, JSON.stringify(cacheData), 'utf-8');
     console.log(`[${name}] Saved cache to ${cacheFilePath}`);
   } catch (err) {
     console.error(`[${name}] Error caching records:`, err);
@@ -71,8 +128,11 @@ async function fetchAndCacheBasicAuth(name, url, username, password, cacheFileNa
       throw new Error(`Failed to fetch: ${res.status} ${res.statusText}`);
     }
 
-    const records = await res.json();
-    console.log(`[${name}] Successfully fetched ${records.length} records.`);
+    const rawRecords = await res.json();
+    console.log(`[${name}] Successfully fetched ${rawRecords.length} records.`);
+
+    // Filter only 2025-2026 records to optimize size
+    const records = filterRecordsForYears(rawRecords, name);
 
     // Create the cached JSON object
     const cacheDir = path.join(__dirname, 'public', 'data');
@@ -86,7 +146,8 @@ async function fetchAndCacheBasicAuth(name, url, username, password, cacheFileNa
     };
 
     const cacheFilePath = path.join(cacheDir, cacheFileName);
-    fs.writeFileSync(cacheFilePath, JSON.stringify(cacheData, null, 2), 'utf-8');
+    // Minify JSON to optimize file transfer size
+    fs.writeFileSync(cacheFilePath, JSON.stringify(cacheData), 'utf-8');
     console.log(`[${name}] Saved cache to ${cacheFilePath}`);
   } catch (err) {
     console.error(`[${name}] Error caching records:`, err);
@@ -153,4 +214,3 @@ async function run() {
 }
 
 run();
-
