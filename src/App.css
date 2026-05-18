@@ -1,0 +1,218 @@
+.app-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 80px 24px;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.navbar {
+  position: fixed;
+  top: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: calc(100% - 48px);
+  max-width: 1152px;
+  height: 64px;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 24px;
+  border-radius: 32px;
+}
+
+.nav-logo {
+  font-weight: 700;
+  font-size: 1.2rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--accent-teal);
+}
+
+.search-trigger {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 16px;
+  background: rgba(0, 0, 0, 0.03);
+  border-radius: 20px;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  transition: all 0.2s;
+}
+
+.search-trigger:hover {
+  background: rgba(0, 0, 0, 0.06);
+}
+
+.hero {
+  margin-top: 40px;
+  margin-bottom: 60px;
+  text-align: center;
+}
+
+.hero h1 {
+  font-size: 3.5rem;
+  margin-bottom: 16px;
+  background: linear-gradient(135deg, var(--accent-teal), var(--accent-green));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.hero p {
+  color: var(--text-secondary);
+  font-size: 1.2rem;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 24px;
+  margin-top: 20px;
+}
+
+.category-card {
+  padding: 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  position: relative;
+  overflow: hidden;
+  min-height: 280px;
+  cursor: pointer;
+}
+
+.card-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 8px;
+}
+
+.card-content h3 {
+  font-size: 1.5rem;
+  margin-bottom: 12px;
+}
+
+.card-content p {
+  color: var(--text-secondary);
+  line-height: 1.5;
+  font-size: 0.95rem;
+}
+
+.card-footer {
+  margin-top: auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.enter-btn {
+  padding: 10px 24px;
+  border-radius: 12px;
+  background: var(--text-main);
+  color: white;
+  font-weight: 500;
+  font-size: 0.9rem;
+  transition: transform 0.2s;
+}
+
+.enter-btn:hover {
+  transform: scale(1.05);
+}
+
+/* Specific Card Colors */
+.card-indicadores .card-icon { background: rgba(0, 137, 123, 0.1); color: var(--accent-green); }
+.card-estadistica .card-icon { background: rgba(255, 145, 0, 0.1); color: var(--accent-orange); }
+.card-costeo .card-icon { background: rgba(253, 216, 53, 0.1); color: #d4ac0d; }
+.card-evaluacion .card-icon { background: rgba(0, 77, 64, 0.1); color: var(--accent-teal); }
+.card-repositorio .card-icon { background: rgba(134, 134, 139, 0.1); color: var(--text-secondary); }
+
+/* Search Modal */
+.search-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.2);
+  backdrop-filter: blur(10px);
+  z-index: 2000;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 100px;
+}
+
+.search-modal {
+  width: 100%;
+  max-width: 600px;
+  margin: 0 24px;
+  background: white;
+  border-radius: 24px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+  overflow: hidden;
+}
+
+.search-input-wrapper {
+  display: flex;
+  align-items: center;
+  padding: 20px 24px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.search-input-wrapper input {
+  flex: 1;
+  border: none;
+  outline: none;
+  font-size: 1.2rem;
+  margin-left: 12px;
+  font-family: inherit;
+}
+
+.search-results {
+  max-height: 400px;
+  overflow-y: auto;
+  padding: 12px;
+}
+
+.result-item {
+  padding: 12px 16px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.result-item:hover {
+  background: rgba(0, 0, 0, 0.03);
+}
+
+.result-info h4 {
+  font-size: 1rem;
+  margin-bottom: 2px;
+}
+
+.result-info p {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+/* Mobile Adjustments */
+@media (max-width: 768px) {
+  .hero h1 { font-size: 2.5rem; }
+  .app-container { padding-top: 100px; }
+  .dashboard-grid { grid-template-columns: 1fr; }
+  .navbar { padding: 0 16px; }
+  .search-trigger span { display: none; }
+}

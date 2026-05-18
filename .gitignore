@@ -1,0 +1,8 @@
+node_modules
+.DS_Store
+dist
+dist-ssr
+*.local
+
+# Archivos de datos cacheados (son muy grandes para GitHub, se generan via CI/Actions)
+public/data/
