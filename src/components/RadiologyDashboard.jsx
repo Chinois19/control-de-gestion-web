@@ -11,7 +11,8 @@ import {
   CheckCircle, 
   Search, 
   Activity, 
-  ChevronRight, 
+  ChevronRight,
+  ChevronLeft,
   Plus, 
   Minus,
   FileText,
@@ -29,6 +30,7 @@ export default function RadiologyDashboard({ onBack, initialTab = 'summary', ini
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState(initialTab === 'patients' ? 'rem' : initialTab); // 'summary', 'pivot', 'classification', 'rem'
   const [lastUpdated, setLastUpdated] = useState('Nunca');
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   
   // Filters
@@ -510,10 +512,62 @@ export default function RadiologyDashboard({ onBack, initialTab = 'summary', ini
       </div>
 
       <div className="portal-layout">
-        {/* Responsive Left Sidebar matching the first two dashboards */}
-        <aside className="portal-sidebar glass-card border-glow-indigo">
-          <div className="sidebar-section-title text-glow-indigo">
-            <Filter size={18} /> <span>Filtros Imagenología</span>
+        {/* Collapsible Sidebar */}
+        {sidebarCollapsed && (
+          <button
+            onClick={() => setSidebarCollapsed(false)}
+            style={{
+              display: 'flex', alignItems: 'center', gap: '8px',
+              padding: '10px 16px',
+              borderRadius: '12px',
+              background: 'linear-gradient(135deg, #4f46e5, #6366f1)',
+              border: 'none',
+              boxShadow: '0 4px 16px rgba(79,70,229,0.35)',
+              cursor: 'pointer',
+              color: 'white',
+              flexShrink: 0,
+              alignSelf: 'flex-start',
+              marginTop: '4px',
+              fontSize: '0.82rem',
+              fontWeight: 700,
+              letterSpacing: '0.3px',
+              transition: 'all 0.2s',
+              whiteSpace: 'nowrap'
+            }}
+            title="Expandir panel de filtros"
+            onMouseEnter={e => e.currentTarget.style.boxShadow = '0 6px 20px rgba(79,70,229,0.5)'}
+            onMouseLeave={e => e.currentTarget.style.boxShadow = '0 4px 16px rgba(79,70,229,0.35)'}
+          >
+            <Filter size={14} />
+            Filtros
+            <ChevronRight size={14} />
+          </button>
+        )}
+        <aside
+          className="portal-sidebar glass-card border-glow-indigo"
+          style={{
+            width: sidebarCollapsed ? '0px' : undefined,
+            padding: sidebarCollapsed ? '0px' : undefined,
+            opacity: sidebarCollapsed ? 0 : 1,
+            overflow: sidebarCollapsed ? 'hidden' : 'visible',
+            transition: 'all 0.35s cubic-bezier(0.4, 0, 0.2, 1)',
+            border: sidebarCollapsed ? 'none' : undefined,
+            boxShadow: sidebarCollapsed ? 'none' : undefined,
+            flexShrink: 0,
+            marginRight: sidebarCollapsed ? '0px' : undefined
+          }}
+        >
+          <div className="sidebar-section-title text-glow-indigo" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Filter size={18} /> <span>Filtros Imagenología</span>
+            </div>
+            <button
+              onClick={() => setSidebarCollapsed(true)}
+              style={{ background: 'none', border: 'none', color: '#64748b', cursor: 'pointer', display: 'flex', alignItems: 'center', padding: '4px', borderRadius: '6px' }}
+              title="Colapsar filtros"
+            >
+              <ChevronLeft size={16} />
+            </button>
           </div>
 
           <div className="filter-item">

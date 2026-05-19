@@ -1,6 +1,6 @@
 @echo off
 :: Navigates to the workspace directory
-cd /d "C:\Users\Minsal\OneDrive\Aplicaciones Antigravity\Control de Gestion Web"
+cd /d "C:\Users\gonza\OneDrive\Aplicaciones Antigravity\Control de Gestion Web"
 
 echo ===================================================
 echo   INICIANDO MOTOR DE SINCRONIZACION DE CLINICA

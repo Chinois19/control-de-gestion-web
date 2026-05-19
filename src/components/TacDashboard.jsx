@@ -11,7 +11,8 @@ import {
   CheckCircle, 
   Search, 
   Activity, 
-  ChevronRight, 
+  ChevronRight,
+  ChevronLeft, 
   Plus, 
   Minus,
   FileText,
@@ -29,6 +30,7 @@ export default function TacDashboard({ onBack, initialTab = 'summary', initialFi
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState(initialTab === 'patients' ? 'rem' : initialTab); // 'summary', 'pivot', 'classification', 'rem'
   const [lastUpdated, setLastUpdated] = useState('Nunca');
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   
   // Filters
@@ -560,10 +562,62 @@ export default function TacDashboard({ onBack, initialTab = 'summary', initialFi
       </div>
 
       <div className="portal-layout">
-        {/* Responsive Left Sidebar */}
-        <aside className="portal-sidebar glass-card border-glow-purple">
-          <div className="sidebar-section-title text-glow-purple">
-            <Filter size={18} /> <span>Filtros Tomografía</span>
+        {/* Collapsible Sidebar */}
+        {sidebarCollapsed && (
+          <button
+            onClick={() => setSidebarCollapsed(false)}
+            style={{
+              display: 'flex', alignItems: 'center', gap: '8px',
+              padding: '10px 16px',
+              borderRadius: '12px',
+              background: 'linear-gradient(135deg, #a855f7, #8b5cf6)',
+              border: 'none',
+              boxShadow: '0 4px 16px rgba(168,85,247,0.35)',
+              cursor: 'pointer',
+              color: 'white',
+              flexShrink: 0,
+              alignSelf: 'flex-start',
+              marginTop: '4px',
+              fontSize: '0.82rem',
+              fontWeight: 700,
+              letterSpacing: '0.3px',
+              transition: 'all 0.2s',
+              whiteSpace: 'nowrap'
+            }}
+            title="Expandir panel de filtros"
+            onMouseEnter={e => e.currentTarget.style.boxShadow = '0 6px 20px rgba(168,85,247,0.5)'}
+            onMouseLeave={e => e.currentTarget.style.boxShadow = '0 4px 16px rgba(168,85,247,0.35)'}
+          >
+            <Filter size={14} />
+            Filtros
+            <ChevronRight size={14} />
+          </button>
+        )}
+        <aside
+          className={`portal-sidebar glass-card border-glow-purple`}
+          style={{
+            width: sidebarCollapsed ? '0px' : undefined,
+            padding: sidebarCollapsed ? '0px' : undefined,
+            opacity: sidebarCollapsed ? 0 : 1,
+            overflow: sidebarCollapsed ? 'hidden' : 'visible',
+            transition: 'all 0.35s cubic-bezier(0.4, 0, 0.2, 1)',
+            border: sidebarCollapsed ? 'none' : undefined,
+            boxShadow: sidebarCollapsed ? 'none' : undefined,
+            flexShrink: 0,
+            marginRight: sidebarCollapsed ? '0px' : undefined
+          }}
+        >
+          <div className="sidebar-section-title text-glow-purple" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Filter size={18} /> <span>Filtros Tomografía</span>
+            </div>
+            <button
+              onClick={() => setSidebarCollapsed(true)}
+              style={{ background: 'none', border: 'none', color: '#64748b', cursor: 'pointer', display: 'flex', alignItems: 'center', padding: '4px', borderRadius: '6px' }}
+              title="Colapsar filtros"
+            >
+              <ChevronLeft size={16} />
+            </button>
           </div>
 
           <div className="filter-item">
@@ -688,11 +742,62 @@ export default function TacDashboard({ onBack, initialTab = 'summary', initialFi
               <p>{error}</p>
             </div>
           ) : (
-            <AnimatePresence mode="wait">
+            <>
+              {selectedEstadoAtencion === 'No se presentó' && stats.total === 0 && (
+                <div style={{
+                  background: 'rgba(168, 85, 247, 0.05)',
+                  border: '1.5px dashed rgba(168, 85, 247, 0.4)',
+                  borderRadius: '24px',
+                  padding: '24px',
+                  marginBottom: '24px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '20px',
+                  color: '#6b21a8'
+                }}>
+                  <div style={{
+                    background: 'rgba(168, 85, 247, 0.1)',
+                    minWidth: '48px',
+                    width: '48px',
+                    height: '48px',
+                    borderRadius: '16px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: '#a855f7'
+                  }}>
+                    <AlertTriangle size={24} />
+                  </div>
+                  <div style={{ flex: 1, textAlign: 'left' }}>
+                    <h4 style={{ fontWeight: 800, margin: 0, fontSize: '0.95rem' }}>Información sobre Ausentismo (NSP) en TAC</h4>
+                    <p style={{ margin: '4px 0 0 0', fontSize: '0.82rem', opacity: 0.8, lineHeight: 1.5 }}>
+                      Actualmente, la base de datos integrada de REDCap para el servicio de <strong>TAC</strong> registra un <strong>100% de asistencia</strong> ("Se presentó") para todas las atenciones agendadas en 2025 y 2026. Por lo tanto, al aplicar el filtro de "No se presentó", no existen registros que mostrar.
+                    </p>
+                  </div>
+                  <button 
+                    onClick={() => setSelectedEstadoAtencion('Todas')}
+                    style={{
+                      background: 'linear-gradient(135deg, #a855f7, #8b5cf6)',
+                      border: 'none',
+                      color: 'white',
+                      padding: '10px 20px',
+                      borderRadius: '12px',
+                      fontWeight: 700,
+                      fontSize: '0.8rem',
+                      cursor: 'pointer',
+                      boxShadow: '0 4px 12px rgba(168,85,247,0.2)'
+                    }}
+                  >
+                    Restablecer Filtro
+                  </button>
+                </div>
+              )}
               
-              {/* Tab 1: Summary Panel */}
-              {activeTab === 'summary' && (
-                <motion.div key="summary" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -15 }} className="tab-pane-layout">
+              <AnimatePresence mode="wait">
+                
+                {/* Tab 1: Summary Panel */}
+                {activeTab === 'summary' && (
+                  <motion.div key="summary" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -15 }} className="tab-pane-layout">
                   {/* Grid KPIs */}
                   <div className="metrics-summary-bar">
                     {(() => {
@@ -1171,6 +1276,7 @@ export default function TacDashboard({ onBack, initialTab = 'summary', initialFi
                 </motion.div>
               )}
             </AnimatePresence>
+            </>
           )}
         </main>
       </div>

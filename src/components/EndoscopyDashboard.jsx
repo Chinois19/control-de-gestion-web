@@ -469,71 +469,70 @@ export default function EndoscopyDashboard({ onBack, initialTab = 'summary', ini
   // SECURE REM STATIC CALCULATION
   const remData = useMemo(() => {
     const isFonasa = (prev) => {
-      const p = prev.toLowerCase();
-      return p.includes('fonasa') || p === 'b' || p === 'fonsas';
+      if (!prev) return false;
+      const p = prev.toLowerCase().trim();
+      return p.includes('fonasa') || p === 'b' || p === 'fonsas' || p === 'c' || p === 'd' || p === 'a' || p === 'f';
     };
 
-    const monthlyMap = {};
+    const isConvenioOrNoInstitucional = (rec) => {
+      const modal = String(rec.modalidad_de_atenci_n || '').toLowerCase();
+      const cc = String(rec.centro_de_costo_perc || '').toLowerCase();
+      return !modal.includes('institucional') || modal.includes('convenio') || cc.includes('631') || cc.includes('convenio');
+    };
+
+    const aggregation = {};
+
     filteredData.forEach(r => {
-      if (r.fecha !== 'Sin Fecha' && r.estadoAtencion === 'Se presentó') {
-        const monthKey = r.fecha.substring(0, 7); // 'YYYY-MM'
-        if (!monthlyMap[monthKey]) {
-          monthlyMap[monthKey] = {
-            key: monthKey,
-            totalRealizados: 0,
-            fonasaTotal: 0,
-            particularTotal: 0,
-            isapreTotal: 0,
-            isPediatric: 0,
-            isAdult: 0,
-            isSenior: 0,
-            maleCount: 0,
-            femaleCount: 0,
-            biopsiasTotal: 0,
-            ureasaTotal: 0
+      // In clinical REM statistics, we register only performed (attended) procedures
+      if (r.estadoAtencion !== 'Se presentó') return;
+
+      r.examsList.forEach(exam => {
+        if (!aggregation[exam]) {
+          aggregation[exam] = {
+            name: exam,
+            beneficiarios: 0,
+            noBeneficiarios: 0,
+            atencionCerrada: 0,
+            atencionAbierta: 0,
+            urgencia: 0,
+            convenios: 0,
+            total: 0
           };
         }
 
-        const m = monthlyMap[monthKey];
-        m.totalRealizados += r.examsCount;
-        
-        if (isFonasa(r.prevision)) m.fonasaTotal += r.examsCount;
-        else if (r.prevision.toLowerCase().includes('particular') || r.prevision.toLowerCase().includes('sin prevision')) m.particularTotal += r.examsCount;
-        else m.isapreTotal += r.examsCount;
+        const item = aggregation[exam];
+        item.total++;
 
-        if (r.edad < 15) m.isPediatric += r.examsCount;
-        else if (r.edad >= 15 && r.edad <= 64) m.isAdult += r.examsCount;
-        else m.isSenior += r.examsCount;
+        if (isFonasa(r.prevision)) {
+          item.beneficiarios++;
+        } else {
+          item.noBeneficiarios++;
+        }
 
-        if (r.sexo.toUpperCase() === 'MASCULINO') m.maleCount += r.examsCount;
-        else m.femaleCount += r.examsCount;
+        if (r.procedencia_de_derivaci_n === 'Atención Cerrada') {
+          item.atencionCerrada++;
+        } else if (r.procedencia_de_derivaci_n === 'Atención Abierta') {
+          item.atencionAbierta++;
+        } else if (r.procedencia_de_derivaci_n === 'Urgencia' || r.procedencia_de_derivaci_n === 'Emergencia') {
+          item.urgencia++;
+        }
 
-        if (r.biopsia === 'Sí') m.biopsiasTotal += r.examsCount;
-        if (r.testUreasa === 'Sí') m.ureasaTotal += r.examsCount;
-      }
+        if (isConvenioOrNoInstitucional(r)) {
+          item.convenios++;
+        }
+      });
     });
 
-    return Object.keys(monthlyMap).sort().map(key => {
-      const parts = key.split('-');
-      const year = parts[0];
-      const monthNum = parts[1];
-      const monthNames = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
-      const label = `${monthNames[parseInt(monthNum, 10) - 1]} ${year}`;
-      return {
-        ...monthlyMap[key],
-        label
-      };
-    });
+    return Object.values(aggregation).sort((a, b) => b.total - a.total);
   }, [filteredData]);
 
-  // Paginated raw clinical logs
-  const paginatedLogRows = useMemo(() => {
+  // Paginated REM rows
+  const paginatedRemData = useMemo(() => {
     const startIdx = (remPage - 1) * itemsPerPage;
-    const endIdx = startIdx + itemsPerPage;
-    return filteredData.slice(startIdx, endIdx);
-  }, [filteredData, remPage]);
+    return remData.slice(startIdx, startIdx + itemsPerPage);
+  }, [remData, remPage]);
 
-  const totalPagesLog = Math.ceil(filteredData.length / itemsPerPage) || 1;
+  const totalRemPages = Math.ceil(remData.length / itemsPerPage) || 1;
 
   return (
     <div className="portal-content-pane animated fadeIn">
@@ -1098,14 +1097,16 @@ export default function EndoscopyDashboard({ onBack, initialTab = 'summary', ini
                 <div className="glass-card" style={{ padding: '30px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px', flexWrap: 'wrap', gap: '20px' }}>
                     <div>
-                      <span style={{ fontSize: '1.4rem', fontWeight: 800 }}>Log de Producción y Resumen REM</span>
-                      <p style={{ fontSize: '0.85rem', color: '#64748b', marginTop: '4px' }}>Listado paginado de atenciones y cruce de datos demográficos Fonasa / Sexo / Edad.</p>
+                      <span style={{ fontSize: '1.4rem', fontWeight: 800 }}>Resumen Estadístico Mensual (REM)</span>
+                      <p style={{ fontSize: '0.85rem', color: '#64748b', marginTop: '4px' }}>
+                        Cruce y consolidación de prestaciones realizadas según previsión, derivación clínica y convenios.
+                      </p>
                     </div>
 
                     <div className="smart-search-bar" style={{ maxWidth: '300px', margin: 0 }}>
                       <Search size={18} color="#999" />
                       <input 
-                        placeholder="Filtrar por diagnóstico o ID..." 
+                        placeholder="Filtrar por procedimiento..." 
                         value={searchQuery} 
                         onChange={(e) => { setSearchQuery(e.target.value); setRemPage(1); }} 
                         style={{ padding: '10px' }}
@@ -1117,73 +1118,82 @@ export default function EndoscopyDashboard({ onBack, initialTab = 'summary', ini
                     <table className="pivot-table">
                       <thead>
                         <tr>
-                          <th className="sticky-cell">ID Registro</th>
-                          <th>Fecha</th>
-                          <th>Médico</th>
-                          <th>Exámenes</th>
-                          <th>Biopsia</th>
-                          <th>Ureasa</th>
-                          <th>Complicaciones</th>
-                          <th>Previsión</th>
-                          <th>Estado</th>
+                          <th className="sticky-cell" style={{ textAlign: 'left', minWidth: '280px' }}>Procedimiento Realizado</th>
+                          <th>Beneficiarios (FONASA)</th>
+                          <th>No Beneficiarios</th>
+                          <th>Atención Cerrada</th>
+                          <th>Atención Abierta</th>
+                          <th>Urgencia / Emergencia</th>
+                          <th style={{ background: 'rgba(168, 85, 247, 0.04)', color: '#a855f7', fontWeight: 800 }}>Convenios / No Inst.</th>
+                          <th style={{ background: 'rgba(79, 70, 229, 0.04)', color: '#4f46e5', fontWeight: 800 }}>Total Realizado</th>
                         </tr>
                       </thead>
                       <tbody>
-                        {paginatedLogRows.map(r => (
-                          <tr key={r.id} className="main-row" style={{ fontSize: '0.8rem' }}>
-                            <td className="sticky-cell">{r.id}</td>
-                            <td>{r.fecha}</td>
-                            <td>{r.medico}</td>
-                            <td style={{ fontWeight: 700, maxWidth: '220px', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }} title={r.examsList.join(', ')}>
-                              {r.examsList.join(', ')}
-                            </td>
-                            <td>
-                              <span style={{ background: r.biopsia === 'Sí' ? 'rgba(236,72,153,0.1)' : 'transparent', color: r.biopsia === 'Sí' ? '#ec4899' : '#64748b', padding: '2px 8px', borderRadius: '10px', fontWeight: 700 }}>
-                                {r.biopsia}
-                              </span>
-                            </td>
-                            <td>
-                              <span style={{ 
-                                background: r.testUreasa === 'Sí' ? (r.resultadoTest === 'Positivo' ? 'rgba(239,68,68,0.1)' : 'rgba(16,185,129,0.1)') : 'transparent', 
-                                color: r.testUreasa === 'Sí' ? (r.resultadoTest === 'Positivo' ? '#ef4444' : '#10b981') : '#64748b', 
-                                padding: '2px 8px', 
-                                borderRadius: '10px', 
-                                fontWeight: 700 
-                              }}>
-                                {r.testUreasa === 'Sí' ? `Sí (${r.resultadoTest})` : 'No'}
-                              </span>
-                            </td>
-                            <td>
-                              <span style={{ color: r.complicaciones !== 'Ninguna' ? '#ef4444' : '#64748b', fontWeight: r.complicaciones !== 'Ninguna' ? 700 : 500 }}>
-                                {r.complicaciones}
-                              </span>
-                            </td>
-                            <td>{r.prevision}</td>
-                            <td>
-                              <span style={{
-                                background: r.estadoAtencion === 'Se presentó' ? 'rgba(16,185,129,0.1)' : 'rgba(239,68,68,0.1)',
-                                color: r.estadoAtencion === 'Se presentó' ? '#10b981' : '#ef4444',
-                                padding: '4px 10px',
-                                borderRadius: '12px',
-                                fontWeight: 800,
-                                fontSize: '0.72rem'
-                              }}>
-                                {r.estadoAtencion}
-                              </span>
+                        {paginatedRemData.length === 0 ? (
+                          <tr>
+                            <td colSpan={8} style={{ textAlign: 'center', padding: '50px', color: '#64748b', fontSize: '0.9rem', fontWeight: 600 }}>
+                              No hay procedimientos realizados registrados para los filtros seleccionados.
                             </td>
                           </tr>
-                        ))}
+                        ) : (
+                          paginatedRemData.map(row => (
+                            <tr key={row.name} className="main-row">
+                              <td className="sticky-cell est-name-cell" style={{ textAlign: 'left', fontWeight: 700, fontSize: '0.8rem', color: '#0f172a' }}>
+                                🔬 {row.name}
+                              </td>
+                              <td className="data-cell">{row.beneficiarios.toLocaleString('es-CL')}</td>
+                              <td className="data-cell">{row.noBeneficiarios.toLocaleString('es-CL')}</td>
+                              <td className="data-cell">{row.atencionCerrada.toLocaleString('es-CL')}</td>
+                              <td className="data-cell">{row.atencionAbierta.toLocaleString('es-CL')}</td>
+                              <td className="data-cell">{row.urgencia.toLocaleString('es-CL')}</td>
+                              <td className="data-cell" style={{ fontWeight: 800, color: '#a855f7', background: 'rgba(168, 85, 247, 0.02)' }}>
+                                {row.convenios.toLocaleString('es-CL')}
+                              </td>
+                              <td className="row-total-cell" style={{ fontWeight: 800, background: 'rgba(79, 70, 229, 0.02)' }}>
+                                {row.total.toLocaleString('es-CL')}
+                              </td>
+                            </tr>
+                          ))
+                        )}
                       </tbody>
+                      {remData.length > 0 && (
+                        <tfoot>
+                          <tr className="total-row">
+                            <td className="sticky-cell est-name-cell" style={{ textAlign: 'left', fontWeight: 900 }}>Total General</td>
+                            <td className="total-cell" style={{ fontWeight: 800 }}>
+                              {remData.reduce((sum, r) => sum + r.beneficiarios, 0).toLocaleString('es-CL')}
+                            </td>
+                            <td className="total-cell" style={{ fontWeight: 800 }}>
+                              {remData.reduce((sum, r) => sum + r.noBeneficiarios, 0).toLocaleString('es-CL')}
+                            </td>
+                            <td className="total-cell" style={{ fontWeight: 800 }}>
+                              {remData.reduce((sum, r) => sum + r.atencionCerrada, 0).toLocaleString('es-CL')}
+                            </td>
+                            <td className="total-cell" style={{ fontWeight: 800 }}>
+                              {remData.reduce((sum, r) => sum + r.atencionAbierta, 0).toLocaleString('es-CL')}
+                            </td>
+                            <td className="total-cell" style={{ fontWeight: 800 }}>
+                              {remData.reduce((sum, r) => sum + r.urgencia, 0).toLocaleString('es-CL')}
+                            </td>
+                            <td className="total-cell" style={{ fontWeight: 900, color: '#a855f7', background: 'rgba(168, 85, 247, 0.04)' }}>
+                              {remData.reduce((sum, r) => sum + r.convenios, 0).toLocaleString('es-CL')}
+                            </td>
+                            <td className="grand-total-cell" style={{ fontWeight: 900, color: '#4f46e5', background: 'rgba(79, 70, 229, 0.05)' }}>
+                              {remData.reduce((sum, r) => sum + r.total, 0).toLocaleString('es-CL')}
+                            </td>
+                          </tr>
+                        </tfoot>
+                      )}
                     </table>
                   </div>
 
                   <div className="table-pagination-nav">
                     <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#64748b' }}>
-                      Mostrando página <strong>{remPage}</strong> de <strong>{totalPagesLog}</strong> (<strong>{filteredData.length.toLocaleString('es-CL')}</strong> atenciones encontradas)
+                      Mostrando página <strong>{remPage}</strong> de <strong>{totalRemPages}</strong> (<strong>{remData.length.toLocaleString('es-CL')}</strong> prestaciones encontradas)
                     </span>
                     <div style={{ display: 'flex', gap: '10px' }}>
                       <button disabled={remPage === 1} onClick={() => setRemPage(remPage - 1)}>Anterior</button>
-                      <button disabled={remPage === totalPagesLog} onClick={() => setRemPage(remPage + 1)}>Siguiente</button>
+                      <button disabled={remPage === totalRemPages} onClick={() => setRemPage(remPage + 1)}>Siguiente</button>
                     </div>
                   </div>
 

@@ -3160,11 +3160,10 @@ export default function ClosedAttentionDashboard({ onBack }) {
         .closed-attention-portal {
           color: #2c3e50;
           font-family: 'Outfit', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-          background: #f4f6f8;
-          padding: 30px;
-          border-radius: 24px;
-          box-shadow: 0 10px 40px rgba(0, 0, 0, 0.05);
-          border: 1px solid rgba(0, 0, 0, 0.05);
+          background: transparent;
+          padding: 0;
+          border: none;
+          box-shadow: none;
         }
 
         .portal-header.neon-cyan {

@@ -138,84 +138,105 @@ const indicatorCards = [
 
 const searchIndex = [
   {
-    keys: ['nsp', 'inasistencias', 'ausentismo', 'no se presento', 'mamografias nsp'],
+    keys: ['censo', 'camas', 'ocupacion', 'egresos', 'altas', 'pacientes', 'cerrado', 'hospitalizacion', 'atencion cerrada', 'ingresos hospitalarios', 'sala', 'camas ocupadas', 'alta medica', 'dias estada', 'atencion clinica', 'estadistica cerrada', 'hospitalizado'],
+    title: 'Estadística Cerrada y Censo de Camas',
+    path: 'Gestión Asistencial ➔ Atención Cerrada',
+    desc: 'Monitoreo diario de ocupación de camas, censo hospitalario, egresos, traslados y altas médicas.',
+    action: { view: 'atencion_cerrada' }
+  },
+  {
+    keys: ['urgencia', 'emergencia', 'sapo', 'sar', 'atencion urgencia', 'box urgencias', 'categorizacion', 'triage', 'c3', 'c2', 'c1', 'tiempo de espera urgencia', 'urgencias'],
+    title: 'Estadísticas de Urgencia',
+    path: 'Gestión Asistencial ➔ Urgencia',
+    desc: 'Volumen de consultas, tiempos de espera por categorización (Triage) y derivaciones de urgencia.',
+    action: { view: 'urgencia' }
+  },
+  {
+    keys: ['atencion abierta', 'consultas', 'medicas', 'profesionales no medicos', 'odontologia', 'consultas especialidades', 'abierta', 'policlinico', 'controles', 'medico', 'especialista', 'consulta medica', 'consultorio'],
+    title: 'Consultas y Atención Abierta',
+    path: 'Gestión Asistencial ➔ Atención Abierta',
+    desc: 'Rendimiento de consultas médicas de especialidades, profesionales no médicos y odontología.',
+    action: { view: 'atencion_abierta' }
+  },
+  {
+    keys: ['nsp', 'inasistencias', 'ausentismo', 'no se presento', 'mamografias nsp', 'perdidas', 'horas mamografia', 'inasistencia mamografia'],
     title: 'Tendencia de Inasistencias (NSP) - Mamografías',
     path: 'Imagenología ➔ Mamografías',
     desc: 'Análisis dinámico de ausentismo, horas perdidas y establecimientos críticos.',
     action: { view: 'mamografias', tab: 'summary', filterNsp: true, scrollId: 'nsp-trend-section' }
   },
   {
-    keys: ['produccion mamografias', 'mamografias', 'procedimientos mamografia', 'redcap'],
+    keys: ['produccion mamografias', 'mamografias', 'procedimientos mamografia', 'redcap', 'radiografia de mama', 'mama'],
     title: 'Producción de Mamografías (REDCap)',
     path: 'Imagenología ➔ Mamografías',
     desc: 'Volumen mensual de atenciones, exámenes unilaterales, bilaterales y marcaciones.',
     action: { view: 'mamografias', tab: 'summary' }
   },
   {
-    keys: ['proyecciones mamografias', 'calidad mamografias', 'edad mamografias', 'grupo etario'],
+    keys: ['proyecciones mamografias', 'calidad mamografias', 'edad mamografias', 'grupo etario', 'cobertura', 'rango de edad'],
     title: 'Proyecciones y Calidad de Mamografías',
     path: 'Imagenología ➔ Mamografías ➔ Calidad',
     desc: 'Distribución por grupo de edad, efectividad de asistencia y metas ministeriales.',
     action: { view: 'mamografias', tab: 'details' }
   },
   {
-    keys: ['alertas mamografias', 'birads', 'birads pendientes', 'alertas clinicas'],
+    keys: ['alertas mamografias', 'birads', 'birads pendientes', 'alertas clinicas', 'urgente mama', 'sospecha cancer', 'derivacion birads', 'birads 4', 'birads 5'],
     title: 'Control de Alertas Clínicas (BIRADS)',
     path: 'Imagenología ➔ Mamografías ➔ Alertas',
     desc: 'Pacientes con sospecha diagnóstica (BIRADS 4 y 5) con necesidad de derivación urgente.',
     action: { view: 'mamografias', tab: 'results' }
   },
   {
-    keys: ['quirurgico', 'pabellon', 'cirugias', 'lista de espera', 'operativa', 'eficiencia operativa'],
+    keys: ['quirurgico', 'pabellon', 'cirugias', 'lista de espera', 'operativa', 'eficiencia operativa', 'sma', 'cirugía', 'suspendidas', 'tiempo quirurgico', 'pabellón'],
     title: 'Panel Quirúrgico y Eficiencia Operativa',
     path: 'Gestión Asistencial ➔ Quirúrgica',
     desc: 'Eficiencia de pabellón, tasa SMA, cirugías fuera de orden y absentismo laboral.',
     action: { view: 'estadistica' }
   },
   {
-    keys: ['metas', 'metas sanitarias', 'compromisos', 'comgest', 'ley 18834', 'ley 19664'],
+    keys: ['metas', 'metas sanitarias', 'compromisos', 'comgest', 'ley 18834', 'ley 19664', 'ley 15707', 'leyes', 'cumplimiento', 'incentivo', 'desempeño', 'indicador metas'],
     title: 'Monitoreo de Metas Sanitarias 2026',
     path: 'Indicadores de Gestión ➔ Metas Sanitarias',
     desc: 'Seguimiento de cumplimiento de leyes de salud y metas de eficiencia institucional.',
     action: { view: 'indicadores' }
   },
   {
-    keys: ['documentos', 'repositorio', 'normas', 'resoluciones', 'archivos'],
+    keys: ['documentos', 'repositorio', 'normas', 'resoluciones', 'archivos', 'pdf', 'descargar manual', 'circulares', 'reglamentos', 'biblioteca'],
     title: 'Repositorio Documental Anual',
     path: 'Repositorio',
     desc: 'Acceso centralizado a circulares, resoluciones, manuales y normativas del establecimiento.',
     action: { view: 'repositorio' }
   },
   {
-    keys: ['ecografias', 'ecotomografias', 'produccion ecografias', 'procedimientos ecograficos', 'urgencia ecografia'],
+    keys: ['ecografias', 'ecotomografias', 'produccion ecografias', 'procedimientos ecograficos', 'urgencia ecografia', 'ecografía', 'ultrasonido', 'eco abdominal', 'eco renal', 'eco partes blandas'],
     title: 'Producción de Ecografías (REDCap)',
     path: 'Imagenología ➔ Ecografías',
     desc: 'Volumen mensual de ecografías abdominales, gineco-obstétricas, renales y de partes blandas.',
     action: { view: 'ecografias', tab: 'summary' }
   },
   {
-    keys: ['nsp ecografias', 'inasistencias ecografias', 'ausentismo ecografias', 'horas perdidas ecografia'],
+    keys: ['nsp ecografias', 'inasistencias ecografias', 'ausentismo ecografias', 'horas perdidas ecografia', 'eco nsp'],
     title: 'Tendencia de Inasistencias (NSP) - Ecografías',
     path: 'Imagenología ➔ Ecografías',
     desc: 'Análisis de ausentismo, horas clínicas perdidas y centros derivadores con mayor tasa NSP.',
     action: { view: 'ecografias', tab: 'summary', filterNsp: true }
   },
   {
-    keys: ['clasificacion ecografias', 'ginecologia ecografia', 'obstetrica ecografia', 'abdominal ecografia', 'renal ecografia'],
+    keys: ['clasificacion ecografias', 'ginecologia ecografia', 'obstetrica ecografia', 'abdominal ecografia', 'renal ecografia', 'eco renal', 'urologica eco'],
     title: 'Clasificación de Procedimientos Ecográficos',
     path: 'Imagenología ➔ Ecografías ➔ Clasificación',
     desc: 'Clasificación y volumen de exámenes urológicos, obstétricos, tiroideos y de partes blandas.',
     action: { view: 'ecografias', tab: 'classification' }
   },
   {
-    keys: ['rem ecografias', 'resumen mensual ecografias', 'fonasa ecografias', 'operativos ecografias'],
+    keys: ['rem ecografias', 'resumen mensual ecografias', 'fonasa ecografias', 'operativos ecografias', 'registro eco'],
     title: 'Resumen Mensual (REM) - Ecografías',
     path: 'Imagenología ➔ Ecografías ➔ REM',
     desc: 'Estadísticas agrupadas REM: Beneficiarios (FONASA), procedencias y operativos.',
     action: { view: 'ecografias', tab: 'rem' }
   },
   {
-    keys: ['radiografias', 'produccion radiografias', 'rayos', 'radiografia convencional', 'redcap radiografias'],
+    keys: ['radiografias', 'produccion radiografias', 'rayos', 'radiografia convencional', 'redcap radiografias', 'placas', 'rayos x'],
     title: 'Producción de Radiografías (REDCap)',
     path: 'Imagenología ➔ Radiografías',
     desc: 'Volumen mensual de atenciones y exámenes realizados en las 10 columnas descriptivas de rayos.',
@@ -229,7 +250,7 @@ const searchIndex = [
     action: { view: 'radiografias', tab: 'summary', filterNsp: true }
   },
   {
-    keys: ['clasificacion radiografias', 'tipos radiografias', 'torax', 'columna', 'pelvis', 'extremidades'],
+    keys: ['clasificacion radiografias', 'tipos radiografias', 'torax', 'columna', 'pelvis', 'extremidades', 'placas torax'],
     title: 'Clasificación de Exámenes Radiográficos',
     path: 'Imagenología ➔ Radiografías ➔ Clasificación',
     desc: 'Distribución y volumen de exámenes de tórax, columna, pelvis, extremidades y estudios contrastados.',
@@ -243,7 +264,7 @@ const searchIndex = [
     action: { view: 'radiografias', tab: 'rem' }
   },
   {
-    keys: ['tac', 'produccion tac', 'tomografia', 'escaner', 'redcap tac'],
+    keys: ['tac', 'produccion tac', 'tomografia', 'escaner', 'redcap tac', 'tac de cerebro', 'tac de abdomen', 'axial computarizada'],
     title: 'Producción de TAC (REDCap)',
     path: 'Imagenología ➔ TAC',
     desc: 'Volumen mensual de atenciones, exámenes y rendimiento del tomógrafo axial computarizada.',
@@ -271,7 +292,7 @@ const searchIndex = [
     action: { view: 'tac', tab: 'rem' }
   },
   {
-    keys: ['endoscopia', 'colonoscopia', 'cistoscopia', 'produccion endoscopias', 'redcap endoscopias'],
+    keys: ['endoscopia', 'colonoscopia', 'cistoscopia', 'produccion endoscopias', 'redcap endoscopias', 'biopsias', 'digestiva', 'endoscopía', 'gastroenterologia'],
     title: 'Producción de Procedimientos Endoscópicos (REDCap)',
     path: 'Especialidades ➔ Procedimientos Endoscópicos',
     desc: 'Volumen mensual de endoscopías altas, colonoscopías, cistoscopías y biopsias asociadas.',
@@ -285,7 +306,7 @@ const searchIndex = [
     action: { view: 'endoscopia', tab: 'summary', filterNsp: true }
   },
   {
-    keys: ['biopsias endoscopia', 'ureasa', 'helicobacter', 'resultado biopsia', 'patologia endoscopias'],
+    keys: ['biopsias endoscopia', 'ureasa', 'helicobacter', 'resultado biopsia', 'patologia endoscopias', 'cancer gastrico'],
     title: 'Estudio de Biopsias y Helicobacter pylori',
     path: 'Especialidades ➔ Procedimientos Endoscópicos ➔ Clasificación',
     desc: 'Mapeo oncológico de biopsias malignas/benignas y tasa de positividad del test de Ureasa.',
@@ -335,11 +356,49 @@ function App() {
     }
   };
 
-  const searchResults = searchQuery.trim() === '' ? [] : searchIndex.filter(item => {
-    const query = searchQuery.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-    return item.keys.some(k => k.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").includes(query)) ||
-           item.title.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").includes(query);
-  });
+  const searchResults = searchQuery.trim() === '' ? [] : (() => {
+    const queryNormalized = searchQuery.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    const queryTokens = queryNormalized.split(/\s+/).filter(t => t.length > 1);
+    
+    if (queryTokens.length === 0 && queryNormalized.length > 0) {
+      queryTokens.push(queryNormalized);
+    }
+
+    return searchIndex
+      .map(item => {
+        let score = 0;
+        const titleNorm = item.title.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+        const descNorm = item.desc.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+        
+        // Match full query
+        if (titleNorm.includes(queryNormalized)) score += 100;
+        if (descNorm.includes(queryNormalized)) score += 30;
+        
+        item.keys.forEach(key => {
+          const keyNorm = key.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+          if (keyNorm === queryNormalized) {
+            score += 80;
+          } else if (keyNorm.includes(queryNormalized)) {
+            score += 40;
+          }
+        });
+
+        // Match tokens
+        queryTokens.forEach(token => {
+          if (titleNorm.includes(token)) score += 15;
+          if (descNorm.includes(token)) score += 5;
+          item.keys.forEach(key => {
+            const keyNorm = key.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+            if (keyNorm.includes(token)) score += 10;
+          });
+        });
+
+        return { ...item, score };
+      })
+      .filter(item => item.score > 0)
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 5); // Limit to top 5 extremely relevant results
+  })();
 
   const handleSearchResultClick = (action) => {
     setSearchQuery('');
@@ -517,7 +576,8 @@ function App() {
             <motion.div key="home" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
               
               <div className="hero-illiers" style={{ backgroundImage: `url(${imgHero})` }}>
-                <h1>Control <span style={{ color: 'var(--primary-accent)' }}>Estratégico</span></h1>
+                <h1>Control de <span style={{ color: 'var(--primary-accent)' }}>Gestión</span></h1>
+                <p style={{ position: 'relative', fontSize: '1.8rem', fontWeight: 800, marginTop: '-12px', marginBottom: '28px', color: 'rgba(255, 255, 255, 0.95)', textShadow: '0 2px 10px rgba(0,0,0,0.3)' }}>Hospital de Villarrica</p>
                 
                 {/* Immersive Smart Search Bar */}
                 <div className="smart-search-container" style={{ position: 'relative', width: '100%', maxWidth: '600px', margin: '0 auto' }}>
@@ -712,8 +772,9 @@ function App() {
         </AnimatePresence>
       </main>
 
-      <footer style={{ padding: '80px 60px', background: '#2c3e50', color: 'rgba(255,255,255,0.5)', marginTop: '100px', textAlign: 'center' }}>
-        <p>© 2026 Unidad de Control de Gestión • Hospital Villarrica</p>
+      <footer style={{ padding: '60px 40px', background: 'transparent', color: 'var(--text-dark)', marginTop: '80px', textAlign: 'center', borderTop: '1px solid rgba(0,0,0,0.06)' }}>
+        <p style={{ fontWeight: 700, fontSize: '0.92rem', opacity: 0.9 }}>© 2026 Departamento de Control de Gestión • Hospital Villarrica</p>
+        <p style={{ fontSize: '0.75rem', marginTop: '6px', opacity: 0.45, fontWeight: 800, letterSpacing: '1px' }}>BY GPS</p>
       </footer>
     </div>
   );
