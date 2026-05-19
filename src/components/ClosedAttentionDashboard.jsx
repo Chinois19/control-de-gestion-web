@@ -84,6 +84,13 @@ export default function ClosedAttentionDashboard({ onBack }) {
 
   // Dynamic Chart Interactive States
   const [chartSelectedUnit, setChartSelectedUnit] = useState('todos'); 
+  const [chartVisibleMeasures, setChartVisibleMeasures] = useState({
+    ocupadas: true,
+    inhabilitadas: true,
+    habilitadas: true,
+    libres: true,
+    tasa: true
+  });
   const [trendSelectedService, setTrendSelectedService] = useState('todos');
   const [selectedClinicalService, setSelectedClinicalService] = useState('Todas');
   const [selectedIndicator, setSelectedIndicator] = useState('ocupacion');
@@ -654,9 +661,16 @@ export default function ClosedAttentionDashboard({ onBack }) {
 
   const maxHistoryVal = useMemo(() => {
     if (occupancyTrendData.length === 0) return 10;
-    const maxVal = Math.max(...occupancyTrendData.map(d => Math.max(d.occupied, d.disabled))) || 10;
+    const maxVal = Math.max(...occupancyTrendData.map(d => {
+      const values = [];
+      if (chartVisibleMeasures.ocupadas) values.push(d.occupied);
+      if (chartVisibleMeasures.inhabilitadas) values.push(d.disabled);
+      if (chartVisibleMeasures.habilitadas) values.push(d.capacity);
+      if (chartVisibleMeasures.libres) values.push(d.available);
+      return values.length > 0 ? Math.max(...values) : 10;
+    })) || 10;
     return maxVal > 0 ? maxVal : 10;
-  }, [occupancyTrendData]);
+  }, [occupancyTrendData, chartVisibleMeasures]);
 
   // Dynamic Ingress vs Egress Trend Data for Tab 1
   const ingressEgressTrendData = useMemo(() => {
@@ -2677,10 +2691,356 @@ export default function ClosedAttentionDashboard({ onBack }) {
                     </div>
                   </div>
 
+                  {/* Bed Occupancy Historical Trend Line Chart */}
+                  <div className="glass-card chart-container border-glow-cyan" style={{ marginBottom: '30px' }}>
+                    <div className="chart-header">
+                      <div>
+                        <h2 className="c-title text-glow-cyan">Historial Dinámico de Ocupación de Camas (Últimos 30 días)</h2>
+                        <p className="c-subtitle">Tendencia de capacidad operativa, ocupación, disponibilidad de camas libres y tasa porcentual de ocupación</p>
+                      </div>
+                      
+                      <div className="chart-controls-row" style={{ display: 'flex', alignItems: 'center', gap: '20px', flexWrap: 'wrap', justifyContent: 'space-between', width: '100%', marginTop: '10px' }}>
+                        <div className="chart-unit-selector">
+                          <label style={{ marginRight: '8px', fontSize: '0.74rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase' }}>UNIDAD:</label>
+                          <select 
+                            value={chartSelectedUnit} 
+                            onChange={(e) => setChartSelectedUnit(e.target.value)}
+                            style={{ padding: '8px 12px', borderRadius: '10px', border: '1.5px solid rgba(6, 182, 212, 0.25)', fontSize: '0.8rem', fontWeight: 700, outline: 'none', cursor: 'pointer', background: 'white' }}
+                          >
+                            <option value="todos">Todas las Unidades (Total General)</option>
+                            <option value="uci">UCI (Intensivos)</option>
+                            <option value="uti">UTI (Intermedios)</option>
+                            <option value="medios">Cuidados Medios</option>
+                            <option value="basicos">Cuidados Básicos</option>
+                            <option value="maternidad">Maternidad y Ginecología</option>
+                            <option value="infantil">Pediatría / Infantil</option>
+                            <option value="neonatologia">Neonatología</option>
+                          </select>
+                        </div>
+
+                        <div className="interactive-series-selector" style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
+                          <span style={{ fontSize: '0.74rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', marginRight: '4px' }}>Métricas del Gráfico:</span>
+                          
+                          {/* Camas Habilitadas Pill */}
+                          <button
+                            onClick={() => setChartVisibleMeasures(prev => ({ ...prev, habilitadas: !prev.habilitadas }))}
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '6px',
+                              padding: '6px 12px',
+                              borderRadius: '20px',
+                              border: '1.5px solid #10b981',
+                              background: chartVisibleMeasures.habilitadas ? 'rgba(16, 185, 129, 0.1)' : 'transparent',
+                              color: '#10b981',
+                              fontSize: '0.76rem',
+                              fontWeight: 800,
+                              cursor: 'pointer',
+                              opacity: chartVisibleMeasures.habilitadas ? 1 : 0.45,
+                              transition: 'all 0.2s ease',
+                              fontFamily: 'inherit'
+                            }}
+                          >
+                            <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#10b981', display: 'inline-block' }}></span>
+                            Camas Habilitadas
+                          </button>
+
+                          {/* Camas Ocupadas Pill */}
+                          <button
+                            onClick={() => setChartVisibleMeasures(prev => ({ ...prev, ocupadas: !prev.ocupadas }))}
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '6px',
+                              padding: '6px 12px',
+                              borderRadius: '20px',
+                              border: '1.5px solid #1a365d',
+                              background: chartVisibleMeasures.ocupadas ? 'rgba(26, 54, 93, 0.1)' : 'transparent',
+                              color: '#1a365d',
+                              fontSize: '0.76rem',
+                              fontWeight: 800,
+                              cursor: 'pointer',
+                              opacity: chartVisibleMeasures.ocupadas ? 1 : 0.45,
+                              transition: 'all 0.2s ease',
+                              fontFamily: 'inherit'
+                            }}
+                          >
+                            <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#1a365d', display: 'inline-block' }}></span>
+                            Camas Ocupadas
+                          </button>
+
+                          {/* Camas Libres Pill */}
+                          <button
+                            onClick={() => setChartVisibleMeasures(prev => ({ ...prev, libres: !prev.libres }))}
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '6px',
+                              padding: '6px 12px',
+                              borderRadius: '20px',
+                              border: '1.5px solid #7c3aed',
+                              background: chartVisibleMeasures.libres ? 'rgba(124, 58, 237, 0.1)' : 'transparent',
+                              color: '#7c3aed',
+                              fontSize: '0.76rem',
+                              fontWeight: 800,
+                              cursor: 'pointer',
+                              opacity: chartVisibleMeasures.libres ? 1 : 0.45,
+                              transition: 'all 0.2s ease',
+                              fontFamily: 'inherit'
+                            }}
+                          >
+                            <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#7c3aed', display: 'inline-block' }}></span>
+                            Camas Libres
+                          </button>
+
+                          {/* Camas Inhabilitadas Pill */}
+                          <button
+                            onClick={() => setChartVisibleMeasures(prev => ({ ...prev, inhabilitadas: !prev.inhabilitadas }))}
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '6px',
+                              padding: '6px 12px',
+                              borderRadius: '20px',
+                              border: '1.5px solid #94a3b8',
+                              background: chartVisibleMeasures.inhabilitadas ? 'rgba(148, 163, 184, 0.1)' : 'transparent',
+                              color: '#64748b',
+                              fontSize: '0.76rem',
+                              fontWeight: 800,
+                              cursor: 'pointer',
+                              opacity: chartVisibleMeasures.inhabilitadas ? 1 : 0.45,
+                              transition: 'all 0.2s ease',
+                              fontFamily: 'inherit'
+                            }}
+                          >
+                            <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#94a3b8', display: 'inline-block' }}></span>
+                            Camas Inhabilitadas
+                          </button>
+
+                          {/* Tasa de Ocupacion Pill */}
+                          <button
+                            onClick={() => setChartVisibleMeasures(prev => ({ ...prev, tasa: !prev.tasa }))}
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '6px',
+                              padding: '6px 12px',
+                              borderRadius: '20px',
+                              border: '1.5px solid #0284c7',
+                              background: chartVisibleMeasures.tasa ? 'rgba(2, 132, 199, 0.1)' : 'transparent',
+                              color: '#0284c7',
+                              fontSize: '0.76rem',
+                              fontWeight: 800,
+                              cursor: 'pointer',
+                              opacity: chartVisibleMeasures.tasa ? 1 : 0.45,
+                              transition: 'all 0.2s ease',
+                              fontFamily: 'inherit'
+                            }}
+                          >
+                            <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#0284c7', display: 'inline-block' }}></span>
+                            % Ocupación (ej. der)
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+
+                    {occupancyTrendData.length === 0 ? (
+                      <div className="empty-chart">Sin registros de cuadratura en la base de datos</div>
+                    ) : (
+                      <div style={{ position: 'relative', marginTop: '25px' }}>
+                        <div style={{ overflowX: 'auto', width: '100%' }}>
+                          <div style={{ minWidth: '100%', height: '240px', position: 'relative' }}>
+                            <svg viewBox="0 0 1000 220" width="100%" height="100%" preserveAspectRatio="none" style={{ overflow: 'visible' }}>
+                              <line x1="50" y1="40" x2="950" y2="40" stroke="rgba(0,0,0,0.03)" strokeDasharray="3 3" />
+                              <line x1="50" y1="100" x2="950" y2="100" stroke="rgba(0,0,0,0.03)" strokeDasharray="3 3" />
+                              <line x1="50" y1="160" x2="950" y2="160" stroke="rgba(0,0,0,0.03)" strokeDasharray="3 3" />
+                              <line x1="50" y1="190" x2="950" y2="190" stroke="rgba(0,0,0,0.08)" />
+
+                              <text x="15" y="20" fill="#64748b" fontSize="8" fontWeight="800">CAMAS (n)</text>
+                              <text x="965" y="20" fill="#0284c7" fontSize="8" fontWeight="800">OCUPACIÓN (%)</text>
+
+                              {(() => {
+                                const pointsWidth = 880 / Math.max(1, occupancyTrendData.length - 1);
+                                const points = occupancyTrendData.map((d, i) => {
+                                  const scaleLeft = 140 / maxHistoryVal;
+                                  const yOccupied = 180 - d.occupied * scaleLeft;
+                                  const yDisabled = 180 - d.disabled * scaleLeft;
+                                  const yCapacity = 180 - d.capacity * scaleLeft;
+                                  const yAvailable = 180 - d.available * scaleLeft;
+                                  const yRate = 180 - (d.occupancyRate / 100) * 140;
+
+                                  return {
+                                    x: 50 + i * pointsWidth,
+                                    yOccupied,
+                                    yDisabled,
+                                    yCapacity,
+                                    yAvailable,
+                                    yRate,
+                                    date: d.date,
+                                    occupied: d.occupied,
+                                    disabled: d.disabled,
+                                    available: d.available,
+                                    capacity: d.capacity,
+                                    rate: d.occupancyRate.toFixed(0)
+                                  };
+                                });
+
+                                const pathOccupied = points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.yOccupied}`).join(' ');
+                                const pathDisabled = points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.yDisabled}`).join(' ');
+                                const pathCapacity = points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.yCapacity}`).join(' ');
+                                const pathAvailable = points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.yAvailable}`).join(' ');
+                                const pathRate = points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.yRate}`).join(' ');
+
+                                return (
+                                  <React.Fragment>
+                                    {chartVisibleMeasures.ocupadas && (
+                                      <>
+                                        <path d={`${pathOccupied} L ${points[points.length - 1].x} 190 L ${points[0].x} 190 Z`} fill="url(#navyAreaGradDynamic)" opacity="0.08" />
+                                        <path d={pathOccupied} fill="none" stroke="#1a365d" strokeWidth="4.5" strokeLinecap="round" strokeLinejoin="round" />
+                                      </>
+                                    )}
+                                    {chartVisibleMeasures.inhabilitadas && (
+                                      <path d={pathDisabled} fill="none" stroke="#94a3b8" strokeWidth="2.5" strokeDasharray="5 4" strokeLinecap="round" />
+                                    )}
+                                    {chartVisibleMeasures.habilitadas && (
+                                      <path d={pathCapacity} fill="none" stroke="#10b981" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round" />
+                                    )}
+                                    {chartVisibleMeasures.libres && (
+                                      <path d={pathAvailable} fill="none" stroke="#7c3aed" strokeWidth="2.5" strokeDasharray="3 3" strokeLinecap="round" strokeLinejoin="round" />
+                                    )}
+                                    {chartVisibleMeasures.tasa && (
+                                      <path d={pathRate} fill="none" stroke="#0284c7" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round" />
+                                    )}
+
+                                    <defs>
+                                      <linearGradient id="navyAreaGradDynamic" x1="0" y1="0" x2="0" y2="1">
+                                        <stop offset="0%" stopColor="#1a365d" stopOpacity="0.5" />
+                                        <stop offset="100%" stopColor="#1a365d" stopOpacity="0.0" />
+                                      </linearGradient>
+                                    </defs>
+
+                                    {points.map((p, i) => {
+                                      const shouldRenderLabel = i % 3 === 0 || i === points.length - 1;
+                                      return (
+                                        <g key={i} className="chart-badge-group">
+                                          {shouldRenderLabel && (
+                                            <React.Fragment>
+                                              {chartVisibleMeasures.ocupadas && (
+                                                <g>
+                                                  <rect x={p.x - 13} y={p.yOccupied - 19} width="26" height="13" fill="rgba(26, 54, 93, 0.08)" stroke="#1a365d" strokeWidth="1" rx="4" ry="4" />
+                                                  <text x={p.x} y={p.yOccupied - 10} fill="#1a365d" fontSize="8" fontWeight="900" textAnchor="middle">{p.occupied}</text>
+                                                  <circle cx={p.x} cy={p.yOccupied} r="4.5" fill="#1a365d" stroke="#fff" strokeWidth="1.5" />
+                                                </g>
+                                              )}
+                                              {chartVisibleMeasures.inhabilitadas && (
+                                                <g>
+                                                  <rect x={p.x - 11} y={p.yDisabled + 6} width="22" height="13" fill="rgba(148, 163, 184, 0.12)" stroke="#94a3b8" strokeWidth="1" rx="4" ry="4" />
+                                                  <text x={p.x} y={p.yDisabled + 15} fill="#64748b" fontSize="8" fontWeight="900" textAnchor="middle">{p.disabled}</text>
+                                                  <circle cx={p.x} cy={p.yDisabled} r="3" fill="#94a3b8" stroke="#fff" strokeWidth="1" />
+                                                </g>
+                                              )}
+                                              {chartVisibleMeasures.habilitadas && (
+                                                <g>
+                                                  <rect x={p.x - 13} y={p.yCapacity - 19} width="26" height="13" fill="rgba(16, 185, 129, 0.08)" stroke="#10b981" strokeWidth="1" rx="4" ry="4" />
+                                                  <text x={p.x} y={p.yCapacity - 10} fill="#10b981" fontSize="8" fontWeight="900" textAnchor="middle">{p.capacity}</text>
+                                                  <circle cx={p.x} cy={p.yCapacity} r="4" fill="#10b981" stroke="#fff" strokeWidth="1.5" />
+                                                </g>
+                                              )}
+                                              {chartVisibleMeasures.libres && (
+                                                <g>
+                                                  <rect x={p.x - 13} y={p.yAvailable + 6} width="26" height="13" fill="rgba(124, 58, 237, 0.08)" stroke="#7c3aed" strokeWidth="1" rx="4" ry="4" />
+                                                  <text x={p.x} y={p.yAvailable + 15} fill="#7c3aed" fontSize="8" fontWeight="900" textAnchor="middle">{p.available}</text>
+                                                  <circle cx={p.x} cy={p.yAvailable} r="3.5" fill="#7c3aed" stroke="#fff" strokeWidth="1.2" />
+                                                </g>
+                                              )}
+                                              {chartVisibleMeasures.tasa && (
+                                                <g>
+                                                  <rect x={p.x - 15} y={p.yRate - 18} width="30" height="13" fill="rgba(2, 132, 199, 0.08)" stroke="#0284c7" strokeWidth="1" rx="4" ry="4" />
+                                                  <text x={p.x} y={p.yRate - 9} fill="#0284c7" fontSize="8" fontWeight="900" textAnchor="middle">{p.rate}%</text>
+                                                  <circle cx={p.x} cy={p.yRate} r="4.5" fill="#0284c7" stroke="#fff" strokeWidth="1.5" />
+                                                </g>
+                                              )}
+                                              <text x={p.x} y="206" fill="#64748b" fontSize="8.5" fontWeight="700" textAnchor="middle">{p.date}</text>
+                                            </React.Fragment>
+                                          )}
+                                          <rect 
+                                            x={p.x - pointsWidth/2}
+                                            y="10"
+                                            width={pointsWidth}
+                                            height="180"
+                                            fill="transparent"
+                                            style={{ cursor: 'pointer' }}
+                                            onMouseEnter={() => setHoveredNode({ ...p, idx: i })}
+                                            onMouseLeave={() => setHoveredNode(null)}
+                                          />
+                                        </g>
+                                      );
+                                    })}
+                                  </React.Fragment>
+                                );
+                              })()}
+                            </svg>
+                          </div>
+                        </div>
+
+                        <AnimatePresence>
+                          {hoveredNode && (
+                            <motion.div 
+                              initial={{ opacity: 0, scale: 0.95, y: 10 }}
+                              animate={{ opacity: 1, scale: 1, y: 0 }}
+                              exit={{ opacity: 0, scale: 0.95 }}
+                              className="absolute-chart-tooltip glass-card"
+                              style={{ 
+                                position: 'absolute',
+                                left: `${Math.min(Math.max(hoveredNode.idx * (880 / 29) - 10, 20), 750)}px`,
+                                top: '35px',
+                                padding: '16px',
+                                background: 'rgba(255, 255, 255, 0.98)',
+                                border: '2px solid #1a365d',
+                                borderRadius: '16px',
+                                boxShadow: '0 10px 30px rgba(26, 54, 93, 0.08)',
+                                zIndex: 100,
+                                width: '240px',
+                                pointerEvents: 'none'
+                              }}
+                            >
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px', borderBottom: '1px solid rgba(0,0,0,0.06)', paddingBottom: '6px' }}>
+                                <Calendar size={14} style={{ color: '#1a365d' }} />
+                                <span style={{ fontWeight: 800, fontSize: '0.86rem', color: '#1a365d' }}>Fecha: {hoveredNode.date}</span>
+                              </div>
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '0.78rem', fontWeight: 700, color: '#334155' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                  <span>Camas Habilitadas (Capacidad):</span>
+                                  <span style={{ color: '#10b981', fontWeight: 800 }}>{hoveredNode.capacity}</span>
+                                </div>
+                                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                  <span>Camas Ocupadas:</span>
+                                  <span style={{ color: '#1a365d', fontWeight: 800 }}>{hoveredNode.occupied}</span>
+                                </div>
+                                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                  <span>Camas Libres (Vacantes):</span>
+                                  <span style={{ color: '#7c3aed', fontWeight: 800 }}>{hoveredNode.available}</span>
+                                </div>
+                                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                  <span>Camas Inhabilitadas:</span>
+                                  <span style={{ color: '#64748b', fontWeight: 800 }}>{hoveredNode.disabled}</span>
+                                </div>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px dashed rgba(0,0,0,0.08)', paddingTop: '6px', marginTop: '4px', fontWeight: 850 }}>
+                                  <span style={{ color: '#0284c7' }}>% Ocupación:</span>
+                                  <span style={{ color: '#0284c7' }}>{hoveredNode.rate}%</span>
+                                </div>
+                              </div>
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+                      </div>
+                    )}
+                  </div>
+
                   {/* Bed Breakdown Grid */}
                   <div className="bed-units-section">
-                    <h2 className="section-title text-glow-cyan"><Bed size={22} /> Cuadratura de Camas por Unidad de Cuidados</h2>
-                    <p className="section-subtitle">Monitoreo de ocupación clínica por servicio y disponibilidad de recursos</p>
+                    <h2 className="section-title text-glow-cyan"><Bed size={22} /> Cuadratura de Camas por Unidad de Cuidados (al {currentOccupancy.fecha})</h2>
+                    <p className="section-subtitle">Fotografía clínica al día de ayer • Monitoreo de ocupación clínica por servicio y disponibilidad de recursos (independiente de filtros de fecha)</p>
                     
                     <div className="bed-units-grid">
                       <div className="unit-card glass-card">
@@ -2815,190 +3175,6 @@ export default function ClosedAttentionDashboard({ onBack }) {
                         </div>
                       </div>
                     </div>
-                  </div>
-
-                  {/* Bed Occupancy Historical Trend Line Chart */}
-                  <div className="glass-card chart-container border-glow-cyan">
-                    <div className="chart-header">
-                      <div>
-                        <h2 className="c-title text-glow-cyan">Historial Dinámico de Ocupación de Camas (Últimos 30 días)</h2>
-                        <p className="c-subtitle">Tendencia de camas ocupadas, inhabilitadas y tasa de ocupación (%) en el eje secundario</p>
-                      </div>
-                      
-                      <div className="chart-controls-row" style={{ display: 'flex', alignItems: 'center', gap: '15px', flexWrap: 'wrap' }}>
-                        <div className="chart-unit-selector">
-                          <label style={{ marginRight: '8px', fontSize: '0.74rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase' }}>UNIDAD:</label>
-                          <select 
-                            value={chartSelectedUnit} 
-                            onChange={(e) => setChartSelectedUnit(e.target.value)}
-                            style={{ padding: '8px 12px', borderRadius: '10px', border: '1.5px solid rgba(6, 182, 212, 0.25)', fontSize: '0.8rem', fontWeight: 700, outline: 'none', cursor: 'pointer', background: 'white' }}
-                          >
-                            <option value="todos">Todas las Unidades (Total General)</option>
-                            <option value="uci">UCI (Intensivos)</option>
-                            <option value="uti">UTI (Intermedios)</option>
-                            <option value="medios">Cuidados Medios</option>
-                            <option value="basicos">Cuidados Básicos</option>
-                            <option value="maternidad">Maternidad y Ginecología</option>
-                            <option value="infantil">Pediatría / Infantil</option>
-                            <option value="neonatologia">Neonatología</option>
-                          </select>
-                        </div>
-
-                        <div className="legend-row" style={{ display: 'flex', gap: '14px', fontSize: '0.78rem', fontWeight: 700 }}>
-                          <div className="legend-item"><span className="legend-color" style={{ background: '#1a365d' }}></span> Ocupadas (izq)</div>
-                          <div className="legend-item"><span className="legend-color" style={{ background: '#94a3b8' }}></span> Inhabilitadas (izq)</div>
-                          <div className="legend-item"><span className="legend-color" style={{ background: '#0284c7' }}></span> % Ocupación (der)</div>
-                        </div>
-                      </div>
-                    </div>
-
-                    {occupancyTrendData.length === 0 ? (
-                      <div className="empty-chart">Sin registros de cuadratura en la base de datos</div>
-                    ) : (
-                      <div style={{ position: 'relative', marginTop: '25px' }}>
-                        <div style={{ overflowX: 'auto', width: '100%' }}>
-                          <div style={{ minWidth: '100%', height: '240px', position: 'relative' }}>
-                            <svg viewBox="0 0 1000 220" width="100%" height="100%" preserveAspectRatio="none" style={{ overflow: 'visible' }}>
-                              <line x1="50" y1="40" x2="950" y2="40" stroke="rgba(0,0,0,0.03)" strokeDasharray="3 3" />
-                              <line x1="50" y1="100" x2="950" y2="100" stroke="rgba(0,0,0,0.03)" strokeDasharray="3 3" />
-                              <line x1="50" y1="160" x2="950" y2="160" stroke="rgba(0,0,0,0.03)" strokeDasharray="3 3" />
-                              <line x1="50" y1="190" x2="950" y2="190" stroke="rgba(0,0,0,0.08)" />
-
-                              <text x="15" y="20" fill="#64748b" fontSize="8" fontWeight="800">CAMAS (n)</text>
-                              <text x="965" y="20" fill="#0284c7" fontSize="8" fontWeight="800">OCUPACIÓN (%)</text>
-
-                              {(() => {
-                                const pointsWidth = 880 / Math.max(1, occupancyTrendData.length - 1);
-                                const points = occupancyTrendData.map((d, i) => {
-                                  const scaleLeft = 140 / maxHistoryVal;
-                                  const yOccupied = 180 - d.occupied * scaleLeft;
-                                  const yDisabled = 180 - d.disabled * scaleLeft;
-                                  const yRate = 180 - (d.occupancyRate / 100) * 140;
-
-                                  return {
-                                    x: 50 + i * pointsWidth,
-                                    yOccupied,
-                                    yDisabled,
-                                    yRate,
-                                    date: d.date,
-                                    occupied: d.occupied,
-                                    disabled: d.disabled,
-                                    available: d.available,
-                                    rate: d.occupancyRate.toFixed(0)
-                                  };
-                                });
-
-                                const pathOccupied = points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.yOccupied}`).join(' ');
-                                const pathDisabled = points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.yDisabled}`).join(' ');
-                                const pathRate = points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.yRate}`).join(' ');
-
-                                return (
-                                  <React.Fragment>
-                                    <path d={`${pathOccupied} L ${points[points.length - 1].x} 190 L ${points[0].x} 190 Z`} fill="url(#navyAreaGradDynamic)" opacity="0.08" />
-
-                                    <path d={pathOccupied} fill="none" stroke="#1a365d" strokeWidth="4.5" strokeLinecap="round" strokeLinejoin="round" />
-                                    <path d={pathDisabled} fill="none" stroke="#94a3b8" strokeWidth="2.5" strokeDasharray="5 4" strokeLinecap="round" />
-                                    <path d={pathRate} fill="none" stroke="#0284c7" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
-
-                                    <defs>
-                                      <linearGradient id="navyAreaGradDynamic" x1="0" y1="0" x2="0" y2="1">
-                                        <stop offset="0%" stopColor="#1a365d" stopOpacity="0.5" />
-                                        <stop offset="100%" stopColor="#1a365d" stopOpacity="0.0" />
-                                      </linearGradient>
-                                    </defs>
-
-                                    {points.map((p, i) => {
-                                      const shouldRenderLabel = i % 3 === 0 || i === points.length - 1;
-                                      return (
-                                        <g key={i} className="chart-badge-group">
-                                          {shouldRenderLabel && (
-                                            <React.Fragment>
-                                              <g>
-                                                <rect x={p.x - 13} y={p.yOccupied - 19} width="26" height="13" fill="rgba(26, 54, 93, 0.08)" stroke="#1a365d" strokeWidth="1" rx="4" ry="4" />
-                                                <text x={p.x} y={p.yOccupied - 10} fill="#1a365d" fontSize="8" fontWeight="900" textAnchor="middle">{p.occupied}</text>
-                                              </g>
-                                              <g>
-                                                <rect x={p.x - 11} y={p.yDisabled + 6} width="22" height="13" fill="rgba(148, 163, 184, 0.12)" stroke="#94a3b8" strokeWidth="1" rx="4" ry="4" />
-                                                <text x={p.x} y={p.yDisabled + 15} fill="#64748b" fontSize="8" fontWeight="900" textAnchor="middle">{p.disabled}</text>
-                                              </g>
-                                              <g>
-                                                <rect x={p.x - 15} y={p.yRate - 18} width="30" height="13" fill="rgba(2, 132, 199, 0.08)" stroke="#0284c7" strokeWidth="1" rx="4" ry="4" />
-                                                <text x={p.x} y={p.yRate - 9} fill="#0284c7" fontSize="8" fontWeight="900" textAnchor="middle">{p.rate}%</text>
-                                              </g>
-                                              <circle cx={p.x} cy={p.yOccupied} r="4" fill="#1a365d" stroke="#fff" strokeWidth="1.5" />
-                                              <circle cx={p.x} cy={p.yDisabled} r="3" fill="#94a3b8" stroke="#fff" strokeWidth="1" />
-                                              <circle cx={p.x} cy={p.yRate} r="4.5" fill="#0284c7" stroke="#fff" strokeWidth="1.5" />
-                                              <text x={p.x} y="206" fill="#64748b" fontSize="8.5" fontWeight="700" textAnchor="middle">{p.date}</text>
-                                            </React.Fragment>
-                                          )}
-                                          <rect 
-                                            x={p.x - pointsWidth/2}
-                                            y="10"
-                                            width={pointsWidth}
-                                            height="180"
-                                            fill="transparent"
-                                            style={{ cursor: 'pointer' }}
-                                            onMouseEnter={() => setHoveredNode({ ...p, idx: i })}
-                                            onMouseLeave={() => setHoveredNode(null)}
-                                          />
-                                        </g>
-                                      );
-                                    })}
-                                  </React.Fragment>
-                                );
-                              })()}
-                            </svg>
-                          </div>
-                        </div>
-
-                        <AnimatePresence>
-                          {hoveredNode && (
-                            <motion.div 
-                              initial={{ opacity: 0, scale: 0.95, y: 10 }}
-                              animate={{ opacity: 1, scale: 1, y: 0 }}
-                              exit={{ opacity: 0, scale: 0.95 }}
-                              className="absolute-chart-tooltip glass-card"
-                              style={{ 
-                                position: 'absolute',
-                                left: `${Math.min(Math.max(hoveredNode.idx * (880 / 29) - 10, 20), 750)}px`,
-                                top: '35px',
-                                padding: '16px',
-                                background: 'rgba(255, 255, 255, 0.98)',
-                                border: '2px solid #1a365d',
-                                borderRadius: '16px',
-                                boxShadow: '0 10px 30px rgba(26, 54, 93, 0.08)',
-                                zIndex: 100,
-                                width: '220px',
-                                pointerEvents: 'none'
-                              }}
-                            >
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px', borderBottom: '1px solid rgba(0,0,0,0.06)', paddingBottom: '6px' }}>
-                                <Calendar size={14} style={{ color: '#1a365d' }} />
-                                <span style={{ fontWeight: 800, fontSize: '0.86rem', color: '#1a365d' }}>Fecha: {hoveredNode.date}</span>
-                              </div>
-                              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '0.78rem', fontWeight: 700, color: '#334155' }}>
-                                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                  <span>Camas Ocupadas:</span>
-                                  <span style={{ color: '#1a365d' }}>{hoveredNode.occupied}</span>
-                                </div>
-                                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                  <span>Camas Inhabilitadas:</span>
-                                  <span style={{ color: '#64748b' }}>{hoveredNode.disabled}</span>
-                                </div>
-                                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                  <span>Camas Libres:</span>
-                                  <span style={{ color: '#059669' }}>{hoveredNode.available}</span>
-                                </div>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px dashed rgba(0,0,0,0.08)', paddingTop: '6px', marginTop: '4px', fontWeight: 800 }}>
-                                  <span style={{ color: '#0284c7' }}>% Ocupación:</span>
-                                  <span style={{ color: '#0284c7' }}>{hoveredNode.rate}%</span>
-                                </div>
-                              </div>
-                            </motion.div>
-                          )}
-                        </AnimatePresence>
-                      </div>
-                    )}
                   </div>
                 </motion.div>
               )}
