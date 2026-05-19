@@ -33,6 +33,7 @@ import RadiologyDashboard from './components/RadiologyDashboard';
 import TacDashboard from './components/TacDashboard';
 import EndoscopyDashboard from './components/EndoscopyDashboard';
 import ClosedAttentionDashboard from './components/ClosedAttentionDashboard';
+import PharmacyDashboard from './components/PharmacyDashboard';
 import './App.css';
 
 // HD Images
@@ -66,6 +67,7 @@ const menuStructure = [
       },
       { id: 'quirurgica', label: 'Producción Quirúrgica' },
       { id: 'urgencia', label: 'Estadísticas de Urgencia' },
+      { id: 'farmacia', label: 'Producción de Farmacia' },
       { 
         id: 'procedimientos_especialidades', 
         label: 'Procedimientos de Especialidades',
@@ -137,6 +139,13 @@ const indicatorCards = [
 ];
 
 const searchIndex = [
+  {
+    keys: ['farmacia', 'recetas', 'prescripciones', 'medicamentos', 'blanca', 'verde', 'controlados', 'dispensacion', 'farmacos', 'produccion farmacia'],
+    title: 'Producción de Farmacia y Medicamentos',
+    path: 'Servicios de Apoyo ➔ Farmacia',
+    desc: 'Monitoreo de dispensación de medicamentos en dos dimensiones: número de recetas y número de prescripciones por servicio clínico.',
+    action: { view: 'farmacia' }
+  },
   {
     keys: ['censo', 'camas', 'ocupacion', 'egresos', 'altas', 'pacientes', 'cerrado', 'hospitalizacion', 'atencion cerrada', 'ingresos hospitalarios', 'sala', 'camas ocupadas', 'alta medica', 'dias estada', 'atencion clinica', 'estadistica cerrada', 'hospitalizado'],
     title: 'Estadística Cerrada y Censo de Camas',
@@ -765,6 +774,11 @@ function App() {
                   onBack={() => navigateToView('procedimientos_especialidades')} 
                   initialTab={mammographyInitialTab}
                   initialFilterNsp={mammographyFilterNsp}
+                />
+              )}
+              {activeView === 'farmacia' && (
+                <PharmacyDashboard 
+                  onBack={() => navigateToView('produccion_general')} 
                 />
               )}
             </div>
