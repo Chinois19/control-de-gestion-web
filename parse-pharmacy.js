@@ -113,12 +113,52 @@ function run() {
   
   console.log('Mapped headers:', cleanHeaders);
   
-  const records = [];
+  const dateIdx = cleanHeaders.indexOf('fecha');
+  if (dateIdx === -1) {
+    console.error("Error: 'fecha' column not found in CSV headers");
+    return;
+  }
+
+  // Determine current month in YYYY-MM format
+  const now = new Date();
+  const currentYear = now.getFullYear();
+  const currentMonth = String(now.getMonth() + 1).padStart(2, '0');
+  const currentYearMonth = `${currentYear}-${currentMonth}`; // e.g. "2026-05"
+  
+  let historicalRecords = [];
+  let isIncremental = false;
+
+  // Load existing cache if available
+  if (fs.existsSync(jsonOutputPath)) {
+    try {
+      const existingCache = JSON.parse(fs.readFileSync(jsonOutputPath, 'utf-8'));
+      if (existingCache && Array.isArray(existingCache.records)) {
+        // Filter out all records belonging to the current month
+        historicalRecords = existingCache.records.filter(r => r.fecha && !r.fecha.startsWith(currentYearMonth));
+        isIncremental = true;
+        console.log(`Incremental load active. Loaded ${historicalRecords.length} historical records (excluding ${currentYearMonth}).`);
+      }
+    } catch (e) {
+      console.warn("Could not read existing cache file or it is invalid. Performing full load.", e);
+    }
+  }
+
+  const currentMonthRecords = [];
+  let skippedRowsCount = 0;
   
   for (let i = 1; i < lines.length; i++) {
     const rowValues = parseCSVLine(lines[i]);
     if (rowValues.length !== rawHeaders.length) {
       // Skip empty or malformed rows
+      continue;
+    }
+
+    const rawDateVal = rowValues[dateIdx].replace(/^"|"$/g, '').trim();
+    const normalizedDateVal = normalizeDate(rawDateVal);
+
+    // If incremental, skip rows that are NOT in the current month
+    if (isIncremental && !normalizedDateVal.startsWith(currentYearMonth)) {
+      skippedRowsCount++;
       continue;
     }
     
@@ -130,7 +170,7 @@ function run() {
       val = val.replace(/^"|"$/g, '').trim();
       
       if (header === 'fecha') {
-        record[header] = normalizeDate(val);
+        record[header] = normalizedDateVal;
       } else if (header === 'recetas' || header === 'prescripciones' || header === 'receta_blanca' || header === 'receta_verde') {
         record[header] = parseInt(val, 10) || 0;
       } else {
@@ -142,6 +182,8 @@ function run() {
             val = 'ATENCIÓN ABIERTA';
           } else if (upperVal.includes('CERRADA')) {
             val = 'ATENCIÓN CERRADA';
+          } else if (upperVal.includes('URGENCIA')) {
+            val = 'ATENCIÓN DE URGENCIA';
           } else {
             val = val.replace(/ATENCI"N/gi, 'ATENCIÓN').replace(/ATENCION/gi, 'ATENCIÓN');
           }
@@ -176,14 +218,17 @@ function run() {
       }
     });
     
-    records.push(record);
+    currentMonthRecords.push(record);
   }
   
-  console.log(`Parsed ${records.length} records successfully.`);
+  console.log(`Parsed ${currentMonthRecords.length} records for the current month (${currentYearMonth}). Skipped ${skippedRowsCount} historical rows.`);
+  
+  const mergedRecords = [...historicalRecords, ...currentMonthRecords];
+  console.log(`Merged database contains ${mergedRecords.length} total records.`);
   
   const outputData = {
     lastUpdated: new Date().toISOString(),
-    records: records
+    records: mergedRecords
   };
   
   fs.writeFileSync(jsonOutputPath, JSON.stringify(outputData, null, 2), 'utf-8');

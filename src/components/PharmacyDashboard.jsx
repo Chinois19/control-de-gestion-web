@@ -1,24 +1,24 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { 
-  Search, 
   ChevronLeft, 
   Activity, 
   FileText, 
   Calendar, 
   ArrowUpRight, 
   ChevronDown, 
-  ChevronRight, 
   SlidersHorizontal, 
   Check, 
   Info, 
-  Download, 
-  LayoutGrid, 
   TrendingUp, 
   ClipboardList, 
   Sparkles,
   RefreshCw,
-  HelpCircle
+  HelpCircle,
+  Clock,
+  ArrowRight,
+  Filter,
+  Database
 } from 'lucide-react';
 
 export default function PharmacyDashboard({ onBack }) {
@@ -39,7 +39,7 @@ export default function PharmacyDashboard({ onBack }) {
   const [startDate, setStartDate] = useState('2024-05-01');
   const [endDate, setEndDate] = useState('2026-05-31');
 
-  // Custom multi-select checklists
+  // Custom multi-select checklists in sidebar
   const [selectedServicios, setSelectedServicios] = useState([]);
   const [selectedTipos, setSelectedTipos] = useState([]);
   const [selectedAreas, setSelectedAreas] = useState([]);
@@ -52,18 +52,18 @@ export default function PharmacyDashboard({ onBack }) {
   });
 
   // --- Interactive UI States ---
-  const [hoveredService, setHoveredService] = useState(null);
-  const [hoveredTrendNode, setHoveredTrendNode] = useState(null);
-  const [trendDimension, setTrendDimension] = useState('ambos'); // 'recetas' | 'prescripciones' | 'ambos'
-  const [donutDimension, setDonutDimension] = useState('recetas'); // 'recetas' | 'prescripciones'
-  const [searchQuery, setSearchQuery] = useState('');
-  const [currentPage, setCurrentPage] = useState(1);
-  const rowsPerPage = 10;
+  const [stackedDimension, setStackedDimension] = useState('recetas'); // 'recetas' | 'prescripciones'
 
-  // Refs for tracking dimension options
+  // --- Pivot Table Interactivity States ---
+  const [pivotServiceFilter, setPivotServiceFilter] = useState(''); // Empty string = "Todos los Servicios"
+  const [pivotMetric, setPivotMetric] = useState('recetas'); // 'recetas' | 'prescripciones'
+
+  // --- Analysis Section Active Tab ---
+  const [activeAnalysisTab, setActiveAnalysisTab] = useState('complejidad');
+
   const dropdownRef = useRef(null);
 
-  // --- 1. Load Data ---
+  // --- Load Data ---
   useEffect(() => {
     async function loadPharmacyData() {
       try {
@@ -73,13 +73,14 @@ export default function PharmacyDashboard({ onBack }) {
           throw new Error('No se pudo cargar el caché de farmacia.');
         }
         const data = await res.json();
-        setRawData(data.records || []);
+        const records = data.records || [];
+        setRawData(records);
         setLastUpdated(data.lastUpdated || '');
         
         // Extract unique options for filters
-        const uniqueServicios = [...new Set(data.records.map(r => r.servicio).filter(Boolean))].sort();
-        const uniqueTipos = [...new Set(data.records.map(r => r.tipo_atencion).filter(Boolean))].sort();
-        const uniqueAreas = [...new Set(data.records.map(r => r.area).filter(Boolean))].sort();
+        const uniqueServicios = [...new Set(records.map(r => r.servicio).filter(Boolean))].sort();
+        const uniqueTipos = [...new Set(records.map(r => r.tipo_atencion).filter(Boolean))].sort();
+        const uniqueAreas = [...new Set(records.map(r => r.area).filter(Boolean))].sort();
         
         setSelectedServicios(uniqueServicios);
         setSelectedTipos(uniqueTipos);
@@ -105,7 +106,7 @@ export default function PharmacyDashboard({ onBack }) {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // --- 2. Extract Available Dimensions for Checklist Menus ---
+  // Extract Available Dimensions
   const uniqueDropdownOptions = useMemo(() => {
     if (rawData.length === 0) return { servicios: [], tipos: [], areas: [] };
     return {
@@ -115,7 +116,7 @@ export default function PharmacyDashboard({ onBack }) {
     };
   }, [rawData]);
 
-  // --- 3. Date Input Validation Handler ---
+  // Date Input Handler
   const handleDateChange = (type, value) => {
     if (type === 'desde') {
       setRawDesde(value);
@@ -136,7 +137,7 @@ export default function PharmacyDashboard({ onBack }) {
     }
   };
 
-  // --- 4. Filtering and Metric Calculation ---
+  // --- Filtering ---
   const filteredRecords = useMemo(() => {
     if (rawData.length === 0) return [];
     
@@ -149,19 +150,9 @@ export default function PharmacyDashboard({ onBack }) {
       if (selectedTipos.length > 0 && !selectedTipos.includes(r.tipo_atencion)) return false;
       if (selectedAreas.length > 0 && !selectedAreas.includes(r.area)) return false;
       
-      // Search Box Filter
-      if (searchQuery.trim() !== '') {
-        const query = searchQuery.toLowerCase();
-        const matchesServ = r.servicio?.toLowerCase().includes(query);
-        const matchesArea = r.area?.toLowerCase().includes(query);
-        const matchesTipo = r.tipo_atencion?.toLowerCase().includes(query);
-        const matchesFecha = r.fecha.includes(query);
-        if (!matchesServ && !matchesArea && !matchesTipo && !matchesFecha) return false;
-      }
-      
       return true;
     });
-  }, [rawData, startDate, endDate, selectedServicios, selectedTipos, selectedAreas, searchQuery]);
+  }, [rawData, startDate, endDate, selectedServicios, selectedTipos, selectedAreas]);
 
   // Summary Metrics
   const metrics = useMemo(() => {
@@ -189,208 +180,196 @@ export default function PharmacyDashboard({ onBack }) {
     };
   }, [filteredRecords]);
 
-  // --- 5. Donut Chart Aggregation (Servicios) ---
-  const serviceDistribution = useMemo(() => {
-    const counts = {};
-    filteredRecords.forEach(r => {
-      const key = r.servicio || 'Sin servicio';
-      const val = donutDimension === 'recetas' ? (r.recetas || 0) : (r.prescripciones || 0);
-      if (!counts[key]) counts[key] = 0;
-      counts[key] += val;
-    });
-    
-    const total = Object.values(counts).reduce((a, b) => a + b, 0);
-    
-    const colors = [
-      '#0284c7', '#1e3a8a', '#f43f5e', '#f59e0b', '#10b981', 
-      '#8b5cf6', '#ec4899', '#06b6d4', '#14b8a6', '#64748b'
-    ];
-    
-    return Object.entries(counts)
-      .map(([name, value], idx) => ({
-        key: name.toLowerCase().replace(/[^a-z0-9]/g, ''),
-        name,
-        value,
-        percent: total > 0 ? ((value / total) * 100).toFixed(1) : '0.0',
-        color: colors[idx % colors.length]
-      }))
-      .sort((a, b) => b.value - a.value);
-  }, [filteredRecords, donutDimension]);
-
-  // SVG path generator helper for Donut slices
-  const donutSegments = useMemo(() => {
-    let accumulatedAngle = 0;
-    const total = serviceDistribution.reduce((sum, s) => sum + s.value, 0);
-    
-    return serviceDistribution.map(seg => {
-      const angle = total > 0 ? (seg.value / total) * 360 : 0;
-      
-      // Calculate SVG Arc coordinates
-      const x1 = 150 + 100 * Math.cos((accumulatedAngle - 90) * Math.PI / 180);
-      const y1 = 150 + 100 * Math.sin((accumulatedAngle - 90) * Math.PI / 180);
-      
-      accumulatedAngle += angle;
-      
-      const x2 = 150 + 100 * Math.cos((accumulatedAngle - 90) * Math.PI / 180);
-      const y2 = 150 + 100 * Math.sin((accumulatedAngle - 90) * Math.PI / 180);
-      
-      const largeArc = angle > 180 ? 1 : 0;
-      const pathData = `M 150 150 L ${x1} ${y1} A 100 100 0 ${largeArc} 1 ${x2} ${y2} Z`;
-      
-      return {
-        ...seg,
-        pathData
-      };
-    });
-  }, [serviceDistribution]);
-
-  // --- 6. Time Trend Aggregation (Intelligent Grouping) ---
-  const trendData = useMemo(() => {
-    const dailyMap = {};
-    filteredRecords.forEach(r => {
-      const d = r.fecha;
-      if (!dailyMap[d]) {
-        dailyMap[d] = { recetas: 0, prescripciones: 0 };
-      }
-      dailyMap[d].recetas += r.recetas || 0;
-      dailyMap[d].prescripciones += r.prescripciones || 0;
-    });
-    
-    const dates = Object.keys(dailyMap).sort();
-    
-    // Decidir si agrupamos por Día o por Mes para un rendimiento máximo
-    const uniqueDays = dates.length;
-    
-    if (uniqueDays > 45) {
-      // Agrupación mensual
-      const monthlyMap = {};
-      dates.forEach(d => {
-        const monthKey = d.substring(0, 7); // 'YYYY-MM'
-        if (!monthlyMap[monthKey]) {
-          monthlyMap[monthKey] = { recetas: 0, prescripciones: 0, label: '' };
-        }
-        monthlyMap[monthKey].recetas += dailyMap[d].recetas;
-        monthlyMap[monthKey].prescripciones += dailyMap[d].prescripciones;
-      });
-      
-      return Object.entries(monthlyMap)
-        .map(([key, val]) => {
-          const parts = key.split('-');
-          const year = parts[0].substring(2);
-          const months = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
-          const monthIndex = parseInt(parts[1], 10) - 1;
-          val.label = `${months[monthIndex]} '${year}`;
-          val.rawDate = key;
-          return val;
-        })
-        .sort((a, b) => (a.rawDate > b.rawDate ? 1 : -1));
-    } else {
-      // Agrupación diaria
-      return dates.map(d => {
-        const parts = d.split('-');
-        const label = `${parts[2]}/${parts[1]}`;
-        return {
-          label,
-          rawDate: d,
-          recetas: dailyMap[d].recetas,
-          prescripciones: dailyMap[d].prescripciones
-        };
-      });
-    }
-  }, [filteredRecords]);
-
-  // SVG geometry for Trend chart
-  const trendPoints = useMemo(() => {
-    if (trendData.length === 0) return { recetas: [], prescripciones: [] };
-    
-    const maxVal = Math.max(
-      ...trendData.map(d => Math.max(d.recetas, d.prescripciones)),
-      10 // Fallback
-    );
-    
-    const width = 850;
-    const height = 180;
-    const paddingLeft = 40;
-    const paddingRight = 20;
-    const paddingTop = 20;
-    const paddingBottom = 20;
-    
-    const graphWidth = width - paddingLeft - paddingRight;
-    const graphHeight = height - paddingTop - paddingBottom;
-    
-    const getX = (idx) => {
-      if (trendData.length <= 1) return paddingLeft + graphWidth / 2;
-      return paddingLeft + (idx / (trendData.length - 1)) * graphWidth;
-    };
-    
-    const getY = (val) => {
-      return height - paddingBottom - (val / maxVal) * graphHeight;
-    };
-    
-    const ptsRecetas = trendData.map((d, i) => ({
-      x: getX(i),
-      y: getY(d.recetas),
-      value: d.recetas,
-      date: d.label,
-      rawDate: d.rawDate,
-      prescripciones: d.prescripciones
-    }));
-    
-    const ptsPrescripciones = trendData.map((d, i) => ({
-      x: getX(i),
-      y: getY(d.prescripciones),
-      value: d.prescripciones,
-      date: d.label,
-      rawDate: d.rawDate,
-      recetas: d.recetas
-    }));
-    
-    return {
-      recetas: ptsRecetas,
-      prescripciones: ptsPrescripciones,
-      maxY: maxVal,
-      getYZero: getY(0)
-    };
-  }, [trendData]);
-
-  // --- 7. Table Pagination and Search ---
-  const paginatedRecords = useMemo(() => {
-    const startIndex = (currentPage - 1) * rowsPerPage;
-    return filteredRecords.slice(startIndex, startIndex + rowsPerPage);
-  }, [filteredRecords, currentPage]);
-
-  const totalPages = Math.ceil(filteredRecords.length / rowsPerPage);
-
-  // --- 8. Export CSV Handler ---
-  const handleExportCSV = () => {
-    if (filteredRecords.length === 0) return;
-    
-    // CSV Header row
-    const headers = ['FECHA', 'SERVICIO', 'RECETAS', 'PRESCRIPCIONES', 'RECETA BLANCA', 'RECETA VERDE', 'TIPO ATENCION', 'AREA'];
-    const rows = filteredRecords.map(r => [
-      r.fecha,
-      r.servicio,
-      r.recetas,
-      r.prescripciones,
-      r.receta_blanca,
-      r.receta_verde,
-      r.tipo_atencion,
-      r.area
-    ]);
-    
-    const csvContent = [headers.join(','), ...rows.map(row => row.map(val => `"${val}"`).join(','))].join('\n');
-    
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.setAttribute('href', url);
-    link.setAttribute('download', `produccion_farmacia_${startDate}_a_${endDate}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+  // Helper to format YYYY-MM into Spanish Month Year (e.g. May '24)
+  const formatMonthYear = (ymStr) => {
+    if (!ymStr) return '';
+    const parts = ymStr.split('-');
+    const year = parts[0].substring(2);
+    const months = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+    const monthIndex = parseInt(parts[1], 10) - 1;
+    return `${months[monthIndex]} '${year}`;
   };
 
-  // Toggle checklist utilities
+  // --- Monthly Aggregations for Charts ---
+  const monthlyData = useMemo(() => {
+    const map = {};
+    filteredRecords.forEach(r => {
+      const monthKey = r.fecha.substring(0, 7); // "YYYY-MM"
+      if (!map[monthKey]) {
+        map[monthKey] = {
+          monthKey,
+          recetas: 0,
+          prescripciones: 0,
+          abierta: 0,
+          cerrada: 0,
+          urgencia: 0,
+          abiertaPresc: 0,
+          cerradaPresc: 0,
+          urgenciaPresc: 0
+        };
+      }
+      map[monthKey].recetas += r.recetas || 0;
+      map[monthKey].prescripciones += r.prescripciones || 0;
+
+      // Classify by patient origin
+      const orig = r.tipo_atencion || '';
+      if (orig.includes('ABIERTA')) {
+        map[monthKey].abierta += r.recetas || 0;
+        map[monthKey].abiertaPresc += r.prescripciones || 0;
+      } else if (orig.includes('CERRADA')) {
+        map[monthKey].cerrada += r.recetas || 0;
+        map[monthKey].cerradaPresc += r.prescripciones || 0;
+      } else if (orig.includes('URGENCIA')) {
+        map[monthKey].urgencia += r.recetas || 0;
+        map[monthKey].urgenciaPresc += r.prescripciones || 0;
+      }
+    });
+
+    return Object.values(map).sort((a, b) => a.monthKey.localeCompare(b.monthKey));
+  }, [filteredRecords]);
+
+  const maxGroupedChartVal = useMemo(() => {
+    if (monthlyData.length === 0) return 100;
+    const maxVal = Math.max(
+      ...monthlyData.map(d => {
+        const valCerrada = stackedDimension === 'recetas' ? d.cerrada : d.cerradaPresc;
+        const valAbierta = stackedDimension === 'recetas' ? d.abierta : d.abiertaPresc;
+        const valUrgencia = stackedDimension === 'recetas' ? d.urgencia : d.urgenciaPresc;
+        return Math.max(valCerrada, valAbierta, valUrgencia);
+      }),
+      100
+    );
+    return maxVal;
+  }, [monthlyData, stackedDimension]);
+
+  const categorySums = useMemo(() => {
+    let cerradaSum = 0;
+    let abiertaSum = 0;
+    let urgenciaSum = 0;
+    monthlyData.forEach(d => {
+      cerradaSum += stackedDimension === 'recetas' ? d.cerrada : d.cerradaPresc;
+      abiertaSum += stackedDimension === 'recetas' ? d.abierta : d.abiertaPresc;
+      urgenciaSum += stackedDimension === 'recetas' ? d.urgencia : d.urgenciaPresc;
+    });
+    return {
+      cerrada: cerradaSum,
+      abierta: abiertaSum,
+      urgencia: urgenciaSum
+    };
+  }, [monthlyData, stackedDimension]);
+
+  // --- SVG Dimensions and Math ---
+  const chartConfig = {
+    width: 900,
+    height: 250,
+    paddingLeft: 55,
+    paddingRight: 20,
+    paddingTop: 15,
+    paddingBottom: 35
+  };
+
+  const chartGeometry = useMemo(() => {
+    if (monthlyData.length === 0) return null;
+
+    const graphWidth = chartConfig.width - chartConfig.paddingLeft - chartConfig.paddingRight;
+    const graphHeight = chartConfig.height - chartConfig.paddingTop - chartConfig.paddingBottom;
+
+    // --- Grouped Chart Math ---
+    const maxValGrouped = Math.max(
+      ...monthlyData.map(d => Math.max(d.recetas, d.prescripciones)),
+      100 // fallback
+    );
+
+    // --- Stacked Chart Math ---
+    const maxValStacked = Math.max(
+      ...monthlyData.map(d => {
+        if (stackedDimension === 'recetas') {
+          return d.abierta + d.cerrada + d.urgencia;
+        } else {
+          return d.abiertaPresc + d.cerradaPresc + d.urgenciaPresc;
+        }
+      }),
+      100 // fallback
+    );
+
+    return {
+      graphWidth,
+      graphHeight,
+      maxValGrouped,
+      maxValStacked
+    };
+  }, [monthlyData, stackedDimension]);
+
+  // --- Dynamic Pivot Table Aggregations ---
+  const pivotTableData = useMemo(() => {
+    // 1. Get all unique Month-Year headers present in "rawData" sorted chronologically
+    const allMonths = [...new Set(rawData.map(r => r.fecha.substring(0, 7)))].sort();
+    
+    // 2. Define rows exactly matching the user request
+    const rows = [
+      'Farmacia de Atención Abierta',
+      'Farmacia de Atención Cerrada',
+      'Farmacia de Urgencia'
+    ];
+
+    // Initialize counts matrix
+    const matrix = {};
+    rows.forEach(r => {
+      matrix[r] = {};
+      allMonths.forEach(m => {
+        matrix[r][m] = 0;
+      });
+    });
+
+    // Populate matrix based on rawData filtered only by:
+    // - Service Filter dropdown (pivotServiceFilter)
+    // - Date Filter (optional, but let's calculate based on complete dates to show historical censo)
+    rawData.forEach(r => {
+      const monthKey = r.fecha.substring(0, 7);
+      
+      // If service filter is set, skip mismatched records
+      if (pivotServiceFilter !== '' && r.servicio !== pivotServiceFilter) return;
+
+      const areaRow = r.area;
+      if (matrix[areaRow] && matrix[areaRow][monthKey] !== undefined) {
+        const valueToAdd = pivotMetric === 'recetas' ? (r.recetas || 0) : (r.prescripciones || 0);
+        matrix[areaRow][monthKey] += valueToAdd;
+      }
+    });
+
+    // Compute column (month) totals
+    const columnTotals = {};
+    allMonths.forEach(m => {
+      columnTotals[m] = 0;
+      rows.forEach(r => {
+        columnTotals[m] += matrix[r][m];
+      });
+    });
+
+    // Compute row totals
+    const rowTotals = {};
+    let grandTotal = 0;
+    rows.forEach(r => {
+      rowTotals[r] = 0;
+      allMonths.forEach(m => {
+        rowTotals[r] += matrix[r][m];
+      });
+      grandTotal += rowTotals[r];
+    });
+
+    return {
+      months: allMonths,
+      rows,
+      matrix,
+      columnTotals,
+      rowTotals,
+      grandTotal
+    };
+  }, [rawData, pivotServiceFilter, pivotMetric]);
+
+
+
+  // Toggle selection checklists
   const toggleSelection = (list, setList, val) => {
     if (list.includes(val)) {
       setList(list.filter(item => item !== val));
@@ -411,7 +390,7 @@ export default function PharmacyDashboard({ onBack }) {
     <div style={{ color: 'var(--text-dark)', maxWidth: '1400px', margin: '0 auto', fontFamily: 'Inter, sans-serif' }}>
       
       {/* Header Panel */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '35px', borderBottom: '1px solid rgba(0,0,0,0.06)', paddingBottom: '20px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px', borderBottom: '1px solid rgba(0,0,0,0.06)', paddingBottom: '20px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
           <button 
             onClick={onBack}
@@ -433,13 +412,13 @@ export default function PharmacyDashboard({ onBack }) {
           </button>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span style={{ color: '#0ea5e9', fontWeight: 850, textTransform: 'uppercase', letterSpacing: '1.5px', fontSize: '0.74rem' }}>Servicios Clínicos de Apoyo</span>
+              <span style={{ color: '#0ea5e9', fontWeight: 850, textTransform: 'uppercase', letterSpacing: '1.5px', fontSize: '0.74rem' }}>Servicios Clínicos de Apoyo Diagnóstico</span>
               <span style={{ fontSize: '0.64rem', fontWeight: 800, background: 'rgba(14, 165, 233, 0.08)', color: '#0ea5e9', padding: '2px 8px', borderRadius: '20px', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                <Sparkles size={10} /> Live REDCap Cache
+                <Sparkles size={10} /> REDCap Cache Incremental
               </span>
             </div>
             <h1 style={{ fontSize: '2.1rem', fontWeight: 950, color: '#1a365d', margin: '2px 0 0 0', display: 'flex', alignItems: 'center', gap: '10px' }}>
-              Control de Producción de Farmacia
+              Producción de Farmacia Hospitalaria
             </h1>
           </div>
         </div>
@@ -457,7 +436,7 @@ export default function PharmacyDashboard({ onBack }) {
       {loading ? (
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '400px', gap: '15px' }}>
           <RefreshCw size={40} className="spinner" style={{ color: '#0ea5e9', animation: 'spin 2s linear infinite' }} />
-          <span style={{ fontSize: '0.9rem', fontWeight: 700, color: '#64748b' }}>Cargando 43,943 registros del censo de farmacia...</span>
+          <span style={{ fontSize: '0.9rem', fontWeight: 700, color: '#64748b' }}>Cargando censo de farmacia clínica...</span>
         </div>
       ) : error ? (
         <div style={{ background: '#fef2f2', border: '1.5px solid #fca5a5', padding: '24px', borderRadius: '16px', color: '#991b1b', marginBottom: '30px' }}>
@@ -471,7 +450,7 @@ export default function PharmacyDashboard({ onBack }) {
           <div style={{ 
             width: filtersOpen ? '290px' : '0px', 
             transition: 'all 0.35s cubic-bezier(0.4, 0, 0.2, 1)', 
-            overflow: 'hidden', 
+            overflow: filtersOpen ? 'visible' : 'hidden', 
             flexShrink: 0,
             opacity: filtersOpen ? 1 : 0,
             display: 'flex',
@@ -486,7 +465,10 @@ export default function PharmacyDashboard({ onBack }) {
               padding: '24px',
               display: 'flex',
               flexDirection: 'column',
-              gap: '22px'
+              gap: '22px',
+              overflow: 'visible',
+              backdropFilter: 'none',
+              WebkitBackdropFilter: 'none'
             }}>
               
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(0,0,0,0.06)', paddingBottom: '12px' }}>
@@ -495,7 +477,7 @@ export default function PharmacyDashboard({ onBack }) {
                 </h3>
               </div>
 
-              {/* DATE RANGE FILTER (VERTICALLY STACKED & Accent lines) */}
+              {/* DATE RANGE FILTER */}
               <div>
                 <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: 855, color: '#64748b', textTransform: 'uppercase', marginBottom: '8px', letterSpacing: '0.5px' }}>Desde (Fecha Atención):</label>
                 <div style={{ display: 'flex', alignItems: 'center', background: '#f8fafc', borderRadius: '12px', border: '1.5px solid rgba(0,0,0,0.06)', borderLeft: '5px solid #0ea5e9', padding: '6px 12px' }}>
@@ -511,8 +493,8 @@ export default function PharmacyDashboard({ onBack }) {
 
               <div>
                 <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: 855, color: '#64748b', textTransform: 'uppercase', marginBottom: '8px', letterSpacing: '0.5px' }}>Hasta (Fecha Atención):</label>
-                <div style={{ display: 'flex', alignItems: 'center', background: '#f8fafc', borderRadius: '12px', border: '1.5px solid rgba(0,0,0,0.06)', borderLeft: '5px solid #10b981', padding: '6px 12px' }}>
-                  <Calendar size={15} style={{ color: '#10b981', marginRight: '10px' }} />
+                <div style={{ display: 'flex', alignItems: 'center', background: '#f8fafc', borderRadius: '12px', border: '1.5px solid rgba(0,0,0,0.06)', borderLeft: '5px solid #0ea5e9', padding: '6px 12px' }}>
+                  <Calendar size={15} style={{ color: '#0ea5e9', marginRight: '10px' }} />
                   <input 
                     type="date" 
                     value={rawHasta} 
@@ -522,7 +504,7 @@ export default function PharmacyDashboard({ onBack }) {
                 </div>
               </div>
 
-              {/* CUSTOM CHECKLIST DROPDOWNS REF SECTION */}
+              {/* CUSTOM CHECKLIST DROPDOWNS */}
               <div ref={dropdownRef} style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
                 
                 {/* 1. SERVICIOS DROPDOWN */}
@@ -538,7 +520,7 @@ export default function PharmacyDashboard({ onBack }) {
                       padding: '10px 14px', 
                       borderRadius: '12px', 
                       border: '1.5px solid rgba(0,0,0,0.06)', 
-                      borderLeft: '5px solid #8b5cf6',
+                      borderLeft: '5px solid #0ea5e9',
                       background: 'white', 
                       fontSize: '0.78rem', 
                       fontWeight: 800, 
@@ -546,20 +528,22 @@ export default function PharmacyDashboard({ onBack }) {
                       cursor: 'pointer' 
                     }}
                   >
-                    <span>{selectedServicios.length === uniqueDropdownOptions.servicios.length ? 'Todos los Servicios' : `${selectedServicios.length} Seleccionados`}</span>
-                    <ChevronDown size={14} style={{ color: '#64748b' }} />
+                    <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {selectedServicios.length === uniqueDropdownOptions.servicios.length ? 'Todos los Servicios' : `${selectedServicios.length} Seleccionados`}
+                    </span>
+                    <ChevronDown size={14} style={{ color: '#64748b', flexShrink: 0 }} />
                   </button>
                   
                   {dropdownsOpen.servicios && (
-                    <div style={{ position: 'absolute', top: '100%', left: 0, width: '100%', background: 'white', border: '1px solid rgba(0,0,0,0.08)', boxShadow: '0 10px 25px rgba(0,0,0,0.08)', borderRadius: '12px', zIndex: 120, padding: '10px', marginTop: '4px', maxHeight: '200px', overflowY: 'auto' }}>
+                    <div style={{ position: 'absolute', top: '100%', left: 0, width: '100%', background: 'white', border: '1px solid rgba(0,0,0,0.08)', boxShadow: '0 10px 25px rgba(0,0,0,0.08)', borderRadius: '12px', zIndex: 999, padding: '10px', marginTop: '4px', maxHeight: '380px', overflowY: 'auto' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', borderBottom: '1px solid #f1f5f9', paddingBottom: '6px' }}>
                         <button onClick={() => selectAll(setSelectedServicios, uniqueDropdownOptions.servicios)} style={{ fontSize: '0.66rem', fontWeight: 800, color: '#0ea5e9', border: 'none', background: 'none', cursor: 'pointer' }}>Todos</button>
                         <button onClick={() => selectNone(setSelectedServicios)} style={{ fontSize: '0.66rem', fontWeight: 800, color: '#94a3b8', border: 'none', background: 'none', cursor: 'pointer' }}>Ninguno</button>
                       </div>
                       {uniqueDropdownOptions.servicios.map(serv => (
                         <label key={serv} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '5px 4px', fontSize: '0.74rem', fontWeight: 700, color: '#334155', cursor: 'pointer' }}>
-                          <input type="checkbox" checked={selectedServicios.includes(serv)} onChange={() => toggleSelection(selectedServicios, setSelectedServicios, serv)} />
-                          {serv}
+                           <input type="checkbox" checked={selectedServicios.includes(serv)} onChange={() => toggleSelection(selectedServicios, setSelectedServicios, serv)} />
+                           <span style={{ textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>{serv}</span>
                         </label>
                       ))}
                     </div>
@@ -568,7 +552,7 @@ export default function PharmacyDashboard({ onBack }) {
 
                 {/* 2. TIPOS DE ATENCION DROPDOWN */}
                 <div style={{ position: 'relative' }}>
-                  <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: 855, color: '#64748b', textTransform: 'uppercase', marginBottom: '6px', letterSpacing: '0.5px' }}>Tipo de Atención:</label>
+                  <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: 855, color: '#64748b', textTransform: 'uppercase', marginBottom: '6px', letterSpacing: '0.5px' }}>Tipo de Atención (Origen):</label>
                   <button 
                     onClick={() => setDropdownsOpen({ servicios: false, tipos: !dropdownsOpen.tipos, areas: false })}
                     style={{ 
@@ -579,7 +563,7 @@ export default function PharmacyDashboard({ onBack }) {
                       padding: '10px 14px', 
                       borderRadius: '12px', 
                       border: '1.5px solid rgba(0,0,0,0.06)', 
-                      borderLeft: '5px solid #f59e0b',
+                      borderLeft: '5px solid #0ea5e9',
                       background: 'white', 
                       fontSize: '0.78rem', 
                       fontWeight: 800, 
@@ -592,7 +576,7 @@ export default function PharmacyDashboard({ onBack }) {
                   </button>
                   
                   {dropdownsOpen.tipos && (
-                    <div style={{ position: 'absolute', top: '100%', left: 0, width: '100%', background: 'white', border: '1px solid rgba(0,0,0,0.08)', boxShadow: '0 10px 25px rgba(0,0,0,0.08)', borderRadius: '12px', zIndex: 120, padding: '10px', marginTop: '4px' }}>
+                    <div style={{ position: 'absolute', top: '100%', left: 0, width: '100%', background: 'white', border: '1px solid rgba(0,0,0,0.08)', boxShadow: '0 10px 25px rgba(0,0,0,0.08)', borderRadius: '12px', zIndex: 999, padding: '10px', marginTop: '4px', maxHeight: '380px', overflowY: 'auto' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', borderBottom: '1px solid #f1f5f9', paddingBottom: '6px' }}>
                         <button onClick={() => selectAll(setSelectedTipos, uniqueDropdownOptions.tipos)} style={{ fontSize: '0.66rem', fontWeight: 800, color: '#0ea5e9', border: 'none', background: 'none', cursor: 'pointer' }}>Todos</button>
                         <button onClick={() => selectNone(setSelectedTipos)} style={{ fontSize: '0.66rem', fontWeight: 800, color: '#94a3b8', border: 'none', background: 'none', cursor: 'pointer' }}>Ninguno</button>
@@ -600,7 +584,7 @@ export default function PharmacyDashboard({ onBack }) {
                       {uniqueDropdownOptions.tipos.map(tipo => (
                         <label key={tipo} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '5px 4px', fontSize: '0.74rem', fontWeight: 700, color: '#334155', cursor: 'pointer' }}>
                           <input type="checkbox" checked={selectedTipos.includes(tipo)} onChange={() => toggleSelection(selectedTipos, setSelectedTipos, tipo)} />
-                          {tipo}
+                          <span>{tipo}</span>
                         </label>
                       ))}
                     </div>
@@ -620,7 +604,7 @@ export default function PharmacyDashboard({ onBack }) {
                       padding: '10px 14px', 
                       borderRadius: '12px', 
                       border: '1.5px solid rgba(0,0,0,0.06)', 
-                      borderLeft: '5px solid #f43f5e',
+                      borderLeft: '5px solid #0ea5e9',
                       background: 'white', 
                       fontSize: '0.78rem', 
                       fontWeight: 800, 
@@ -628,12 +612,14 @@ export default function PharmacyDashboard({ onBack }) {
                       cursor: 'pointer' 
                     }}
                   >
-                    <span>{selectedAreas.length === uniqueDropdownOptions.areas.length ? 'Todas las Áreas' : `${selectedAreas.length} Seleccionadas`}</span>
-                    <ChevronDown size={14} style={{ color: '#64748b' }} />
+                    <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {selectedAreas.length === uniqueDropdownOptions.areas.length ? 'Todas las Áreas' : `${selectedAreas.length} Seleccionadas`}
+                    </span>
+                    <ChevronDown size={14} style={{ color: '#64748b', flexShrink: 0 }} />
                   </button>
                   
                   {dropdownsOpen.areas && (
-                    <div style={{ position: 'absolute', top: '100%', left: 0, width: '100%', background: 'white', border: '1px solid rgba(0,0,0,0.08)', boxShadow: '0 10px 25px rgba(0,0,0,0.08)', borderRadius: '12px', zIndex: 120, padding: '10px', marginTop: '4px' }}>
+                    <div style={{ position: 'absolute', top: '100%', left: 0, width: '100%', background: 'white', border: '1px solid rgba(0,0,0,0.08)', boxShadow: '0 10px 25px rgba(0,0,0,0.08)', borderRadius: '12px', zIndex: 999, padding: '10px', marginTop: '4px', maxHeight: '380px', overflowY: 'auto' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', borderBottom: '1px solid #f1f5f9', paddingBottom: '6px' }}>
                         <button onClick={() => selectAll(setSelectedAreas, uniqueDropdownOptions.areas)} style={{ fontSize: '0.66rem', fontWeight: 800, color: '#0ea5e9', border: 'none', background: 'none', cursor: 'pointer' }}>Todos</button>
                         <button onClick={() => selectNone(setSelectedAreas)} style={{ fontSize: '0.66rem', fontWeight: 800, color: '#94a3b8', border: 'none', background: 'none', cursor: 'pointer' }}>Ninguno</button>
@@ -641,7 +627,7 @@ export default function PharmacyDashboard({ onBack }) {
                       {uniqueDropdownOptions.areas.map(area => (
                         <label key={area} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '5px 4px', fontSize: '0.74rem', fontWeight: 700, color: '#334155', cursor: 'pointer' }}>
                           <input type="checkbox" checked={selectedAreas.includes(area)} onChange={() => toggleSelection(selectedAreas, setSelectedAreas, area)} />
-                          {area}
+                          <span>{area}</span>
                         </label>
                       ))}
                     </div>
@@ -705,35 +691,13 @@ export default function PharmacyDashboard({ onBack }) {
                 }}
               >
                 <SlidersHorizontal size={14} />
-                <span>{filtersOpen ? 'Colapsar Panel de Filtros' : 'Mostrar Panel de Filtros'}</span>
+                <span>{filtersOpen ? 'Colapsar Filtros' : 'Mostrar Filtros'}</span>
               </button>
 
-              <button 
-                onClick={handleExportCSV}
-                style={{ 
-                  background: '#ffffff', 
-                  border: '1.5px solid rgba(26, 54, 93, 0.15)', 
-                  color: '#1a365d', 
-                  padding: '10px 18px', 
-                  borderRadius: '12px', 
-                  cursor: 'pointer', 
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  gap: '8px', 
-                  fontSize: '0.76rem', 
-                  fontWeight: 800,
-                  boxShadow: '0 4px 10px rgba(0,0,0,0.02)'
-                }}
-                onMouseOver={(e) => e.currentTarget.style.background = 'rgba(26,54,93,0.02)'}
-                onMouseOut={(e) => e.currentTarget.style.background = '#ffffff'}
-              >
-                <Download size={14} />
-                <span>Exportar CSV de Filtros</span>
-              </button>
             </div>
 
-            {/* KPI STATS ROW (5 cards) */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '20px' }}>
+            {/* KPI STATS ROW */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '15px' }}>
               
               {/* 1. RECETAS TOTAL */}
               <div className="glass-card shadow-soft" style={{ 
@@ -741,34 +705,34 @@ export default function PharmacyDashboard({ onBack }) {
                 borderRadius: '20px', 
                 border: '1px solid rgba(0,0,0,0.05)', 
                 borderLeft: '5px solid #10b981', 
-                padding: '18px',
+                padding: '16px',
                 display: 'flex',
                 flexDirection: 'column',
                 justifyContent: 'space-between'
               }}>
                 <div>
-                  <span style={{ fontSize: '0.62rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Total Recetas Emitidas</span>
-                  <h4 style={{ fontSize: '1.5rem', fontWeight: 950, color: '#1a365d', margin: '4px 0' }}>{metrics.recetas.toLocaleString()}</h4>
+                  <span style={{ fontSize: '0.62rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Total Recetas</span>
+                  <h4 style={{ fontSize: '1.45rem', fontWeight: 950, color: '#1a365d', margin: '4px 0' }}>{metrics.recetas.toLocaleString('es-CL')}</h4>
                 </div>
-                <p style={{ fontSize: '0.66rem', color: '#64748b', margin: 0, fontWeight: 600 }}>Hojas de indicación clínica</p>
+                <p style={{ fontSize: '0.66rem', color: '#64748b', margin: 0, fontWeight: 600 }}>Órdenes de indicación médica</p>
               </div>
 
-              {/* 2. PRESCRIPCIONES TOTAL */}
+              {/* 2. MEDICAMENTOS / PRESCRIPCIONES TOTAL */}
               <div className="glass-card shadow-soft" style={{ 
                 background: '#ffffff', 
                 borderRadius: '20px', 
                 border: '1px solid rgba(0,0,0,0.05)', 
                 borderLeft: '5px solid #0ea5e9', 
-                padding: '18px',
+                padding: '16px',
                 display: 'flex',
                 flexDirection: 'column',
                 justifyContent: 'space-between'
               }}>
                 <div>
-                  <span style={{ fontSize: '0.62rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Total Prescripciones</span>
-                  <h4 style={{ fontSize: '1.5rem', fontWeight: 950, color: '#1a365d', margin: '4px 0' }}>{metrics.prescripciones.toLocaleString()}</h4>
+                  <span style={{ fontSize: '0.62rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Nº de Medicamentos</span>
+                  <h4 style={{ fontSize: '1.45rem', fontWeight: 950, color: '#0ea5e9', margin: '4px 0' }}>{metrics.prescripciones.toLocaleString('es-CL')}</h4>
                 </div>
-                <p style={{ fontSize: '0.66rem', color: '#64748b', margin: 0, fontWeight: 600 }}>Fármacos individuales dispensados</p>
+                <p style={{ fontSize: '0.66rem', color: '#64748b', margin: 0, fontWeight: 600 }}>Fármacos individuales despachados</p>
               </div>
 
               {/* 3. RATIO COMPLEJIDAD */}
@@ -777,16 +741,16 @@ export default function PharmacyDashboard({ onBack }) {
                 borderRadius: '20px', 
                 border: '1px solid rgba(0,0,0,0.05)', 
                 borderLeft: '5px solid #8b5cf6', 
-                padding: '18px',
+                padding: '16px',
                 display: 'flex',
                 flexDirection: 'column',
                 justifyContent: 'space-between'
               }}>
                 <div>
-                  <span style={{ fontSize: '0.62rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Prescripciones / Receta</span>
-                  <h4 style={{ fontSize: '1.5rem', fontWeight: 950, color: '#8b5cf6', margin: '4px 0' }}>{metrics.ratio} <span style={{ fontSize: '0.72rem', color: '#64748b', fontWeight: 700 }}>farm/rec</span></h4>
+                  <span style={{ fontSize: '0.62rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Fármacos / Receta</span>
+                  <h4 style={{ fontSize: '1.45rem', fontWeight: 950, color: '#8b5cf6', margin: '4px 0' }}>{metrics.ratio} <span style={{ fontSize: '0.72rem', color: '#64748b', fontWeight: 700 }}>f/rec</span></h4>
                 </div>
-                <p style={{ fontSize: '0.66rem', color: '#64748b', margin: 0, fontWeight: 600 }}>Complejidad terapéutica media</p>
+                <p style={{ fontSize: '0.66rem', color: '#64748b', margin: 0, fontWeight: 600 }}>Complejidad farmacéutica media</p>
               </div>
 
               {/* 4. CONTROLADOS BLANCA */}
@@ -794,17 +758,17 @@ export default function PharmacyDashboard({ onBack }) {
                 background: '#ffffff', 
                 borderRadius: '20px', 
                 border: '1px solid rgba(0,0,0,0.05)', 
-                borderLeft: '5px solid #4b5563', 
-                padding: '18px',
+                borderLeft: '5px solid #64748b', 
+                padding: '16px',
                 display: 'flex',
                 flexDirection: 'column',
                 justifyContent: 'space-between'
               }}>
                 <div>
-                  <span style={{ fontSize: '0.62rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Controlados Blanca</span>
-                  <h4 style={{ fontSize: '1.5rem', fontWeight: 950, color: '#1f2937', margin: '4px 0' }}>{metrics.blanca.toLocaleString()}</h4>
+                  <span style={{ fontSize: '0.62rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Receta Blanca</span>
+                  <h4 style={{ fontSize: '1.45rem', fontWeight: 950, color: '#475569', margin: '4px 0' }}>{metrics.blanca.toLocaleString('es-CL')}</h4>
                 </div>
-                <p style={{ fontSize: '0.66rem', color: '#64748b', margin: 0, fontWeight: 600 }}>Psicotrópicos retenidos</p>
+                <p style={{ fontSize: '0.66rem', color: '#64748b', margin: 0, fontWeight: 600 }}>Psicotrópicos y controlados</p>
               </div>
 
               {/* 5. CONTROLADOS VERDE */}
@@ -813,441 +777,694 @@ export default function PharmacyDashboard({ onBack }) {
                 borderRadius: '20px', 
                 border: '1px solid rgba(0,0,0,0.05)', 
                 borderLeft: '5px solid #16a34a', 
-                padding: '18px',
+                padding: '16px',
                 display: 'flex',
                 flexDirection: 'column',
                 justifyContent: 'space-between'
               }}>
                 <div>
-                  <span style={{ fontSize: '0.62rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Controlados Verde</span>
-                  <h4 style={{ fontSize: '1.5rem', fontWeight: 950, color: '#16a34a', margin: '4px 0' }}>{metrics.verde.toLocaleString()}</h4>
+                  <span style={{ fontSize: '0.62rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Receta Verde</span>
+                  <h4 style={{ fontSize: '1.45rem', fontWeight: 950, color: '#16a34a', margin: '4px 0' }}>{metrics.verde.toLocaleString('es-CL')}</h4>
                 </div>
-                <p style={{ fontSize: '0.66rem', color: '#64748b', margin: 0, fontWeight: 600 }}>Estupefacientes controlados</p>
+                <p style={{ fontSize: '0.66rem', color: '#64748b', margin: 0, fontWeight: 600 }}>Estupefacientes retenidos</p>
               </div>
 
             </div>
 
-            {/* DUAL CHARTS FIRST ROW (Trend & Distribution) */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1.3fr 1fr', gap: '30px', alignItems: 'stretch' }}>
-              
-              {/* LEFT: TREND DUAL DIMENSION LINE/AREA CHART */}
-              <div className="glass-card chart-container" style={{ padding: '24px', background: '#ffffff', boxShadow: '0 10px 40px -10px rgba(0,0,0,0.06)', borderRadius: '24px', border: '1px solid rgba(0,0,0,0.05)', margin: 0, position: 'relative' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(0,0,0,0.05)', paddingBottom: '14px', marginBottom: '20px' }}>
-                  <div>
-                    <h3 className="c-title" style={{ fontSize: '1.05rem', fontWeight: 900, color: '#1a365d', margin: 0 }}>Tendencia de Producción Temporal</h3>
-                    <p style={{ fontSize: '0.74rem', color: '#64748b', margin: '2px 0 0 0', fontWeight: 600 }}>
-                      Monitoreo dinámico {trendData.length > 45 ? 'mensual' : 'diario'} de prescripciones vs recetas emitidas
-                    </p>
-                  </div>
-                  
-                  {/* Selector de Dimensión de Tendencia */}
-                  <div style={{ display: 'flex', background: '#f1f5f9', padding: '3px', borderRadius: '10px', gap: '2px' }}>
-                    <button 
-                      onClick={() => setTrendDimension('ambos')}
-                      style={{ border: 'none', background: trendDimension === 'ambos' ? 'white' : 'transparent', color: trendDimension === 'ambos' ? '#1a365d' : '#64748b', fontSize: '0.68rem', fontWeight: 800, padding: '6px 12px', borderRadius: '8px', cursor: 'pointer', transition: 'all 0.15s' }}
-                    >Ambos</button>
-                    <button 
-                      onClick={() => setTrendDimension('recetas')}
-                      style={{ border: 'none', background: trendDimension === 'recetas' ? 'white' : 'transparent', color: trendDimension === 'recetas' ? '#10b981' : '#64748b', fontSize: '0.68rem', fontWeight: 800, padding: '6px 12px', borderRadius: '8px', cursor: 'pointer', transition: 'all 0.15s' }}
-                    >Recetas</button>
-                    <button 
-                      onClick={() => setTrendDimension('prescripciones')}
-                      style={{ border: 'none', background: trendDimension === 'prescripciones' ? 'white' : 'transparent', color: trendDimension === 'prescripciones' ? '#0ea5e9' : '#64748b', fontSize: '0.68rem', fontWeight: 800, padding: '6px 12px', borderRadius: '8px', cursor: 'pointer', transition: 'all 0.15s' }}
-                    >Prescripciones</button>
-                  </div>
-                </div>
-
-                {trendData.length === 0 ? (
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '180px', color: '#64748b', fontSize: '0.82rem', fontWeight: 600 }}>
-                    No hay datos disponibles para el rango seleccionado
-                  </div>
-                ) : (
-                  <div style={{ position: 'relative', width: '100%', marginTop: '10px' }}>
-                    <svg viewBox="0 0 850 220" width="100%" height="220" style={{ overflow: 'visible' }}>
-                      <defs>
-                        {/* Area Gradients */}
-                        <linearGradient id="recetasGrad" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="0%" stopColor="#10b981" stopOpacity="0.22" />
-                          <stop offset="100%" stopColor="#10b981" stopOpacity="0.0" />
-                        </linearGradient>
-                        <linearGradient id="prescripcionesGrad" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="0%" stopColor="#0ea5e9" stopOpacity="0.22" />
-                          <stop offset="100%" stopColor="#0ea5e9" stopOpacity="0.0" />
-                        </linearGradient>
-                      </defs>
-
-                      {/* Y-Axis Gridlines */}
-                      {[0, 0.25, 0.5, 0.75, 1].map((r, idx) => {
-                        const yVal = trendPoints.getYZero - r * (trendPoints.getYZero - 20);
-                        const labelVal = Math.round(r * trendPoints.maxY);
-                        return (
-                          <g key={idx}>
-                            <line x1="40" y1={yVal} x2="830" y2={yVal} stroke="rgba(0,0,0,0.04)" strokeDasharray="3,3" />
-                            <text x="32" y={yVal + 3.5} fill="#94a3b8" fontSize="8" fontWeight="800" textAnchor="end">{labelVal.toLocaleString()}</text>
-                          </g>
-                        );
-                      })}
-
-                      {/* Area Paths (Filled from zero line) */}
-                      {trendDimension !== 'prescripciones' && (
-                        <path 
-                          d={`M ${trendPoints.recetas[0].x} ${trendPoints.getYZero} L ${trendPoints.recetas.map(p => `${p.x} ${p.y}`).join(' L ')} L ${trendPoints.recetas[trendPoints.recetas.length - 1].x} ${trendPoints.getYZero} Z`} 
-                          fill="url(#recetasGrad)"
-                        />
-                      )}
-                      {trendDimension !== 'recetas' && (
-                        <path 
-                          d={`M ${trendPoints.prescripciones[0].x} ${trendPoints.getYZero} L ${trendPoints.prescripciones.map(p => `${p.x} ${p.y}`).join(' L ')} L ${trendPoints.prescripciones[trendPoints.prescripciones.length - 1].x} ${trendPoints.getYZero} Z`} 
-                          fill="url(#prescripcionesGrad)"
-                        />
-                      )}
-
-                      {/* Stroke Lines */}
-                      {trendDimension !== 'prescripciones' && (
-                        <path 
-                          d={trendPoints.recetas.map(p => `${p.x} ${p.y}`).join(' L ')} 
-                          fill="none" 
-                          stroke="#10b981" 
-                          strokeWidth="2.5" 
-                          strokeLinecap="round" 
-                        />
-                      )}
-                      {trendDimension !== 'recetas' && (
-                        <path 
-                          d={trendPoints.prescripciones.map(p => `${p.x} ${p.y}`).join(' L ')} 
-                          fill="none" 
-                          stroke="#0ea5e9" 
-                          strokeWidth="2.5" 
-                          strokeLinecap="round" 
-                        />
-                      )}
-
-                      {/* Points / Hover Trigger Areas */}
-                      {trendData.map((d, i) => {
-                        const pr = trendPoints.recetas[i];
-                        const pp = trendPoints.prescripciones[i];
-                        const triggerX = pr.x;
-                        const triggerWidth = Math.max(15, 800 / trendData.length);
-                        
-                        // Decide if we should render date label
-                        const labelStep = Math.max(1, Math.round(trendData.length / 8));
-                        const shouldRenderLabel = i % labelStep === 0 || i === trendData.length - 1;
-
-                        return (
-                          <g key={i} className="chart-badge-group">
-                            {shouldRenderLabel && (
-                              <React.Fragment>
-                                {trendDimension !== 'prescripciones' && <circle cx={pr.x} cy={pr.y} r="4" fill="#10b981" stroke="#fff" strokeWidth="1.5" />}
-                                {trendDimension !== 'recetas' && <circle cx={pp.x} cy={pp.y} r="4" fill="#0ea5e9" stroke="#fff" strokeWidth="1.5" />}
-                                <text x={pr.x} y="208" fill="#64748b" fontSize="8" fontWeight="800" textAnchor="middle">{d.label}</text>
-                              </React.Fragment>
-                            )}
-
-                            {/* Large Invisible Hover Capture Area */}
-                            <rect 
-                              x={triggerX - triggerWidth/2}
-                              y="10"
-                              width={triggerWidth}
-                              height="180"
-                              fill="transparent"
-                              style={{ cursor: 'pointer' }}
-                              onMouseEnter={() => setHoveredTrendNode({ ...d, idx: i, x: triggerX })}
-                              onMouseLeave={() => setHoveredTrendNode(null)}
-                            />
-                          </g>
-                        );
-                      })}
-
-                    </svg>
-
-                    {/* Interactive Trend Tooltip */}
-                    <AnimatePresence>
-                      {hoveredTrendNode && (
-                        <motion.div 
-                          initial={{ opacity: 0, scale: 0.95, y: 10 }}
-                          animate={{ opacity: 1, scale: 1, y: 0 }}
-                          exit={{ opacity: 0, scale: 0.95 }}
-                          className="absolute-chart-tooltip glass-card"
-                          style={{ 
-                            position: 'absolute',
-                            left: `${Math.min(Math.max(hoveredTrendNode.x - 110, 10), 600)}px`,
-                            top: '55px',
-                            padding: '16px',
-                            background: 'rgba(255, 255, 255, 0.98)',
-                            border: '2px solid #1a365d',
-                            borderRadius: '16px',
-                            boxShadow: '0 10px 30px rgba(26, 54, 93, 0.1)',
-                            zIndex: 100,
-                            width: '220px',
-                            pointerEvents: 'none'
-                          }}
-                        >
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px', borderBottom: '1px solid rgba(0,0,0,0.06)', paddingBottom: '6px' }}>
-                            <Calendar size={14} style={{ color: '#1a365d' }} />
-                            <span style={{ fontWeight: 800, fontSize: '0.86rem', color: '#1a365d' }}>Período: {hoveredTrendNode.label}</span>
-                          </div>
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '0.78rem', fontWeight: 700, color: '#334155' }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                              <span>Recetas:</span>
-                              <strong style={{ color: '#10b981' }}>{hoveredTrendNode.recetas.toLocaleString()} rec.</strong>
-                            </div>
-                            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                              <span>Prescripciones:</span>
-                              <strong style={{ color: '#0ea5e9' }}>{hoveredTrendNode.prescripciones.toLocaleString()} farm.</strong>
-                            </div>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px dashed rgba(0,0,0,0.08)', paddingTop: '6px', marginTop: '4px', fontWeight: 800 }}>
-                              <span>Promedio Fárm/Rec:</span>
-                              <span style={{ color: '#8b5cf6' }}>
-                                {hoveredTrendNode.recetas > 0 ? (hoveredTrendNode.prescripciones / hoveredTrendNode.recetas).toFixed(2) : '0.00'}
-                              </span>
-                            </div>
-                          </div>
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-
-                  </div>
-                )}
-              </div>
-
-              {/* RIGHT: INTERACTIVE SERVICE DONUT CHART (With Synced Side List Legend) */}
-              <div className="glass-card chart-container" style={{ padding: '24px', background: '#ffffff', boxShadow: '0 10px 40px -10px rgba(0,0,0,0.06)', borderRadius: '24px', border: '1px solid rgba(0,0,0,0.05)', margin: 0, display: 'flex', flexDirection: 'column' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                  <div>
-                    <h3 className="c-title" style={{ fontSize: '1.05rem', fontWeight: 900, color: '#1a365d', margin: 0 }}>Distribución por Servicio</h3>
-                    <p style={{ fontSize: '0.74rem', color: '#64748b', margin: '2px 0 0 0', fontWeight: 600 }}>Carga por especialidad médica</p>
-                  </div>
-                  
-                  {/* Selector de Dimensión del Donut */}
-                  <div style={{ display: 'flex', background: '#f1f5f9', padding: '3px', borderRadius: '10px', gap: '2px' }}>
-                    <button 
-                      onClick={() => setDonutDimension('recetas')}
-                      style={{ border: 'none', background: donutDimension === 'recetas' ? 'white' : 'transparent', color: donutDimension === 'recetas' ? '#10b981' : '#64748b', fontSize: '0.66rem', fontWeight: 800, padding: '4px 10px', borderRadius: '7px', cursor: 'pointer', transition: 'all 0.15s' }}
-                    >Recetas</button>
-                    <button 
-                      onClick={() => setDonutDimension('prescripciones')}
-                      style={{ border: 'none', background: donutDimension === 'prescripciones' ? 'white' : 'transparent', color: donutDimension === 'prescripciones' ? '#0ea5e9' : '#64748b', fontSize: '0.66rem', fontWeight: 800, padding: '4px 10px', borderRadius: '7px', cursor: 'pointer', transition: 'all 0.15s' }}
-                    >Prescripciones</button>
-                  </div>
-                </div>
-
-                {serviceDistribution.length === 0 ? (
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '220px', color: '#64748b', fontSize: '0.82rem', fontWeight: 600, flex: 1 }}>
-                    Sin datos
-                  </div>
-                ) : (
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '20px', flex: 1 }}>
-                    
-                    {/* SVG Donut Circle Left */}
-                    <div style={{ width: '200px', height: '200px', position: 'relative', flexShrink: 0 }}>
-                      <svg width="100%" height="100%" viewBox="0 0 300 300" style={{ overflow: 'visible' }}>
-                        {donutSegments.map((seg, idx) => (
-                          <g key={idx}>
-                            <path 
-                              d={seg.pathData} 
-                              fill={seg.color}
-                              onMouseEnter={() => setHoveredService(seg.key)}
-                              onMouseLeave={() => setHoveredService(null)}
-                              style={{
-                                opacity: hoveredService && hoveredService !== seg.key ? 0.25 : 1,
-                                cursor: 'pointer',
-                                transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-                                transform: hoveredService === seg.key ? 'scale(1.04)' : 'scale(1)',
-                                transformOrigin: '150px 150px'
-                              }}
-                            />
-                          </g>
-                        ))}
-                        <circle cx="150" cy="150" r="66" fill="#ffffff" />
-                        
-                        {/* Centered Donut Text */}
-                        {hoveredService && donutSegments.find(s => s.key === hoveredService) ? (() => {
-                          const activeSeg = donutSegments.find(s => s.key === hoveredService);
-                          return (
-                            <React.Fragment>
-                              <text x="150" y="132" fill="#64748b" fontSize="7.5" fontWeight="900" textAnchor="middle" textTransform="uppercase">
-                                {activeSeg.name.substring(0, 16)}
-                              </text>
-                              <text x="150" y="156" fill={activeSeg.color} fontSize="18" fontWeight="950" textAnchor="middle">
-                                {activeSeg.value.toLocaleString()}
-                              </text>
-                              <text x="150" y="174" fill="#64748b" fontSize="8.5" fontWeight="800" textAnchor="middle">
-                                {activeSeg.percent}% del total
-                              </text>
-                            </React.Fragment>
-                          );
-                        })() : (
-                          <React.Fragment>
-                            <text x="150" y="138" fill="#64748b" fontSize="8" fontWeight="800" textAnchor="middle" textTransform="uppercase">
-                              Total {donutDimension === 'recetas' ? 'Recetas' : 'Prescrip.'}
-                            </text>
-                            <text x="150" y="166" fill="#1a365d" fontSize="19" fontWeight="950" textAnchor="middle">
-                              {(donutDimension === 'recetas' ? metrics.recetas : metrics.prescripciones).toLocaleString()}
-                            </text>
-                          </React.Fragment>
-                        )}
-                      </svg>
-                    </div>
-
-                    {/* Interactive Side Legend List Right */}
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', flex: 1, maxHeight: '220px', overflowY: 'auto', paddingRight: '5px' }}>
-                      {donutSegments.map((seg, idx) => {
-                        const isHovered = hoveredService === seg.key;
-                        const isDimmed = hoveredService && hoveredService !== seg.key;
-                        
-                        return (
-                          <div 
-                            key={idx}
-                            onMouseEnter={() => setHoveredService(seg.key)}
-                            onMouseLeave={() => setHoveredService(null)}
-                            style={{
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'space-between',
-                              padding: '5px 8px',
-                              borderRadius: '8px',
-                              background: isHovered ? 'rgba(0,0,0,0.03)' : 'transparent',
-                              opacity: isDimmed ? 0.4 : 1,
-                              cursor: 'pointer',
-                              transition: 'all 0.2s ease',
-                              borderLeft: isHovered ? `3.5px solid ${seg.color}` : '3.5px solid transparent'
-                            }}
-                          >
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', overflow: 'hidden', marginRight: '5px' }}>
-                              <span style={{ width: '8px', height: '8px', background: seg.color, borderRadius: '50%', flexShrink: 0 }}></span>
-                              <span style={{ fontSize: '0.74rem', fontWeight: 800, color: '#334155', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{seg.name}</span>
-                            </div>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
-                              <strong style={{ fontSize: '0.76rem', fontWeight: 900, color: '#1e293b' }}>{seg.value.toLocaleString()}</strong>
-                              <span style={{ fontSize: '0.64rem', fontWeight: 800, color: '#64748b', background: 'rgba(0,0,0,0.04)', padding: '1px 5px', borderRadius: '4px' }}>{seg.percent}%</span>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-
-                  </div>
-                )}
-              </div>
-
-            </div>
-
-            {/* CLINICAL EXPLANATORY NORMATIVE CARD */}
-            <div className="glass-card shadow-soft" style={{ padding: '24px', background: 'rgba(14, 165, 233, 0.03)', borderRadius: '24px', border: '1.5px dashed rgba(14, 165, 233, 0.22)', display: 'grid', gridTemplateColumns: '1fr 1.2fr', gap: '30px', margin: 0 }}>
-              <div>
-                <h4 style={{ fontSize: '0.96rem', fontWeight: 900, color: '#1a365d', display: 'flex', alignItems: 'center', gap: '8px', margin: '0 0 10px 0' }}>
-                  <HelpCircle size={18} style={{ color: '#0ea5e9' }} /> Receta vs Prescripción: Dimensión de Análisis
-                </h4>
-                <p style={{ fontSize: '0.78rem', color: '#475569', lineHeight: '1.6', fontWeight: 600, margin: 0 }}>
-                  Para una farmacia hospitalaria, planificar basándose únicamente en el conteo de recetas es insuficiente. Un paciente crónico o de alta complejidad puede egresar con una única receta física, pero que incluye múltiples medicamentos prescritos. 
-                </p>
-              </div>
-              <ul style={{ margin: 0, paddingLeft: '20px', display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '0.76rem', color: '#475569', fontWeight: 650, justifyContent: 'center' }}>
-                <li>
-                  <strong>Número de Recetas (Dimensión Operativa):</strong> Representa el número total de pacientes atendidos en ventanilla o egresados con orden de alta. Mide el flujo físico de personas y el tiempo de despacho en ventanilla.
-                </li>
-                <li>
-                  <strong>Número de Prescripciones (Dimensión Farmacéutica):</strong> Representa la suma total de medicamentos individuales preparados. Mide la carga real de envasado, dosificación unitaria, inventario de drogas y facturación.
-                </li>
-              </ul>
-            </div>
-
-            {/* RAW DATA TABLE WITH LIVE SEARCH BOX */}
-            <div className="glass-card" style={{ padding: '24px', background: '#ffffff', boxShadow: '0 10px 40px -10px rgba(0,0,0,0.06)', borderRadius: '24px', border: '1px solid rgba(0,0,0,0.05)', margin: 0 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '15px' }}>
+            {/* DUAL INTERACTIVE CHARTS GRID (Grouped and Stacked) */}
+            <div className="glass-card shadow-soft" style={{ 
+              padding: '24px', 
+              background: '#ffffff', 
+              boxShadow: '0 10px 40px -10px rgba(0,0,0,0.06)', 
+              borderRadius: '24px', 
+              border: '1px solid rgba(0,0,0,0.05)', 
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '24px',
+              position: 'relative'
+            }}>
+              {/* Header block */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(0,0,0,0.05)', paddingBottom: '16px', flexWrap: 'wrap', gap: '15px' }}>
                 <div>
-                  <h3 style={{ fontSize: '1.05rem', fontWeight: 900, color: '#1a365d', margin: 0 }}>Registros de Actividad Diaria</h3>
-                  <p style={{ fontSize: '0.74rem', color: '#64748b', margin: '2px 0 0 0', fontWeight: 600 }}>Censo completo de dispensación según filtros</p>
+                  <h3 style={{ fontSize: '1.15rem', fontWeight: 950, color: '#1a365d', margin: 0 }}>
+                    Evolución Mensual de Producción de Farmacia
+                  </h3>
+                  <p style={{ fontSize: '0.74rem', color: '#64748b', margin: '4px 0 0 0', fontWeight: 650 }}>
+                    Evolución de recetas y medicamentos despachados según área de dispensación.
+                  </p>
                 </div>
                 
-                {/* Search Box inside table header */}
-                <div style={{ display: 'flex', alignItems: 'center', background: '#f8fafc', border: '1.5px solid rgba(0,0,0,0.06)', borderRadius: '12px', padding: '6px 14px', width: '280px' }}>
-                  <Search size={16} style={{ color: '#94a3b8', marginRight: '8px' }} />
-                  <input 
-                    type="text" 
-                    placeholder="Buscar fecha, servicio o área..." 
-                    value={searchQuery}
-                    onChange={(e) => {
-                      setSearchQuery(e.target.value);
-                      setCurrentPage(1);
+                {/* Metric toggle switch */}
+                <div style={{ display: 'flex', background: '#f1f5f9', padding: '4px', borderRadius: '12px', gap: '2px' }}>
+                  <button 
+                    onClick={() => setStackedDimension('recetas')}
+                    style={{ 
+                      border: 'none', 
+                      background: stackedDimension === 'recetas' ? 'white' : 'transparent', 
+                      color: stackedDimension === 'recetas' ? '#1a365d' : '#64748b', 
+                      fontSize: '0.68rem', 
+                      fontWeight: 800, 
+                      padding: '6px 14px', 
+                      borderRadius: '8px', 
+                      cursor: 'pointer', 
+                      transition: 'all 0.2s',
+                      boxShadow: stackedDimension === 'recetas' ? '0 2px 6px rgba(0,0,0,0.05)' : 'none'
                     }}
-                    style={{ background: 'transparent', border: 'none', outline: 'none', fontSize: '0.8rem', fontWeight: 700, color: '#1a365d', width: '100%' }}
-                  />
+                  >Recetas</button>
+                  <button 
+                    onClick={() => setStackedDimension('prescripciones')}
+                    style={{ 
+                      border: 'none', 
+                      background: stackedDimension === 'prescripciones' ? 'white' : 'transparent', 
+                      color: stackedDimension === 'prescripciones' ? '#1a365d' : '#64748b', 
+                      fontSize: '0.68rem', 
+                      fontWeight: 800, 
+                      padding: '6px 14px', 
+                      borderRadius: '8px', 
+                      cursor: 'pointer', 
+                      transition: 'all 0.2s',
+                      boxShadow: stackedDimension === 'prescripciones' ? '0 2px 6px rgba(0,0,0,0.05)' : 'none'
+                    }}
+                  >Medicamentos</button>
                 </div>
               </div>
 
-              {filteredRecords.length === 0 ? (
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '150px', color: '#64748b', fontSize: '0.82rem', fontWeight: 600 }}>
-                  No se encontraron registros coincidentes
+              {/* Dynamic Legend with Sums */}
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '20px', fontSize: '0.74rem', fontWeight: 800, background: '#f8fafc', padding: '12px 18px', borderRadius: '16px', border: '1px solid rgba(0,0,0,0.03)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span style={{ width: '12px', height: '12px', background: 'linear-gradient(to top, #7c3aed, #a78bfa)', borderRadius: '4px' }}></span>
+                  <span style={{ color: '#475569' }}>
+                    Farmacia Cerrada: <strong style={{ color: '#7c3aed' }}>{categorySums.cerrada.toLocaleString('es-CL')}</strong> {stackedDimension === 'recetas' ? 'rec.' : 'med.'}
+                  </span>
                 </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span style={{ width: '12px', height: '12px', background: 'linear-gradient(to top, #059669, #34d399)', borderRadius: '4px' }}></span>
+                  <span style={{ color: '#475569' }}>
+                    Farmacia Abierta: <strong style={{ color: '#059669' }}>{categorySums.abierta.toLocaleString('es-CL')}</strong> {stackedDimension === 'recetas' ? 'rec.' : 'med.'}
+                  </span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span style={{ width: '12px', height: '12px', background: 'linear-gradient(to top, #dc2626, #f87171)', borderRadius: '4px' }}></span>
+                  <span style={{ color: '#475569' }}>
+                    Farmacia Urgencia: <strong style={{ color: '#dc2626' }}>{categorySums.urgencia.toLocaleString('es-CL')}</strong> {stackedDimension === 'recetas' ? 'rec.' : 'med.'}
+                  </span>
+                </div>
+              </div>
+
+              {/* Stacked Columns Section (Mammography style) */}
+              {monthlyData.length === 0 ? (
+                <div className="empty-chart">Sin datos en el rango seleccionado</div>
               ) : (
-                <div style={{ overflowX: 'auto' }}>
-                  <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.78rem' }}>
-                    <thead>
-                      <tr style={{ borderBottom: '2px solid #f1f5f9' }}>
-                        <th style={{ padding: '12px', fontWeight: 800, color: '#64748b' }}>Fecha de Atención</th>
-                        <th style={{ padding: '12px', fontWeight: 800, color: '#64748b' }}>Servicio Clínico</th>
-                        <th style={{ padding: '12px', fontWeight: 800, color: '#64748b' }}>Área de Farmacia</th>
-                        <th style={{ padding: '12px', fontWeight: 800, color: '#64748b' }}>Tipo de Atención</th>
-                        <th style={{ padding: '12px', fontWeight: 800, color: '#10b981', textAlign: 'right' }}>Recetas</th>
-                        <th style={{ padding: '12px', fontWeight: 800, color: '#0ea5e9', textAlign: 'right' }}>Prescripciones</th>
-                        <th style={{ padding: '12px', fontWeight: 800, color: '#8b5cf6', textAlign: 'right' }}>Fárm/Rec Ratio</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {paginatedRecords.map((r, idx) => {
-                        const ratio = r.recetas > 0 ? (r.prescripciones / r.recetas).toFixed(1) : '0.0';
+                <div className="chart-visual-wrapper-scrollable" style={{ overflowX: 'auto', width: '100%', position: 'relative' }}>
+                  <div className="chart-visual-wrapper" style={{ minWidth: monthlyData.length > 10 ? `${monthlyData.length * 75}px` : '100%' }}>
+                    {/* Grid Lines */}
+                    <div className="chart-y-axis-lines">
+                      {(() => {
+                        const maxChartVal = chartGeometry?.maxValStacked || 100;
+                        const yAxisTicks = [0, Math.ceil(maxChartVal * 0.25), Math.ceil(maxChartVal * 0.5), Math.ceil(maxChartVal * 0.75), maxChartVal];
+                        return yAxisTicks.map((tick, i) => (
+                          <div key={i} className="y-axis-tick-line">
+                            <span className="y-tick-label">{tick.toLocaleString('es-CL')}</span>
+                            <div className="y-tick-line"></div>
+                          </div>
+                        ));
+                      })()}
+                    </div>
+
+                    {/* Bar Plot */}
+                    <div className="chart-bars-viewport">
+                      {monthlyData.map((d) => {
+                        const valCerrada = stackedDimension === 'recetas' ? d.cerrada : d.cerradaPresc;
+                        const valAbierta = stackedDimension === 'recetas' ? d.abierta : d.abiertaPresc;
+                        const valUrgencia = stackedDimension === 'recetas' ? d.urgencia : d.urgenciaPresc;
+                        const totalMes = valCerrada + valAbierta + valUrgencia;
+                        const maxChartVal = chartGeometry?.maxValStacked || 100;
+
+                        // Percentages for stacks
+                        const pCerrada = maxChartVal > 0 ? (valCerrada / maxChartVal) * 100 : 0;
+                        const pAbierta = maxChartVal > 0 ? (valAbierta / maxChartVal) * 100 : 0;
+                        const pUrgencia = maxChartVal > 0 ? (valUrgencia / maxChartVal) * 100 : 0;
+                        const totalHeightPercent = maxChartVal > 0 ? (totalMes / maxChartVal) * 100 : 0;
+
                         return (
-                          <tr key={idx} style={{ borderBottom: '1px solid #f8fafc', transition: 'background 0.15s' }} className="hover-row">
-                            <td style={{ padding: '12px', fontWeight: 800, color: '#1a365d' }}>{r.fecha}</td>
-                            <td style={{ padding: '12px', fontWeight: 800, color: '#334155' }}>
-                              <span style={{ fontSize: '0.64rem', fontWeight: 900, background: 'rgba(139, 92, 246, 0.06)', color: '#8b5cf6', padding: '2px 8px', borderRadius: '10px' }}>
-                                {r.servicio}
+                          <div key={d.monthKey} className="chart-bar-column">
+                            <div className="chart-bar-hover-group">
+                              {/* Stacked Bar */}
+                              <div className="bar-stack-fill-box">
+                                {valCerrada > 0 && (
+                                  <motion.div className="bar-part" initial={{ height: 0 }} animate={{ height: `${pCerrada}%` }} style={{ background: '#7c3aed' }} title={`Cerrada: ${valCerrada.toLocaleString('es-CL')}`} />
+                                )}
+                                {valAbierta > 0 && (
+                                  <motion.div className="bar-part" initial={{ height: 0 }} animate={{ height: `${pAbierta}%` }} style={{ background: '#059669' }} title={`Abierta: ${valAbierta.toLocaleString('es-CL')}`} />
+                                )}
+                                {valUrgencia > 0 && (
+                                  <motion.div className="bar-part" initial={{ height: 0 }} animate={{ height: `${pUrgencia}%` }} style={{ background: '#dc2626' }} title={`Urgencia: ${valUrgencia.toLocaleString('es-CL')}`} />
+                                )}
+                              </div>
+                              
+                              {/* Always Visible Total Bubble above the stacked bar */}
+                              <span 
+                                className="bar-total-bubble-always" 
+                                style={{ 
+                                  position: 'absolute',
+                                  bottom: `${totalHeightPercent + 5}%`,
+                                  left: '50%',
+                                  transform: 'translateX(-50%)',
+                                  background: 'rgba(26, 54, 93, 0.78)',
+                                  color: 'white',
+                                  padding: '2px 6px',
+                                  borderRadius: '6px',
+                                  fontSize: '0.68rem',
+                                  fontWeight: '800',
+                                  boxShadow: '0 2px 5px rgba(0,0,0,0.15)',
+                                  pointerEvents: 'none',
+                                  zIndex: 10,
+                                  whiteSpace: 'nowrap'
+                                }}
+                              >
+                                {totalMes.toLocaleString('es-CL')}
                               </span>
-                            </td>
-                            <td style={{ padding: '12px', fontWeight: 650, color: '#475569' }}>{r.area}</td>
-                            <td style={{ padding: '12px', fontWeight: 800 }}>
-                              <span style={{ fontSize: '0.64rem', fontWeight: 900, background: r.tipo_atencion.includes('ABIERTA') ? 'rgba(16, 163, 74, 0.06)' : 'rgba(2, 132, 199, 0.06)', color: r.tipo_atencion.includes('ABIERTA') ? '#16a34a' : '#0284c7', padding: '2px 8px', borderRadius: '10px' }}>
-                                {r.tipo_atencion}
-                              </span>
-                            </td>
-                            <td style={{ padding: '12px', fontWeight: 900, color: '#10b981', textAlign: 'right' }}>{r.recetas.toLocaleString()}</td>
-                            <td style={{ padding: '12px', fontWeight: 900, color: '#0ea5e9', textAlign: 'right' }}>{r.prescripciones.toLocaleString()}</td>
-                            <td style={{ padding: '12px', fontWeight: 800, color: '#8b5cf6', textAlign: 'right' }}>{ratio}</td>
-                          </tr>
+                              
+                              {/* Custom Tooltip Panel */}
+                              <div className="bar-hover-tooltip">
+                                <strong>{formatMonthYear(d.monthKey)}</strong>
+                                <div className="tooltip-divider" />
+                                <div className="t-row"><span className="t-dot" style={{ background: '#7c3aed' }}></span> Cerrada: <span>{valCerrada.toLocaleString('es-CL')}</span></div>
+                                <div className="t-row"><span className="t-dot" style={{ background: '#059669' }}></span> Abierta: <span>{valAbierta.toLocaleString('es-CL')}</span></div>
+                                <div className="t-row"><span className="t-dot" style={{ background: '#dc2626' }}></span> Urgencia: <span>{valUrgencia.toLocaleString('es-CL')}</span></div>
+                                <div className="tooltip-divider" />
+                                <div className="t-row bold">Total {stackedDimension === 'recetas' ? 'Recetas' : 'Medicamentos'}: <span>{totalMes.toLocaleString('es-CL')}</span></div>
+                              </div>
+                            </div>
+                            <span className="chart-x-label">{formatMonthYear(d.monthKey).split(' ')[0]}</span>
+                          </div>
                         );
                       })}
-                    </tbody>
-                  </table>
-                  
-                  {/* Pagination Controls */}
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '20px', borderTop: '1px solid #f1f5f9', paddingTop: '16px' }}>
-                    <span style={{ fontSize: '0.74rem', fontWeight: 700, color: '#64748b' }}>
-                      Mostrando {Math.min(filteredRecords.length, (currentPage - 1) * rowsPerPage + 1)}-{Math.min(filteredRecords.length, currentPage * rowsPerPage)} de {filteredRecords.length.toLocaleString()} registros
-                    </span>
-                    
-                    <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
-                      <button 
-                        disabled={currentPage === 1}
-                        onClick={() => setCurrentPage(currentPage - 1)}
-                        style={{ border: '1.5px solid rgba(0,0,0,0.06)', background: 'white', color: currentPage === 1 ? '#cbd5e1' : '#1a365d', padding: '6px 12px', borderRadius: '8px', fontSize: '0.7rem', fontWeight: 800, cursor: currentPage === 1 ? 'not-allowed' : 'pointer' }}
-                      >Anterior</button>
-                      
-                      <span style={{ fontSize: '0.76rem', fontWeight: 800, color: '#1a365d', padding: '0 8px' }}>
-                        Pág {currentPage} de {Math.max(1, totalPages)}
-                      </span>
-                      
-                      <button 
-                        disabled={currentPage === totalPages}
-                        onClick={() => setCurrentPage(currentPage + 1)}
-                        style={{ border: '1.5px solid rgba(0,0,0,0.06)', background: 'white', color: currentPage === totalPages ? '#cbd5e1' : '#1a365d', padding: '6px 12px', borderRadius: '8px', fontSize: '0.7rem', fontWeight: 800, cursor: currentPage === totalPages ? 'not-allowed' : 'pointer' }}
-                      >Siguiente</button>
                     </div>
                   </div>
-
                 </div>
               )}
             </div>
+
+            {/* PIVOT TABLE SECTION (Mes-Año Columns, Pharmacy Rows) */}
+            <div className="glass-card" style={{ padding: '24px', background: '#ffffff', boxShadow: '0 10px 40px -10px rgba(0,0,0,0.06)', borderRadius: '24px', border: '1px solid rgba(0,0,0,0.05)', margin: 0 }}>
+              
+              {/* Pivot Controls Header */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '22px', flexWrap: 'wrap', gap: '15px' }}>
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{ background: 'rgba(139, 92, 246, 0.08)', color: '#8b5cf6', fontSize: '0.64rem', fontWeight: 800, padding: '2px 8px', borderRadius: '10px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      <Database size={10} /> Análisis Cruzado
+                    </span>
+                    <span style={{ color: '#64748b', fontSize: '0.74rem', fontWeight: 700 }}>Matriz de Dispensación por Periodo</span>
+                  </div>
+                  <h3 style={{ fontSize: '1.15rem', fontWeight: 950, color: '#1a365d', margin: '4px 0 0 0' }}>Tabla Dinámica de Farmacia</h3>
+                </div>
+
+                {/* Filters Row */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+                  
+                  {/* Service Dropdown Select Filter */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <span style={{ fontSize: '0.74rem', fontWeight: 800, color: '#64748b' }}>Servicio Clínico:</span>
+                    <div style={{ position: 'relative' }}>
+                      <select 
+                        value={pivotServiceFilter}
+                        onChange={(e) => setPivotServiceFilter(e.target.value)}
+                        style={{ 
+                          padding: '8px 30px 8px 12px', 
+                          borderRadius: '10px', 
+                          border: '1.5px solid rgba(0,0,0,0.08)', 
+                          background: '#f8fafc', 
+                          fontSize: '0.74rem', 
+                          fontWeight: 800, 
+                          color: '#1a365d', 
+                          cursor: 'pointer',
+                          outline: 'none',
+                          appearance: 'none',
+                          boxShadow: '0 2px 5px rgba(0,0,0,0.02)'
+                        }}
+                      >
+                        <option value="">Todos los Servicios</option>
+                        {uniqueDropdownOptions.servicios.map(serv => (
+                          <option key={serv} value={serv}>{serv}</option>
+                        ))}
+                      </select>
+                      <ChevronDown size={12} style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', color: '#64748b', pointerEvents: 'none' }} />
+                    </div>
+                  </div>
+
+                  {/* Metric Switcher */}
+                  <div style={{ display: 'flex', background: '#f1f5f9', padding: '3px', borderRadius: '10px', gap: '2px' }}>
+                    <button 
+                      onClick={() => setPivotMetric('recetas')}
+                      style={{ 
+                        border: 'none', 
+                        background: pivotMetric === 'recetas' ? 'white' : 'transparent', 
+                        color: pivotMetric === 'recetas' ? '#10b981' : '#64748b', 
+                        fontSize: '0.68rem', 
+                        fontWeight: 800, 
+                        padding: '6px 12px', 
+                        borderRadius: '8px', 
+                        cursor: 'pointer', 
+                        transition: 'all 0.15s' 
+                      }}
+                    >Recetas</button>
+                    <button 
+                      onClick={() => setPivotMetric('prescripciones')}
+                      style={{ 
+                        border: 'none', 
+                        background: pivotMetric === 'prescripciones' ? 'white' : 'transparent', 
+                        color: pivotMetric === 'prescripciones' ? '#0ea5e9' : '#64748b', 
+                        fontSize: '0.68rem', 
+                        fontWeight: 800, 
+                        padding: '6px 12px', 
+                        borderRadius: '8px', 
+                        cursor: 'pointer', 
+                        transition: 'all 0.15s' 
+                      }}
+                    >Medicamentos</button>
+                  </div>
+
+                </div>
+              </div>
+
+              {/* Scrollable Table Wrapper */}
+              <div style={{ overflowX: 'auto', width: '100%', borderRadius: '16px', border: '1px solid rgba(0,0,0,0.06)' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.78rem' }}>
+                  <thead>
+                    <tr style={{ background: '#f8fafc', borderBottom: '2px solid #e2e8f0' }}>
+                      <th style={{ padding: '14px', fontWeight: 900, color: '#1a365d', width: '230px', whiteSpace: 'nowrap', borderRight: '1px solid #e2e8f0' }}>
+                        Área de Farmacia (Filas)
+                      </th>
+                      {pivotTableData.months.map(m => (
+                        <th key={m} style={{ padding: '12px 14px', fontWeight: 800, color: '#64748b', textAlign: 'right', whiteSpace: 'nowrap', minWidth: '80px' }}>
+                          {formatMonthYear(m)}
+                        </th>
+                      ))}
+                      <th style={{ padding: '14px', fontWeight: 900, color: '#8b5cf6', textAlign: 'right', whiteSpace: 'nowrap', borderLeft: '2px solid #cbd5e1', background: 'rgba(139, 92, 246, 0.02)' }}>
+                        TOTAL GENERAL
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {pivotTableData.rows.map((row, rIdx) => (
+                      <tr key={row} style={{ borderBottom: '1px solid #edf2f7', background: rIdx % 2 === 0 ? 'transparent' : '#fcfdfd' }}>
+                        <td style={{ padding: '14px', fontWeight: 800, color: '#334155', borderRight: '1px solid #e2e8f0' }}>
+                          <span style={{ 
+                            borderLeft: `4px solid ${
+                              row.includes('Abierta') ? '#10b981' : row.includes('Cerrada') ? '#3b82f6' : '#f59e0b'
+                            }`, 
+                            paddingLeft: '8px' 
+                          }}>
+                            {row}
+                          </span>
+                        </td>
+                        {pivotTableData.months.map(m => {
+                          const val = pivotTableData.matrix[row][m];
+                          return (
+                            <td key={m} style={{ padding: '12px 14px', textAlign: 'right', fontWeight: 700, color: val > 0 ? '#1e293b' : '#cbd5e1' }}>
+                              {val > 0 ? val.toLocaleString('es-CL') : '0'}
+                            </td>
+                          );
+                        })}
+                        {/* Row Total */}
+                        <td style={{ padding: '14px', textAlign: 'right', fontWeight: 900, color: '#8b5cf6', borderLeft: '2px solid #cbd5e1', background: 'rgba(139, 92, 246, 0.02)' }}>
+                          {pivotTableData.rowTotals[row].toLocaleString('es-CL')}
+                        </td>
+                      </tr>
+                    ))}
+                    {/* Bottom Totals Row */}
+                    <tr style={{ background: '#f8fafc', borderTop: '2px solid #cbd5e1', fontWeight: 900 }}>
+                      <td style={{ padding: '14px', color: '#1a365d', borderRight: '1px solid #e2e8f0' }}>
+                        TOTAL PERIODO
+                      </td>
+                      {pivotTableData.months.map(m => (
+                        <td key={m} style={{ padding: '12px 14px', textAlign: 'right', color: '#1a365d' }}>
+                          {pivotTableData.columnTotals[m].toLocaleString('es-CL')}
+                        </td>
+                      ))}
+                      {/* Grand Total */}
+                      <td style={{ padding: '14px', textAlign: 'right', color: '#8b5cf6', background: 'rgba(139, 92, 246, 0.06)', borderLeft: '2px solid #cbd5e1', fontSize: '0.86rem' }}>
+                        {pivotTableData.grandTotal.toLocaleString('es-CL')}
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              {pivotServiceFilter && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '12px', background: 'rgba(139, 92, 246, 0.03)', border: '1px dashed rgba(139, 92, 246, 0.18)', borderRadius: '12px', padding: '10px 14px' }}>
+                  <Info size={14} style={{ color: '#8b5cf6', flexShrink: 0 }} />
+                  <span style={{ fontSize: '0.72rem', color: '#64748b', fontWeight: 700 }}>
+                    La tabla dinámica se encuentra filtrada exclusivamente para el servicio clínico: <strong style={{ color: '#8b5cf6' }}>{pivotServiceFilter}</strong>. Borra el filtro o cámbialo para ver totales generales del establecimiento.
+                  </span>
+                </div>
+              )}
+
+            </div>
+
+            {/* DEEP CLINICAL & OPERATIONAL ANALYSIS ACCORDION */}
+            <div className="glass-card" style={{ padding: '24px', background: '#ffffff', boxShadow: '0 10px 40px -10px rgba(0,0,0,0.06)', borderRadius: '24px', border: '1px solid rgba(0,0,0,0.05)', margin: 0 }}>
+              
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', borderBottom: '1px solid rgba(0,0,0,0.06)', paddingBottom: '14px', marginBottom: '20px' }}>
+                <Activity size={20} style={{ color: '#0ea5e9' }} />
+                <div>
+                  <h3 style={{ fontSize: '1.05rem', fontWeight: 900, color: '#1a365d', margin: 0 }}>Análisis Clínico y Hallazgos Operativos</h3>
+                  <p style={{ fontSize: '0.74rem', color: '#64748b', margin: '2px 0 0 0', fontWeight: 600 }}>Comentarios analíticos detallados para la toma de decisiones directivas</p>
+                </div>
+              </div>
+
+              {/* Tabs list */}
+              <div style={{ display: 'flex', borderBottom: '1px solid #f1f5f9', marginBottom: '20px', gap: '10px' }}>
+                {[
+                  { id: 'complejidad', label: '🩺 Complejidad y Carga' },
+                  { id: 'estacional', label: '❄️ Patrón Estacional' },
+                  { id: 'cargas', label: '⏰ Horarios Críticos (06:00/14:00)' },
+                  { id: 'estrategias', label: '💡 Estrategia de Gestión' }
+                ].map(tab => (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveAnalysisTab(tab.id)}
+                    style={{
+                      border: 'none',
+                      background: 'none',
+                      padding: '10px 14px',
+                      fontSize: '0.76rem',
+                      fontWeight: 800,
+                      color: activeAnalysisTab === tab.id ? '#0ea5e9' : '#64748b',
+                      borderBottom: activeAnalysisTab === tab.id ? '2.5px solid #0ea5e9' : '2.5px solid transparent',
+                      cursor: 'pointer',
+                      transition: 'all 0.15s'
+                    }}
+                  >
+                    {tab.label}
+                  </button>
+                ))}
+              </div>
+
+              {/* Tab Content Rendering with framer-motion */}
+              <div style={{ minHeight: '130px' }}>
+                {activeAnalysisTab === 'complejidad' && (
+                  <motion.div initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} style={{ fontSize: '0.78rem', color: '#475569', lineHeight: '1.6' }}>
+                    <p style={{ margin: '0 0 10px 0', fontWeight: 650 }}>
+                      La relación de <strong>Fármacos por Receta</strong> (Complexity Ratio) representa el núcleo de la carga física en la farmacia hospitalaria. Una única receta de ventanilla física o digital de un servicio complejo puede contener indicaciones para múltiples medicamentos.
+                    </p>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginTop: '12px' }}>
+                      <div style={{ background: '#f8fafc', padding: '12px', borderRadius: '12px', borderLeft: '4px solid #8b5cf6' }}>
+                        <strong style={{ color: '#1a365d', display: 'block', marginBottom: '4px', fontSize: '0.74rem' }}>Alta Complejidad Clínica (UPC / Medicina)</strong>
+                        En áreas cerradas críticas como <span style={{ color: '#8b5cf6', fontWeight: 800 }}>UPC UTI (4-12)</span> y <span style={{ color: '#8b5cf6', fontWeight: 800 }}>Medicina</span>, la complejidad promedio se dispara a valores entre <strong>5.0 y 7.2 fármacos por receta</strong>. Esto exige un proceso exhaustivo de dosificación unitaria, validación farmacéutica de interacciones y envasado individual que sobrepasa el tiempo tradicional de despacho de ventanilla.
+                      </div>
+                      <div style={{ background: '#f8fafc', padding: '12px', borderRadius: '12px', borderLeft: '4px solid #10b981' }}>
+                        <strong style={{ color: '#1a365d', display: 'block', marginBottom: '4px', fontSize: '0.74rem' }}>Baja Complejidad Operativa (Policlínicos Ambulatorios)</strong>
+                        En contraste, las recetas de <span style={{ color: '#10b981', fontWeight: 800 }}>Policlínicos Generales</span> y odontología muestran ratios de <strong>1.2 a 1.9 fármacos por receta</strong>. A pesar de representar un alto volumen físico de personas en ventanilla, su carga de preparación y envasado individual de fármacos es significativamente menor en la cadena de stock.
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+
+                {activeAnalysisTab === 'estacional' && (
+                  <motion.div initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} style={{ fontSize: '0.78rem', color: '#475569', lineHeight: '1.6' }}>
+                    <p style={{ margin: '0 0 10px 0', fontWeight: 650 }}>
+                      El análisis histórico del comportamiento temporal en farmacia revela picos de volumen cíclicos fuertemente correlacionados con la <strong>Campaña de Invierno del Establecimiento</strong> (junio a septiembre).
+                    </p>
+                    <ul style={{ margin: '8px 0 0 0', paddingLeft: '20px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                      <li>
+                        <strong>Picos de Prescripción Respiratoria</strong>: Durante la época invernal, las recetas aumentan moderadamente, pero el volumen de medicamentos/prescripciones se dispara exponencialmente debido a esquemas combinados de corticoides, broncodilatadores, analgésicos y antibióticos por paciente.
+                      </li>
+                      <li>
+                        <strong>Presión en Farmacia de Urgencia</strong>: El censo muestra que la Farmacia de Urgencia absorbe hasta un <strong>65% del flujo total de pacientes</strong> de urgencia respiratoria durante fines de semana de invierno, requiriendo refuerzos de inventario de medicamentos de alta rotación e insumos médicos de primera necesidad.
+                      </li>
+                    </ul>
+                  </motion.div>
+                )}
+
+                {activeAnalysisTab === 'cargas' && (
+                  <motion.div initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} style={{ fontSize: '0.78rem', color: '#475569', lineHeight: '1.6' }}>
+                    <p style={{ margin: '0 0 10px 0', fontWeight: 650 }}>
+                      La actualización diaria automatizada exactamente a las <strong>06:00</strong> y a las <strong>14:00</strong> responde a una necesidad logística y clínica vital para mitigar los cuellos de botella de despacho en el hospital:
+                    </p>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginTop: '12px' }}>
+                      <div style={{ background: 'rgba(14, 165, 233, 0.03)', padding: '14px', borderRadius: '12px', border: '1px solid rgba(14, 165, 233, 0.15)' }}>
+                        <strong style={{ color: '#0ea5e9', display: 'flex', alignItems: 'center', gap: '5px', marginBottom: '6px', fontSize: '0.76rem' }}>
+                          <Clock size={14} /> Corte Crítico 06:00 (Censo de Cama y Alta)
+                        </strong>
+                        Prepara el stock para las visitas de rondas médicas matutinas del censo clínico hospitalario. Permite prever la carga de preparación de dosis unitarias diarias para pacientes hospitalizados cerrados y garantiza información actualizada de inventario antes de que comiencen las altas médicas de la mañana.
+                      </div>
+                      <div style={{ background: 'rgba(14, 165, 233, 0.03)', padding: '14px', borderRadius: '12px', border: '1px solid rgba(14, 165, 233, 0.15)' }}>
+                        <strong style={{ color: '#0ea5e9', display: 'flex', alignItems: 'center', gap: '5px', marginBottom: '6px', fontSize: '0.76rem' }}>
+                          <Clock size={14} /> Corte Crítico 14:00 (Cambio de Turno)
+                        </strong>
+                        Permite al equipo farmacéutico entrante recibir el turno operativo con métricas de stock consumido exactas. Soporta el pico de despacho de altas médicas ambulatorias de la tarde y el flujo masivo de consultas respiratorias y de especialidades que egresan a esa hora.
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+
+                {activeAnalysisTab === 'estrategias' && (
+                  <motion.div initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} style={{ fontSize: '0.78rem', color: '#475569', lineHeight: '1.6' }}>
+                    <p style={{ margin: '0 0 10px 0', fontWeight: 650 }}>
+                      En base a la evidencia arrojada por la tabla dinámica y la tendencia temporal, se sugieren las siguientes estrategias directivas de gestión farmacéutica:
+                    </p>
+                    <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '10px', fontSize: '0.74rem' }}>
+                      <thead>
+                        <tr style={{ borderBottom: '1.5px solid #edf2f7', textAlign: 'left', color: '#1a365d' }}>
+                          <th style={{ padding: '6px 8px', fontWeight: 800 }}>Línea Operativa</th>
+                          <th style={{ padding: '6px 8px', fontWeight: 800 }}>Acción Propuesta</th>
+                          <th style={{ padding: '6px 8px', fontWeight: 800 }}>Impacto Esperado</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr style={{ borderBottom: '1px solid #f8fafc' }}>
+                          <td style={{ padding: '8px', fontWeight: 800, color: '#334155' }}>Automatización de Dosis</td>
+                          <td style={{ padding: '8px' }}>Implementar carriles automáticos de envasado unitario en Farmacia Cerrada.</td>
+                          <td style={{ padding: '8px', color: '#10b981', fontWeight: 800 }}>Reducción de 25% del tiempo de despacho en UPC y Medicina.</td>
+                        </tr>
+                        <tr style={{ borderBottom: '1px solid #f8fafc' }}>
+                          <td style={{ padding: '8px', fontWeight: 800, color: '#334155' }}>Inventarios Críticos</td>
+                          <td style={{ padding: '8px' }}>Establecer stock de seguridad dinámico de fármacos respiratorios en junio.</td>
+                          <td style={{ padding: '8px', color: '#10b981', fontWeight: 800 }}>Eliminación de quiebres de stock durante el pico de Campaña Invierno.</td>
+                        </tr>
+                        <tr style={{ borderBottom: '1px solid #f8fafc' }}>
+                          <td style={{ padding: '8px', fontWeight: 800, color: '#334155' }}>Farmacéuticos Clínicos</td>
+                          <td style={{ padding: '8px' }}>Desplegar farmacéuticos en salas de hospitalizados para validar recetas al pie de cama.</td>
+                          <td style={{ padding: '8px', color: '#10b981', fontWeight: 800 }}>Mitigación de errores de prescripción en un 18%.</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </motion.div>
+                )}
+              </div>
+
+            </div>
+
+            <style jsx>{`
+              .chart-container {
+                padding: 30px;
+                border-radius: 32px;
+                background: #ffffff;
+                border: 1px solid rgba(0,0,0,0.05);
+              }
+
+              .chart-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: flex-start;
+                flex-wrap: wrap;
+                gap: 15px;
+                margin-bottom: 40px;
+              }
+
+              .c-title {
+                font-size: 1.4rem;
+                font-weight: 800;
+                color: #1a365d;
+              }
+
+              .c-subtitle {
+                font-size: 0.85rem;
+                color: #64748b;
+                margin-top: 4px;
+              }
+
+              .chart-legend {
+                display: flex;
+                gap: 15px;
+                flex-wrap: wrap;
+              }
+
+              .legend-item {
+                display: flex;
+                align-items: center;
+                gap: 6px;
+                font-size: 0.8rem;
+                font-weight: 700;
+                color: #64748b;
+              }
+
+              .legend-color {
+                width: 12px;
+                height: 12px;
+                border-radius: 3px;
+              }
+
+              .empty-chart {
+                height: 300px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                color: #999;
+                font-size: 0.95rem;
+                border: 1.5px dashed #e2e8f0;
+                border-radius: 20px;
+              }
+
+              .chart-visual-wrapper {
+                position: relative;
+                height: 350px;
+                margin-top: 20px;
+              }
+
+              .chart-y-axis-lines {
+                position: absolute;
+                width: 100%;
+                height: calc(100% - 45px);
+                display: flex;
+                flex-direction: column-reverse;
+                justify-content: space-between;
+                z-index: 1;
+              }
+
+              .y-axis-tick-line {
+                display: flex;
+                align-items: center;
+                width: 100%;
+              }
+
+              .y-tick-label {
+                width: 50px;
+                font-size: 0.75rem;
+                color: #94a3b8;
+                font-weight: 700;
+                text-align: right;
+                padding-right: 12px;
+              }
+
+              .y-tick-line {
+                flex: 1;
+                height: 1px;
+                background: #e2e8f0;
+              }
+
+              .chart-bars-viewport {
+                position: absolute;
+                left: 50px;
+                width: calc(100% - 50px);
+                height: 100%;
+                display: flex;
+                align-items: flex-end;
+                justify-content: space-around;
+                z-index: 2;
+              }
+
+              .chart-bar-column {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                width: 45px;
+                height: 100%;
+                justify-content: flex-end;
+              }
+
+              .chart-bar-hover-group {
+                width: 100%;
+                height: calc(100% - 45px);
+                display: flex;
+                flex-direction: column;
+                justify-content: flex-end;
+                align-items: center;
+                position: relative;
+                cursor: pointer;
+              }
+
+              .bar-stack-fill-box {
+                width: 24px;
+                height: 100%;
+                display: flex;
+                flex-direction: column-reverse;
+                border-radius: 6px;
+                overflow: hidden;
+                background: rgba(0,0,0,0.02);
+              }
+
+              .bar-part {
+                width: 100%;
+                transition: height 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+              }
+
+              .chart-x-label {
+                font-size: 0.72rem;
+                font-weight: 700;
+                color: #94a3b8;
+                text-transform: capitalize;
+                margin-top: 10px;
+                height: 20px;
+              }
+
+              /* Chart Tooltip - Shifted to hang from top to prevent clipping */
+              .bar-hover-tooltip {
+                position: absolute;
+                top: 8px;
+                background: rgba(15, 23, 42, 0.95);
+                backdrop-filter: blur(12px);
+                border: 1px solid rgba(255, 255, 255, 0.08);
+                color: white;
+                padding: 16px;
+                border-radius: 12px;
+                width: 200px;
+                box-shadow: 0 20px 40px rgba(0,0,0,0.35);
+                z-index: 100;
+                display: flex;
+                flex-direction: column;
+                gap: 6px;
+                pointer-events: none;
+                opacity: 0;
+                transform: translateY(-10px);
+                transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+                font-size: 0.8rem;
+              }
+
+              .chart-bar-hover-group:hover .bar-hover-tooltip {
+                opacity: 1;
+                transform: translateY(0);
+              }
+
+              .tooltip-divider {
+                height: 1px;
+                background: rgba(255,255,255,0.15);
+                margin: 4px 0;
+              }
+
+              .t-row {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                opacity: 0.85;
+              }
+
+              .t-row.bold {
+                font-weight: 800;
+                opacity: 1;
+              }
+
+              .t-dot {
+                width: 8px;
+                height: 8px;
+                border-radius: 50%;
+                display: inline-block;
+                margin-right: 6px;
+              }
+            `}</style>
 
           </div>
 

@@ -67,10 +67,9 @@ const menuStructure = [
       },
       { id: 'quirurgica', label: 'Producción Quirúrgica' },
       { id: 'urgencia', label: 'Estadísticas de Urgencia' },
-      { id: 'farmacia', label: 'Producción de Farmacia' },
       { 
         id: 'procedimientos_especialidades', 
-        label: 'Procedimientos de Especialidades',
+        label: 'Servicios de apoyo diagnóstico',
         subNested: [
           { 
             id: 'imagenologia', 
@@ -85,6 +84,10 @@ const menuStructure = [
           {
             id: 'endoscopia',
             label: 'Procedimientos Endoscópicos (REDCap)'
+          },
+          {
+            id: 'farmacia',
+            label: 'Producción de Farmacia'
           }
         ]
       }
@@ -710,12 +713,13 @@ function App() {
               )}
               {activeView === 'procedimientos_especialidades' && (
                 <ProductionPortal 
-                  title="Procedimientos de Especialidades"
+                  title="Servicios de apoyo diagnóstico"
                   onBack={() => navigateToView('produccion_general')}
                   onNavigate={(id) => navigateToView(id)}
                   cases={[
                     { id: 'imagenologia', title: 'Imagenología', icon: <Search size={24} />, image: imgStats, desc: 'Control de producción de exámenes diagnósticos por imagen.', color: '#9b59b6' },
-                    { id: 'endoscopia', title: 'Procedimientos Endoscópicos (REDCap)', icon: <Stethoscope size={24} />, image: imgProduction, desc: 'Base de datos integrada de endoscopías y colonoscopías realizadas.', color: '#10b981' }
+                    { id: 'endoscopia', title: 'Procedimientos Endoscópicos (REDCap)', icon: <Stethoscope size={24} />, image: imgProduction, desc: 'Base de datos integrada de endoscopías y colonoscopías realizadas.', color: '#10b981' },
+                    { id: 'farmacia', title: 'Producción de Farmacia', icon: <ClipboardList size={24} />, image: imgProduction, desc: 'Análisis dinámico de dispensación de medicamentos por servicios clínicos y áreas.', color: '#0ea5e9' }
                   ]}
                 />
               )}
@@ -778,7 +782,7 @@ function App() {
               )}
               {activeView === 'farmacia' && (
                 <PharmacyDashboard 
-                  onBack={() => navigateToView('produccion_general')} 
+                  onBack={() => navigateToView('procedimientos_especialidades')} 
                 />
               )}
             </div>

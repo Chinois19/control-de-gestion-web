@@ -37,19 +37,11 @@ const cases = [
   },
   {
     id: 'procedimientos_especialidades',
-    title: 'Procedimientos de Especialidades',
+    title: 'Servicios de apoyo diagnóstico',
     icon: <Activity size={24} />,
     image: '/stats_abstract.png',
-    desc: 'Estadísticas de procedimientos clínicos realizados por especialidad y servicios de apoyo.',
+    desc: 'Control y análisis de imagenología, procedimientos endoscópicos y producción de farmacia del establecimiento.',
     color: '#e74c3c'
-  },
-  {
-    id: 'farmacia',
-    title: 'Producción de Farmacia',
-    icon: <ClipboardList size={24} />,
-    image: '/production_stats_hd.png',
-    desc: 'Análisis dinámico de dispensación de medicamentos. Monitoreo en dos dimensiones clave (recetas y prescripciones) según servicios clínicos y áreas de farmacia.',
-    color: '#0ea5e9'
   }
 ];
 

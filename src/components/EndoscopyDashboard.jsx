@@ -653,7 +653,7 @@ export default function EndoscopyDashboard({ onBack, initialTab = 'summary', ini
                   <select 
                     value={periodPreset} 
                     onChange={(e) => handlePeriodPresetChange(e.target.value)}
-                    style={{ width: '100%', padding: '14px', borderRadius: '12px', border: '1.5px solid #e2e8f0', fontWeight: 700, outline: 'none' }}
+                    className="filter-select"
                   >
                     <option value="2025_2026">Años 2025 y 2026 (Predeterminado)</option>
                     <option value="2025">Sólo Año 2025</option>
@@ -665,11 +665,11 @@ export default function EndoscopyDashboard({ onBack, initialTab = 'summary', ini
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
                   <div>
                     <label style={{ fontSize: '0.7rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', display: 'block', marginBottom: '6px' }}>Desde</label>
-                    <input type="date" value={startDate} onChange={(e) => { setStartDate(e.target.value); setPeriodPreset('custom'); }} style={{ width: '100%', padding: '10px', borderRadius: '10px', border: '1.5px solid #e2e8f0', fontSize: '0.75rem', fontWeight: 700 }} />
+                    <input type="date" value={startDate} onChange={(e) => { setStartDate(e.target.value); setPeriodPreset('custom'); }} className="filter-input-date" />
                   </div>
                   <div>
                     <label style={{ fontSize: '0.7rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', display: 'block', marginBottom: '6px' }}>Hasta</label>
-                    <input type="date" value={endDate} onChange={(e) => { setEndDate(e.target.value); setPeriodPreset('custom'); }} style={{ width: '100%', padding: '10px', borderRadius: '10px', border: '1.5px solid #e2e8f0', fontSize: '0.75rem', fontWeight: 700 }} />
+                    <input type="date" value={endDate} onChange={(e) => { setEndDate(e.target.value); setPeriodPreset('custom'); }} className="filter-input-date" />
                   </div>
                 </div>
 
@@ -678,7 +678,7 @@ export default function EndoscopyDashboard({ onBack, initialTab = 'summary', ini
                   <select 
                     value={selectedFuncionario} 
                     onChange={(e) => setSelectedFuncionario(e.target.value)}
-                    style={{ width: '100%', padding: '14px', borderRadius: '12px', border: '1.5px solid #e2e8f0', fontWeight: 700, outline: 'none' }}
+                    className="filter-select"
                   >
                     <option value="Todas">Todos los facultativos ({uniqueDropdowns.funcionarios.length})</option>
                     {uniqueDropdowns.funcionarios.map(fn => <option key={fn} value={fn}>{fn}</option>)}
@@ -690,7 +690,7 @@ export default function EndoscopyDashboard({ onBack, initialTab = 'summary', ini
                   <select 
                     value={selectedEstablecimiento} 
                     onChange={(e) => setSelectedEstablecimiento(e.target.value)}
-                    style={{ width: '100%', padding: '14px', borderRadius: '12px', border: '1.5px solid #e2e8f0', fontWeight: 700, outline: 'none' }}
+                    className="filter-select"
                   >
                     <option value="Todas">Todos los centros derivadores ({uniqueDropdowns.establecimientos.length})</option>
                     {uniqueDropdowns.establecimientos.map(est => <option key={est} value={est}>{est}</option>)}
@@ -702,7 +702,7 @@ export default function EndoscopyDashboard({ onBack, initialTab = 'summary', ini
                   <select 
                     value={selectedEstadoAtencion} 
                     onChange={(e) => setSelectedEstadoAtencion(e.target.value)}
-                    style={{ width: '100%', padding: '14px', borderRadius: '12px', border: '1.5px solid #e2e8f0', fontWeight: 700, outline: 'none' }}
+                    className="filter-select"
                   >
                     <option value="Todas">Todos los estados</option>
                     <option value="Se presentó">Se presentó (Atendido)</option>
@@ -716,7 +716,7 @@ export default function EndoscopyDashboard({ onBack, initialTab = 'summary', ini
                   <select 
                     value={selectedRangoEdad} 
                     onChange={(e) => setSelectedRangoEdad(e.target.value)}
-                    style={{ width: '100%', padding: '14px', borderRadius: '12px', border: '1.5px solid #e2e8f0', fontWeight: 700, outline: 'none' }}
+                    className="filter-select"
                   >
                     <option value="Todas">Todas las edades</option>
                     <option value="Pediátrico (<15)">Pediátrico (&lt;15 años)</option>
@@ -730,7 +730,7 @@ export default function EndoscopyDashboard({ onBack, initialTab = 'summary', ini
                   <select 
                     value={selectedProcedencia} 
                     onChange={(e) => setSelectedProcedencia(e.target.value)}
-                    style={{ width: '100%', padding: '14px', borderRadius: '12px', border: '1.5px solid #e2e8f0', fontWeight: 700, outline: 'none' }}
+                    className="filter-select"
                   >
                     <option value="Todas">Todas las procedencias</option>
                     {uniqueDropdowns.procedencias.map(pr => <option key={pr} value={pr}>{pr}</option>)}
@@ -1262,6 +1262,31 @@ export default function EndoscopyDashboard({ onBack, initialTab = 'summary', ini
         .border-violet { border-left: 6px solid #a855f7 !important; }
         .border-pink { border-left: 6px solid #ec4899 !important; }
         .border-emerald { border-left: 6px solid #10b981 !important; }
+
+        .filter-select, .filter-input-date {
+          width: 100%;
+          padding: 12px 14px;
+          border-radius: 12px;
+          border: 1.5px solid #e2e8f0;
+          background: #ffffff;
+          font-weight: 700;
+          font-size: 0.8rem;
+          color: #1e293b;
+          outline: none;
+          cursor: pointer;
+          transition: all 0.2s ease-in-out;
+        }
+
+        .filter-select:hover, .filter-input-date:hover {
+          border-color: #cbd5e1;
+          background: #f8fafc;
+        }
+
+        .filter-select:focus, .filter-input-date:focus {
+          border-color: #8b5cf6;
+          background: #ffffff;
+          box-shadow: 0 0 0 4px rgba(139, 92, 246, 0.12);
+        }
 
         .glass-card {
           background: rgba(255, 255, 255, 0.7);
