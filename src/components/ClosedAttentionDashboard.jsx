@@ -1343,7 +1343,53 @@ export default function ClosedAttentionDashboard({ onBack }) {
     // Ecuación de Coherencia Censal: Existencia Anterior + Ingresos - Egresos = Existencia Siguiente
     const existenciaSiguiente = existenciaAnterior + totalIngresos - totalEgresos;
 
-    const diasCamaDisponibles = camasHabilitadas * diffDaysMonitor;
+    // Calculate Bed Days (Días Cama) from Cuadratura de Camas data source
+    let diasCamaDisponibles = 0;
+    let diasCamaOcupadas = 0;
+
+    cuadraturaRaw.forEach(r => {
+      const pDate = parseDDMMYYYY(r.fecha);
+      if (pDate && pDate >= monitorStart && pDate <= monitorEnd) {
+        if (selectedRemService === 'Todas') {
+          diasCamaDisponibles += r.total_camas_habilitadas || 0;
+          diasCamaOcupadas += r.total_camas_ocupadas || 0;
+        } else {
+          const s = selectedRemService.toLowerCase();
+          if (s.includes('basico') || s.includes('básico')) {
+            diasCamaDisponibles += r.cuidados_basicos_disponibles || 0;
+            diasCamaOcupadas += r.cuidados_basicos_ocupadas || 0;
+          } else if (s.includes('medio')) {
+            diasCamaDisponibles += r.cuidados_medios_disponibles || 0;
+            diasCamaOcupadas += r.cuidados_medios_ocupadas || 0;
+          } else if (s.includes('uci') || s.includes('intensivo')) {
+            diasCamaDisponibles += r.uci_disponibles || 0;
+            diasCamaOcupadas += r.uci_ocupadas || 0;
+          } else if (s.includes('uti') || s.includes('intermedio')) {
+            diasCamaDisponibles += r.uti_disponibles || 0;
+            diasCamaOcupadas += r.uti_ocupadas || 0;
+          } else if (s.includes('mater') || s.includes('mujer') || s.includes('obstet') || s.includes('ginec')) {
+            diasCamaDisponibles += r.maternidad_disponibles || 0;
+            diasCamaOcupadas += r.maternidad_ocupadas || 0;
+          } else if (s.includes('pediat') || s.includes('infantil')) {
+            diasCamaDisponibles += r.infantil_disponibles || 0;
+            diasCamaOcupadas += r.infantil_ocupadas || 0;
+          } else if (s.includes('neo') || s.includes('cuna')) {
+            diasCamaDisponibles += r.neonatologia_disponibles || 0;
+            diasCamaOcupadas += r.neonatologia_ocupadas || 0;
+          } else {
+            diasCamaDisponibles += r.total_camas_habilitadas || 0;
+            diasCamaOcupadas += r.total_camas_ocupadas || 0;
+          }
+        }
+      }
+    });
+
+    if (diasCamaDisponibles === 0) {
+      diasCamaDisponibles = camasHabilitadas * diffDaysMonitor;
+    }
+    if (diasCamaOcupadas === 0) {
+      diasCamaOcupadas = totalBedDaysDedup;
+    }
 
     return {
       existenciaAnterior,
@@ -1361,12 +1407,12 @@ export default function ClosedAttentionDashboard({ onBack }) {
       existenciaSiguiente,
       ingresosEgresosMismoDia,
       diasCamaDisponibles,
-      diasCamaOcupadas: totalBedDaysDedup,   // ← deduplicado
+      diasCamaOcupadas,
       diasEstadaTotal:  totalDiasEstada,
       diasEstadaBeneficiarios: totalDiasEstada,
       camasHabilitadas
     };
-  }, [censoCleaned, startDate, endDate, selectedRemService]);
+  }, [censoCleaned, cuadraturaRaw, startDate, endDate, selectedRemService]);
 
   return (
     <div className="closed-attention-portal">
