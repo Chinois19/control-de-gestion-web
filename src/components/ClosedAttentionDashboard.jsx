@@ -99,6 +99,7 @@ export default function ClosedAttentionDashboard({ onBack }) {
   const [hoveredIndicatorNode, setHoveredIndicatorNode] = useState(null);
   const [groupedBarHover, setGroupedBarHover] = useState(null); 
   const [hoveredStackMonth, setHoveredStackMonth] = useState(null); 
+  const [hoveredService, setHoveredService] = useState(null); // 'basicos', 'medios', 'mujer', 'infantil', 'uci', 'uti'
 
   // Load Censo and Cuadratura Data
   useEffect(() => {
@@ -517,12 +518,12 @@ export default function ClosedAttentionDashboard({ onBack }) {
     const total = counts.medios + counts.mujer + counts.infantil + counts.basicos + counts.uti + counts.uci;
     
     const rawSegments = [
-      { name: 'Cuidados básicos', value: counts.basicos, color: '#0284c7' }, // Sky Blue
-      { name: 'Cuidados medios', value: counts.medios, color: '#1a365d' }, // Navy Blue
-      { name: 'Mqx de la mujer', value: counts.mujer, color: '#b91c1c' }, // Deep Red
-      { name: 'Mqx infantil', value: counts.infantil, color: '#e11d48' }, // Vibrant Red
-      { name: 'UCI', value: counts.uci, color: '#059669' }, // Clinical Green
-      { name: 'UTI', value: counts.uti, color: '#6b21a8' } // Deep Purple
+      { name: 'Cuidados básicos', value: counts.basicos, color: '#0284c7', key: 'basicos' }, 
+      { name: 'Cuidados medios', value: counts.medios, color: '#1e3a8a', key: 'medios' }, 
+      { name: 'Mqx de la mujer', value: counts.mujer, color: '#f43f5e', key: 'mujer' }, 
+      { name: 'Mqx infantil', value: counts.infantil, color: '#f59e0b', key: 'infantil' }, 
+      { name: 'UCI', value: counts.uci, color: '#10b981', key: 'uci' }, 
+      { name: 'UTI', value: counts.uti, color: '#8b5cf6', key: 'uti' } 
     ];
 
     if (total === 0) {
@@ -530,6 +531,7 @@ export default function ClosedAttentionDashboard({ onBack }) {
         name: 'Sin datos',
         value: 0,
         color: '#cbd5e1',
+        key: 'none',
         pathData: 'M 150 50 A 100 100 0 1 1 149.9 50 L 149.9 85 A 65 65 0 1 0 150 85 Z',
         percent: '0.0',
         px: 150, py: 50, lx: 150, ly: 30, textAnchor: 'middle'
@@ -1197,6 +1199,7 @@ export default function ClosedAttentionDashboard({ onBack }) {
             padding: '10px 12px',
             background: '#ffffff',
             border: isOpen ? '1.5px solid #0891b2' : '1px solid rgba(0,0,0,0.08)',
+            borderLeft: isOpen ? '5px solid #0891b2' : '5px solid #0284c7',
             borderRadius: '10px',
             cursor: 'pointer',
             fontSize: '0.8rem',
@@ -1641,39 +1644,58 @@ export default function ClosedAttentionDashboard({ onBack }) {
             </button>
           </div>
 
-          <div className="filter-item" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '14px' }}>
-            <div>
-              <label style={{ display: 'block', fontSize: '0.68rem', fontWeight: 800, color: '#475569', marginBottom: '6px', letterSpacing: '0.05em' }}>DESDE</label>
-              <input 
-                type="date" 
-                value={startDateInput} 
-                onChange={(e) => {
-                  const val = e.target.value;
-                  setStartDateInput(val);
-                  // Only update the validated state when the date is fully entered
-                  if (val && val.length === 10 && isValidDateStr(val)) {
-                    setStartDate(val);
-                  }
-                }}
-                style={{ width: '100%', padding: '9px 10px', borderRadius: '10px', border: '1px solid rgba(0,0,0,0.08)', background: '#ffffff', color: '#0f172a', fontSize: '0.78rem', fontWeight: 700, outline: 'none' }}
-              />
-            </div>
-            <div>
-              <label style={{ display: 'block', fontSize: '0.68rem', fontWeight: 800, color: '#475569', marginBottom: '6px', letterSpacing: '0.05em' }}>HASTA</label>
-              <input 
-                type="date" 
-                value={endDateInput} 
-                onChange={(e) => {
-                  const val = e.target.value;
-                  setEndDateInput(val);
-                  // Only update the validated state when the date is fully entered
-                  if (val && val.length === 10 && isValidDateStr(val)) {
-                    setEndDate(val);
-                  }
-                }}
-                style={{ width: '100%', padding: '9px 10px', borderRadius: '10px', border: '1px solid rgba(0,0,0,0.08)', background: '#ffffff', color: '#0f172a', fontSize: '0.78rem', fontWeight: 700, outline: 'none' }}
-              />
-            </div>
+          <div className="filter-item" style={{ position: 'relative', marginBottom: '14px' }}>
+            <label style={{ display: 'block', fontSize: '0.68rem', fontWeight: 800, color: '#475569', marginBottom: '6px', letterSpacing: '0.05em', textTransform: 'uppercase' }}>DESDE</label>
+            <input 
+              type="date" 
+              value={startDateInput} 
+              onChange={(e) => {
+                const val = e.target.value;
+                setStartDateInput(val);
+                if (val && val.length === 10 && isValidDateStr(val)) {
+                  setStartDate(val);
+                }
+              }}
+              style={{ 
+                width: '100%', 
+                padding: '10px 12px', 
+                borderRadius: '10px', 
+                border: '1px solid rgba(0,0,0,0.08)', 
+                borderLeft: '5px solid #0284c7', 
+                background: '#ffffff', 
+                color: '#0f172a', 
+                fontSize: '0.8rem', 
+                fontWeight: 700, 
+                outline: 'none' 
+              }}
+            />
+          </div>
+
+          <div className="filter-item" style={{ position: 'relative', marginBottom: '14px' }}>
+            <label style={{ display: 'block', fontSize: '0.68rem', fontWeight: 800, color: '#475569', marginBottom: '6px', letterSpacing: '0.05em', textTransform: 'uppercase' }}>HASTA</label>
+            <input 
+              type="date" 
+              value={endDateInput} 
+              onChange={(e) => {
+                const val = e.target.value;
+                setEndDateInput(val);
+                if (val && val.length === 10 && isValidDateStr(val)) {
+                  setEndDate(val);
+                }
+              }}
+              style={{ 
+                width: '100%', 
+                padding: '10px 12px', 
+                borderRadius: '10px', 
+                border: '1px solid rgba(0,0,0,0.08)', 
+                borderLeft: '5px solid #0284c7', 
+                background: '#ffffff', 
+                color: '#0f172a', 
+                fontSize: '0.8rem', 
+                fontWeight: 700, 
+                outline: 'none' 
+              }}
+            />
           </div>
 
           {renderMultiSelect('Servicio Clínico de Egreso', selectedService, setSelectedService, uniqueDropdowns.servicios, 'Todos los servicios clínicos', 'service')}
@@ -1814,38 +1836,34 @@ export default function ClosedAttentionDashboard({ onBack }) {
                                       const yMujer = yMedios - hMujer;
                                       const yInfantil = yMujer - hInfantil;
 
+                                      const segmentStyle = (key) => ({
+                                        opacity: hoveredService && hoveredService !== key ? 0.25 : 1,
+                                        cursor: 'pointer',
+                                        transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                                        filter: hoveredService === key ? 'drop-shadow(0px 0px 4px rgba(0,0,0,0.15))' : 'none'
+                                      });
+
                                       return (
                                         <g key={i} className="stacked-bar-group">
-                                          {hUci > 0 && <rect x={x} y={yUci} width={barWidth} height={hUci} fill="#059669" rx="2" />}
-                                          {hUti > 0 && <rect x={x} y={yUti} width={barWidth} height={hUti} fill="#6b21a8" rx="2" />}
-                                          {hBasicos > 0 && <rect x={x} y={yBasicos} width={barWidth} height={hBasicos} fill="#0284c7" rx="2" />}
-                                          {hMedios > 0 && <rect x={x} y={yMedios} width={barWidth} height={hMedios} fill="#1a365d" rx="2" />}
-                                          {hMujer > 0 && <rect x={x} y={yMujer} width={barWidth} height={hMujer} fill="#b91c1c" rx="2" />}
-                                          {hInfantil > 0 && <rect x={x} y={yInfantil} width={barWidth} height={hInfantil} fill="#e11d48" rx="3.5" />}
+                                          {hUci > 0 && <rect x={x} y={yUci} width={barWidth} height={hUci} fill="#10b981" rx="2" style={segmentStyle('uci')} onMouseEnter={() => setHoveredService('uci')} onMouseLeave={() => setHoveredService(null)} />}
+                                          {hUti > 0 && <rect x={x} y={yUti} width={barWidth} height={hUti} fill="#8b5cf6" rx="2" style={segmentStyle('uti')} onMouseEnter={() => setHoveredService('uti')} onMouseLeave={() => setHoveredService(null)} />}
+                                          {hBasicos > 0 && <rect x={x} y={yBasicos} width={barWidth} height={hBasicos} fill="#0284c7" rx="2" style={segmentStyle('basicos')} onMouseEnter={() => setHoveredService('basicos')} onMouseLeave={() => setHoveredService(null)} />}
+                                          {hMedios > 0 && <rect x={x} y={yMedios} width={barWidth} height={hMedios} fill="#1e3a8a" rx="2" style={segmentStyle('medios')} onMouseEnter={() => setHoveredService('medios')} onMouseLeave={() => setHoveredService(null)} />}
+                                          {hMujer > 0 && <rect x={x} y={yMujer} width={barWidth} height={hMujer} fill="#f43f5e" rx="2" style={segmentStyle('mujer')} onMouseEnter={() => setHoveredService('mujer')} onMouseLeave={() => setHoveredService(null)} />}
+                                          {hInfantil > 0 && <rect x={x} y={yInfantil} width={barWidth} height={hInfantil} fill="#f59e0b" rx="3.5" style={segmentStyle('infantil')} onMouseEnter={() => setHoveredService('infantil')} onMouseLeave={() => setHoveredService(null)} />}
 
                                           {/* In-bar segment counts with white contrast text */}
-                                          {m.medios > 20 && <text x={x + barWidth/2} y={yMedios + hMedios/2 + 3} fill="#fff" fontSize="8.2" fontWeight="950" textAnchor="middle">{m.medios}</text>}
-                                          {m.mujer > 20 && <text x={x + barWidth/2} y={yMujer + hMujer/2 + 3} fill="#fff" fontSize="8.2" fontWeight="950" textAnchor="middle">{m.mujer}</text>}
-                                          {m.basicos > 15 && <text x={x + barWidth/2} y={yBasicos + hBasicos/2 + 3} fill="#fff" fontSize="8.2" fontWeight="950" textAnchor="middle">{m.basicos}</text>}
+                                          {m.medios > 20 && <text x={x + barWidth/2} y={yMedios + hMedios/2 + 3} fill="#fff" fontSize="8.2" fontWeight="950" textAnchor="middle" style={{ pointerEvents: 'none', opacity: hoveredService && hoveredService !== 'medios' ? 0.25 : 1 }}>{m.medios}</text>}
+                                          {m.mujer > 20 && <text x={x + barWidth/2} y={yMujer + hMujer/2 + 3} fill="#fff" fontSize="8.2" fontWeight="950" textAnchor="middle" style={{ pointerEvents: 'none', opacity: hoveredService && hoveredService !== 'mujer' ? 0.25 : 1 }}>{m.mujer}</text>}
+                                          {m.basicos > 15 && <text x={x + barWidth/2} y={yBasicos + hBasicos/2 + 3} fill="#fff" fontSize="8.2" fontWeight="950" textAnchor="middle" style={{ pointerEvents: 'none', opacity: hoveredService && hoveredService !== 'basicos' ? 0.25 : 1 }}>{m.basicos}</text>}
 
-                                          {/* Top Total Box styled for light mode */}
-                                          <g>
+                                          {/* Top Total Box */}
+                                          <g style={{ cursor: 'pointer' }} onMouseEnter={() => setHoveredStackMonth({ ...m, idx: i })} onMouseLeave={() => setHoveredStackMonth(null)}>
                                             <rect x={x + barWidth/2 - 20} y={yInfantil - 18} width="40" height="12" fill="#1a365d" stroke="rgba(0,0,0,0.05)" strokeWidth="0.8" rx="4" ry="4" />
                                             <text x={x + barWidth/2} y={yInfantil - 9} fill="#ffffff" fontSize="8" fontWeight="950" textAnchor="middle">{m.total}</text>
                                           </g>
 
                                           <text x={x + barWidth/2} y="215" fill="#64748b" fontSize="8.5" fontWeight="800" textAnchor="middle">{m.label}</text>
-
-                                          <rect 
-                                            x={x}
-                                            y="10"
-                                            width={barWidth}
-                                            height="190"
-                                            fill="transparent"
-                                            style={{ cursor: 'pointer' }}
-                                            onMouseEnter={() => setHoveredStackMonth({ ...m, idx: i })}
-                                            onMouseLeave={() => setHoveredStackMonth(null)}
-                                          />
                                         </g>
                                       );
                                     })}
@@ -1881,15 +1899,15 @@ export default function ClosedAttentionDashboard({ onBack }) {
                               </span>
                               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '0.78rem', fontWeight: 700, color: '#475569' }}>
                                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                  <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><span style={{ width: '6px', height: '6px', background: '#1a365d', borderRadius: '50%' }}></span> Medios:</span>
+                                  <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><span style={{ width: '6px', height: '6px', background: '#1e3a8a', borderRadius: '50%' }}></span> Medios:</span>
                                   <strong style={{ color: '#1a365d' }}>{hoveredStackMonth.medios} egresos</strong>
                                 </div>
                                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                  <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><span style={{ width: '6px', height: '6px', background: '#b91c1c', borderRadius: '50%' }}></span> Mqx mujer:</span>
+                                  <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><span style={{ width: '6px', height: '6px', background: '#f43f5e', borderRadius: '50%' }}></span> Mqx mujer:</span>
                                   <strong style={{ color: '#1a365d' }}>{hoveredStackMonth.mujer} egresos</strong>
                                 </div>
                                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                  <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><span style={{ width: '6px', height: '6px', background: '#e11d48', borderRadius: '50%' }}></span> Mqx infantil:</span>
+                                  <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><span style={{ width: '6px', height: '6px', background: '#f59e0b', borderRadius: '50%' }}></span> Mqx infantil:</span>
                                   <strong style={{ color: '#1a365d' }}>{hoveredStackMonth.infantil} egresos</strong>
                                 </div>
                                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
@@ -1897,11 +1915,11 @@ export default function ClosedAttentionDashboard({ onBack }) {
                                   <strong style={{ color: '#1a365d' }}>{hoveredStackMonth.basicos} egresos</strong>
                                 </div>
                                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                  <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><span style={{ width: '6px', height: '6px', background: '#059669', borderRadius: '50%' }}></span> UCI:</span>
+                                  <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><span style={{ width: '6px', height: '6px', background: '#10b981', borderRadius: '50%' }}></span> UCI:</span>
                                   <strong style={{ color: '#1a365d' }}>{hoveredStackMonth.uci || 0} egresos</strong>
                                 </div>
                                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                  <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><span style={{ width: '6px', height: '6px', background: '#6b21a8', borderRadius: '50%' }}></span> UTI:</span>
+                                  <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><span style={{ width: '6px', height: '6px', background: '#8b5cf6', borderRadius: '50%' }}></span> UTI:</span>
                                   <strong style={{ color: '#1a365d' }}>{hoveredStackMonth.uti || 0} egresos</strong>
                                 </div>
                                 <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px dashed rgba(0,0,0,0.08)', paddingTop: '6px', marginTop: '4px', fontWeight: 800 }}>
@@ -1915,42 +1933,106 @@ export default function ClosedAttentionDashboard({ onBack }) {
                       </div>
 
                     {/* RIGHT: Donut Chart Card */}
-                    <div className="glass-card chart-container" style={{ padding: '24px', background: '#ffffff', boxShadow: '0 10px 40px -10px rgba(0,0,0,0.06)', borderRadius: '24px', border: '1px solid rgba(0,0,0,0.05)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', marginBottom: 0 }}>
-                      <div className="chart-header" style={{ marginBottom: '10px', borderBottom: 'none', width: '100%' }}>
-                        <div>
-                          <h3 className="c-title" style={{ fontSize: '1.05rem', fontWeight: 900, color: '#1a365d', textAlign: 'center' }}>Distribución porcentual de egresos según servicio de egreso</h3>
+                    <div className="glass-card chart-container" style={{ padding: '24px', background: '#ffffff', boxShadow: '0 10px 40px -10px rgba(0,0,0,0.06)', borderRadius: '24px', border: '1px solid rgba(0,0,0,0.05)', display: 'flex', flexDirection: 'column', height: '100%', marginBottom: 0 }}>
+                      <div className="chart-header" style={{ marginBottom: '16px', borderBottom: 'none', width: '100%' }}>
+                        <div style={{ textAlign: 'center', width: '100%' }}>
+                          <h3 className="c-title" style={{ fontSize: '1.05rem', fontWeight: 900, color: '#1a365d' }}>Distribución porcentual de egresos según servicio de egreso</h3>
                         </div>
                       </div>
 
-                      <div style={{ display: 'flex', justifyContent: 'center', margin: '5px 0' }}>
-                        <div style={{ width: '280px', height: '280px', position: 'relative' }}>
+                      <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: '20px', width: '100%', flex: 1 }}>
+                        
+                        {/* Donut SVG Left Column */}
+                        <div style={{ width: '220px', height: '220px', position: 'relative', flexShrink: 0 }}>
                           <svg width="100%" height="100%" viewBox="0 0 300 300" style={{ overflow: 'visible' }}>
                             {donutSegments.map((seg, idx) => (
                               <g key={idx}>
-                                <path d={seg.pathData} fill={seg.color} className="bar-hover-effect" />
-                                {parseFloat(seg.percent) > 1 && (
-                                  <g>
-                                    <path d={`M ${seg.px} ${seg.py} L ${seg.lx} ${seg.ly}`} fill="none" stroke="rgba(0, 0, 0, 0.15)" strokeWidth="0.8" strokeDasharray="2 2" />
-                                    <circle cx={seg.px} cy={seg.py} r="2" fill="#1a365d" />
-                                    <text x={seg.lx + (seg.lx > 150 ? 4 : -4)} y={seg.ly + 3} fill="#2c3e50" fontSize="7.5" fontWeight="950" textAnchor={seg.textAnchor}>
-                                      {seg.value} ({seg.percent}%)
-                                    </text>
-                                  </g>
-                                )}
+                                <path 
+                                  d={seg.pathData} 
+                                  fill={seg.color} 
+                                  onMouseEnter={() => setHoveredService(seg.key)}
+                                  onMouseLeave={() => setHoveredService(null)}
+                                  style={{
+                                    opacity: hoveredService && hoveredService !== seg.key ? 0.25 : 1,
+                                    cursor: 'pointer',
+                                    transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
+                                    transform: hoveredService === seg.key ? 'scale(1.05)' : 'scale(1)',
+                                    transformOrigin: '150px 150px',
+                                    filter: hoveredService === seg.key ? 'drop-shadow(0px 4px 8px rgba(0,0,0,0.15))' : 'none'
+                                  }}
+                                />
                               </g>
                             ))}
                             <circle cx="150" cy="150" r="64" fill="#ffffff" />
-                            <text x="150" y="146" fill="#64748b" fontSize="8" fontWeight="800" textAnchor="middle" textTransform="uppercase">Total Egresos</text>
-                            <text x="150" y="168" fill="#1a365d" fontSize="19" fontWeight="950" textAnchor="middle">
-                              {(metrics.current.totalEgresosNetos).toLocaleString()}
-                            </text>
+                            
+                            {/* Interactive Hole Text */}
+                            {hoveredService && donutSegments.find(s => s.key === hoveredService) ? (() => {
+                              const activeSeg = donutSegments.find(s => s.key === hoveredService);
+                              return (
+                                <React.Fragment>
+                                  <text x="150" y="132" fill="#64748b" fontSize="7.5" fontWeight="800" textAnchor="middle" textTransform="uppercase">
+                                    {activeSeg.name.substring(0, 16)}
+                                  </text>
+                                  <text x="150" y="156" fill={activeSeg.color} fontSize="19" fontWeight="950" textAnchor="middle">
+                                    {activeSeg.value.toLocaleString()}
+                                  </text>
+                                  <text x="150" y="174" fill="#64748b" fontSize="8" fontWeight="800" textAnchor="middle">
+                                    {activeSeg.percent}% del total
+                                  </text>
+                                </React.Fragment>
+                              );
+                            })() : (
+                              <React.Fragment>
+                                <text x="150" y="138" fill="#64748b" fontSize="8" fontWeight="800" textAnchor="middle" textTransform="uppercase">Total Egresos</text>
+                                <text x="150" y="166" fill="#1a365d" fontSize="20" fontWeight="950" textAnchor="middle">
+                                  {(metrics.current.totalEgresosNetos).toLocaleString()}
+                                </text>
+                              </React.Fragment>
+                            )}
                           </svg>
+                        </div>
+
+                        {/* Interactive Side List Legend Right Column */}
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', flex: 1, minWidth: 0 }}>
+                          {donutSegments.map((seg, idx) => {
+                            const isHovered = hoveredService === seg.key;
+                            const isDimmed = hoveredService && hoveredService !== seg.key;
+                            
+                            return (
+                              <div 
+                                key={idx}
+                                onMouseEnter={() => setHoveredService(seg.key)}
+                                onMouseLeave={() => setHoveredService(null)}
+                                style={{
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'space-between',
+                                  padding: '6px 10px',
+                                  borderRadius: '8px',
+                                  background: isHovered ? 'rgba(0,0,0,0.03)' : 'transparent',
+                                  opacity: isDimmed ? 0.4 : 1,
+                                  cursor: 'pointer',
+                                  transition: 'all 0.2s ease',
+                                  borderLeft: isHovered ? `3.5px solid ${seg.color}` : '3.5px solid transparent'
+                                }}
+                              >
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', overflow: 'hidden' }}>
+                                  <span style={{ width: '8px', height: '8px', background: seg.color, borderRadius: '50%', flexShrink: 0 }}></span>
+                                  <span style={{ fontSize: '0.76rem', fontWeight: 700, color: '#334155', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{seg.name}</span>
+                                </div>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
+                                  <span style={{ fontSize: '0.78rem', fontWeight: 900, color: '#1e293b' }}>{seg.value}</span>
+                                  <span style={{ fontSize: '0.66rem', fontWeight: 800, color: '#64748b', background: 'rgba(0,0,0,0.04)', padding: '2px 5px', borderRadius: '4px' }}>{seg.percent}%</span>
+                                </div>
+                              </div>
+                            );
+                          })}
                         </div>
                       </div>
                     </div>
                   </div>
 
-                  {/* Unified Legend Badges Row under BOTH charts */}
+                  {/* Unified Interactive Legend Badges Row under BOTH charts */}
                   <div className="glass-card legend-row-container" style={{ 
                     padding: '20px', 
                     display: 'grid', 
@@ -1962,30 +2044,46 @@ export default function ClosedAttentionDashboard({ onBack }) {
                     borderRadius: '20px', 
                     border: '1px solid rgba(0,0,0,0.05)' 
                   }}>
-                    <div className="detail-badge basicos" style={{ background: 'rgba(2, 132, 199, 0.06)', border: '1px solid rgba(2, 132, 199, 0.15)', borderLeft: '4px solid #0284c7', padding: '10px 14px', borderRadius: '12px', display: 'flex', flexDirection: 'column' }}>
-                      <span className="lbl" style={{ fontSize: '0.62rem', fontWeight: 800, textTransform: 'uppercase', color: '#64748b' }}>Cuidados básicos</span>
-                      <strong style={{ fontSize: '1.25rem', fontWeight: 900, color: '#0284c7', marginTop: '4px' }}>{metrics.current.serviceCounts.basicos}</strong>
-                    </div>
-                    <div className="detail-badge medios" style={{ background: 'rgba(26, 54, 93, 0.06)', border: '1px solid rgba(26, 54, 93, 0.15)', borderLeft: '4px solid #1a365d', padding: '10px 14px', borderRadius: '12px', display: 'flex', flexDirection: 'column' }}>
-                      <span className="lbl" style={{ fontSize: '0.62rem', fontWeight: 800, textTransform: 'uppercase', color: '#64748b' }}>Cuidados medios</span>
-                      <strong style={{ fontSize: '1.25rem', fontWeight: 900, color: '#1a365d', marginTop: '4px' }}>{metrics.current.serviceCounts.medios}</strong>
-                    </div>
-                    <div className="detail-badge mujer" style={{ background: 'rgba(185, 28, 28, 0.06)', border: '1px solid rgba(185, 28, 28, 0.15)', borderLeft: '4px solid #b91c1c', padding: '10px 14px', borderRadius: '12px', display: 'flex', flexDirection: 'column' }}>
-                      <span className="lbl" style={{ fontSize: '0.62rem', fontWeight: 800, textTransform: 'uppercase', color: '#64748b' }}>Mqx de la mujer</span>
-                      <strong style={{ fontSize: '1.25rem', fontWeight: 900, color: '#b91c1c', marginTop: '4px' }}>{metrics.current.serviceCounts.mujer}</strong>
-                    </div>
-                    <div className="detail-badge infantil" style={{ background: 'rgba(225, 29, 72, 0.06)', border: '1px solid rgba(225, 29, 72, 0.15)', borderLeft: '4px solid #e11d48', padding: '10px 14px', borderRadius: '12px', display: 'flex', flexDirection: 'column' }}>
-                      <span className="lbl" style={{ fontSize: '0.62rem', fontWeight: 800, textTransform: 'uppercase', color: '#64748b' }}>Mqx infantil</span>
-                      <strong style={{ fontSize: '1.25rem', fontWeight: 900, color: '#e11d48', marginTop: '4px' }}>{metrics.current.serviceCounts.infantil}</strong>
-                    </div>
-                    <div className="detail-badge uci" style={{ background: 'rgba(5, 150, 105, 0.06)', border: '1px solid rgba(5, 150, 105, 0.15)', borderLeft: '4px solid #059669', padding: '10px 14px', borderRadius: '12px', display: 'flex', flexDirection: 'column' }}>
-                      <span className="lbl" style={{ fontSize: '0.62rem', fontWeight: 800, textTransform: 'uppercase', color: '#64748b' }}>UCI</span>
-                      <strong style={{ fontSize: '1.25rem', fontWeight: 900, color: '#059669', marginTop: '4px' }}>{metrics.current.serviceCounts.uci}</strong>
-                    </div>
-                    <div className="detail-badge uti" style={{ background: 'rgba(107, 33, 168, 0.06)', border: '1px solid rgba(107, 33, 168, 0.15)', borderLeft: '4px solid #6b21a8', padding: '10px 14px', borderRadius: '12px', display: 'flex', flexDirection: 'column' }}>
-                      <span className="lbl" style={{ fontSize: '0.62rem', fontWeight: 800, textTransform: 'uppercase', color: '#6b21a8' }}>UTI</span>
-                      <strong style={{ fontSize: '1.25rem', fontWeight: 900, color: '#6b21a8', marginTop: '4px' }}>{metrics.current.serviceCounts.uti}</strong>
-                    </div>
+                    {(() => {
+                      const badges = [
+                        { key: 'basicos', label: 'Cuidados básicos', count: metrics.current.serviceCounts.basicos, color: '#0284c7', bg: 'rgba(2, 132, 199, 0.06)', border: 'rgba(2, 132, 199, 0.15)' },
+                        { key: 'medios', label: 'Cuidados medios', count: metrics.current.serviceCounts.medios, color: '#1e3a8a', bg: 'rgba(30, 58, 138, 0.06)', border: 'rgba(30, 58, 138, 0.15)' },
+                        { key: 'mujer', label: 'Mqx de la mujer', count: metrics.current.serviceCounts.mujer, color: '#f43f5e', bg: 'rgba(244, 63, 94, 0.06)', border: 'rgba(244, 63, 94, 0.15)' },
+                        { key: 'infantil', label: 'Mqx infantil', count: metrics.current.serviceCounts.infantil, color: '#f59e0b', bg: 'rgba(245, 158, 11, 0.06)', border: 'rgba(245, 158, 11, 0.15)' },
+                        { key: 'uci', label: 'UCI', count: metrics.current.serviceCounts.uci, color: '#10b981', bg: 'rgba(16, 185, 129, 0.06)', border: 'rgba(16, 185, 129, 0.15)' },
+                        { key: 'uti', label: 'UTI', count: metrics.current.serviceCounts.uti, color: '#8b5cf6', bg: 'rgba(139, 92, 246, 0.06)', border: 'rgba(139, 92, 246, 0.15)' }
+                      ];
+
+                      return badges.map((badge) => {
+                        const isHovered = hoveredService === badge.key;
+                        const isDimmed = hoveredService && hoveredService !== badge.key;
+
+                        return (
+                          <div 
+                            key={badge.key}
+                            onMouseEnter={() => setHoveredService(badge.key)}
+                            onMouseLeave={() => setHoveredService(null)}
+                            style={{
+                              background: badge.bg,
+                              border: `1px solid ${badge.border}`,
+                              borderLeft: `4px solid ${badge.color}`,
+                              padding: '10px 14px',
+                              borderRadius: '12px',
+                              display: 'flex',
+                              flexDirection: 'column',
+                              cursor: 'pointer',
+                              opacity: isDimmed ? 0.35 : 1,
+                              transform: isHovered ? 'translateY(-2px)' : 'none',
+                              boxShadow: isHovered ? '0 4px 12px rgba(0,0,0,0.06)' : 'none',
+                              transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)'
+                            }}
+                          >
+                            <span className="lbl" style={{ fontSize: '0.62rem', fontWeight: 800, textTransform: 'uppercase', color: '#64748b' }}>{badge.label}</span>
+                            <strong style={{ fontSize: '1.25rem', fontWeight: 900, color: badge.color, marginTop: '4px' }}>{badge.count}</strong>
+                          </div>
+                        );
+                      });
+                    })()}
                   </div>
 
                   {/* Row 2: Logistics and In-depth Clinical Insights */}
