@@ -720,20 +720,79 @@ export default function ClosedAttentionDashboard({ onBack }) {
       const diffTimeMonitor = Math.abs(monitorEnd - monitorStart);
       const diffDaysMonitor = Math.ceil(diffTimeMonitor / (1000 * 60 * 60 * 24)) || 1;
 
-      // Dynamic camas limit by service to look premium and authentic
-      let camasHabilitadas = 120;
-      let defaultInhabilitadas = 4;
-      if (serviceFilter !== 'Todas') {
-        const s = serviceFilter.toLowerCase();
-        if (s.includes('pediat') || s.includes('infantil')) { camasHabilitadas = 15; defaultInhabilitadas = 1; }
-        else if (s.includes('mater') || s.includes('mujer') || s.includes('ginec')) { camasHabilitadas = 20; defaultInhabilitadas = 1; }
-        else if (s.includes('intensivo') || s.includes('uci')) { camasHabilitadas = 6; defaultInhabilitadas = 0; }
-        else if (s.includes('intermedio') || s.includes('uti')) { camasHabilitadas = 8; defaultInhabilitadas = 0; }
-        else if (s.includes('básico') || s.includes('basico')) { camasHabilitadas = 25; defaultInhabilitadas = 1; }
-        else { camasHabilitadas = 46; defaultInhabilitadas = 1; } // medios
-      }
+      // Calculate dynamic camasHabilitadas and defaultInhabilitadas from Cuadratura de Camas
+      let sumHabilCamas = 0;
+      let sumOcupadasCamas = 0;
+      let sumInhabilCamas = 0;
+      let countDays = 0;
       
-      const diasInhabilitados = defaultInhabilitadas * diffDaysMonitor;
+      cuadraturaRaw.forEach(r => {
+        const pDate = parseDDMMYYYY(r.fecha);
+        if (pDate && pDate >= monitorStart && pDate <= monitorEnd) {
+          countDays++;
+          if (serviceFilter === 'Todas') {
+            sumHabilCamas += r.total_camas_habilitadas || 0;
+            sumOcupadasCamas += r.total_camas_ocupadas || 0;
+            sumInhabilCamas += r.total_camas_inhabilitadas || 0;
+          } else {
+            const s = serviceFilter.toLowerCase();
+            if (s.includes('basico') || s.includes('básico')) {
+              sumHabilCamas += r.cuidados_basicos_disponibles || 0;
+              sumOcupadasCamas += r.cuidados_basicos_ocupadas || 0;
+              sumInhabilCamas += r.cuidados_basicos_inhabilitadas || 0;
+            } else if (s.includes('medio')) {
+              sumHabilCamas += r.cuidados_medios_disponibles || 0;
+              sumOcupadasCamas += r.cuidados_medios_ocupadas || 0;
+              sumInhabilCamas += r.cuidados_medios_inhabilitadas || 0;
+            } else if (s.includes('uci') || s.includes('intensivo')) {
+              sumHabilCamas += r.uci_disponibles || 0;
+              sumOcupadasCamas += r.uci_ocupadas || 0;
+              sumInhabilCamas += r.uci_inhabilitadas || 0;
+            } else if (s.includes('uti') || s.includes('intermedio')) {
+              sumHabilCamas += r.uti_disponibles || 0;
+              sumOcupadasCamas += r.uti_ocupadas || 0;
+              sumInhabilCamas += r.uti_inhabilitadas || 0;
+            } else if (s.includes('mater') || s.includes('mujer') || s.includes('obstet') || s.includes('ginec')) {
+              sumHabilCamas += r.maternidad_disponibles || 0;
+              sumOcupadasCamas += r.maternidad_ocupadas || 0;
+              sumInhabilCamas += r.maternidad_inhabilitadas || 0;
+            } else if (s.includes('pediat') || s.includes('infantil')) {
+              sumHabilCamas += r.infantil_disponibles || 0;
+              sumOcupadasCamas += r.infantil_ocupadas || 0;
+              sumInhabilCamas += r.infantil_inhabilitadas || 0;
+            } else if (s.includes('neo') || s.includes('cuna')) {
+              sumHabilCamas += r.neonatologia_disponibles || 0;
+              sumOcupadasCamas += r.neonatologia_ocupadas || 0;
+              sumInhabilCamas += r.neonatologia_inhabilitadas || 0;
+            } else {
+              sumHabilCamas += r.total_camas_habilitadas || 0;
+              sumOcupadasCamas += r.total_camas_ocupadas || 0;
+              sumInhabilCamas += r.total_camas_inhabilitadas || 0;
+            }
+          }
+        }
+      });
+
+      let camasHabilitadas = 120;
+      let diasInhabilitados = 4 * diffDaysMonitor;
+
+      if (sumHabilCamas > 0) {
+        camasHabilitadas = Math.round(sumHabilCamas / (countDays || 1));
+        diasInhabilitados = sumInhabilCamas;
+      } else {
+        // Fallback to static rules
+        let defaultInhabilitadas = 4;
+        if (serviceFilter !== 'Todas') {
+          const s = serviceFilter.toLowerCase();
+          if (s.includes('pediat') || s.includes('infantil')) { camasHabilitadas = 15; defaultInhabilitadas = 1; }
+          else if (s.includes('mater') || s.includes('mujer') || s.includes('ginec')) { camasHabilitadas = 20; defaultInhabilitadas = 1; }
+          else if (s.includes('intensivo') || s.includes('uci')) { camasHabilitadas = 6; defaultInhabilitadas = 0; }
+          else if (s.includes('intermedio') || s.includes('uti')) { camasHabilitadas = 8; defaultInhabilitadas = 0; }
+          else if (s.includes('básico') || s.includes('basico')) { camasHabilitadas = 25; defaultInhabilitadas = 1; }
+          else { camasHabilitadas = 46; defaultInhabilitadas = 1; }
+        }
+        diasInhabilitados = defaultInhabilitadas * diffDaysMonitor;
+      }
 
       censoCleaned.forEach(r => {
         // Apply service filter
@@ -780,9 +839,12 @@ export default function ClosedAttentionDashboard({ onBack }) {
         }
       });
 
-      const occupancyRate = (camasHabilitadas * diffDaysMonitor) > 0 ? ((totalBedDaysInPeriod / (camasHabilitadas * diffDaysMonitor)) * 100) : 0;
+      const availableBedDays = sumHabilCamas > 0 ? sumHabilCamas : (camasHabilitadas * diffDaysMonitor);
+      const occupiedBedDays = sumHabilCamas > 0 ? sumOcupadasCamas : totalBedDaysInPeriod;
+
+      const occupancyRate = availableBedDays > 0 ? ((occupiedBedDays / availableBedDays) * 100) : 0;
       const rotationIndex = camasHabilitadas > 0 ? (totalEgresosNetos / camasHabilitadas) : 0;
-      const subInterval = totalEgresosNetos > 0 ? ((camasHabilitadas * diffDaysMonitor - totalBedDaysInPeriod) / totalEgresosNetos) : 0;
+      const subInterval = totalEgresosNetos > 0 ? ((availableBedDays - occupiedBedDays) / totalEgresosNetos) : 0;
       const lethalityRate = totalEgresosNetos > 0 ? ((deceasedCount / totalEgresosNetos) * 100) : 0;
 
       return {
@@ -792,7 +854,7 @@ export default function ClosedAttentionDashboard({ onBack }) {
         totalEgresosNetos,
         totalDiasEstada,
         totalTraslados,
-        totalBedDaysInPeriod,
+        totalBedDaysInPeriod: occupiedBedDays,
         occupancyRate,
         rotationIndex,
         subInterval,
@@ -834,7 +896,7 @@ export default function ClosedAttentionDashboard({ onBack }) {
       previous,
       diffs
     };
-  }, [censoCleaned, startDate, endDate, selectedClinicalService, prevPeriod]);
+  }, [censoCleaned, cuadraturaRaw, startDate, endDate, selectedClinicalService, prevPeriod]);
 
   // Tab 2: Monthly trend points for the line chart (Dynamic based on selectedClinicalService)
   const clinicalStatsTrendData = useMemo(() => {
@@ -858,19 +920,79 @@ export default function ClosedAttentionDashboard({ onBack }) {
       const diffTimeMonitor = Math.abs(monitorEnd - monitorStart);
       const diffDaysMonitor = Math.ceil(diffTimeMonitor / (1000 * 60 * 60 * 24)) || 1;
 
-      let camasHabilitadas = 120;
-      let defaultInhabilitadas = 4;
-      if (serviceFilter !== 'Todas') {
-        const s = serviceFilter.toLowerCase();
-        if (s.includes('pediat') || s.includes('infantil')) { camasHabilitadas = 15; defaultInhabilitadas = 1; }
-        else if (s.includes('mater') || s.includes('mujer') || s.includes('ginec')) { camasHabilitadas = 20; defaultInhabilitadas = 1; }
-        else if (s.includes('intensivo') || s.includes('uci')) { camasHabilitadas = 6; defaultInhabilitadas = 0; }
-        else if (s.includes('intermedio') || s.includes('uti')) { camasHabilitadas = 8; defaultInhabilitadas = 0; }
-        else if (s.includes('básico') || s.includes('basico')) { camasHabilitadas = 25; defaultInhabilitadas = 1; }
-        else { camasHabilitadas = 46; defaultInhabilitadas = 1; }
-      }
+      // Calculate dynamic camasHabilitadas and defaultInhabilitadas from Cuadratura de Camas
+      let sumHabilCamas = 0;
+      let sumOcupadasCamas = 0;
+      let sumInhabilCamas = 0;
+      let countDays = 0;
+      
+      cuadraturaRaw.forEach(r => {
+        const pDate = parseDDMMYYYY(r.fecha);
+        if (pDate && pDate >= monitorStart && pDate <= monitorEnd) {
+          countDays++;
+          if (serviceFilter === 'Todas') {
+            sumHabilCamas += r.total_camas_habilitadas || 0;
+            sumOcupadasCamas += r.total_camas_ocupadas || 0;
+            sumInhabilCamas += r.total_camas_inhabilitadas || 0;
+          } else {
+            const s = serviceFilter.toLowerCase();
+            if (s.includes('basico') || s.includes('básico')) {
+              sumHabilCamas += r.cuidados_basicos_disponibles || 0;
+              sumOcupadasCamas += r.cuidados_basicos_ocupadas || 0;
+              sumInhabilCamas += r.cuidados_basicos_inhabilitadas || 0;
+            } else if (s.includes('medio')) {
+              sumHabilCamas += r.cuidados_medios_disponibles || 0;
+              sumOcupadasCamas += r.cuidados_medios_ocupadas || 0;
+              sumInhabilCamas += r.cuidados_medios_inhabilitadas || 0;
+            } else if (s.includes('uci') || s.includes('intensivo')) {
+              sumHabilCamas += r.uci_disponibles || 0;
+              sumOcupadasCamas += r.uci_ocupadas || 0;
+              sumInhabilCamas += r.uci_inhabilitadas || 0;
+            } else if (s.includes('uti') || s.includes('intermedio')) {
+              sumHabilCamas += r.uti_disponibles || 0;
+              sumOcupadasCamas += r.uti_ocupadas || 0;
+              sumInhabilCamas += r.uti_inhabilitadas || 0;
+            } else if (s.includes('mater') || s.includes('mujer') || s.includes('obstet') || s.includes('ginec')) {
+              sumHabilCamas += r.maternidad_disponibles || 0;
+              sumOcupadasCamas += r.maternidad_ocupadas || 0;
+              sumInhabilCamas += r.maternidad_inhabilitadas || 0;
+            } else if (s.includes('pediat') || s.includes('infantil')) {
+              sumHabilCamas += r.infantil_disponibles || 0;
+              sumOcupadasCamas += r.infantil_ocupadas || 0;
+              sumInhabilCamas += r.infantil_inhabilitadas || 0;
+            } else if (s.includes('neo') || s.includes('cuna')) {
+              sumHabilCamas += r.neonatologia_disponibles || 0;
+              sumOcupadasCamas += r.neonatologia_ocupadas || 0;
+              sumInhabilCamas += r.neonatologia_inhabilitadas || 0;
+            } else {
+              sumHabilCamas += r.total_camas_habilitadas || 0;
+              sumOcupadasCamas += r.total_camas_ocupadas || 0;
+              sumInhabilCamas += r.total_camas_inhabilitadas || 0;
+            }
+          }
+        }
+      });
 
-      const diasInhabilitados = defaultInhabilitadas * diffDaysMonitor;
+      let camasHabilitadas = 120;
+      let diasInhabilitados = 4 * diffDaysMonitor;
+
+      if (sumHabilCamas > 0) {
+        camasHabilitadas = Math.round(sumHabilCamas / (countDays || 1));
+        diasInhabilitados = sumInhabilCamas;
+      } else {
+        // Fallback to static rules
+        let defaultInhabilitadas = 4;
+        if (serviceFilter !== 'Todas') {
+          const s = serviceFilter.toLowerCase();
+          if (s.includes('pediat') || s.includes('infantil')) { camasHabilitadas = 15; defaultInhabilitadas = 1; }
+          else if (s.includes('mater') || s.includes('mujer') || s.includes('ginec')) { camasHabilitadas = 20; defaultInhabilitadas = 1; }
+          else if (s.includes('intensivo') || s.includes('uci')) { camasHabilitadas = 6; defaultInhabilitadas = 0; }
+          else if (s.includes('intermedio') || s.includes('uti')) { camasHabilitadas = 8; defaultInhabilitadas = 0; }
+          else if (s.includes('básico') || s.includes('basico')) { camasHabilitadas = 25; defaultInhabilitadas = 1; }
+          else { camasHabilitadas = 46; defaultInhabilitadas = 1; }
+        }
+        diasInhabilitados = defaultInhabilitadas * diffDaysMonitor;
+      }
 
       censoCleaned.forEach(r => {
         if (serviceFilter !== 'Todas') {
@@ -911,9 +1033,12 @@ export default function ClosedAttentionDashboard({ onBack }) {
         }
       });
 
-      const occupancyRate = (camasHabilitadas * diffDaysMonitor) > 0 ? ((totalBedDaysInPeriod / (camasHabilitadas * diffDaysMonitor)) * 100) : 0;
+      const availableBedDays = sumHabilCamas > 0 ? sumHabilCamas : (camasHabilitadas * diffDaysMonitor);
+      const occupiedBedDays = sumHabilCamas > 0 ? sumOcupadasCamas : totalBedDaysInPeriod;
+
+      const occupancyRate = availableBedDays > 0 ? ((occupiedBedDays / availableBedDays) * 100) : 0;
       const rotationIndex = camasHabilitadas > 0 ? (totalEgresosNetos / camasHabilitadas) : 0;
-      const subInterval = totalEgresosNetos > 0 ? ((camasHabilitadas * diffDaysMonitor - totalBedDaysInPeriod) / totalEgresosNetos) : 0;
+      const subInterval = totalEgresosNetos > 0 ? ((availableBedDays - occupiedBedDays) / totalEgresosNetos) : 0;
       const lethalityRate = totalEgresosNetos > 0 ? ((deceasedCount / totalEgresosNetos) * 100) : 0;
 
       return {
@@ -946,7 +1071,7 @@ export default function ClosedAttentionDashboard({ onBack }) {
         estada: res.totalDiasEstada
       };
     });
-  }, [censoCleaned, selectedClinicalService]);
+  }, [censoCleaned, cuadraturaRaw, selectedClinicalService]);
 
   // Census specific breakdown lists (Ingresos, Egresos, CIE-10)
   const censusBreakdowns = useMemo(() => {
@@ -1208,16 +1333,7 @@ export default function ClosedAttentionDashboard({ onBack }) {
     let ingresosEgresosMismoDia = 0;
     let totalDiasEstada = 0;
 
-    let camasHabilitadas = 120;
-    if (selectedRemService !== 'Todas') {
-      const s = selectedRemService.toLowerCase();
-      if (s.includes('pediat') || s.includes('infantil')) { camasHabilitadas = 15; }
-      else if (s.includes('mater') || s.includes('mujer') || s.includes('ginec') || s.includes('obstet')) { camasHabilitadas = 20; }
-      else if (s.includes('intensivo') || s.includes('uci')) { camasHabilitadas = 6; }
-      else if (s.includes('intermedio') || s.includes('uti')) { camasHabilitadas = 8; }
-      else if (s.includes('básico') || s.includes('basico')) { camasHabilitadas = 25; }
-      else { camasHabilitadas = 46; }
-    }
+    // camasHabilitadas will be calculated dynamically below from cuadraturaRaw
 
     // ─── SET para deduplicación RUT+fecha (días cama MINSAL nivel establecimiento) ───
     // Elimina el doble conteo causado por traslados de servicio:
@@ -1346,10 +1462,12 @@ export default function ClosedAttentionDashboard({ onBack }) {
     // Calculate Bed Days (Días Cama) from Cuadratura de Camas data source
     let diasCamaDisponibles = 0;
     let diasCamaOcupadas = 0;
+    let countCuadraturaDays = 0;
 
     cuadraturaRaw.forEach(r => {
       const pDate = parseDDMMYYYY(r.fecha);
       if (pDate && pDate >= monitorStart && pDate <= monitorEnd) {
+        countCuadraturaDays++;
         if (selectedRemService === 'Todas') {
           diasCamaDisponibles += r.total_camas_habilitadas || 0;
           diasCamaOcupadas += r.total_camas_ocupadas || 0;
@@ -1383,6 +1501,22 @@ export default function ClosedAttentionDashboard({ onBack }) {
         }
       }
     });
+
+    let camasHabilitadas = 120;
+    const divisor = countCuadraturaDays || diffDaysMonitor || 1;
+    if (diasCamaDisponibles > 0) {
+      camasHabilitadas = Math.round(diasCamaDisponibles / divisor);
+    } else {
+      if (selectedRemService !== 'Todas') {
+        const s = selectedRemService.toLowerCase();
+        if (s.includes('pediat') || s.includes('infantil')) { camasHabilitadas = 15; }
+        else if (s.includes('mater') || s.includes('mujer') || s.includes('ginec') || s.includes('obstet')) { camasHabilitadas = 20; }
+        else if (s.includes('intensivo') || s.includes('uci')) { camasHabilitadas = 6; }
+        else if (s.includes('intermedio') || s.includes('uti')) { camasHabilitadas = 8; }
+        else if (s.includes('básico') || s.includes('basico')) { camasHabilitadas = 25; }
+        else { camasHabilitadas = 46; }
+      }
+    }
 
     if (diasCamaDisponibles === 0) {
       diasCamaDisponibles = camasHabilitadas * diffDaysMonitor;
