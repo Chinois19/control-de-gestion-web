@@ -12,6 +12,7 @@ import {
   Search, 
   Activity, 
   ChevronRight, 
+  ChevronLeft, 
   Plus, 
   Minus,
   FileText,
@@ -30,6 +31,7 @@ export default function EndoscopyDashboard({ onBack, initialTab = 'summary', ini
   const [activeTab, setActiveTab] = useState(initialTab === 'patients' ? 'rem' : initialTab); // 'summary', 'pivot', 'classification', 'rem'
   const [lastUpdated, setLastUpdated] = useState('Nunca');
   const [currentPage, setCurrentPage] = useState(1);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   
   // Filters
   const [startDate, setStartDate] = useState('2025-01-01');
@@ -589,115 +591,162 @@ export default function EndoscopyDashboard({ onBack, initialTab = 'summary', ini
           <p style={{ marginTop: '8px', fontSize: '0.95rem' }}>{error}</p>
         </div>
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: '320px 1fr', gap: '40px', alignItems: 'start' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: sidebarCollapsed ? 'auto 1fr' : '320px 1fr', gap: '40px', alignItems: 'start', transition: 'grid-template-columns 0.35s ease' }}>
           
           {/* Advanced Filtering Panel */}
-          <div style={{ background: 'white', border: '1px solid rgba(0,0,0,0.06)', borderRadius: '32px', padding: '30px', boxShadow: '0 20px 50px rgba(0,0,0,0.03)' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '24px', paddingBottom: '16px', borderBottom: '1.5px solid rgba(0,0,0,0.04)' }}>
-              <Filter size={18} color="#8b5cf6" />
-              <h3 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#0f172a' }}>Filtros Endoscopía</h3>
-            </div>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '22px' }}>
-              
-              <div>
-                <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#475569', textTransform: 'uppercase', display: 'block', marginBottom: '8px' }}>Selección Temporal</label>
-                <select 
-                  value={periodPreset} 
-                  onChange={(e) => handlePeriodPresetChange(e.target.value)}
-                  style={{ width: '100%', padding: '14px', borderRadius: '12px', border: '1.5px solid #e2e8f0', fontWeight: 700, outline: 'none' }}
+          {sidebarCollapsed ? (
+            <button
+              onClick={() => setSidebarCollapsed(false)}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px',
+                padding: '16px',
+                borderRadius: '24px',
+                background: 'white',
+                border: '1px solid rgba(0,0,0,0.06)',
+                boxShadow: '0 10px 30px rgba(0,0,0,0.03)',
+                cursor: 'pointer',
+                color: '#8b5cf6',
+                fontWeight: 700,
+                fontSize: '0.88rem',
+                transition: 'all 0.2s',
+                width: 'fit-content'
+              }}
+              title="Expandir panel de filtros"
+            >
+              <Filter size={18} />
+              <ChevronRight size={16} />
+            </button>
+          ) : (
+            <div
+              style={{
+                background: 'white',
+                border: '1px solid rgba(0,0,0,0.06)',
+                borderRadius: '32px',
+                padding: '30px',
+                boxShadow: '0 20px 50px rgba(0,0,0,0.03)',
+                transition: 'all 0.35s ease',
+                width: '320px',
+                flexShrink: 0
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px', paddingBottom: '16px', borderBottom: '1.5px solid rgba(0,0,0,0.04)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <Filter size={18} color="#8b5cf6" />
+                  <h3 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#0f172a' }}>Filtros Endoscopía</h3>
+                </div>
+                <button
+                  onClick={() => setSidebarCollapsed(true)}
+                  style={{ background: 'none', border: 'none', color: '#64748b', cursor: 'pointer', display: 'flex', alignItems: 'center', padding: '4px', borderRadius: '6px' }}
+                  title="Colapsar filtros"
                 >
-                  <option value="2025_2026">Años 2025 y 2026 (Predeterminado)</option>
-                  <option value="2025">Sólo Año 2025</option>
-                  <option value="2026">Sólo Año 2026</option>
-                  <option value="historico">Histórico Completo</option>
-                </select>
+                  <ChevronLeft size={18} />
+                </button>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '22px' }}>
+                
                 <div>
-                  <label style={{ fontSize: '0.7rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', display: 'block', marginBottom: '6px' }}>Desde</label>
-                  <input type="date" value={startDate} onChange={(e) => { setStartDate(e.target.value); setPeriodPreset('custom'); }} style={{ width: '100%', padding: '10px', borderRadius: '10px', border: '1.5px solid #e2e8f0', fontSize: '0.75rem', fontWeight: 700 }} />
+                  <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#475569', textTransform: 'uppercase', display: 'block', marginBottom: '8px' }}>Selección Temporal</label>
+                  <select 
+                    value={periodPreset} 
+                    onChange={(e) => handlePeriodPresetChange(e.target.value)}
+                    style={{ width: '100%', padding: '14px', borderRadius: '12px', border: '1.5px solid #e2e8f0', fontWeight: 700, outline: 'none' }}
+                  >
+                    <option value="2025_2026">Años 2025 y 2026 (Predeterminado)</option>
+                    <option value="2025">Sólo Año 2025</option>
+                    <option value="2026">Sólo Año 2026</option>
+                    <option value="historico">Histórico Completo</option>
+                  </select>
                 </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                  <div>
+                    <label style={{ fontSize: '0.7rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', display: 'block', marginBottom: '6px' }}>Desde</label>
+                    <input type="date" value={startDate} onChange={(e) => { setStartDate(e.target.value); setPeriodPreset('custom'); }} style={{ width: '100%', padding: '10px', borderRadius: '10px', border: '1.5px solid #e2e8f0', fontSize: '0.75rem', fontWeight: 700 }} />
+                  </div>
+                  <div>
+                    <label style={{ fontSize: '0.7rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', display: 'block', marginBottom: '6px' }}>Hasta</label>
+                    <input type="date" value={endDate} onChange={(e) => { setEndDate(e.target.value); setPeriodPreset('custom'); }} style={{ width: '100%', padding: '10px', borderRadius: '10px', border: '1.5px solid #e2e8f0', fontSize: '0.75rem', fontWeight: 700 }} />
+                  </div>
+                </div>
+
                 <div>
-                  <label style={{ fontSize: '0.7rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', display: 'block', marginBottom: '6px' }}>Hasta</label>
-                  <input type="date" value={endDate} onChange={(e) => { setEndDate(e.target.value); setPeriodPreset('custom'); }} style={{ width: '100%', padding: '10px', borderRadius: '10px', border: '1.5px solid #e2e8f0', fontSize: '0.75rem', fontWeight: 700 }} />
+                  <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#475569', textTransform: 'uppercase', display: 'block', marginBottom: '8px' }}>Médico Tratante</label>
+                  <select 
+                    value={selectedFuncionario} 
+                    onChange={(e) => setSelectedFuncionario(e.target.value)}
+                    style={{ width: '100%', padding: '14px', borderRadius: '12px', border: '1.5px solid #e2e8f0', fontWeight: 700, outline: 'none' }}
+                  >
+                    <option value="Todas">Todos los facultativos ({uniqueDropdowns.funcionarios.length})</option>
+                    {uniqueDropdowns.funcionarios.map(fn => <option key={fn} value={fn}>{fn}</option>)}
+                  </select>
                 </div>
-              </div>
 
-              <div>
-                <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#475569', textTransform: 'uppercase', display: 'block', marginBottom: '8px' }}>Médico Tratante</label>
-                <select 
-                  value={selectedFuncionario} 
-                  onChange={(e) => setSelectedFuncionario(e.target.value)}
-                  style={{ width: '100%', padding: '14px', borderRadius: '12px', border: '1.5px solid #e2e8f0', fontWeight: 700, outline: 'none' }}
-                >
-                  <option value="Todas">Todos los facultativos ({uniqueDropdowns.funcionarios.length})</option>
-                  {uniqueDropdowns.funcionarios.map(fn => <option key={fn} value={fn}>{fn}</option>)}
-                </select>
-              </div>
-
-              <div>
-                <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#475569', textTransform: 'uppercase', display: 'block', marginBottom: '8px' }}>Establecimiento Origen</label>
-                <select 
-                  value={selectedEstablecimiento} 
-                  onChange={(e) => setSelectedEstablecimiento(e.target.value)}
-                  style={{ width: '100%', padding: '14px', borderRadius: '12px', border: '1.5px solid #e2e8f0', fontWeight: 700, outline: 'none' }}
-                >
-                  <option value="Todas">Todos los centros derivadores ({uniqueDropdowns.establecimientos.length})</option>
-                  {uniqueDropdowns.establecimientos.map(est => <option key={est} value={est}>{est}</option>)}
-                </select>
-              </div>
-
-              <div>
-                <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#475569', textTransform: 'uppercase', display: 'block', marginBottom: '8px' }}>Estado Asistencial</label>
-                <select 
-                  value={selectedEstadoAtencion} 
-                  onChange={(e) => setSelectedEstadoAtencion(e.target.value)}
-                  style={{ width: '100%', padding: '14px', borderRadius: '12px', border: '1.5px solid #e2e8f0', fontWeight: 700, outline: 'none' }}
-                >
-                  <option value="Todas">Todos los estados</option>
-                  <option value="Se presentó">Se presentó (Atendido)</option>
-                  <option value="No se presentó">No se presentó (NSP)</option>
-                  <option value="No se atendió">No se atendió (Reagendado)</option>
-                </select>
-              </div>
-
-              <div>
-                <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#475569', textTransform: 'uppercase', display: 'block', marginBottom: '8px' }}>Rango de Edad</label>
-                <select 
-                  value={selectedRangoEdad} 
-                  onChange={(e) => setSelectedRangoEdad(e.target.value)}
-                  style={{ width: '100%', padding: '14px', borderRadius: '12px', border: '1.5px solid #e2e8f0', fontWeight: 700, outline: 'none' }}
-                >
-                  <option value="Todas">Todas las edades</option>
-                  <option value="Pediátrico (<15)">Pediátrico (&lt;15 años)</option>
-                  <option value="Adulto (15-64)">Adulto (15-64 años)</option>
-                  <option value="Adulto Mayor (>=65)">Adulto Mayor (&ge;65 años)</option>
-                </select>
-              </div>
-
-              <div>
-                <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#475569', textTransform: 'uppercase', display: 'block', marginBottom: '8px' }}>Procedencia</label>
-                <select 
-                  value={selectedProcedencia} 
-                  onChange={(e) => setSelectedProcedencia(e.target.value)}
-                  style={{ width: '100%', padding: '14px', borderRadius: '12px', border: '1.5px solid #e2e8f0', fontWeight: 700, outline: 'none' }}
-                >
-                  <option value="Todas">Todas las procedencias</option>
-                  {uniqueDropdowns.procedencias.map(pr => <option key={pr} value={pr}>{pr}</option>)}
-                </select>
-              </div>
-
-              <div style={{ marginTop: '10px', paddingTop: '16px', borderTop: '1.5px solid rgba(0,0,0,0.04)' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'rgba(139,92,246,0.05)', padding: '12px 16px', borderRadius: '14px', fontSize: '0.8rem', color: '#64748b', fontWeight: 600, border: '1px solid rgba(139,92,246,0.1)' }}>
-                  <Users size={16} color="#8b5cf6" />
-                  <span>Cohorte activa: <strong>{filteredData.length.toLocaleString('es-CL')}</strong> atenciones</span>
+                <div>
+                  <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#475569', textTransform: 'uppercase', display: 'block', marginBottom: '8px' }}>Establecimiento Origen</label>
+                  <select 
+                    value={selectedEstablecimiento} 
+                    onChange={(e) => setSelectedEstablecimiento(e.target.value)}
+                    style={{ width: '100%', padding: '14px', borderRadius: '12px', border: '1.5px solid #e2e8f0', fontWeight: 700, outline: 'none' }}
+                  >
+                    <option value="Todas">Todos los centros derivadores ({uniqueDropdowns.establecimientos.length})</option>
+                    {uniqueDropdowns.establecimientos.map(est => <option key={est} value={est}>{est}</option>)}
+                  </select>
                 </div>
-              </div>
 
+                <div>
+                  <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#475569', textTransform: 'uppercase', display: 'block', marginBottom: '8px' }}>Estado Asistencial</label>
+                  <select 
+                    value={selectedEstadoAtencion} 
+                    onChange={(e) => setSelectedEstadoAtencion(e.target.value)}
+                    style={{ width: '100%', padding: '14px', borderRadius: '12px', border: '1.5px solid #e2e8f0', fontWeight: 700, outline: 'none' }}
+                  >
+                    <option value="Todas">Todos los estados</option>
+                    <option value="Se presentó">Se presentó (Atendido)</option>
+                    <option value="No se presentó">No se presentó (NSP)</option>
+                    <option value="No se atendió">No se atendió (Reagendado)</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#475569', textTransform: 'uppercase', display: 'block', marginBottom: '8px' }}>Rango de Edad</label>
+                  <select 
+                    value={selectedRangoEdad} 
+                    onChange={(e) => setSelectedRangoEdad(e.target.value)}
+                    style={{ width: '100%', padding: '14px', borderRadius: '12px', border: '1.5px solid #e2e8f0', fontWeight: 700, outline: 'none' }}
+                  >
+                    <option value="Todas">Todas las edades</option>
+                    <option value="Pediátrico (<15)">Pediátrico (&lt;15 años)</option>
+                    <option value="Adulto (15-64)">Adulto (15-64 años)</option>
+                    <option value="Adulto Mayor (>=65)">Adulto Mayor (&ge;65 años)</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#475569', textTransform: 'uppercase', display: 'block', marginBottom: '8px' }}>Procedencia</label>
+                  <select 
+                    value={selectedProcedencia} 
+                    onChange={(e) => setSelectedProcedencia(e.target.value)}
+                    style={{ width: '100%', padding: '14px', borderRadius: '12px', border: '1.5px solid #e2e8f0', fontWeight: 700, outline: 'none' }}
+                  >
+                    <option value="Todas">Todas las procedencias</option>
+                    {uniqueDropdowns.procedencias.map(pr => <option key={pr} value={pr}>{pr}</option>)}
+                  </select>
+                </div>
+
+                <div style={{ marginTop: '10px', paddingTop: '16px', borderTop: '1.5px solid rgba(0,0,0,0.04)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'rgba(139,92,246,0.05)', padding: '12px 16px', borderRadius: '14px', fontSize: '0.8rem', color: '#64748b', fontWeight: 600, border: '1px solid rgba(139,92,246,0.1)' }}>
+                    <Users size={16} color="#8b5cf6" />
+                    <span>Cohorte activa: <strong>{filteredData.length.toLocaleString('es-CL')}</strong> atenciones</span>
+                  </div>
+                </div>
+
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Interactive Portal Content Area */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '30px' }}>
