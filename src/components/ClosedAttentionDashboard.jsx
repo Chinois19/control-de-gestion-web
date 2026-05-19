@@ -1263,7 +1263,7 @@ export default function ClosedAttentionDashboard({ onBack }) {
               ingresosCma++;
             } else if (proc.includes('cae') || proc.includes('policlinico') || proc.includes('consultorio')) {
               ingresosCae++;
-            } else if (proc.includes('otro hospital') || proc.includes('establecimiento') || proc.includes('red')) {
+            } else if (proc.includes('otro hospital') || proc.includes('otros hospitales') || proc.includes('establecimiento') || proc.includes('red')) {
               ingresosOtrosHospitales++;
             } else {
               ingresosOtraProcedencia++;
