@@ -1,14 +1,39 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
-  ArrowLeft, Users, Calendar, CheckCircle, AlertCircle, TrendingUp, RefreshCw, Filter, ChevronLeft, ChevronRight, BarChart2, PieChart, Clock
+  ArrowLeft, Users, Calendar, CheckCircle, AlertCircle, TrendingUp, RefreshCw, Filter, ChevronLeft, ChevronRight, BarChart2, PieChart, Clock, MessageSquare, AlertTriangle, Lightbulb, TrendingDown
 } from 'lucide-react';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
-  PieChart as RechartsPieChart, Pie, Cell, LineChart, Line
+  PieChart as RechartsPieChart, Pie, Cell, LineChart, Line, LabelList, StackedBarChart
 } from 'recharts';
 
-const COLORS = ['#2ecc71', '#e74c3c', '#f1c40f', '#3498db', '#9b59b6', '#1abc9c', '#e67e22', '#34495e'];
+const COLORS = ['#e74c3c', '#2ecc71', '#3498db', '#f1c40f', '#9b59b6', '#1abc9c', '#e67e22', '#34495e'];
+const TIPO_COLORS = {
+  'RECLAMOS': '#e74c3c',
+  'FELICITACIONES': '#2ecc71',
+  'SUGERENCIAS': '#f1c40f',
+  'SOLICITUDES': '#3498db',
+  'CONSULTAS': '#9b59b6'
+};
+
+const CustomTooltip = ({ active, payload, label }) => {
+  if (active && payload && payload.length) {
+    return (
+      <div className="custom-tooltip" style={{ background: 'rgba(255, 255, 255, 0.95)', padding: '12px 16px', borderRadius: '12px', boxShadow: '0 10px 30px rgba(0,0,0,0.1)', border: '1px solid rgba(255,255,255,0.5)', backdropFilter: 'blur(10px)' }}>
+        <p className="label" style={{ fontWeight: 800, color: '#2c3e50', marginBottom: '8px', fontSize: '0.9rem' }}>{label}</p>
+        {payload.map((entry, index) => (
+          <div key={index} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.85rem', marginBottom: '4px' }}>
+            <div style={{ width: '10px', height: '10px', borderRadius: '50%', backgroundColor: entry.color }} />
+            <span style={{ color: '#555', fontWeight: 600 }}>{entry.name}:</span>
+            <span style={{ color: '#2c3e50', fontWeight: 800 }}>{entry.value}</span>
+          </div>
+        ))}
+      </div>
+    );
+  }
+  return null;
+};
 
 export default function SolicitudesDashboard({ onBack }) {
   const [rawData, setRawData] = useState([]);
@@ -16,6 +41,7 @@ export default function SolicitudesDashboard({ onBack }) {
   const [error, setError] = useState(null);
   const [lastUpdated, setLastUpdated] = useState('Nunca');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [activeTab, setActiveTab] = useState('generales');
   
   const [startDate, setStartDate] = useState('2025-01-01');
   const [endDate, setEndDate] = useState('2026-12-31');
@@ -23,6 +49,7 @@ export default function SolicitudesDashboard({ onBack }) {
   
   const [selectedTipo, setSelectedTipo] = useState('Todas');
   const [selectedServicio, setSelectedServicio] = useState('Todas');
+  const [trendTipo, setTrendTipo] = useState('Todas');
 
   useEffect(() => {
     fetchData();
@@ -50,9 +77,7 @@ export default function SolicitudesDashboard({ onBack }) {
     setError(null);
     try {
       const response = await fetch('/data/solicitudes_cached.json');
-      if (!response.ok) {
-        throw new Error('No se pudo encontrar el archivo de datos local.');
-      }
+      if (!response.ok) throw new Error('No se pudo encontrar el archivo de datos local.');
       const data = await response.json();
       setRawData(data.records || []);
       
@@ -63,7 +88,7 @@ export default function SolicitudesDashboard({ onBack }) {
       }
     } catch (err) {
       console.warn("Local cache load failed", err);
-      setError('No se pudo conectar a la base de datos ni cargar el archivo semanal.');
+      setError('No se pudo conectar a la base de datos ni cargar el archivo.');
     } finally {
       setLoading(false);
     }
@@ -75,29 +100,37 @@ export default function SolicitudesDashboard({ onBack }) {
       let monthName = 'N/A';
       let monthIndex = -1;
       let yearMonthKey = 'N/A';
+      let epochDate = 0;
 
       if (record.fechadocumento) {
         const dateParts = record.fechadocumento.split('-');
         if (dateParts.length === 3) {
           year = dateParts[0];
           monthIndex = parseInt(dateParts[1]) - 1;
-          const months = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+          const months = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
           monthName = months[monthIndex] || 'N/A';
           yearMonthKey = `${year}-${dateParts[1]}`;
+          epochDate = new Date(record.fechadocumento).getTime();
         }
       }
+
+      const tipo = record.tipo_solicitud?.toUpperCase() || 'N/A';
 
       return {
         ...record,
         recordId: record.record_id,
         fecha: record.fechadocumento || 'N/A',
+        epochDate,
         year,
         monthName,
         monthIndex,
         yearMonthKey,
-        tipo: record.tipo_solicitud || 'N/A',
-        servicio: record.servicio_dpto || 'N/A',
-        dias: parseInt(record.diasderespuesta) || 0
+        tipo: tipo,
+        dimension: record.reclamos || 'Sin Especificar',
+        servicio: record.servicio_dpto || 'Sin Especificar',
+        dias: parseInt(record.diasderespuesta) || 0,
+        respondida: !!record.fecharespuesta,
+        fueraPlazo: (parseInt(record.diasderespuesta) || 0) > 15
       };
     });
   }, [rawData]);
@@ -108,67 +141,174 @@ export default function SolicitudesDashboard({ onBack }) {
     return { tipos, servicios };
   }, [processedData]);
 
-  const filteredData = useMemo(() => {
-    return processedData.filter(item => {
-      if (item.fecha !== 'N/A') {
-        if (startDate && item.fecha < startDate) return false;
-        if (endDate && item.fecha > endDate) return false;
-      }
-      
-      if (selectedTipo !== 'Todas' && item.tipo !== selectedTipo) return false;
-      if (selectedServicio !== 'Todas' && item.servicio !== selectedServicio) return false;
-      
-      return true;
-    });
-  }, [processedData, startDate, endDate, selectedTipo, selectedServicio]);
-
-  const stats = useMemo(() => {
-    const total = filteredData.length;
+  // Funciones de cálculo de periodo previo para % de diferencia
+  const calculateStats = (dataArray) => {
+    const total = dataArray.length;
     let sumDias = 0;
-    let countDias = 0;
+    let countRespondidas = 0;
+    let countUnanswered = 0;
+    let countFueraPlazo = 0;
 
     const tiposCount = {};
-    const serviciosCount = {};
-    const monthlyTotalMap = {};
 
-    filteredData.forEach(d => {
-      if (d.dias > 0) {
+    dataArray.forEach(d => {
+      if (d.respondida) {
         sumDias += d.dias;
-        countDias++;
+        countRespondidas++;
+      } else {
+        countUnanswered++;
+      }
+      if (d.fueraPlazo) {
+        countFueraPlazo++;
       }
       tiposCount[d.tipo] = (tiposCount[d.tipo] || 0) + 1;
-      serviciosCount[d.servicio] = (serviciosCount[d.servicio] || 0) + 1;
+    });
 
-      if (d.yearMonthKey !== 'N/A') {
-        monthlyTotalMap[d.yearMonthKey] = (monthlyTotalMap[d.yearMonthKey] || 0) + 1;
+    const avgDias = countRespondidas > 0 ? (sumDias / countRespondidas).toFixed(1) : 0;
+
+    return { total, avgDias, countUnanswered, countFueraPlazo, tiposCount, countRespondidas };
+  };
+
+  const { filteredData, previousPeriodStats, currentStats, timelineChartData, stackedBarData, dimensionTableData, dimensionBarData, servicioTableData, servicioBarData, monthsList } = useMemo(() => {
+    
+    // Current period
+    const startEpoch = new Date(startDate).getTime();
+    const endEpoch = new Date(endDate).getTime() + 86400000; // include end day
+    
+    const currentData = processedData.filter(item => {
+      if (item.epochDate === 0) return false;
+      if (item.epochDate < startEpoch || item.epochDate >= endEpoch) return false;
+      if (selectedTipo !== 'Todas' && item.tipo !== selectedTipo) return false;
+      if (selectedServicio !== 'Todas' && item.servicio !== selectedServicio) return false;
+      return true;
+    });
+
+    // Previous period (same length)
+    const periodLength = endEpoch - startEpoch;
+    const prevStartEpoch = startEpoch - periodLength;
+    const prevEndEpoch = startEpoch;
+
+    const prevData = processedData.filter(item => {
+      if (item.epochDate === 0) return false;
+      if (item.epochDate < prevStartEpoch || item.epochDate >= prevEndEpoch) return false;
+      if (selectedTipo !== 'Todas' && item.tipo !== selectedTipo) return false;
+      if (selectedServicio !== 'Todas' && item.servicio !== selectedServicio) return false;
+      return true;
+    });
+
+    const cStats = calculateStats(currentData);
+    const pStats = calculateStats(prevData);
+
+    // Timeline & Stacked Bar Data
+    const monthlyMap = {};
+    const monthsSet = new Set();
+    
+    currentData.forEach(d => {
+      if (d.yearMonthKey === 'N/A') return;
+      monthsSet.add(d.yearMonthKey);
+      if (!monthlyMap[d.yearMonthKey]) {
+        monthlyMap[d.yearMonthKey] = { key: d.yearMonthKey, name: `${d.monthName} ${d.year.slice(2)}`, Total: 0, RECLAMOS: 0, FELICITACIONES: 0, SUGERENCIAS: 0, SOLICITUDES: 0, CONSULTAS: 0 };
+      }
+      monthlyMap[d.yearMonthKey].Total += 1;
+      monthlyMap[d.yearMonthKey][d.tipo] = (monthlyMap[d.yearMonthKey][d.tipo] || 0) + 1;
+    });
+
+    const sortedKeys = Array.from(monthsSet).sort();
+    const timelineData = sortedKeys.map(key => monthlyMap[key]);
+    
+    // For specific trend filter
+    const trendFiltered = timelineData.map(month => {
+      return {
+        ...month,
+        Value: trendTipo === 'Todas' ? month.Total : (month[trendTipo] || 0)
       }
     });
 
-    const avgDias = countDias > 0 ? (sumDias / countDias).toFixed(1) : 0;
-
-    const tiposData = Object.entries(tiposCount).map(([name, value]) => ({ name, value })).sort((a,b) => b.value - a.value);
-    const serviciosData = Object.entries(serviciosCount).map(([name, value]) => ({ name, value })).sort((a,b) => b.value - a.value).slice(0, 10);
+    // Dimension Data (ONLY RECLAMOS)
+    const reclamosData = currentData.filter(d => d.tipo === 'RECLAMOS');
+    const dimMap = {};
+    const dimTotalCount = {};
+    reclamosData.forEach(d => {
+      const dim = d.dimension;
+      if (!dimMap[dim]) dimMap[dim] = {};
+      dimMap[dim][d.yearMonthKey] = (dimMap[dim][d.yearMonthKey] || 0) + 1;
+      dimTotalCount[dim] = (dimTotalCount[dim] || 0) + 1;
+    });
     
-    const sortedKeys = Object.keys(monthlyTotalMap).sort();
-    const timelineData = sortedKeys.map(key => {
-      const parts = key.split('-');
+    const dimBar = Object.entries(dimTotalCount).map(([name, value]) => ({ name, value })).sort((a,b) => b.value - a.value).slice(0, 10);
+    const dimTable = Object.entries(dimTotalCount).map(([name, total]) => {
+      const row = { name, total };
+      sortedKeys.forEach(k => { row[k] = dimMap[name]?.[k] || 0; });
+      return row;
+    }).sort((a,b) => b.total - a.total);
+
+    // Servicio Data (ONLY RECLAMOS)
+    const servMap = {};
+    const servTotalCount = {};
+    reclamosData.forEach(d => {
+      const serv = d.servicio;
+      if (!servMap[serv]) servMap[serv] = {};
+      servMap[serv][d.yearMonthKey] = (servMap[serv][d.yearMonthKey] || 0) + 1;
+      servTotalCount[serv] = (servTotalCount[serv] || 0) + 1;
+    });
+    
+    const servBar = Object.entries(servTotalCount).map(([name, value]) => ({ name, value })).sort((a,b) => b.value - a.value).slice(0, 10);
+    const servTable = Object.entries(servTotalCount).map(([name, total]) => {
+      const row = { name, total };
+      sortedKeys.forEach(k => { row[k] = servMap[name]?.[k] || 0; });
+      return row;
+    }).sort((a,b) => b.total - a.total);
+
+    const mList = sortedKeys.map(k => {
+      const parts = k.split('-');
       const months = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
-      const mIdx = parseInt(parts[1]) - 1;
-      return {
-        key,
-        name: `${months[mIdx]} ${parts[0].slice(2)}`,
-        Total: monthlyTotalMap[key]
-      };
+      return { key: k, label: `${months[parseInt(parts[1])-1]} ${parts[0]}` };
     });
 
     return {
-      total,
-      avgDias,
-      tiposData,
-      serviciosData,
-      timelineData
+      filteredData: currentData,
+      previousPeriodStats: pStats,
+      currentStats: cStats,
+      timelineChartData: trendFiltered,
+      stackedBarData: timelineData,
+      dimensionTableData: dimTable,
+      dimensionBarData: dimBar,
+      servicioTableData: servTable,
+      servicioBarData: servBar,
+      monthsList: mList
     };
-  }, [filteredData]);
+  }, [processedData, startDate, endDate, selectedTipo, selectedServicio, trendTipo]);
+
+  const renderDiff = (current, previous) => {
+    if (!previous || previous === 0) return <span style={{ color: '#888', fontSize: '0.75rem' }}>N/A vs ant.</span>;
+    const diff = ((current - previous) / previous) * 100;
+    const isPositive = diff > 0;
+    const isNeutral = diff === 0;
+    const color = isPositive ? '#e74c3c' : (isNeutral ? '#888' : '#2ecc71'); // Positive diff in complaints is BAD (red), negative is GOOD (green)
+    const Icon = isPositive ? TrendingUp : TrendingDown;
+    
+    return (
+      <span style={{ color, fontSize: '0.8rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '4px' }}>
+        {!isNeutral && <Icon size={14} />}
+        {Math.abs(diff).toFixed(1)}% vs ant.
+      </span>
+    );
+  };
+
+  const renderDiffPositiveIsGood = (current, previous) => {
+    if (!previous || previous === 0) return <span style={{ color: '#888', fontSize: '0.75rem' }}>N/A vs ant.</span>;
+    const diff = ((current - previous) / previous) * 100;
+    const isPositive = diff > 0;
+    const color = isPositive ? '#2ecc71' : '#e74c3c'; 
+    const Icon = isPositive ? TrendingUp : TrendingDown;
+    return (
+      <span style={{ color, fontSize: '0.8rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '4px' }}>
+        <Icon size={14} /> {Math.abs(diff).toFixed(1)}% vs ant.
+      </span>
+    );
+  };
+
+  const pieData = Object.entries(currentStats.tiposCount).map(([name, value]) => ({ name, value })).sort((a,b) => b.value - a.value);
 
   if (loading) {
     return (
@@ -183,20 +323,6 @@ export default function SolicitudesDashboard({ onBack }) {
           .loader-container h3 { font-size: 1.6rem; font-weight: 700; }
           .loader-container p { color: #888; }
         `}</style>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="error-view glass-card">
-        <AlertCircle size={64} color="#e74c3c" />
-        <h2>Error al Conectar con REDCap</h2>
-        <p>No se pudo establecer la sincronización segura. Mensaje técnico: <code>{error}</code></p>
-        <div style={{ display: 'flex', gap: '15px' }}>
-          <button className="dashboard-btn" onClick={onBack}><ArrowLeft size={18} /> Volver</button>
-          <button className="dashboard-btn primary" onClick={fetchData}><RefreshCw size={18} /> Reintentar</button>
-        </div>
       </div>
     );
   }
@@ -254,7 +380,6 @@ export default function SolicitudesDashboard({ onBack }) {
                 <button 
                   onClick={() => setSidebarCollapsed(true)} 
                   style={{ background: 'rgba(0,0,0,0.05)', border: 'none', borderRadius: '50%', width: '28px', height: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#666' }}
-                  title="Ocultar panel de filtros"
                 >
                   <ChevronLeft size={16} />
                 </button>
@@ -295,92 +420,255 @@ export default function SolicitudesDashboard({ onBack }) {
                   {filtersList.servicios.map(s => <option key={s} value={s}>{s}</option>)}
                 </select>
               </div>
-
-              <div style={{ marginTop: 'auto', paddingTop: '20px', borderTop: '1px solid rgba(0,0,0,0.05)', fontSize: '0.75rem', color: '#888', textAlign: 'center' }}>
-                Mostrando {filteredData.length} registros
-              </div>
             </motion.aside>
           )}
         </AnimatePresence>
 
         <div className="portal-content" style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '24px' }}>
           
+          <div className="custom-tabs glass-card" style={{ display: 'flex', padding: '8px', borderRadius: '16px', gap: '8px' }}>
+            <button className={`tab-btn ${activeTab === 'generales' ? 'active' : ''}`} onClick={() => setActiveTab('generales')}>
+              <PieChart size={18} /> Estadísticas Generales
+            </button>
+            <button className={`tab-btn ${activeTab === 'tendencias' ? 'active' : ''}`} onClick={() => setActiveTab('tendencias')}>
+              <TrendingUp size={18} /> Líneas de Tendencia
+            </button>
+            <button className={`tab-btn ${activeTab === 'dimensiones' ? 'active' : ''}`} onClick={() => setActiveTab('dimensiones')}>
+              <AlertTriangle size={18} /> Reclamos por Dimensión
+            </button>
+            <button className={`tab-btn ${activeTab === 'servicios' ? 'active' : ''}`} onClick={() => setActiveTab('servicios')}>
+              <Users size={18} /> Reclamos por Servicio
+            </button>
+          </div>
+
           <div className="kpi-grid">
             <div className="kpi-card glass-card">
-              <div className="kpi-icon" style={{ background: 'rgba(52, 152, 219, 0.1)', color: '#3498db' }}><Users size={24} /></div>
+              <div className="kpi-icon" style={{ background: 'rgba(52, 152, 219, 0.1)', color: '#3498db' }}><MessageSquare size={24} /></div>
               <div className="kpi-info">
                 <h3>Total Solicitudes</h3>
-                <div className="kpi-value">{stats.total.toLocaleString('es-CL')}</div>
-                <div className="kpi-trend">En el periodo seleccionado</div>
+                <div className="kpi-value">{currentStats.total.toLocaleString('es-CL')}</div>
+                <div className="kpi-trend">{renderDiff(currentStats.total, previousPeriodStats.total)}</div>
               </div>
             </div>
             <div className="kpi-card glass-card">
-              <div className="kpi-icon" style={{ background: 'rgba(231, 76, 60, 0.1)', color: '#e74c3c' }}><Clock size={24} /></div>
+              <div className="kpi-icon" style={{ background: 'rgba(231, 76, 60, 0.1)', color: '#e74c3c' }}><AlertTriangle size={24} /></div>
               <div className="kpi-info">
-                <h3>Promedio Respuesta</h3>
-                <div className="kpi-value">{stats.avgDias} <span style={{ fontSize: '1rem', color: '#666' }}>días</span></div>
-                <div className="kpi-trend">Tiempo promedio de resolución</div>
+                <h3>Reclamos</h3>
+                <div className="kpi-value">{currentStats.tiposCount['RECLAMOS'] || 0}</div>
+                <div className="kpi-trend">{renderDiff(currentStats.tiposCount['RECLAMOS'] || 0, previousPeriodStats.tiposCount['RECLAMOS'] || 0)}</div>
               </div>
             </div>
             <div className="kpi-card glass-card">
               <div className="kpi-icon" style={{ background: 'rgba(46, 204, 113, 0.1)', color: '#2ecc71' }}><CheckCircle size={24} /></div>
               <div className="kpi-info">
-                <h3>Más Frecuente</h3>
-                <div className="kpi-value" style={{ fontSize: '1.4rem' }}>{stats.tiposData[0]?.name || 'N/A'}</div>
-                <div className="kpi-trend">{stats.tiposData[0]?.value || 0} casos registrados</div>
+                <h3>Felicitaciones</h3>
+                <div className="kpi-value">{currentStats.tiposCount['FELICITACIONES'] || 0}</div>
+                <div className="kpi-trend">{renderDiffPositiveIsGood(currentStats.tiposCount['FELICITACIONES'] || 0, previousPeriodStats.tiposCount['FELICITACIONES'] || 0)}</div>
+              </div>
+            </div>
+            <div className="kpi-card glass-card">
+              <div className="kpi-icon" style={{ background: 'rgba(241, 196, 15, 0.1)', color: '#f1c40f' }}><Lightbulb size={24} /></div>
+              <div className="kpi-info">
+                <h3>Sugerencias</h3>
+                <div className="kpi-value">{currentStats.tiposCount['SUGERENCIAS'] || 0}</div>
+                <div className="kpi-trend">{renderDiff(currentStats.tiposCount['SUGERENCIAS'] || 0, previousPeriodStats.tiposCount['SUGERENCIAS'] || 0)}</div>
               </div>
             </div>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
-            <div className="glass-card" style={{ padding: '24px' }}>
-              <h3 style={{ fontSize: '1.2rem', marginBottom: '20px' }}>Distribución por Tipo de Solicitud</h3>
-              <div style={{ height: '300px' }}>
+          {activeTab === 'generales' && (
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="tab-pane">
+              <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: '24px', marginBottom: '24px' }}>
+                <div className="glass-card" style={{ padding: '24px' }}>
+                  <h3 style={{ fontSize: '1.2rem', marginBottom: '20px' }}>Evolución de Solicitudes (Apiladas por Tipo)</h3>
+                  <div style={{ height: '350px' }}>
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={stackedBarData} margin={{ top: 20, right: 30, left: 0, bottom: 20 }}>
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.3} />
+                        <XAxis dataKey="name" tick={{ fontSize: 12, fill: '#666' }} dy={10} />
+                        <YAxis tick={{ fontSize: 12, fill: '#666' }} />
+                        <Tooltip content={<CustomTooltip />} />
+                        <Legend wrapperStyle={{ paddingTop: '20px' }} />
+                        {filtersList.tipos.map((tipo, idx) => (
+                          <Bar key={tipo} dataKey={tipo} stackId="a" fill={TIPO_COLORS[tipo] || COLORS[idx % COLORS.length]}>
+                            <LabelList dataKey={tipo} position="center" fill="#fff" style={{ fontWeight: 'bold', fontSize: '10px' }} formatter={(val) => val > 0 ? val : ''} />
+                          </Bar>
+                        ))}
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+
+                <div className="glass-card" style={{ padding: '24px', display: 'flex', flexDirection: 'column' }}>
+                  <h3 style={{ fontSize: '1.2rem', marginBottom: '10px', textAlign: 'center' }}>Distribución por Tipo</h3>
+                  <div style={{ flex: 1, position: 'relative' }}>
+                    <ResponsiveContainer width="100%" height="100%">
+                      <RechartsPieChart>
+                        <Pie data={pieData} cx="50%" cy="50%" innerRadius={70} outerRadius={120} paddingAngle={2} dataKey="value" stroke="none">
+                          {pieData.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={TIPO_COLORS[entry.name] || COLORS[index % COLORS.length]} />
+                          ))}
+                        </Pie>
+                        <Tooltip contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 30px rgba(0,0,0,0.1)' }} />
+                        <Legend />
+                      </RechartsPieChart>
+                    </ResponsiveContainer>
+                    <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', textAlign: 'center', pointerEvents: 'none', marginTop: '-15px' }}>
+                      <div style={{ fontSize: '0.8rem', color: '#888', fontWeight: 600, letterSpacing: '1px' }}>TOTAL</div>
+                      <div style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--text-dark)', lineHeight: 1 }}>{currentStats.total.toLocaleString('es-CL')}</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="glass-card" style={{ padding: '24px' }}>
+                <h3 style={{ fontSize: '1.2rem', marginBottom: '20px' }}><Lightbulb size={20} style={{ display: 'inline', verticalAlign: 'text-bottom', marginRight: '8px', color: '#f39c12' }}/> Principales Insights de Gestión</h3>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px' }}>
+                  <div style={{ background: 'rgba(255,255,255,0.5)', padding: '20px', borderRadius: '16px', border: '1px solid rgba(0,0,0,0.05)' }}>
+                    <div style={{ fontSize: '0.8rem', color: '#888', fontWeight: 700, marginBottom: '8px' }}>GESTIÓN DE RESPUESTAS</div>
+                    <div style={{ fontSize: '1.8rem', fontWeight: 800, color: '#3498db', marginBottom: '4px' }}>{currentStats.avgDias} días</div>
+                    <div style={{ fontSize: '0.85rem', color: '#666' }}>Promedio histórico de días de respuesta para solicitudes gestionadas.</div>
+                  </div>
+                  <div style={{ background: 'rgba(231,76,60,0.05)', padding: '20px', borderRadius: '16px', border: '1px solid rgba(231,76,60,0.1)' }}>
+                    <div style={{ fontSize: '0.8rem', color: '#c0392b', fontWeight: 700, marginBottom: '8px' }}>FUERA DEL PLAZO LEGAL {'>'} 15 DÍAS</div>
+                    <div style={{ fontSize: '1.8rem', fontWeight: 800, color: '#e74c3c', marginBottom: '4px' }}>{currentStats.countFueraPlazo} casos</div>
+                    <div style={{ fontSize: '0.85rem', color: '#666' }}>Solicitudes que excedieron el plazo legal de respuesta ({((currentStats.countFueraPlazo/currentStats.total)*100).toFixed(1)}%).</div>
+                  </div>
+                  <div style={{ background: 'rgba(243,156,18,0.05)', padding: '20px', borderRadius: '16px', border: '1px solid rgba(243,156,18,0.1)' }}>
+                    <div style={{ fontSize: '0.8rem', color: '#d35400', fontWeight: 700, marginBottom: '8px' }}>SIN FECHA DE RESPUESTA</div>
+                    <div style={{ fontSize: '1.8rem', fontWeight: 800, color: '#f39c12', marginBottom: '4px' }}>{currentStats.countUnanswered} casos</div>
+                    <div style={{ fontSize: '0.85rem', color: '#666' }}>Solicitudes actualmente en proceso o sin cierre registrado en el periodo.</div>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          )}
+
+          {activeTab === 'tendencias' && (
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="tab-pane glass-card" style={{ padding: '24px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+                <h3 style={{ fontSize: '1.2rem', margin: 0 }}>Línea de Tendencia Evolutiva</h3>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <span style={{ fontSize: '0.85rem', fontWeight: 600, color: '#666' }}>Filtrar serie:</span>
+                  <select className="filter-select" style={{ width: '200px', padding: '6px 12px' }} value={trendTipo} onChange={(e) => setTrendTipo(e.target.value)}>
+                    <option value="Todas">Todas las solicitudes</option>
+                    {filtersList.tipos.map(t => <option key={t} value={t}>{t}</option>)}
+                  </select>
+                </div>
+              </div>
+              
+              <div style={{ height: '450px' }}>
                 <ResponsiveContainer width="100%" height="100%">
-                  <RechartsPieChart>
-                    <Pie data={stats.tiposData} cx="50%" cy="50%" innerRadius={60} outerRadius={100} paddingAngle={5} dataKey="value">
-                      {stats.tiposData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                      ))}
-                    </Pie>
+                  <LineChart data={timelineChartData} margin={{ top: 30, right: 30, left: 0, bottom: 20 }}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.3} />
+                    <XAxis dataKey="name" tick={{ fontSize: 12, fill: '#666' }} dy={10} />
+                    <YAxis tick={{ fontSize: 12, fill: '#666' }} />
                     <Tooltip contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 30px rgba(0,0,0,0.1)' }} />
                     <Legend />
-                  </RechartsPieChart>
+                    <Line name={trendTipo === 'Todas' ? 'Total Solicitudes' : trendTipo} type="monotone" dataKey="Value" stroke={trendTipo === 'Todas' ? '#3498db' : TIPO_COLORS[trendTipo]} strokeWidth={4} dot={{ r: 5, fill: trendTipo === 'Todas' ? '#3498db' : TIPO_COLORS[trendTipo], strokeWidth: 2 }} activeDot={{ r: 8 }}>
+                      <LabelList dataKey="Value" position="top" style={{ fill: '#2c3e50', fontWeight: 800, fontSize: '12px' }} dy={-10} />
+                    </Line>
+                  </LineChart>
                 </ResponsiveContainer>
               </div>
-            </div>
+            </motion.div>
+          )}
 
-            <div className="glass-card" style={{ padding: '24px' }}>
-              <h3 style={{ fontSize: '1.2rem', marginBottom: '20px' }}>Top 10 Servicios más Solicitados</h3>
-              <div style={{ height: '300px' }}>
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={stats.serviciosData} layout="vertical" margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
-                    <CartesianGrid strokeDasharray="3 3" horizontal={false} opacity={0.3} />
-                    <XAxis type="number" />
-                    <YAxis dataKey="name" type="category" width={120} tick={{ fontSize: 11 }} />
-                    <Tooltip cursor={{ fill: 'rgba(0,0,0,0.05)' }} contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 30px rgba(0,0,0,0.1)' }} />
-                    <Bar dataKey="value" fill="var(--primary-accent)" radius={[0, 4, 4, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
+          {activeTab === 'dimensiones' && (
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="tab-pane">
+              <h2 style={{ fontSize: '1.4rem', fontWeight: 800, marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '10px' }}><AlertTriangle color="#e74c3c" /> Análisis Exclusivo de Reclamos por Dimensión</h2>
+              <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: '24px' }}>
+                <div className="glass-card" style={{ padding: '24px', overflowX: 'auto' }}>
+                  <h3 style={{ fontSize: '1.1rem', marginBottom: '16px' }}>Matriz de Reclamos por Mes</h3>
+                  <table className="custom-table">
+                    <thead>
+                      <tr>
+                        <th style={{ textAlign: 'left' }}>Dimensión</th>
+                        {monthsList.map(m => <th key={m.key}>{m.label}</th>)}
+                        <th>TOTAL</th>
+                        <th>Peso %</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {dimensionTableData.map(row => (
+                        <tr key={row.name}>
+                          <td style={{ textAlign: 'left', fontWeight: 600 }}>{row.name}</td>
+                          {monthsList.map(m => <td key={m.key}>{row[m.key]}</td>)}
+                          <td style={{ fontWeight: 800 }}>{row.total}</td>
+                          <td style={{ fontWeight: 800, color: 'var(--primary-accent)' }}>{((row.total / currentStats.tiposCount['RECLAMOS']) * 100).toFixed(1)}%</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                <div className="glass-card" style={{ padding: '24px' }}>
+                  <h3 style={{ fontSize: '1.1rem', marginBottom: '16px' }}>Top 10 Dimensiones Más Reclamadas</h3>
+                  <div style={{ height: '500px' }}>
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={dimensionBarData} layout="vertical" margin={{ top: 5, right: 40, left: 10, bottom: 5 }}>
+                        <CartesianGrid strokeDasharray="3 3" horizontal={false} opacity={0.3} />
+                        <XAxis type="number" hide />
+                        <YAxis dataKey="name" type="category" width={180} tick={{ fontSize: 10, fill: '#555' }} />
+                        <Tooltip cursor={{ fill: 'rgba(0,0,0,0.05)' }} contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 30px rgba(0,0,0,0.1)' }} />
+                        <Bar dataKey="value" fill="#e74c3c" radius={[0, 4, 4, 0]}>
+                          <LabelList dataKey="value" position="right" style={{ fill: '#e74c3c', fontWeight: 800, fontSize: '12px' }} />
+                        </Bar>
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
               </div>
-            </div>
-          </div>
+            </motion.div>
+          )}
 
-          <div className="glass-card" style={{ padding: '24px' }}>
-            <h3 style={{ fontSize: '1.2rem', marginBottom: '20px' }}>Evolución de Solicitudes en el Tiempo</h3>
-            <div style={{ height: '350px' }}>
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={stats.timelineData} margin={{ top: 20, right: 30, left: 0, bottom: 20 }}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.3} />
-                  <XAxis dataKey="name" tick={{ fontSize: 12, fill: '#666' }} dy={10} />
-                  <YAxis tick={{ fontSize: 12, fill: '#666' }} />
-                  <Tooltip contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 30px rgba(0,0,0,0.1)' }} />
-                  <Legend />
-                  <Line type="monotone" dataKey="Total" stroke="#3498db" strokeWidth={3} dot={{ r: 4, fill: '#3498db', strokeWidth: 2 }} activeDot={{ r: 6 }} />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
+          {activeTab === 'servicios' && (
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="tab-pane">
+              <h2 style={{ fontSize: '1.4rem', fontWeight: 800, marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '10px' }}><Users color="#3498db" /> Análisis Exclusivo de Reclamos por Servicio</h2>
+              <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: '24px' }}>
+                <div className="glass-card" style={{ padding: '24px', overflowX: 'auto' }}>
+                  <h3 style={{ fontSize: '1.1rem', marginBottom: '16px' }}>Matriz de Reclamos por Servicio</h3>
+                  <table className="custom-table">
+                    <thead>
+                      <tr>
+                        <th style={{ textAlign: 'left' }}>Servicio Involucrado</th>
+                        {monthsList.map(m => <th key={m.key}>{m.label}</th>)}
+                        <th>TOTAL</th>
+                        <th>Peso %</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {servicioTableData.map(row => (
+                        <tr key={row.name}>
+                          <td style={{ textAlign: 'left', fontWeight: 600 }}>{row.name}</td>
+                          {monthsList.map(m => <td key={m.key}>{row[m.key]}</td>)}
+                          <td style={{ fontWeight: 800 }}>{row.total}</td>
+                          <td style={{ fontWeight: 800, color: 'var(--primary-accent)' }}>{((row.total / currentStats.tiposCount['RECLAMOS']) * 100).toFixed(1)}%</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                <div className="glass-card" style={{ padding: '24px' }}>
+                  <h3 style={{ fontSize: '1.1rem', marginBottom: '16px' }}>Top 10 Servicios Más Reclamados</h3>
+                  <div style={{ height: '500px' }}>
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={servicioBarData} layout="vertical" margin={{ top: 5, right: 40, left: 10, bottom: 5 }}>
+                        <CartesianGrid strokeDasharray="3 3" horizontal={false} opacity={0.3} />
+                        <XAxis type="number" hide />
+                        <YAxis dataKey="name" type="category" width={180} tick={{ fontSize: 10, fill: '#555' }} />
+                        <Tooltip cursor={{ fill: 'rgba(0,0,0,0.05)' }} contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 30px rgba(0,0,0,0.1)' }} />
+                        <Bar dataKey="value" fill="#3498db" radius={[0, 4, 4, 0]}>
+                          <LabelList dataKey="value" position="right" style={{ fill: '#3498db', fontWeight: 800, fontSize: '12px' }} />
+                        </Bar>
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          )}
 
         </div>
       </div>
@@ -393,12 +681,11 @@ export default function SolicitudesDashboard({ onBack }) {
         .api-badge { background: rgba(52, 152, 219, 0.15); color: #3498db; }
         .update-badge { background: rgba(243, 156, 18, 0.15); color: #f39c12; }
         
-        .kpi-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
-        .kpi-card { padding: 24px; display: flex; align-items: center; gap: 20px; border-radius: 20px; }
-        .kpi-icon { width: 60px; height: 60px; border-radius: 16px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-        .kpi-info h3 { font-size: 0.85rem; color: #888; margin: 0 0 4px 0; text-transform: uppercase; letter-spacing: 0.5px; }
-        .kpi-value { font-size: 2rem; font-weight: 800; color: var(--text-dark); margin-bottom: 4px; line-height: 1.1; }
-        .kpi-trend { font-size: 0.75rem; color: #666; font-weight: 600; }
+        .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; }
+        .kpi-card { padding: 20px; display: flex; align-items: center; gap: 16px; border-radius: 20px; }
+        .kpi-icon { width: 50px; height: 50px; border-radius: 14px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+        .kpi-info h3 { font-size: 0.8rem; color: #888; margin: 0 0 4px 0; text-transform: uppercase; letter-spacing: 0.5px; }
+        .kpi-value { font-size: 1.8rem; font-weight: 800; color: var(--text-dark); margin-bottom: 4px; line-height: 1.1; }
         
         .filter-group { display: flex; flexDirection: column; gap: 8px; }
         .filter-group label { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; color: #888; letter-spacing: 0.5px; }
@@ -408,12 +695,19 @@ export default function SolicitudesDashboard({ onBack }) {
         .preset-btn.active { background: var(--primary-accent); color: white; border-color: var(--primary-accent); }
         .preset-btn:hover:not(.active) { background: rgba(0,0,0,0.02); }
         
+        .custom-tabs { background: rgba(255,255,255,0.7); backdrop-filter: blur(10px); }
+        .tab-btn { flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px; padding: 12px; border: none; background: transparent; border-radius: 12px; font-weight: 700; font-size: 0.9rem; color: #666; cursor: pointer; transition: all 0.2s; }
+        .tab-btn:hover { background: rgba(0,0,0,0.03); }
+        .tab-btn.active { background: white; color: var(--primary-accent); box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+
+        .custom-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+        .custom-table th { background: rgba(0,0,0,0.02); padding: 12px 8px; font-weight: 700; color: #555; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.5px; border-bottom: 2px solid rgba(0,0,0,0.05); text-align: center; }
+        .custom-table td { padding: 12px 8px; border-bottom: 1px solid rgba(0,0,0,0.05); text-align: center; color: #444; }
+        .custom-table tr:hover td { background: rgba(0,0,0,0.01); }
+
         .error-view { max-width: 650px; margin: 60px auto; padding: 40px; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 24px; border-radius: 30px; box-shadow: 0 30px 70px rgba(0,0,0,0.15); }
-        .error-view h2 { font-size: 2rem; font-weight: 800; color: #2c3e50; }
-        .error-view p { color: #555; line-height: 1.6; }
         .dashboard-btn { display: flex; align-items: center; gap: 10px; padding: 12px 24px; border: 1px solid #ddd; background: white; border-radius: 14px; font-weight: 700; cursor: pointer; transition: all 0.2s; }
         .dashboard-btn.primary { background: var(--primary-accent); color: white; border-color: var(--primary-accent); }
-        .dashboard-btn:hover { transform: translateY(-2px); box-shadow: 0 10px 20px rgba(0,0,0,0.05); }
 
         @keyframes pulse { 0% { transform: scale(0.95); opacity: 0.8; } 50% { transform: scale(1.1); opacity: 1; } 100% { transform: scale(0.95); opacity: 0.8; } }
       `}</style>
