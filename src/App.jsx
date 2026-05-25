@@ -34,6 +34,8 @@ import TacDashboard from './components/TacDashboard';
 import EndoscopyDashboard from './components/EndoscopyDashboard';
 import ClosedAttentionDashboard from './components/ClosedAttentionDashboard';
 import PharmacyDashboard from './components/PharmacyDashboard';
+import SigcomDashboard from './components/SigcomDashboard';
+import SolicitudesDashboard from './components/SolicitudesDashboard';
 import './App.css';
 
 // HD Images
@@ -44,6 +46,7 @@ const imgStats = "/stats_abstract.png";
 const imgProduction = "/production_stats_hd.png";
 
 const menuStructure = [
+  { id: 'solicitudes_ciudadanas', icon: <User size={22} />, label: 'Solicitudes Ciudadanas' },
   { 
     id: 'produccion_general', 
     icon: <LayoutDashboard size={22} />, 
@@ -329,7 +332,20 @@ const searchIndex = [
     title: 'Resumen Mensual (REM) - Endoscopías',
     path: 'Especialidades ➔ Procedimientos Endoscópicos ➔ REM',
     desc: 'Estadísticas agrupadas REM: Beneficiarios (FONASA), desglose etario y de género para endoscopías.',
-    action: { view: 'endoscopia', tab: 'rem' }
+  },
+  {
+    keys: ['solicitudes', 'ciudadanas', 'oirs', 'reclamos', 'felicitaciones', 'sugerencias', 'transparencia', 'ley de transparencia', 'participacion', 'participación'],
+    title: 'Solicitudes Ciudadanas (OIRS)',
+    path: 'Panel Principal ➔ Solicitudes Ciudadanas',
+    desc: 'Monitor dinámico de la Ley de Transparencia, reclamos, felicitaciones y tiempos de respuesta.',
+    action: { view: 'solicitudes_ciudadanas' }
+  },
+  {
+    keys: ['sigcom', 'costeo', 'grd', 'analisis proyectivo', 'finanzas', 'costos', 'banda minsal', 'produccion valorizada'],
+    title: 'Análisis Proyectivo SIGCOM',
+    path: 'Costeo GRD ➔ SIGCOM',
+    desc: 'Costeo por área productiva y análisis financiero institucional comparativo con Banda MINSAL.',
+    action: { view: 'sigcom' }
   }
 ];
 
@@ -784,6 +800,23 @@ function App() {
                 <PharmacyDashboard 
                   onBack={() => navigateToView('procedimientos_especialidades')} 
                 />
+              )}
+              {activeView === 'costeo' && (
+                <ProductionPortal 
+                  title="Costeo GRD y Eficiencia"
+                  onBack={() => navigateToView('home')}
+                  onNavigate={(id) => navigateToView(id)}
+                  cases={[
+                    { id: 'sigcom', title: 'Análisis Proyectivo SIGCOM', icon: <Activity size={24} />, image: imgStats, desc: 'Costeo por área productiva y análisis financiero institucional vs Banda MINSAL.', color: '#e74c3c' },
+                    { id: 'visor_grd', title: 'Visor Analítico GRD (Próximamente)', icon: <TrendingUp size={24} />, image: imgProduction, desc: 'Análisis de Casuística Hospitalaria, Peso GRD, IMAE e impacto por servicio clínico.', color: '#3498db' }
+                  ]}
+                />
+              )}
+              {activeView === 'sigcom' && (
+                <SigcomDashboard />
+              )}
+              {activeView === 'solicitudes_ciudadanas' && (
+                <SolicitudesDashboard onBack={() => navigateToView('home')} />
               )}
             </div>
           )}

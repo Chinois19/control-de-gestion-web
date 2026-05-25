@@ -36,7 +36,7 @@ function isDateIn2025_2026(dateStr) {
 
 // Helper to filter records array to only include years 2025 and 2026
 function filterRecordsForYears(records, name) {
-  const dateFields = ['fecha_de_atenci_n', 'fecha_ingreso', 'fecha_egreso', 'fecha'];
+  const dateFields = ['fecha_de_atenci_n', 'fecha_ingreso', 'fecha_egreso', 'fecha', 'fechadocumento'];
   
   const filtered = records.filter(r => {
     // If no fields, keep by default so we don't lose data
@@ -208,6 +208,13 @@ async function run() {
     "admin",
     "Controldegestion2025",
     "cuadratura_cached.json"
+  );
+
+  // 8. Fetch Solicitudes Ciudadanas
+  await fetchAndCache(
+    "Solicitudes Ciudadanas",
+    "F03C4EE0F08CD8A846F1621332F966CD",
+    "solicitudes_cached.json"
   );
 
   console.log("REDCap & PythonAnywhere Cache synchronization complete.");
