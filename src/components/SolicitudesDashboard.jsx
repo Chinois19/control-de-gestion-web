@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
-  ArrowLeft, Users, Calendar, CheckCircle, AlertCircle, TrendingUp, RefreshCw, Filter, ChevronLeft, ChevronRight, BarChart2, PieChart, Clock, MessageSquare, AlertTriangle, Lightbulb, TrendingDown
+  ArrowLeft, Users, Calendar, CheckCircle, AlertCircle, TrendingUp, RefreshCw, Filter, ChevronLeft, ChevronRight, BarChart2, PieChart, Clock, MessageSquare, AlertTriangle, Lightbulb, TrendingDown, Scale, ShieldAlert, Award
 } from 'lucide-react';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
-  PieChart as RechartsPieChart, Pie, Cell, LineChart, Line, LabelList, StackedBarChart
+  PieChart as RechartsPieChart, Pie, Cell, LineChart, Line, LabelList
 } from 'recharts';
 
 const COLORS = ['#e74c3c', '#2ecc71', '#3498db', '#f1c40f', '#9b59b6', '#1abc9c', '#e67e22', '#34495e'];
@@ -15,6 +15,35 @@ const TIPO_COLORS = {
   'SUGERENCIAS': '#f1c40f',
   'SOLICITUDES': '#3498db',
   'CONSULTAS': '#9b59b6'
+};
+
+const GESTION_COLORS = {
+  'Respuesta dentro del plazo legal': '#2ecc71',
+  'Respuesta fuera del plazo legal': '#e74c3c',
+  'Sin respuesta, dentro del plazo legal': '#3498db',
+  'Sin respuesta, fuera del plazo legal': '#f1c40f'
+};
+
+// Función auxiliar para contar días hábiles chilenos (Lunes a Viernes)
+const getChileanWorkingDays = (startDateStr, endDateStr) => {
+  if (!startDateStr) return 0;
+  const start = new Date(startDateStr);
+  const end = endDateStr ? new Date(endDateStr) : new Date('2026-05-25'); // usar fecha de hoy en el contexto local (May 25, 2026)
+  if (isNaN(start.getTime()) || isNaN(end.getTime())) return 0;
+  
+  let count = 0;
+  let cur = new Date(start);
+  cur.setHours(0,0,0,0);
+  end.setHours(0,0,0,0);
+  
+  while (cur < end) {
+    cur.setDate(cur.getDate() + 1);
+    const day = cur.getDay();
+    if (day !== 0 && day !== 6) { // Excluir Sábados (6) y Domingos (0)
+      count++;
+    }
+  }
+  return count;
 };
 
 const CustomTooltip = ({ active, payload, label }) => {
@@ -115,6 +144,27 @@ export default function SolicitudesDashboard({ onBack }) {
       }
 
       const tipo = record.tipo_solicitud?.toUpperCase() || 'N/A';
+      const respondida = !!record.fecharespuesta;
+      const diasHabiles = getChileanWorkingDays(record.fechadocumento, record.fecharespuesta);
+
+      // Determinación de la Categoría de Plazo de Gestión OIRS Chile (15 días hábiles)
+      let plazoCategory = 'N/A';
+      if (tipo === 'RECLAMOS') {
+        if (respondida) {
+          if (diasHabiles <= 15) {
+            plazoCategory = 'Respuesta dentro del plazo legal';
+          } else {
+            plazoCategory = 'Respuesta fuera del plazo legal';
+          }
+        } else {
+          const diasTranscurridos = getChileanWorkingDays(record.fechadocumento, null);
+          if (diasTranscurridos <= 15) {
+            plazoCategory = 'Sin respuesta, dentro del plazo legal';
+          } else {
+            plazoCategory = 'Sin respuesta, fuera del plazo legal';
+          }
+        }
+      }
 
       return {
         ...record,
@@ -128,9 +178,9 @@ export default function SolicitudesDashboard({ onBack }) {
         tipo: tipo,
         dimension: record.reclamos || 'Sin Especificar',
         servicio: record.servicio_dpto || 'Sin Especificar',
-        dias: parseInt(record.diasderespuesta) || 0,
-        respondida: !!record.fecharespuesta,
-        fueraPlazo: (parseInt(record.diasderespuesta) || 0) > 15
+        dias: parseInt(record.diasderespuesta) || diasHabiles || 0,
+        respondida,
+        plazoCategory
       };
     });
   }, [rawData]);
@@ -141,7 +191,6 @@ export default function SolicitudesDashboard({ onBack }) {
     return { tipos, servicios };
   }, [processedData]);
 
-  // Funciones de cálculo de periodo previo para % de diferencia
   const calculateStats = (dataArray) => {
     const total = dataArray.length;
     let sumDias = 0;
@@ -158,7 +207,8 @@ export default function SolicitudesDashboard({ onBack }) {
       } else {
         countUnanswered++;
       }
-      if (d.fueraPlazo) {
+      // Considerar fuera de plazo general (dias > 15 hábiles)
+      if (d.dias > 15) {
         countFueraPlazo++;
       }
       tiposCount[d.tipo] = (tiposCount[d.tipo] || 0) + 1;
@@ -169,11 +219,15 @@ export default function SolicitudesDashboard({ onBack }) {
     return { total, avgDias, countUnanswered, countFueraPlazo, tiposCount, countRespondidas };
   };
 
-  const { filteredData, previousPeriodStats, currentStats, timelineChartData, stackedBarData, dimensionTableData, dimensionBarData, servicioTableData, servicioBarData, monthsList } = useMemo(() => {
+  const { 
+    filteredData, previousPeriodStats, currentStats, timelineChartData, stackedBarData, 
+    dimensionTableData, dimensionBarData, servicioTableData, servicioBarData, monthsList,
+    reclamosGestionData, gestionKPIs, serviceRanking, dimensionRanking
+  } = useMemo(() => {
     
-    // Current period
+    // Periodo Actual
     const startEpoch = new Date(startDate).getTime();
-    const endEpoch = new Date(endDate).getTime() + 86400000; // include end day
+    const endEpoch = new Date(endDate).getTime() + 86400000;
     
     const currentData = processedData.filter(item => {
       if (item.epochDate === 0) return false;
@@ -183,7 +237,7 @@ export default function SolicitudesDashboard({ onBack }) {
       return true;
     });
 
-    // Previous period (same length)
+    // Periodo Anterior
     const periodLength = endEpoch - startEpoch;
     const prevStartEpoch = startEpoch - periodLength;
     const prevEndEpoch = startEpoch;
@@ -199,7 +253,7 @@ export default function SolicitudesDashboard({ onBack }) {
     const cStats = calculateStats(currentData);
     const pStats = calculateStats(prevData);
 
-    // Timeline & Stacked Bar Data
+    // Eje de meses
     const monthlyMap = {};
     const monthsSet = new Set();
     
@@ -216,7 +270,6 @@ export default function SolicitudesDashboard({ onBack }) {
     const sortedKeys = Array.from(monthsSet).sort();
     const timelineData = sortedKeys.map(key => monthlyMap[key]);
     
-    // For specific trend filter
     const trendFiltered = timelineData.map(month => {
       return {
         ...month,
@@ -224,8 +277,10 @@ export default function SolicitudesDashboard({ onBack }) {
       }
     });
 
-    // Dimension Data (ONLY RECLAMOS)
+    // Filtro específico para RECLAMOS en Matriz y Top 10
     const reclamosData = currentData.filter(d => d.tipo === 'RECLAMOS');
+    
+    // Dimensiones Reclamos
     const dimMap = {};
     const dimTotalCount = {};
     reclamosData.forEach(d => {
@@ -234,7 +289,6 @@ export default function SolicitudesDashboard({ onBack }) {
       dimMap[dim][d.yearMonthKey] = (dimMap[dim][d.yearMonthKey] || 0) + 1;
       dimTotalCount[dim] = (dimTotalCount[dim] || 0) + 1;
     });
-    
     const dimBar = Object.entries(dimTotalCount).map(([name, value]) => ({ name, value })).sort((a,b) => b.value - a.value).slice(0, 10);
     const dimTable = Object.entries(dimTotalCount).map(([name, total]) => {
       const row = { name, total };
@@ -242,7 +296,7 @@ export default function SolicitudesDashboard({ onBack }) {
       return row;
     }).sort((a,b) => b.total - a.total);
 
-    // Servicio Data (ONLY RECLAMOS)
+    // Servicios Reclamos
     const servMap = {};
     const servTotalCount = {};
     reclamosData.forEach(d => {
@@ -251,7 +305,6 @@ export default function SolicitudesDashboard({ onBack }) {
       servMap[serv][d.yearMonthKey] = (servMap[serv][d.yearMonthKey] || 0) + 1;
       servTotalCount[serv] = (servTotalCount[serv] || 0) + 1;
     });
-    
     const servBar = Object.entries(servTotalCount).map(([name, value]) => ({ name, value })).sort((a,b) => b.value - a.value).slice(0, 10);
     const servTable = Object.entries(servTotalCount).map(([name, total]) => {
       const row = { name, total };
@@ -265,6 +318,58 @@ export default function SolicitudesDashboard({ onBack }) {
       return { key: k, label: `${months[parseInt(parts[1])-1]} ${parts[0]}` };
     });
 
+    // ----------------------------------------------------
+    // PROCESAMIENTO GESTIÓN DE PLAZOS (NUEVA PESTAÑA)
+    // ----------------------------------------------------
+    const gKPIs = {
+      'Respuesta dentro del plazo legal': 0,
+      'Respuesta fuera del plazo legal': 0,
+      'Sin respuesta, dentro del plazo legal': 0,
+      'Sin respuesta, fuera del plazo legal': 0,
+      totalReclamos: reclamosData.length
+    };
+
+    const serviceGestObj = {};
+    const dimGestObj = {};
+
+    reclamosData.forEach(r => {
+      const cat = r.plazoCategory;
+      if (gKPIs[cat] !== undefined) {
+        gKPIs[cat]++;
+      }
+
+      // Por Servicio
+      const sName = r.servicio;
+      if (!serviceGestObj[sName]) {
+        serviceGestObj[sName] = { name: sName, total: 0, 'Respuesta dentro del plazo legal': 0, 'Respuesta fuera del plazo legal': 0, 'Sin respuesta, dentro del plazo legal': 0, 'Sin respuesta, fuera del plazo legal': 0 };
+      }
+      serviceGestObj[sName].total++;
+      if (serviceGestObj[sName][cat] !== undefined) {
+        serviceGestObj[sName][cat]++;
+      }
+
+      // Por Tipo de Reclamo (Dimensión)
+      const dName = r.dimension;
+      if (!dimGestObj[dName]) {
+        dimGestObj[dName] = { name: dName, total: 0, 'Respuesta dentro del plazo legal': 0, 'Respuesta fuera del plazo legal': 0, 'Sin respuesta, dentro del plazo legal': 0, 'Sin respuesta, fuera del plazo legal': 0 };
+      }
+      dimGestObj[dName].total++;
+      if (dimGestObj[dName][cat] !== undefined) {
+        dimGestObj[dName][cat]++;
+      }
+    });
+
+    // Convertir a arreglos para gráficos y tablas
+    const servRank = Object.values(serviceGestObj).map(s => {
+      const cumplimiento = s.total > 0 ? (((s['Respuesta dentro del plazo legal'] + s['Sin respuesta, dentro del plazo legal']) / s.total) * 100).toFixed(1) : 0;
+      return { ...s, complianceRate: parseFloat(cumplimiento) };
+    }).sort((a, b) => b.complianceRate - a.complianceRate);
+
+    const dimRank = Object.values(dimGestObj).map(d => {
+      const cumplimiento = d.total > 0 ? (((d['Respuesta dentro del plazo legal'] + d['Sin respuesta, dentro del plazo legal']) / d.total) * 100).toFixed(1) : 0;
+      return { ...d, complianceRate: parseFloat(cumplimiento) };
+    }).sort((a, b) => b.complianceRate - a.complianceRate);
+
     return {
       filteredData: currentData,
       previousPeriodStats: pStats,
@@ -275,7 +380,10 @@ export default function SolicitudesDashboard({ onBack }) {
       dimensionBarData: dimBar,
       servicioTableData: servTable,
       servicioBarData: servBar,
-      monthsList: mList
+      monthsList: mList,
+      gestionKPIs: gKPIs,
+      serviceRanking: servRank,
+      dimensionRanking: dimRank
     };
   }, [processedData, startDate, endDate, selectedTipo, selectedServicio, trendTipo]);
 
@@ -284,7 +392,7 @@ export default function SolicitudesDashboard({ onBack }) {
     const diff = ((current - previous) / previous) * 100;
     const isPositive = diff > 0;
     const isNeutral = diff === 0;
-    const color = isPositive ? '#e74c3c' : (isNeutral ? '#888' : '#2ecc71'); // Positive diff in complaints is BAD (red), negative is GOOD (green)
+    const color = isPositive ? '#e74c3c' : (isNeutral ? '#888' : '#2ecc71'); // Un aumento en reclamos es malo (rojo)
     const Icon = isPositive ? TrendingUp : TrendingDown;
     
     return (
@@ -426,12 +534,15 @@ export default function SolicitudesDashboard({ onBack }) {
 
         <div className="portal-content" style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '24px' }}>
           
-          <div className="custom-tabs glass-card" style={{ display: 'flex', padding: '8px', borderRadius: '16px', gap: '8px' }}>
+          <div className="custom-tabs glass-card" style={{ display: 'flex', padding: '8px', borderRadius: '16px', gap: '8px', overflowX: 'auto' }}>
             <button className={`tab-btn ${activeTab === 'generales' ? 'active' : ''}`} onClick={() => setActiveTab('generales')}>
               <PieChart size={18} /> Estadísticas Generales
             </button>
             <button className={`tab-btn ${activeTab === 'tendencias' ? 'active' : ''}`} onClick={() => setActiveTab('tendencias')}>
               <TrendingUp size={18} /> Líneas de Tendencia
+            </button>
+            <button className={`tab-btn ${activeTab === 'gestion' ? 'active' : ''}`} onClick={() => setActiveTab('gestion')}>
+              <Scale size={18} /> Gestión de Reclamos
             </button>
             <button className={`tab-btn ${activeTab === 'dimensiones' ? 'active' : ''}`} onClick={() => setActiveTab('dimensiones')}>
               <AlertTriangle size={18} /> Reclamos por Dimensión
@@ -527,7 +638,7 @@ export default function SolicitudesDashboard({ onBack }) {
                   <div style={{ background: 'rgba(255,255,255,0.5)', padding: '20px', borderRadius: '16px', border: '1px solid rgba(0,0,0,0.05)' }}>
                     <div style={{ fontSize: '0.8rem', color: '#888', fontWeight: 700, marginBottom: '8px' }}>GESTIÓN DE RESPUESTAS</div>
                     <div style={{ fontSize: '1.8rem', fontWeight: 800, color: '#3498db', marginBottom: '4px' }}>{currentStats.avgDias} días</div>
-                    <div style={{ fontSize: '0.85rem', color: '#666' }}>Promedio histórico de días de respuesta para solicitudes gestionadas.</div>
+                    <div style={{ fontSize: '0.85rem', color: '#666' }}>Promedio de días hábiles de resolución para solicitudes del periodo.</div>
                   </div>
                   <div style={{ background: 'rgba(231,76,60,0.05)', padding: '20px', borderRadius: '16px', border: '1px solid rgba(231,76,60,0.1)' }}>
                     <div style={{ fontSize: '0.8rem', color: '#c0392b', fontWeight: 700, marginBottom: '8px' }}>FUERA DEL PLAZO LEGAL {'>'} 15 DÍAS</div>
@@ -570,6 +681,140 @@ export default function SolicitudesDashboard({ onBack }) {
                     </Line>
                   </LineChart>
                 </ResponsiveContainer>
+              </div>
+            </motion.div>
+          )}
+
+          {activeTab === 'gestion' && (
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="tab-pane" style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+              <div className="glass-card" style={{ padding: '24px' }}>
+                <h2 style={{ fontSize: '1.4rem', fontWeight: 800, marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '10px' }}><Scale color="var(--primary-accent)" /> Control de Plazos y Cumplimiento Legal (15 Días Hábiles)</h2>
+                
+                {/* Indicadores de Gestión OIRS específicos */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginBottom: '24px' }}>
+                  <div style={{ background: 'rgba(46, 204, 113, 0.08)', border: '1px solid rgba(46,204,113,0.15)', padding: '16px', borderRadius: '16px' }}>
+                    <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#27ae60', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Respuesta en Plazo</div>
+                    <div style={{ fontSize: '1.8rem', fontWeight: 800, color: '#2ecc71', margin: '4px 0' }}>{gestionKPIs['Respuesta dentro del plazo legal']} <span style={{ fontSize: '0.85rem', fontWeight: 600, color: '#555' }}>casos</span></div>
+                    <div style={{ fontSize: '0.8rem', color: '#666' }}>{(((gestionKPIs['Respuesta dentro del plazo legal'] || 0) / (gestionKPIs.totalReclamos || 1)) * 100).toFixed(1)}% del total reclamos.</div>
+                  </div>
+                  <div style={{ background: 'rgba(231, 76, 60, 0.08)', border: '1px solid rgba(231,76,60,0.15)', padding: '16px', borderRadius: '16px' }}>
+                    <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#c0392b', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Respuesta fuera de Plazo</div>
+                    <div style={{ fontSize: '1.8rem', fontWeight: 800, color: '#e74c3c', margin: '4px 0' }}>{gestionKPIs['Respuesta fuera del plazo legal']} <span style={{ fontSize: '0.85rem', fontWeight: 600, color: '#555' }}>casos</span></div>
+                    <div style={{ fontSize: '0.8rem', color: '#666' }}>{(((gestionKPIs['Respuesta fuera del plazo legal'] || 0) / (gestionKPIs.totalReclamos || 1)) * 100).toFixed(1)}% del total reclamos.</div>
+                  </div>
+                  <div style={{ background: 'rgba(52, 152, 219, 0.08)', border: '1px solid rgba(52,152,219,0.15)', padding: '16px', borderRadius: '16px' }}>
+                    <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#2980b9', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Pte. dentro de Plazo</div>
+                    <div style={{ fontSize: '1.8rem', fontWeight: 800, color: '#3498db', margin: '4px 0' }}>{gestionKPIs['Sin respuesta, dentro del plazo legal']} <span style={{ fontSize: '0.85rem', fontWeight: 600, color: '#555' }}>casos</span></div>
+                    <div style={{ fontSize: '0.8rem', color: '#666' }}>{(((gestionKPIs['Sin respuesta, dentro del plazo legal'] || 0) / (gestionKPIs.totalReclamos || 1)) * 100).toFixed(1)}% del total reclamos.</div>
+                  </div>
+                  <div style={{ background: 'rgba(241, 196, 15, 0.08)', border: '1px solid rgba(241,196,15,0.15)', padding: '16px', borderRadius: '16px' }}>
+                    <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#d35400', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Pte. fuera de Plazo</div>
+                    <div style={{ fontSize: '1.8rem', fontWeight: 800, color: '#f1c40f', margin: '4px 0' }}>{gestionKPIs['Sin respuesta, fuera del plazo legal']} <span style={{ fontSize: '0.85rem', fontWeight: 600, color: '#555' }}>casos</span></div>
+                    <div style={{ fontSize: '0.8rem', color: '#666' }}>{(((gestionKPIs['Sin respuesta, fuera del plazo legal'] || 0) / (gestionKPIs.totalReclamos || 1)) * 100).toFixed(1)}% del total reclamos.</div>
+                  </div>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: '24px' }}>
+                  <div style={{ height: '400px' }}>
+                    <h3 style={{ fontSize: '1.1rem', marginBottom: '16px', fontWeight: 700 }}>Distribución de Cumplimiento por Servicio</h3>
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={serviceRanking.slice(0,8)} margin={{ top: 20, right: 30, left: 0, bottom: 20 }}>
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.3} />
+                        <XAxis dataKey="name" tick={{ fontSize: 10, fill: '#666' }} />
+                        <YAxis tick={{ fontSize: 11 }} />
+                        <Tooltip />
+                        <Legend />
+                        <Bar dataKey="Respuesta dentro del plazo legal" stackId="a" fill={GESTION_COLORS['Respuesta dentro del plazo legal']}>
+                          <LabelList dataKey="Respuesta dentro del plazo legal" position="center" fill="#fff" style={{ fontWeight: 'bold', fontSize: '9px' }} formatter={(val) => val > 0 ? val : ''} />
+                        </Bar>
+                        <Bar dataKey="Sin respuesta, dentro del plazo legal" stackId="a" fill={GESTION_COLORS['Sin respuesta, dentro del plazo legal']}>
+                          <LabelList dataKey="Sin respuesta, dentro del plazo legal" position="center" fill="#fff" style={{ fontWeight: 'bold', fontSize: '9px' }} formatter={(val) => val > 0 ? val : ''} />
+                        </Bar>
+                        <Bar dataKey="Respuesta fuera del plazo legal" stackId="a" fill={GESTION_COLORS['Respuesta fuera del plazo legal']}>
+                          <LabelList dataKey="Respuesta fuera del plazo legal" position="center" fill="#fff" style={{ fontWeight: 'bold', fontSize: '9px' }} formatter={(val) => val > 0 ? val : ''} />
+                        </Bar>
+                        <Bar dataKey="Sin respuesta, fuera del plazo legal" stackId="a" fill={GESTION_COLORS['Sin respuesta, fuera del plazo legal']}>
+                          <LabelList dataKey="Sin respuesta, fuera del plazo legal" position="center" fill="#fff" style={{ fontWeight: 'bold', fontSize: '9px' }} formatter={(val) => val > 0 ? val : ''} />
+                        </Bar>
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                  
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', justifyContent: 'center' }}>
+                    <div style={{ border: '1px solid rgba(0,0,0,0.05)', padding: '16px', borderRadius: '16px', background: 'rgba(255,255,255,0.4)', backdropFilter: 'blur(5px)' }}>
+                      <h4 style={{ margin: '0 0 8px 0', fontSize: '0.9rem', color: '#27ae60', display: 'flex', alignItems: 'center', gap: '8px' }}><Award size={18} /> Mayor Cumplimiento de Plazo</h4>
+                      <p style={{ margin: 0, fontSize: '1.2rem', fontWeight: 800, color: 'var(--text-dark)' }}>{serviceRanking[0]?.name || 'N/A'}</p>
+                      <p style={{ margin: '4px 0 0 0', fontSize: '0.8rem', color: '#666' }}>Tasa de cumplimiento legal de **{serviceRanking[0]?.complianceRate || 0}%** en el periodo.</p>
+                    </div>
+                    <div style={{ border: '1px solid rgba(231,76,60,0.1)', padding: '16px', borderRadius: '16px', background: 'rgba(231,76,60,0.02)' }}>
+                      <h4 style={{ margin: '0 0 8px 0', fontSize: '0.9rem', color: '#c0392b', display: 'flex', alignItems: 'center', gap: '8px' }}><ShieldAlert size={18} /> Crítico en Cumplimiento de Plazo</h4>
+                      <p style={{ margin: 0, fontSize: '1.2rem', fontWeight: 800, color: 'var(--text-dark)' }}>{serviceRanking[serviceRanking.length - 1]?.name || 'N/A'}</p>
+                      <p style={{ margin: '4px 0 0 0', fontSize: '0.8rem', color: '#666' }}>Tasa de cumplimiento legal de **{serviceRanking[serviceRanking.length - 1]?.complianceRate || 0}%** en el periodo.</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Tabla descriptora de cumplimiento por servicio */}
+              <div className="glass-card" style={{ padding: '24px' }}>
+                <h3 style={{ fontSize: '1.1rem', marginBottom: '16px', fontWeight: 700 }}>Tabla Descriptora y Porcentajes de Cumplimiento por Servicio Involucrado</h3>
+                <table className="custom-table">
+                  <thead>
+                    <tr>
+                      <th style={{ textAlign: 'left' }}>Servicio</th>
+                      <th>Total Reclamos</th>
+                      <th style={{ color: '#27ae60' }}>Resp. en Plazo %</th>
+                      <th style={{ color: '#c0392b' }}>Resp. Fuera %</th>
+                      <th style={{ color: '#2980b9' }}>Pte. en Plazo %</th>
+                      <th style={{ color: '#d35400' }}>Pte. Fuera %</th>
+                      <th style={{ background: '#f5f5f5' }}>Tasa Cumplimiento Legal</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {serviceRanking.map(s => (
+                      <tr key={s.name}>
+                        <td style={{ textAlign: 'left', fontWeight: 700 }}>{s.name}</td>
+                        <td style={{ fontWeight: 700 }}>{s.total}</td>
+                        <td style={{ color: '#2ecc71', fontWeight: 600 }}>{(((s['Respuesta dentro del plazo legal'] || 0) / s.total) * 100).toFixed(1)}%</td>
+                        <td style={{ color: '#e74c3c', fontWeight: 600 }}>{(((s['Respuesta fuera del plazo legal'] || 0) / s.total) * 100).toFixed(1)}%</td>
+                        <td style={{ color: '#3498db', fontWeight: 600 }}>{(((s['Sin respuesta, dentro del plazo legal'] || 0) / s.total) * 100).toFixed(1)}%</td>
+                        <td style={{ color: '#f1c40f', fontWeight: 600 }}>{(((s['Sin respuesta, fuera del plazo legal'] || 0) / s.total) * 100).toFixed(1)}%</td>
+                        <td style={{ fontWeight: 800, background: '#fafafa', color: s.complianceRate >= 80 ? '#27ae60' : (s.complianceRate >= 50 ? '#f39c12' : '#c0392b') }}>{s.complianceRate}%</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Tabla descriptora de cumplimiento por tipo de reclamo */}
+              <div className="glass-card" style={{ padding: '24px' }}>
+                <h3 style={{ fontSize: '1.1rem', marginBottom: '16px', fontWeight: 700 }}>Tabla Descriptora y Porcentajes de Cumplimiento por Dimensión del Reclamo</h3>
+                <table className="custom-table">
+                  <thead>
+                    <tr>
+                      <th style={{ textAlign: 'left' }}>Dimensión</th>
+                      <th>Total Reclamos</th>
+                      <th style={{ color: '#27ae60' }}>Resp. en Plazo %</th>
+                      <th style={{ color: '#c0392b' }}>Resp. Fuera %</th>
+                      <th style={{ color: '#2980b9' }}>Pte. en Plazo %</th>
+                      <th style={{ color: '#d35400' }}>Pte. Fuera %</th>
+                      <th style={{ background: '#f5f5f5' }}>Tasa Cumplimiento Legal</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {dimensionRanking.slice(0, 15).map(d => (
+                      <tr key={d.name}>
+                        <td style={{ textAlign: 'left', fontWeight: 700 }}>{d.name}</td>
+                        <td style={{ fontWeight: 700 }}>{d.total}</td>
+                        <td style={{ color: '#2ecc71', fontWeight: 600 }}>{(((d['Respuesta dentro del plazo legal'] || 0) / d.total) * 100).toFixed(1)}%</td>
+                        <td style={{ color: '#e74c3c', fontWeight: 600 }}>{(((d['Respuesta fuera del plazo legal'] || 0) / d.total) * 100).toFixed(1)}%</td>
+                        <td style={{ color: '#3498db', fontWeight: 600 }}>{(((d['Sin respuesta, dentro del plazo legal'] || 0) / d.total) * 100).toFixed(1)}%</td>
+                        <td style={{ color: '#f1c40f', fontWeight: 600 }}>{(((d['Sin respuesta, fuera del plazo legal'] || 0) / d.total) * 100).toFixed(1)}%</td>
+                        <td style={{ fontWeight: 800, background: '#fafafa', color: d.complianceRate >= 80 ? '#27ae60' : (d.complianceRate >= 50 ? '#f39c12' : '#c0392b') }}>{d.complianceRate}%</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             </motion.div>
           )}
@@ -696,7 +941,7 @@ export default function SolicitudesDashboard({ onBack }) {
         .preset-btn:hover:not(.active) { background: rgba(0,0,0,0.02); }
         
         .custom-tabs { background: rgba(255,255,255,0.7); backdrop-filter: blur(10px); }
-        .tab-btn { flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px; padding: 12px; border: none; background: transparent; border-radius: 12px; font-weight: 700; font-size: 0.9rem; color: #666; cursor: pointer; transition: all 0.2s; }
+        .tab-btn { flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px; padding: 12px; border: none; background: transparent; border-radius: 12px; font-weight: 700; font-size: 0.9rem; color: #666; cursor: pointer; transition: all 0.2s; white-space: nowrap; }
         .tab-btn:hover { background: rgba(0,0,0,0.03); }
         .tab-btn.active { background: white; color: var(--primary-accent); box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
 
