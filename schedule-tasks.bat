@@ -13,7 +13,7 @@ echo.
 :: Get current directory path and remove trailing backslash
 set WORKSPACE_DIR=%~dp0
 set WORKSPACE_DIR=%WORKSPACE_DIR:~0,-1%
-set SCRIPT_PATH=%WORKSPACE_DIR%\parse-pharmacy.js
+set SCRIPT_PATH=%WORKSPACE_DIR%\update-pharmacy.bat
 
 echo Directorio detectado: %WORKSPACE_DIR%
 echo Script a ejecutar: %SCRIPT_PATH%
@@ -30,7 +30,7 @@ echo Creando tareas en el Programador de Tareas de Windows...
 echo.
 
 :: Create task for 06:00
-schtasks /create /tn "ControlGestion_Farmacia_0600" /tr "node \"%SCRIPT_PATH%\"" /sc daily /st 06:00 /f
+schtasks /create /tn "ControlGestion_Farmacia_0600" /tr "\"%SCRIPT_PATH%\"" /sc daily /st 06:00 /f
 if %errorlevel% equ 0 (
     echo [OK] Tarea de las 06:00 creada con éxito.
 ) else (
@@ -41,7 +41,7 @@ if %errorlevel% equ 0 (
 echo.
 
 :: Create task for 14:00
-schtasks /create /tn "ControlGestion_Farmacia_1400" /tr "node \"%SCRIPT_PATH%\"" /sc daily /st 14:00 /f
+schtasks /create /tn "ControlGestion_Farmacia_1400" /tr "\"%SCRIPT_PATH%\"" /sc daily /st 14:00 /f
 if %errorlevel% equ 0 (
     echo [OK] Tarea de las 14:00 creada con éxito.
 ) else (
