@@ -771,7 +771,7 @@ function App() {
                 />
               )}
               {activeView === 'urgencia' && <div style={{ color: 'var(--text-dark)' }}><h1>Panel de Urgencia</h1><button onClick={() => navigateToView('produccion_general')}>Volver</button></div>}
-              {activeView === 'estadistica' && <SurgicalDashboard onBack={() => navigateToView('home')} />}
+              {(activeView === 'estadistica' || activeView === 'quirurgica') && <SurgicalDashboard onBack={() => navigateToView(activeView === 'estadistica' ? 'home' : 'produccion_general')} />}
               {activeView === 'indicadores' && <HealthGoals onBack={() => navigateToView('home')} />}
               {activeView === 'repositorio' && <DocumentRepository onBack={() => navigateToView('home')} />}
               {activeView === 'mamografias' && (
