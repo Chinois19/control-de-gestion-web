@@ -855,15 +855,6 @@ export default function MammographyDashboard({ onBack, initialTab = 'summary', i
           </div>
 
 
-          <div className="filter-item">
-            <label>PERIODO RÁPIDO</label>
-            <select value={periodPreset} onChange={(e) => handlePresetChange(e.target.value)}>
-              <option value="2025_2026">Años 2025 y 2026 (Predeterminado)</option>
-              <option value="2025">Año 2025</option>
-              <option value="2026">Año 2026</option>
-              <option value="historico">Histórico Completo (2018-2026)</option>
-            </select>
-          </div>
 
           <div className="filter-item" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
             <div>

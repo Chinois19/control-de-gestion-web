@@ -647,20 +647,6 @@ export default function EndoscopyDashboard({ onBack, initialTab = 'summary', ini
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '22px' }}>
-                
-                <div>
-                  <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#475569', textTransform: 'uppercase', display: 'block', marginBottom: '8px' }}>Selección Temporal</label>
-                  <select 
-                    value={periodPreset} 
-                    onChange={(e) => handlePeriodPresetChange(e.target.value)}
-                    className="filter-select"
-                  >
-                    <option value="2025_2026">Años 2025 y 2026 (Predeterminado)</option>
-                    <option value="2025">Sólo Año 2025</option>
-                    <option value="2026">Sólo Año 2026</option>
-                    <option value="historico">Histórico Completo</option>
-                  </select>
-                </div>
 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
                   <div>
