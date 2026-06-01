@@ -590,9 +590,28 @@ export default function MammographyDashboard({ onBack, initialTab = 'summary', i
       };
     });
 
-    filteredData.forEach(r => {
+    // Use processedData to apply all filters EXCEPT selectedEstadoAtencion
+    processedData.forEach(r => {
       // REM statistics only count presented (realized) procedures
       if (r.estadoAtencion !== 'Se presentó') return;
+
+      // Re-apply other active filters
+      if (r.fechaAtencion !== 'N/A') {
+        if (startDate && r.fechaAtencion < startDate) return;
+        if (endDate && r.fechaAtencion > endDate) return;
+      }
+      if (selectedFuncionario !== 'Todas' && r.funcionario !== selectedFuncionario) return;
+      if (selectedEstablecimiento !== 'Todas' && r.establecimiento !== selectedEstablecimiento) return;
+      if (selectedRangoEdad !== 'Todas' && r.grupoEdad !== selectedRangoEdad) return;
+      
+      if (searchQuery) {
+        const query = searchQuery.toLowerCase();
+        if (!r.recordId.toString().includes(query) && 
+            !r.establecimiento.toLowerCase().includes(query) && 
+            !r.birads.toLowerCase().includes(query)) {
+          return;
+        }
+      }
 
       const fonasa = isFonasa(r.prevision);
       const cerrado = r.procedencia === 'Atención Cerrada';
@@ -617,7 +636,7 @@ export default function MammographyDashboard({ onBack, initialTab = 'summary', i
     });
 
     return Object.values(aggregation).filter(item => item.total > 0 || ['Mamografía Bilateral', 'Mamografía Unilateral', 'Mamografía Complementaria'].includes(item.name));
-  }, [filteredData]);
+  }, [processedData, startDate, endDate, selectedFuncionario, selectedEstablecimiento, selectedRangoEdad, searchQuery]);
 
   // Paginated Patient Grid
   const paginatedGridData = useMemo(() => {
