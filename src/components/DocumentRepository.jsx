@@ -47,7 +47,7 @@ export default function DocumentRepository({ onBack }) {
   const [searchQuery, setSearchQuery] = useState('');
 
   return (
-    <motion.div 
+    <motion.div
       className="repository-view"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
@@ -61,9 +61,9 @@ export default function DocumentRepository({ onBack }) {
       <div className="repo-controls glass-card">
         <div className="search-box">
           <Search size={20} color="var(--text-secondary)" />
-          <input 
-            type="text" 
-            placeholder="Buscar documentos por nombre o categoría..." 
+          <input
+            type="text"
+            placeholder="Buscar documentos por nombre o categoría..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />

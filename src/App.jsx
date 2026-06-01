@@ -36,6 +36,7 @@ import ClosedAttentionDashboard from './components/ClosedAttentionDashboard';
 import PharmacyDashboard from './components/PharmacyDashboard';
 import SigcomDashboard from './components/SigcomDashboard';
 import SolicitudesDashboard from './components/SolicitudesDashboard';
+import LaboratoryDashboard from './components/LaboratoryDashboard';
 import './App.css';
 
 // HD Images
@@ -91,6 +92,10 @@ const menuStructure = [
           {
             id: 'farmacia',
             label: 'Producción de Farmacia'
+          },
+          {
+            id: 'laboratorio',
+            label: 'Producción de Laboratorio Clínico'
           }
         ]
       }
@@ -346,6 +351,13 @@ const searchIndex = [
     path: 'Costeo GRD ➔ SIGCOM',
     desc: 'Costeo por área productiva y análisis financiero institucional comparativo con Banda MINSAL.',
     action: { view: 'sigcom' }
+  },
+  {
+    keys: ['laboratorio', 'examenes', 'muestras', 'hematologia', 'bioquimica', 'rem 03', 'tat', 'rechazo', 'microbiologia', 'inmunologia', 'hormonas', 'analitica', 'clinico', 'produccion laboratorio'],
+    title: 'Producción de Laboratorio Clínico y REM 03',
+    path: 'Servicios de Apoyo ➔ Laboratorio',
+    desc: 'Panel analítico ejecutivo de exámenes procesados, tiempos de respuesta (TAT), rechazo de muestras y cuadratura REM 03.',
+    action: { view: 'laboratorio' }
   }
 ];
 
@@ -734,8 +746,9 @@ function App() {
                   onNavigate={(id) => navigateToView(id)}
                   cases={[
                     { id: 'imagenologia', title: 'Imagenología', icon: <Search size={24} />, image: imgStats, desc: 'Control de producción de exámenes diagnósticos por imagen.', color: '#9b59b6' },
-                    { id: 'endoscopia', title: 'Procedimientos Endoscópicos (REDCap)', icon: <Stethoscope size={24} />, image: imgProduction, desc: 'Base de datos integrada de endoscopías y colonoscopías realizadas.', color: '#10b981' },
-                    { id: 'farmacia', title: 'Producción de Farmacia', icon: <ClipboardList size={24} />, image: imgProduction, desc: 'Análisis dinámico de dispensación de medicamentos por servicios clínicos y áreas.', color: '#0ea5e9' }
+                    { id: 'endoscopia', title: 'Procedimientos Endoscópicos (REDCap)', icon: <Stethoscope size={24} />, image: imgConsultation, desc: 'Base de datos integrada de endoscopías y colonoscopías realizadas.', color: '#10b981' },
+                    { id: 'farmacia', title: 'Producción de Farmacia', icon: <ClipboardList size={24} />, image: imgStats, desc: 'Análisis dinámico de dispensación de medicamentos por servicios clínicos y áreas.', color: '#0ea5e9' },
+                    { id: 'laboratorio', title: 'Producción de Laboratorio Clínico', icon: <Activity size={24} />, image: imgProduction, desc: 'Panel ejecutivo analítico del Laboratorio Clínico y validación REM 03.', color: '#8b5cf6' }
                   ]}
                 />
               )}
@@ -798,6 +811,11 @@ function App() {
               )}
               {activeView === 'farmacia' && (
                 <PharmacyDashboard 
+                  onBack={() => navigateToView('procedimientos_especialidades')} 
+                />
+              )}
+              {activeView === 'laboratorio' && (
+                <LaboratoryDashboard 
                   onBack={() => navigateToView('procedimientos_especialidades')} 
                 />
               )}
