@@ -36,7 +36,7 @@ function isDateIn2025_2026(dateStr) {
 
 // Helper to filter records array to only include years 2025 and 2026
 function filterRecordsForYears(records, name) {
-  const dateFields = ['fecha_de_atenci_n', 'fecha_ingreso', 'fecha_egreso', 'fecha', 'fechadocumento'];
+  const dateFields = ['fecha_de_atenci_n', 'fecha_ingreso', 'fecha_egreso', 'fecha', 'fechadocumento', 'fecha_programacion'];
   
   const filtered = records.filter(r => {
     // If no fields, keep by default so we don't lose data
@@ -154,6 +154,49 @@ async function fetchAndCacheBasicAuth(name, url, username, password, cacheFileNa
   }
 }
 
+async function fetchAndCachePabellonDisponibilidad(name, url, username, password, cacheFileName) {
+  try {
+    console.log(`Fetching live records for ${name} from ${url}...`);
+    const auth = 'Basic ' + Buffer.from(`${username}:${password}`).toString('base64');
+    const res = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'Authorization': auth
+      }
+    });
+
+    if (!res.ok) {
+      throw new Error(`Failed to fetch: ${res.status} ${res.statusText}`);
+    }
+
+    const payload = await res.json();
+    const rawRecords = payload.datos || [];
+    console.log(`[${name}] Successfully fetched ${rawRecords.length} records.`);
+
+    // Filter only 2025-2026 records to optimize size
+    const records = filterRecordsForYears(rawRecords, name);
+
+    // Create the cached JSON object
+    const cacheDir = path.join(__dirname, 'public', 'data');
+    if (!fs.existsSync(cacheDir)) {
+      fs.mkdirSync(cacheDir, { recursive: true });
+    }
+
+    const cacheData = {
+      lastUpdated: new Date().toISOString(),
+      records: records,
+      fecha_actualizacion_fuente: payload.fecha_actualizacion || null
+    };
+
+    const cacheFilePath = path.join(cacheDir, cacheFileName);
+    fs.writeFileSync(cacheFilePath, JSON.stringify(cacheData), 'utf-8');
+    console.log(`[${name}] Saved cache to ${cacheFilePath}`);
+  } catch (err) {
+    console.error(`[${name}] Error caching records:`, err);
+  }
+}
+
+
 async function run() {
   console.log("Starting REDCap Unified Cache Engine...");
   
@@ -215,6 +258,24 @@ async function run() {
     "Solicitudes Ciudadanas",
     "F03C4EE0F08CD8A846F1621332F966CD",
     "solicitudes_cached.json"
+  );
+
+  // 9. Fetch Pabellon - Disponibilidad
+  await fetchAndCachePabellonDisponibilidad(
+    "Disponibilidad Pabellon",
+    "https://pabellonhospitalvillarrica.pythonanywhere.com/pabellon/exportar_disponibilidad/",
+    "admin",
+    "Controldegestion2025",
+    "pabellon_disponibilidad_cached.json"
+  );
+
+  // 10. Fetch Pabellon - Tabla Quirurgica
+  await fetchAndCacheBasicAuth(
+    "Tabla Quirurgica",
+    "https://pabellonhospitalvillarrica.pythonanywhere.com/pabellon/exportar_data/",
+    "admin",
+    "Controldegestion2025",
+    "pabellon_tabla_cached.json"
   );
 
   console.log("REDCap & PythonAnywhere Cache synchronization complete.");
