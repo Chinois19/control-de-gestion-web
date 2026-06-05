@@ -54,7 +54,7 @@ rawData.forEach(row => {
     intervencion: row['NOMBRE DE LA INTERVENCIÓN'],
     familia_iq: row['FAMILIA DE LA INTERVENCIÓN'],
     estado: row['ESTADO DE ATENCIÓN'],
-    tipo_cirugia: row['Tipo cirugia'],
+    tipo_cirugia: row['TIPO DE CIRUGIA 3'] || row['Tipo cirugia'],
     tipo_actividad: row['LISTA PROCEDIMIENTOS. TIPO DE ACTIVIDAD'],
     urgencia: row['PROCEDENCIA URGENCIA'] ? 'SI' : 'NO',
     procedencia: row['PROCEDENCIA URGENCIA'] ? 'URGENCIA' : (row['PROCEDENCIA ATENCIÓN ABIERTA'] ? 'ATENCION ABIERTA' : 'OTRA'),
@@ -63,7 +63,10 @@ rawData.forEach(row => {
     reintervencion_no_prog: row['Reintervención no Programada'] || 'NO',
     mai: row['Beneficiarios MAI'] ? 'SI' : 'NO',
     menor_15: (parseInt(row['EDAD DEL PACIENTE']) < 15) ? 'SI' : 'NO',
-    duracion: row['Duración IQ']
+    duracion: row['Duración IQ'],
+    ges: row['DETALLE GES'] || 'NO GES',
+    dias_espera: row['Dias de espera al momento de la IQ'] || 0,
+    tipo_iq: row['Tipo iq'] || 'NO DEFINIDO'
   });
 });
 
