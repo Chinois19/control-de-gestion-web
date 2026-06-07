@@ -71,6 +71,7 @@ export default function SigcomDashboard({ onBack }) {
     
     // For the hierarchical table
     const ccMap = {};
+    const globalInsumosBreakdown = {};
 
     filtered.forEach(item => {
       // Monthly aggregation for top chart
@@ -112,6 +113,7 @@ export default function SigcomDashboard({ onBack }) {
 
       if (item.insumosBreakdown) {
         Object.entries(item.insumosBreakdown).forEach(([k, v]) => {
+          globalInsumosBreakdown[k] = (globalInsumosBreakdown[k] || 0) + v;
           ccMap[item.costCenter].insumosBreakdown[k] = (ccMap[item.costCenter].insumosBreakdown[k] || 0) + v;
         });
       }
@@ -174,7 +176,7 @@ export default function SigcomDashboard({ onBack }) {
 
     const tData = Object.values(ccMap).sort((a, b) => b.total - a.total);
 
-    return { chartData: cData, kpis: kpisObj, insights: genInsights, tableData: tData, activeBandas: bandasObj || null };
+    return { chartData: cData, kpis: kpisObj, insights: genInsights, tableData: tData, activeBandas: bandasObj || null, globalInsumosBreakdown };
   }, [rawData, selectedCCs, startMonth, endMonth, selectedBanda]);
 
   // Set default active node if nothing is selected
@@ -382,80 +384,58 @@ export default function SigcomDashboard({ onBack }) {
         {/* Drill-down Table & Dynamic Chart */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
           
-          {/* Collapsible Table */}
+          {/* Tabla de Totales Consolidados */}
           <div style={{ background: 'white', borderRadius: '12px', border: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column' }}>
             <div style={{ padding: '15px 20px', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 700, color: '#0f172a' }}>Detalle de Costos (Drill-down)</h3>
+              <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 700, color: '#0f172a' }}>Desglose Total (Selección)</h3>
               <button 
                 onClick={() => handleRowClick('global', kpis, 'Visión Global')}
                 style={{ background: '#f1f5f9', border: 'none', padding: '6px 12px', borderRadius: '6px', fontSize: '0.75rem', fontWeight: 600, cursor: 'pointer', color: '#475569' }}
               >
-                Ver Global
+                Ver Gráfico Global
               </button>
             </div>
             
             <div style={{ flex: 1, overflowY: 'auto', maxHeight: '400px' }}>
-              {tableData.map((cc) => (
-                <div key={cc.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                  {/* CC Row */}
-                  <div 
-                    style={{ padding: '12px 20px', display: 'flex', alignItems: 'center', cursor: 'pointer', background: activeChartNode?.label === cc.label ? '#f8fafc' : 'white' }}
-                    onClick={() => handleRowClick('cc', cc, cc.label)}
-                  >
-                    <button onClick={(e) => { e.stopPropagation(); toggleRow(cc.id); }} style={{ background: 'none', border: 'none', padding: 0, marginRight: '10px', cursor: 'pointer' }}>
-                      {expandedRows[cc.id] ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
-                    </button>
-                    <span style={{ fontWeight: 700, fontSize: '0.85rem', flex: 1, color: '#0f172a' }}>{cc.label}</span>
-                    <span style={{ fontWeight: 800, fontSize: '0.85rem', color: '#64748b' }}>{formatCompact(cc.total)}</span>
-                  </div>
-
-                  {/* Expanded CC Details (RRHH, GG, Insumos) */}
-                  <AnimatePresence>
-                    {expandedRows[cc.id] && (
-                      <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} style={{ overflow: 'hidden', background: '#fafafa' }}>
-                        
-                        <div style={{ padding: '8px 20px 8px 45px', display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem' }}>
-                          <span style={{ color: '#475569', fontWeight: 600 }}>Recursos Humanos</span>
-                          <span style={{ color: '#0f172a', fontWeight: 700 }}>{formatCLP(cc.rrhh)}</span>
-                        </div>
-                        <div style={{ padding: '8px 20px 8px 45px', display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem' }}>
-                          <span style={{ color: '#475569', fontWeight: 600 }}>Gastos Generales</span>
-                          <span style={{ color: '#0f172a', fontWeight: 700 }}>{formatCLP(cc.gg)}</span>
-                        </div>
-                        
-                        {/* Insumos Row (Expandable) */}
-                        <div 
-                          style={{ padding: '8px 20px 8px 45px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.8rem', cursor: 'pointer', background: activeChartNode?.label === `Insumos: ${cc.label}` ? '#e0f2fe' : 'transparent' }}
-                          onClick={() => handleRowClick('insumos', cc.insumosBreakdown, `Insumos: ${cc.label}`)}
-                        >
-                          <div style={{ display: 'flex', alignItems: 'center' }}>
-                            <button onClick={(e) => { e.stopPropagation(); toggleRow(`${cc.id}-insumos`); }} style={{ background: 'none', border: 'none', padding: 0, marginRight: '8px', cursor: 'pointer' }}>
-                              {expandedRows[`${cc.id}-insumos`] ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
-                            </button>
-                            <span style={{ color: '#0ea5e9', fontWeight: 700 }}>Insumos (Click para Gráfico)</span>
-                          </div>
-                          <span style={{ color: '#0f172a', fontWeight: 700 }}>{formatCLP(cc.insumos)}</span>
-                        </div>
-
-                        {/* Expanded Insumos Details */}
-                        <AnimatePresence>
-                          {expandedRows[`${cc.id}-insumos`] && (
-                            <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} style={{ overflow: 'hidden' }}>
-                              {Object.entries(cc.insumosBreakdown).sort((a,b) => b[1]-a[1]).map(([name, val], i) => (
-                                <div key={i} style={{ padding: '6px 20px 6px 75px', display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem' }}>
-                                  <span style={{ color: '#64748b' }}>{name.length > 35 ? name.substring(0,35)+'...' : name}</span>
-                                  <span style={{ color: '#475569', fontWeight: 600 }}>{formatCLP(val)}</span>
-                                </div>
-                              ))}
-                            </motion.div>
-                          )}
-                        </AnimatePresence>
-
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
+              <div 
+                style={{ padding: '16px 20px', borderBottom: '1px solid #f1f5f9', display: 'flex', justifyContent: 'space-between', cursor: 'pointer', background: activeChartNode?.type === 'global' ? '#f8fafc' : 'white' }}
+                onClick={() => handleRowClick('global', kpis, 'Visión Global')}
+              >
+                <span style={{ fontWeight: 700, color: '#0f172a' }}>Recursos Humanos (Directo)</span>
+                <span style={{ fontWeight: 800, color: '#0ea5e9', fontSize: '1.05rem' }}>{formatCLP(kpis.totalRRHH)}</span>
+              </div>
+              <div 
+                style={{ padding: '16px 20px', borderBottom: '1px solid #f1f5f9', display: 'flex', justifyContent: 'space-between', cursor: 'pointer', background: activeChartNode?.type === 'global' ? '#f8fafc' : 'white' }}
+                onClick={() => handleRowClick('global', kpis, 'Visión Global')}
+              >
+                <span style={{ fontWeight: 700, color: '#0f172a' }}>Gastos Generales (Indirecto)</span>
+                <span style={{ fontWeight: 800, color: '#f59e0b', fontSize: '1.05rem' }}>{formatCLP(kpis.totalGG)}</span>
+              </div>
+              <div 
+                style={{ padding: '16px 20px', borderBottom: '1px solid #f1f5f9', display: 'flex', justifyContent: 'space-between', cursor: 'pointer', background: expandedRows['global-insumos'] || activeChartNode?.type === 'insumos' ? '#f8fafc' : 'white' }}
+                onClick={() => { toggleRow('global-insumos'); handleRowClick('insumos', globalInsumosBreakdown, 'Desglose de Insumos'); }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center' }}>
+                  <button style={{ background: 'none', border: 'none', padding: 0, marginRight: '10px', cursor: 'pointer' }}>
+                    {expandedRows['global-insumos'] ? <ChevronDown size={18} /> : <ChevronRight size={18} />}
+                  </button>
+                  <span style={{ fontWeight: 700, color: '#10b981' }}>Insumos (Directo - Click para ver)</span>
                 </div>
-              ))}
+                <span style={{ fontWeight: 800, color: '#10b981', fontSize: '1.05rem' }}>{formatCLP(kpis.totalInsumos)}</span>
+              </div>
+              
+              <AnimatePresence>
+                {expandedRows['global-insumos'] && (
+                  <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} style={{ overflow: 'hidden', background: '#fafafa' }}>
+                    {Object.entries(globalInsumosBreakdown).sort((a,b) => b[1]-a[1]).map(([name, val], i) => (
+                      <div key={i} style={{ padding: '10px 20px 10px 45px', display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', borderBottom: '1px solid #e2e8f0' }}>
+                        <span style={{ color: '#475569', fontWeight: 500 }}>{name.length > 50 ? name.substring(0,50)+'...' : name}</span>
+                        <span style={{ color: '#0f172a', fontWeight: 700 }}>{formatCLP(val)}</span>
+                      </div>
+                    ))}
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
           </div>
 
