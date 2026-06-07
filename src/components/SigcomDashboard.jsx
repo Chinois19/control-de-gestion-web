@@ -146,9 +146,10 @@ export default function SigcomDashboard({ onBack }) {
     });
 
     const kpisObj = { totalCost, totalRRHH, totalGG, totalInsumos, totalProd, unitCost: avgCostoUnitario };
+    const activePromedio = bandasObj ? bandasObj.promedio : promNacionalAuto;
 
     const genInsights = [];
-    if (kpisObj.unitCost > promNacional * 1.1) {
+    if (kpisObj.unitCost > activePromedio * 1.1) {
       genInsights.push({ type: 'warning', text: `Costo promedio unitario (${formatCLP(kpisObj.unitCost)}) supera la referencia estándar en 10%.`});
     } else {
       genInsights.push({ type: 'success', text: `Eficiencia dentro del margen de referencia. Costo unitario: ${formatCLP(kpisObj.unitCost)}.`});
