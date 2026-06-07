@@ -11,7 +11,7 @@ import sigcomJson from '../data/sigcom_data.json';
 import './SigcomDashboard.css';
 
 const monthsNames = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
-const COLORS = ['#38bdf8', '#818cf8', '#34d399', '#fbbf24', '#f472b6', '#a78bfa', '#2dd4bf', '#f87171', '#10b981', '#f59e0b', '#ec4899', '#0ea5e9'];
+const COLORS = ['#00c4cc', '#ff9f00', '#e63956', '#005b9f', '#8f1a52', '#ffc107', '#4dd0e1', '#f06292', '#1976d2', '#ffb300'];
 
 const BANDAS_MINSAL = {
   "CMA": { limiteInferior: 381104, marcaInferior: 496768, promedio: 728097, marcaSuperior: 1006438, limiteSuperior: 1127771 },
@@ -221,14 +221,14 @@ export default function SigcomDashboard({ onBack }) {
       const gg = data.gg || data.totalGG || 0;
 
       const inner = [
-        { name: 'Directos', value: rrhh + insumos, fill: '#38bdf8' },
-        { name: 'Indirectos', value: gg, fill: '#f59e0b' }
+        { name: 'Directos', value: rrhh + insumos, fill: '#00c4cc' },
+        { name: 'Indirectos', value: gg, fill: '#e63956' }
       ].filter(d => d.value > 0);
 
       const outer = [
-        { name: 'RRHH', value: rrhh, fill: '#0ea5e9' },
-        { name: 'Insumos', value: insumos, fill: '#10b981' },
-        { name: 'Gastos Gen.', value: gg, fill: '#fbbf24' }
+        { name: 'RRHH', value: rrhh, fill: '#4dd0e1' },
+        { name: 'Insumos', value: insumos, fill: '#ffc107' },
+        { name: 'Gastos Gen.', value: gg, fill: '#f06292' }
       ].filter(d => d.value > 0);
 
       return { inner, outer };
@@ -367,13 +367,13 @@ export default function SigcomDashboard({ onBack }) {
                 <YAxis tickFormatter={(v) => '$' + (v/1000000).toFixed(0) + 'M'} axisLine={false} tickLine={false} tick={{fill: '#64748b', fontSize: 11}} width={60} />
                 <Tooltip contentStyle={{ borderRadius: '8px', fontSize: '12px' }} formatter={(val) => formatCLP(val)} cursor={{fill: '#f1f5f9'}} />
                 <Legend iconType="circle" wrapperStyle={{ fontSize: '12px' }} />
-                <Bar dataKey="rrhh" name="Recursos Humanos (Directo)" stackId="a" fill="#0ea5e9" radius={[0, 0, 4, 4]}>
+                <Bar dataKey="rrhh" name="Recursos Humanos (Directo)" stackId="a" fill="#00c4cc" radius={[0, 0, 4, 4]}>
                   <LabelList dataKey="rrhh" position="inside" formatter={(v) => v > 0 ? formatCompact(v) : ''} fill="#fff" fontSize={10} fontWeight={600} />
                 </Bar>
-                <Bar dataKey="insumos" name="Insumos (Directo)" stackId="a" fill="#10b981">
+                <Bar dataKey="insumos" name="Insumos (Directo)" stackId="a" fill="#ff9f00">
                   <LabelList dataKey="insumos" position="inside" formatter={(v) => v > 0 ? formatCompact(v) : ''} fill="#fff" fontSize={10} fontWeight={600} />
                 </Bar>
-                <Bar dataKey="gg" name="Gastos Generales (Indirecto)" stackId="a" fill="#f59e0b" radius={[4, 4, 0, 0]}>
+                <Bar dataKey="gg" name="Gastos Generales (Indirecto)" stackId="a" fill="#e63956" radius={[4, 4, 0, 0]}>
                   <LabelList dataKey="gg" position="inside" formatter={(v) => v > 0 ? formatCompact(v) : ''} fill="#fff" fontSize={10} fontWeight={600} />
                 </Bar>
               </BarChart>
