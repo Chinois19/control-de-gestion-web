@@ -5,7 +5,7 @@ import {
   ChevronLeft, Activity, DollarSign, Users, Package, AlertTriangle, TrendingUp, Layers, ChevronDown, ChevronRight, Lightbulb
 } from 'lucide-react';
 import {
-  ComposedChart, Line, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Area, PieChart, Pie, Cell, Sector, BarChart, ReferenceArea
+  ComposedChart, Line, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Area, PieChart, Pie, Cell, Sector, BarChart, LabelList
 } from 'recharts';
 import sigcomJson from '../data/sigcom_data.json';
 import './SigcomDashboard.css';
@@ -210,25 +210,40 @@ export default function SigcomDashboard({ onBack }) {
   };
 
   const getDynamicChartData = () => {
-    if (!activeChartNode) return [];
+    if (!activeChartNode) return { inner: [], outer: [] };
     
     if (activeChartNode.type === 'global' || activeChartNode.type === 'cc') {
-      // Show RRHH vs Insumos vs GG
-      return [
-        { name: 'RRHH', value: activeChartNode.data.rrhh || activeChartNode.data.totalRRHH },
-        { name: 'Insumos', value: activeChartNode.data.insumos || activeChartNode.data.totalInsumos },
-        { name: 'G. Generales', value: activeChartNode.data.gg || activeChartNode.data.totalGG },
+      const data = activeChartNode.data;
+      const rrhh = data.rrhh || data.totalRRHH || 0;
+      const insumos = data.insumos || data.totalInsumos || 0;
+      const gg = data.gg || data.totalGG || 0;
+
+      const inner = [
+        { name: 'Directos', value: rrhh + insumos, fill: '#38bdf8' },
+        { name: 'Indirectos', value: gg, fill: '#f59e0b' }
       ].filter(d => d.value > 0);
+
+      const outer = [
+        { name: 'RRHH', value: rrhh, fill: '#0ea5e9' },
+        { name: 'Insumos', value: insumos, fill: '#10b981' },
+        { name: 'Gastos Gen.', value: gg, fill: '#fbbf24' }
+      ].filter(d => d.value > 0);
+
+      return { inner, outer };
     }
     
     if (activeChartNode.type === 'insumos') {
-      // Show top breakdown
-      return Object.entries(activeChartNode.data)
-        .map(([name, value]) => ({ name, value }))
+      const data = activeChartNode.data;
+      const total = Object.values(data).reduce((a, b) => a + b, 0);
+      const inner = [{ name: 'Insumos', value: total, fill: '#10b981' }];
+      
+      const outer = Object.entries(data)
+        .map(([name, value], i) => ({ name: name.substring(0,25), value, fill: COLORS[i % COLORS.length] }))
         .sort((a, b) => b.value - a.value)
-        .slice(0, 10);
+        .slice(0, 12);
+      return { inner, outer };
     }
-    return [];
+    return { inner: [], outer: [] };
   };
 
   const dynamicData = getDynamicChartData();
@@ -339,6 +354,31 @@ export default function SigcomDashboard({ onBack }) {
           </div>
         </div>
 
+        {/* Stacked Bar Chart por Mes */}
+        <div style={{ background: 'white', borderRadius: '12px', padding: '1.5rem', border: '1px solid #e2e8f0' }}>
+          <h3 style={{ margin: '0 0 15px 0', fontSize: '1.1rem', fontWeight: 700, color: '#0f172a' }}>Evolución Mensual: Costos Directos e Indirectos</h3>
+          <div style={{ height: '280px' }}>
+            <ResponsiveContainer>
+              <BarChart data={chartData} margin={{ top: 20, right: 20, bottom: 0, left: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.3} />
+                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#64748b', fontSize: 11}} dy={5} />
+                <YAxis tickFormatter={(v) => '$' + (v/1000000).toFixed(0) + 'M'} axisLine={false} tickLine={false} tick={{fill: '#64748b', fontSize: 11}} width={60} />
+                <Tooltip contentStyle={{ borderRadius: '8px', fontSize: '12px' }} formatter={(val) => formatCLP(val)} cursor={{fill: '#f1f5f9'}} />
+                <Legend iconType="circle" wrapperStyle={{ fontSize: '12px' }} />
+                <Bar dataKey="rrhh" name="Recursos Humanos (Directo)" stackId="a" fill="#0ea5e9" radius={[0, 0, 4, 4]}>
+                  <LabelList dataKey="rrhh" position="inside" formatter={(v) => v > 0 ? formatCompact(v) : ''} fill="#fff" fontSize={10} fontWeight={600} />
+                </Bar>
+                <Bar dataKey="insumos" name="Insumos (Directo)" stackId="a" fill="#10b981">
+                  <LabelList dataKey="insumos" position="inside" formatter={(v) => v > 0 ? formatCompact(v) : ''} fill="#fff" fontSize={10} fontWeight={600} />
+                </Bar>
+                <Bar dataKey="gg" name="Gastos Generales (Indirecto)" stackId="a" fill="#f59e0b" radius={[4, 4, 0, 0]}>
+                  <LabelList dataKey="gg" position="inside" formatter={(v) => v > 0 ? formatCompact(v) : ''} fill="#fff" fontSize={10} fontWeight={600} />
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
         {/* Drill-down Table & Dynamic Chart */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
           
@@ -433,10 +473,10 @@ export default function SigcomDashboard({ onBack }) {
                   initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }}
                   style={{ width: '100%', height: '100%' }}
                 >
-                  {dynamicData.length > 0 ? (
-                    activeChartNode?.type === 'insumos' ? (
+                  {dynamicData.outer.length > 0 ? (
+                    activeChartNode?.type === 'insumos_old' ? (
                       <ResponsiveContainer width="100%" height={300}>
-                        <BarChart data={dynamicData} layout="vertical" margin={{ top: 0, right: 30, left: 10, bottom: 0 }}>
+                        <BarChart data={dynamicData.outer} layout="vertical" margin={{ top: 0, right: 30, left: 10, bottom: 0 }}>
                           <CartesianGrid strokeDasharray="3 3" horizontal={false} opacity={0.3}/>
                           <XAxis type="number" tickFormatter={formatCompact} tick={{fontSize: 10}} axisLine={false} tickLine={false} />
                           <YAxis dataKey="name" type="category" width={120} tick={{fontSize: 10}} axisLine={false} tickLine={false} />
@@ -445,17 +485,35 @@ export default function SigcomDashboard({ onBack }) {
                         </BarChart>
                       </ResponsiveContainer>
                     ) : (
-                      <ResponsiveContainer width="100%" height={300}>
+                      <ResponsiveContainer width="100%" height={380}>
                         <PieChart>
+                          <Tooltip formatter={(val) => formatCLP(val)} contentStyle={{ borderRadius: '8px', fontSize: '12px' }} />
                           <Pie
-                            activeIndex={pieActiveIndex}
-                            activeShape={renderActiveShape}
-                            data={dynamicData}
-                            cx="50%" cy="50%" innerRadius={70} outerRadius={90}
-                            dataKey="value" onMouseEnter={(_, idx) => setPieActiveIndex(idx)} animationDuration={1000}
+                            data={dynamicData.inner}
+                            dataKey="value"
+                            nameKey="name"
+                            cx="50%" cy="50%"
+                            innerRadius={0}
+                            outerRadius={65}
+                            animationDuration={1000}
                           >
-                            {dynamicData.map((entry, index) => (
-                              <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                            {dynamicData.inner.map((entry, index) => (
+                              <Cell key={`inner-${index}`} fill={entry.fill} />
+                            ))}
+                          </Pie>
+                          <Pie
+                            data={dynamicData.outer}
+                            dataKey="value"
+                            nameKey="name"
+                            cx="50%" cy="50%"
+                            innerRadius={75}
+                            outerRadius={115}
+                            label={({ name, percent }) => percent > 0.05 ? `${name}` : ''}
+                            labelLine={true}
+                            animationDuration={1000}
+                          >
+                            {dynamicData.outer.map((entry, index) => (
+                              <Cell key={`outer-${index}`} fill={entry.fill || COLORS[index % COLORS.length]} />
                             ))}
                           </Pie>
                         </PieChart>
