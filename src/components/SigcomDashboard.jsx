@@ -328,12 +328,6 @@ export default function SigcomDashboard({ onBack }) {
                 <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#64748b', fontSize: 11}} dy={5} />
                 <YAxis tickFormatter={(v) => '$' + (v/1000).toFixed(0) + 'k'} axisLine={false} tickLine={false} tick={{fill: '#64748b', fontSize: 11}} width={60} />
                 <Tooltip contentStyle={{ borderRadius: '8px', fontSize: '12px' }} formatter={(val) => formatCLP(val)} />
-                {activeBandas && <ReferenceArea y1={activeBandas.marcaInferior} y2={activeBandas.marcaSuperior} fill="#10b981" fillOpacity={0.15} />}
-                {activeBandas && <ReferenceArea y1={activeBandas.limiteInferior} y2={activeBandas.marcaInferior} fill="#f59e0b" fillOpacity={0.15} />}
-                {activeBandas && <ReferenceArea y1={activeBandas.marcaSuperior} y2={activeBandas.limiteSuperior} fill="#f59e0b" fillOpacity={0.15} />}
-                {activeBandas && <ReferenceArea y2={activeBandas.limiteInferior} fill="#dc2626" fillOpacity={0.15} />}
-                {activeBandas && <ReferenceArea y1={activeBandas.limiteSuperior} fill="#dc2626" fillOpacity={0.15} />}
-                
                 <Area type="monotone" dataKey="costoUnitario" name="Costo Real" stroke="#8b5cf6" strokeWidth={4} fillOpacity={1} fill="url(#colorCostoSmall)" />
                 <Line type="step" dataKey="limiteSuperior" name="Límite Sup (Rojo)" stroke="#dc2626" strokeWidth={2} dot={false} strokeDasharray="3 3" />
                 <Line type="step" dataKey="marcaSuperior" name="Marca Sup (Ambar)" stroke="#f59e0b" strokeWidth={2} dot={false} strokeDasharray="3 3" />
