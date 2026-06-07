@@ -5,7 +5,7 @@ import {
   ChevronLeft, Activity, DollarSign, Users, Package, AlertTriangle, TrendingUp, Layers, ChevronDown, ChevronRight, Lightbulb
 } from 'lucide-react';
 import {
-  ComposedChart, Line, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Area, PieChart, Pie, Cell, Sector, BarChart
+  ComposedChart, Line, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Area, PieChart, Pie, Cell, Sector, BarChart, ReferenceArea
 } from 'recharts';
 import sigcomJson from '../data/sigcom_data.json';
 import './SigcomDashboard.css';
@@ -32,7 +32,7 @@ export default function SigcomDashboard({ onBack }) {
   const [selectedCCs, setSelectedCCs] = useState([]);
   const [startMonth, setStartMonth] = useState('2025-01');
   const [endMonth, setEndMonth] = useState('2026-12');
-  const [selectedBanda, setSelectedBanda] = useState(OPCIONES_BANDAS.find(o => o.value === 'Consultas especialidad'));
+  const [selectedBanda, setSelectedBanda] = useState(OPCIONES_BANDAS[0]); // Por defecto: Cálculo Automático
   
   // Table state
   const [expandedRows, setExpandedRows] = useState({});
@@ -58,7 +58,7 @@ export default function SigcomDashboard({ onBack }) {
   const formatCLP = (val) => new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP', maximumFractionDigits: 0 }).format(val);
   const formatCompact = (val) => new Intl.NumberFormat('es-CL', { notation: 'compact', maximumFractionDigits: 1 }).format(val);
 
-  const { chartData, kpis, insights, tableData } = useMemo(() => {
+  const { chartData, kpis, insights, tableData, activeBandas } = useMemo(() => {
     const selectedLabels = selectedCCs.map(cc => cc.value);
     
     const filtered = rawData.filter(d => {
@@ -125,7 +125,21 @@ export default function SigcomDashboard({ onBack }) {
     const avgCostoUnitario = totalProd > 0 ? totalCost / totalProd : 0;
     const promNacionalAuto = avgCostoUnitario > 0 ? avgCostoUnitario : 150000;
     
-    const bandasObj = selectedBanda && selectedBanda.value !== 'auto' ? BANDAS_MINSAL[selectedBanda.value] : null;
+    // Auto-detectar la banda correcta si está en 'auto'
+    const activeBandKey = (() => {
+      if (selectedBanda && selectedBanda.value !== 'auto') return selectedBanda.value;
+      const labels = selectedCCs.map(cc => cc.label.toLowerCase());
+      if (labels.some(l => l.includes('ambulat'))) return 'CMA';
+      if (labels.some(l => l.includes('urgencia') || l.includes('emergencia'))) return 'Emergencia';
+      if (labels.some(l => l.includes('uti'))) return 'DCO UTI';
+      if (labels.some(l => l.includes('uci'))) return 'DCO UCI';
+      if (labels.some(l => l.includes('hospitalizaci'))) return 'DCO Hospitalizacion';
+      if (labels.some(l => l.includes('consulta') || l.includes('especialidad'))) return 'Consultas especialidad';
+      if (labels.some(l => l.includes('iq') || l.includes('quirófano') || l.includes('quirofano'))) return 'IQ No Ambulatoria';
+      return null;
+    })();
+
+    const bandasObj = activeBandKey ? BANDAS_MINSAL[activeBandKey] : null;
 
     cData.forEach(d => {
       d.costoUnitario = d.totalProd > 0 ? (d.totalCost / d.totalProd) : 0;
@@ -160,7 +174,7 @@ export default function SigcomDashboard({ onBack }) {
 
     const tData = Object.values(ccMap).sort((a, b) => b.total - a.total);
 
-    return { chartData: cData, kpis: kpisObj, insights: genInsights, tableData: tData };
+    return { chartData: cData, kpis: kpisObj, insights: genInsights, tableData: tData, activeBandas: bandasObj || null };
   }, [rawData, selectedCCs, startMonth, endMonth, selectedBanda]);
 
   // Set default active node if nothing is selected
@@ -314,6 +328,12 @@ export default function SigcomDashboard({ onBack }) {
                 <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#64748b', fontSize: 11}} dy={5} />
                 <YAxis tickFormatter={(v) => '$' + (v/1000).toFixed(0) + 'k'} axisLine={false} tickLine={false} tick={{fill: '#64748b', fontSize: 11}} width={60} />
                 <Tooltip contentStyle={{ borderRadius: '8px', fontSize: '12px' }} formatter={(val) => formatCLP(val)} />
+                {activeBandas && <ReferenceArea y1={activeBandas.marcaInferior} y2={activeBandas.marcaSuperior} fill="#10b981" fillOpacity={0.15} />}
+                {activeBandas && <ReferenceArea y1={activeBandas.limiteInferior} y2={activeBandas.marcaInferior} fill="#f59e0b" fillOpacity={0.15} />}
+                {activeBandas && <ReferenceArea y1={activeBandas.marcaSuperior} y2={activeBandas.limiteSuperior} fill="#f59e0b" fillOpacity={0.15} />}
+                {activeBandas && <ReferenceArea y2={activeBandas.limiteInferior} fill="#dc2626" fillOpacity={0.15} />}
+                {activeBandas && <ReferenceArea y1={activeBandas.limiteSuperior} fill="#dc2626" fillOpacity={0.15} />}
+                
                 <Area type="monotone" dataKey="costoUnitario" name="Costo Real" stroke="#8b5cf6" strokeWidth={4} fillOpacity={1} fill="url(#colorCostoSmall)" />
                 <Line type="step" dataKey="limiteSuperior" name="Límite Sup (Rojo)" stroke="#dc2626" strokeWidth={2} dot={false} strokeDasharray="3 3" />
                 <Line type="step" dataKey="marcaSuperior" name="Marca Sup (Ambar)" stroke="#f59e0b" strokeWidth={2} dot={false} strokeDasharray="3 3" />
