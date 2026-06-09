@@ -5,10 +5,18 @@ const { readFile, utils } = pkg;
 
 const SIGCOM_DATA_DIR = path.join(process.cwd(), 'src', 'data', 'SIGCOM');
 const OUTPUT_FILE = path.join(process.cwd(), 'src', 'data', 'sigcom_data.json');
+const AGRUPACIONES_FILE = path.join(SIGCOM_DATA_DIR, 'Agrupaciones SIGCOM.xlsx');
 
 const extractMonth = (folderName) => {
   const match = folderName.match(/\((\d+)\)/);
   return match ? parseInt(match[1], 10) : null;
+};
+
+const cleanName = (name) => {
+  return String(name)
+    .replace(/^\d+\s*/, '') // remove leading numbers
+    .replace(/\s*\(.*?\)/g, '') // remove anything in parentheses
+    .trim();
 };
 
 const compileData = () => {
@@ -77,6 +85,9 @@ const compileData = () => {
         let directosIndex = data.findIndex(row => row[1] === 'DIRECTOS');
         
         const insumosRow = data[insumosIndex];
+        const directosRow = data[directosIndex];
+        const indirectosRow = data.find(row => row[1] === 'INDIRECTOS');
+        const totalGeneralRow = data.find(row => row[1] === 'TOTAL GENERAL');
         
         // Extract sub-insumos
         const detailedInsumosRows = [];
@@ -97,7 +108,9 @@ const compileData = () => {
           const rrhhVal = getVal(rrhhRow, col);
           const ggVal = getVal(ggRow, col);
           const insumosVal = getVal(insumosRow, col);
-          const totalVal = rrhhVal + ggVal + insumosVal;
+          const directosVal = getVal(directosRow, col) || (rrhhVal + ggVal + insumosVal);
+          const indirectosVal = getVal(indirectosRow, col);
+          const totalVal = getVal(totalGeneralRow, col) || (directosVal + indirectosVal);
 
           if (totalVal > 0 || (productionMap[cc] && Object.keys(productionMap[cc]).length > 0)) {
             
@@ -128,6 +141,8 @@ const compileData = () => {
               rrhh: rrhhVal,
               gastosGenerales: ggVal,
               insumos: insumosVal,
+              directos: directosVal,
+              indirectos: indirectosVal,
               total: totalVal,
               productionDetails: prodObj,
               productionTotal: prodTotal,
@@ -141,11 +156,82 @@ const compileData = () => {
     }
   }
 
+  // 3. Read Agrupaciones & Bands
+  let groupings = {};
+  let bands = {};
+
+  if (fs.existsSync(AGRUPACIONES_FILE)) {
+    try {
+      console.log('Reading Agrupaciones SIGCOM Excel...');
+      const workbook = readFile(AGRUPACIONES_FILE);
+      
+      // Parse Agrupaciones CC
+      const sheetCC = workbook.Sheets['Agrupaciones CC'];
+      if (sheetCC) {
+        const dataCC = utils.sheet_to_json(sheetCC, { header: 1 });
+        let currentGroup = null;
+        for (const row of dataCC) {
+          if (!row || row.length === 0) continue;
+          const col0 = String(row[0]).trim();
+          const col1 = String(row[1]).trim();
+          
+          if (col0 === 'Cod') {
+            currentGroup = col1;
+            groupings[currentGroup] = [];
+          } else if (currentGroup && row[0] !== undefined) {
+            const code = parseInt(row[0], 10);
+            const rawName = String(row[1]).trim();
+            const clean = cleanName(rawName);
+            groupings[currentGroup].push({ code, name: rawName, cleanName: clean });
+          }
+        }
+        console.log(`Parsed ${Object.keys(groupings).length} groups from Excel.`);
+      }
+
+      // Parse Banda de costos
+      const sheetBands = workbook.Sheets['Banda de costos '];
+      if (sheetBands) {
+        const dataBands = utils.sheet_to_json(sheetBands, { header: 1 });
+        for (let i = 1; i < dataBands.length; i++) {
+          const row = dataBands[i];
+          if (!row || row.length === 0) continue;
+          const name = String(row[0]).trim();
+          const promedio = parseFloat(row[1]);
+          const limiteInferior = parseFloat(row[2]);
+          const marcaInferior = parseFloat(row[3]);
+          let marcaSuperior = parseFloat(row[4]);
+          const limiteSuperior = parseFloat(row[5]);
+
+          // Typo correction for UTI marcaSuperior (e.g. 9100 -> 910000)
+          if (name === 'UTI' && marcaSuperior === 9100) {
+            marcaSuperior = 910000;
+          }
+
+          bands[name] = {
+            promedio,
+            limiteInferior,
+            marcaInferior,
+            marcaSuperior,
+            limiteSuperior
+          };
+        }
+        console.log(`Parsed bands for: ${Object.keys(bands).join(', ')}`);
+      }
+    } catch (err) {
+      console.error('Failed to parse Agrupaciones SIGCOM.xlsx:', err.message);
+    }
+  } else {
+    console.warn('Agrupaciones SIGCOM.xlsx file not found in SIGCOM directory.');
+  }
+
+  // Save everything to output file
   fs.writeFileSync(OUTPUT_FILE, JSON.stringify({
     lastUpdated: new Date().toISOString(),
+    groupings,
+    bands,
     data: existingData
   }, null, 2));
-  console.log(`Compilation complete. Saved ${existingData.length} records.`);
+  console.log(`Compilation complete. Saved ${existingData.length} records to ${OUTPUT_FILE}`);
 };
 
 compileData();

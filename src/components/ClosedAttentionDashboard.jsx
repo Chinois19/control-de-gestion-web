@@ -33,6 +33,153 @@ import {
   Info
 } from 'lucide-react';
 
+// ─── Custom MultiSelect with Search ────────────────────────────────────────
+function MultiSelectDropdown({ label, selectedValues, setSelectedValues, options, placeholder, dropdownKey, activeDropdown, setActiveDropdown }) {
+  const [searchTerm, setSearchTerm] = React.useState('');
+  const isOpen = activeDropdown === dropdownKey;
+  const isAll = selectedValues.includes('Todas');
+
+  const filtered = options.filter(o => o.toLowerCase().includes(searchTerm.toLowerCase()));
+
+  let displayLabel = placeholder;
+  if (!isAll && selectedValues.length > 0) {
+    displayLabel = selectedValues.length === 1 ? selectedValues[0] : `${selectedValues.length} seleccionados`;
+  }
+
+  const toggle = (value) => {
+    if (value === 'Todas') { setSelectedValues(['Todas']); return; }
+    let next = selectedValues.filter(x => x !== 'Todas');
+    if (next.includes(value)) next = next.filter(x => x !== value);
+    else next.push(value);
+    setSelectedValues(next.length === 0 ? ['Todas'] : next);
+  };
+
+  return (
+    <div style={{ position: 'relative', marginBottom: '14px' }}>
+      <label style={{ display: 'block', fontSize: '0.68rem', fontWeight: 800, color: '#475569', marginBottom: '6px', letterSpacing: '0.05em', textTransform: 'uppercase' }}>
+        {label}
+      </label>
+
+      {/* Trigger */}
+      <div
+        onClick={() => { setActiveDropdown(isOpen ? null : dropdownKey); setSearchTerm(''); }}
+        style={{
+          display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+          padding: '10px 12px', background: '#ffffff',
+          border: isOpen ? '1.5px solid #0891b2' : '1px solid rgba(0,0,0,0.08)',
+          borderLeft: isOpen ? '5px solid #0891b2' : '5px solid #0284c7',
+          borderRadius: '10px', cursor: 'pointer', fontSize: '0.8rem',
+          color: isAll ? '#64748b' : '#0f172a',
+          fontWeight: isAll ? 500 : 700,
+          transition: 'all 0.15s ease',
+          boxShadow: isOpen ? '0 0 0 3px rgba(8,145,178,0.1)' : 'none',
+          userSelect: 'none'
+        }}
+      >
+        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '90%' }}>
+          {displayLabel}
+        </span>
+        <span style={{ color: '#94a3b8', display: 'flex', alignItems: 'center' }}>
+          {isOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+        </span>
+      </div>
+
+      {/* Dropdown panel */}
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            initial={{ opacity: 0, y: -4 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -4 }}
+            transition={{ duration: 0.1 }}
+            style={{
+              position: 'absolute', top: '105%', left: 0, right: 0, zIndex: 200,
+              background: '#ffffff',
+              border: '1px solid rgba(8,145,178,0.15)',
+              borderRadius: '12px',
+              boxShadow: '0 12px 30px rgba(0,0,0,0.1)',
+              overflow: 'hidden'
+            }}
+          >
+            {/* Search box */}
+            <div style={{ padding: '8px 10px', borderBottom: '1px solid #f1f5f9', display: 'flex', alignItems: 'center', gap: '7px' }}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
+              </svg>
+              <input
+                autoFocus
+                value={searchTerm}
+                onChange={e => setSearchTerm(e.target.value)}
+                onClick={e => e.stopPropagation()}
+                placeholder="Buscar..."
+                style={{
+                  flex: 1, border: 'none', outline: 'none', fontSize: '0.78rem',
+                  color: '#475569', fontWeight: 500, background: 'transparent', fontFamily: 'inherit'
+                }}
+              />
+            </div>
+
+            {/* Scrollable list */}
+            <div style={{ maxHeight: '200px', overflowY: 'auto' }}>
+              {/* Todas row */}
+              <div
+                onClick={() => toggle('Todas')}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: '10px',
+                  padding: '9px 14px', cursor: 'pointer',
+                  background: isAll ? 'rgba(8,145,178,0.06)' : 'transparent',
+                  borderBottom: '1px solid #f1f5f9',
+                  transition: 'background 0.1s'
+                }}
+              >
+                <input type="checkbox" checked={isAll} readOnly
+                  style={{ accentColor: '#0891b2', cursor: 'pointer', width: '15px', height: '15px' }}
+                />
+                <span style={{ fontSize: '0.78rem', fontWeight: 800, color: isAll ? '#0891b2' : '#1e293b' }}>Todas</span>
+              </div>
+
+              {/* Filtered options */}
+              {filtered.map(opt => {
+                const checked = selectedValues.includes(opt);
+                return (
+                  <div
+                    key={opt}
+                    onClick={() => toggle(opt)}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: '10px',
+                      padding: '8px 14px', cursor: 'pointer',
+                      background: checked ? 'rgba(8,145,178,0.04)' : 'transparent',
+                      transition: 'background 0.1s'
+                    }}
+                    onMouseEnter={e => { if (!checked) e.currentTarget.style.background = '#f8fafc'; }}
+                    onMouseLeave={e => { if (!checked) e.currentTarget.style.background = 'transparent'; }}
+                  >
+                    <input type="checkbox" checked={checked} readOnly
+                      style={{ accentColor: '#0891b2', cursor: 'pointer', width: '15px', height: '15px', flexShrink: 0 }}
+                    />
+                    <span style={{
+                      fontSize: '0.78rem', fontWeight: checked ? 700 : 500,
+                      color: checked ? '#0891b2' : '#475569',
+                      overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap'
+                    }}>{opt}</span>
+                  </div>
+                );
+              })}
+
+              {filtered.length === 0 && (
+                <div style={{ padding: '12px 14px', fontSize: '0.75rem', color: '#94a3b8', fontStyle: 'italic' }}>
+                  Sin resultados
+                </div>
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+// ────────────────────────────────────────────────────────────────────────────
+
 export default function ClosedAttentionDashboard({ onBack }) {
   const [censoRaw, setCensoRaw] = useState([]);
   const [cuadraturaRaw, setCuadraturaRaw] = useState([]);
@@ -1146,162 +1293,22 @@ export default function ClosedAttentionDashboard({ onBack }) {
     };
   }, [filteredCenso, startDate, endDate]);
 
-  // Collapsible Multi-select selection toggle logic
-  const handleMultiSelectToggle = (category, value, selectedArray, setSelectedArray, allOptions) => {
-    if (value === 'Todas') {
-      setSelectedArray(['Todas']);
-      return;
-    }
+  // (toggle logic now handled inside <MultiSelectDropdown />)
 
-    let next = selectedArray.filter(x => x !== 'Todas');
-    if (next.includes(value)) {
-      next = next.filter(x => x !== value);
-    } else {
-      next.push(value);
-    }
+  // renderMultiSelect → now delegated to <MultiSelectDropdown /> component above
+  const renderMultiSelect = (label, selectedValues, setSelectedValues, options, placeholder, dropdownKey) => (
+    <MultiSelectDropdown
+      label={label}
+      selectedValues={selectedValues}
+      setSelectedValues={setSelectedValues}
+      options={options}
+      placeholder={placeholder}
+      dropdownKey={dropdownKey}
+      activeDropdown={activeDropdown}
+      setActiveDropdown={setActiveDropdown}
+    />
+  );
 
-    if (next.length === 0) {
-      setSelectedArray(['Todas']);
-    } else {
-      setSelectedArray(next);
-    }
-  };
-
-  // Reusable multi-select dropdown renderer
-  const renderMultiSelect = (label, selectedValues, setSelectedValues, options, placeholder, dropdownKey) => {
-    const isOpen = activeDropdown === dropdownKey;
-    const isAll = selectedValues.includes('Todas');
-    
-    let displayLabel = placeholder;
-    if (!isAll && selectedValues.length > 0) {
-      if (selectedValues.length === 1) {
-        displayLabel = selectedValues[0];
-      } else {
-        displayLabel = `${selectedValues.length} seleccionados`;
-      }
-    }
-
-    return (
-      <div className="filter-item" style={{ position: 'relative', marginBottom: '14px' }}>
-        <label style={{ display: 'block', fontSize: '0.68rem', fontWeight: 800, color: '#475569', marginBottom: '6px', letterSpacing: '0.05em', textTransform: 'uppercase' }}>
-          {label}
-        </label>
-        
-        {/* Dropdown Header */}
-        <div
-          onClick={() => {
-            setActiveDropdown(activeDropdown === dropdownKey ? null : dropdownKey);
-          }}
-          style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            padding: '10px 12px',
-            background: '#ffffff',
-            border: isOpen ? '1.5px solid #0891b2' : '1px solid rgba(0,0,0,0.08)',
-            borderLeft: isOpen ? '5px solid #0891b2' : '5px solid #0284c7',
-            borderRadius: '10px',
-            cursor: 'pointer',
-            fontSize: '0.8rem',
-            color: isAll ? '#64748b' : '#0f172a',
-            fontWeight: isAll ? 500 : 700,
-            transition: 'all 0.15s ease',
-            boxShadow: isOpen ? '0 0 0 3px rgba(8, 145, 178, 0.1)' : 'none',
-            userSelect: 'none'
-          }}
-        >
-          <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '90%' }}>
-            {displayLabel}
-          </span>
-          <span style={{ color: '#94a3b8', display: 'flex', alignItems: 'center' }}>
-            {isOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-          </span>
-        </div>
-
-        {/* Dropdown List */}
-        <AnimatePresence>
-          {isOpen && (
-            <motion.div
-              initial={{ opacity: 0, y: -4 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -4 }}
-              transition={{ duration: 0.1 }}
-              style={{
-                position: 'absolute',
-                top: '105%',
-                left: 0,
-                right: 0,
-                zIndex: 100,
-                maxHeight: '200px',
-                overflowY: 'auto',
-                background: '#ffffff',
-                border: '1px solid rgba(8, 145, 178, 0.15)',
-                borderRadius: '12px',
-                boxShadow: '0 12px 30px rgba(0,0,0,0.08)',
-                padding: '6px 0'
-              }}
-            >
-              {/* Option: "Todas" */}
-              <div
-                onClick={() => handleMultiSelectToggle(dropdownKey, 'Todas', selectedValues, setSelectedValues, options)}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  padding: '8px 12px',
-                  fontSize: '0.78rem',
-                  color: isAll ? '#0891b2' : '#475569',
-                  background: isAll ? 'rgba(8, 145, 178, 0.04)' : 'transparent',
-                  fontWeight: isAll ? 750 : 600,
-                  cursor: 'pointer',
-                  transition: 'background 0.1s'
-                }}
-              >
-                <input
-                  type="checkbox"
-                  checked={isAll}
-                  readOnly
-                  style={{ accentColor: '#0891b2', cursor: 'pointer' }}
-                />
-                <span>Todas</span>
-              </div>
-
-              {/* Individual Options */}
-              {options.map(opt => {
-                const checked = selectedValues.includes(opt);
-                return (
-                  <div
-                    key={opt}
-                    onClick={() => handleMultiSelectToggle(dropdownKey, opt, selectedValues, setSelectedValues, options)}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '8px',
-                      padding: '8px 12px',
-                      fontSize: '0.78rem',
-                      color: checked ? '#0891b2' : '#475569',
-                      background: checked ? 'rgba(8, 145, 178, 0.04)' : 'transparent',
-                      fontWeight: checked ? 750 : 600,
-                      cursor: 'pointer',
-                      transition: 'background 0.1s'
-                    }}
-                  >
-                    <input
-                      type="checkbox"
-                      checked={checked}
-                      readOnly
-                      style={{ accentColor: '#0891b2', cursor: 'pointer' }}
-                    />
-                    <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{opt}</span>
-                  </div>
-                );
-              })}
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
-    );
-  };
 
   // REM 20 statistical engine
   const rem20Data = useMemo(() => {

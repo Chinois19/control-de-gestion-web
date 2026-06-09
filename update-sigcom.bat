@@ -1,6 +1,6 @@
 @echo off
 :: Navigates to the workspace directory
-cd /d "C:\Users\gonza\OneDrive\Aplicaciones Antigravity\Control de Gestion Web"
+cd /d "%~dp0"
 
 echo ===================================================
 echo   COMPILANDO DATOS MENSUALES DE SIGCOM...
