@@ -472,6 +472,8 @@ export default function SigcomDashboard({ onBack }) {
   const activeInsumos = isGlobalActive ? kpis.totalInsumos : (activeChartNode?.data?.insumos || 0);
   const activeDirectos = isGlobalActive ? kpis.totalDirectos : (activeChartNode?.data?.directos || 0);
   const activeIndirectos = isGlobalActive ? kpis.totalIndirectos : (activeChartNode?.data?.indirectos || 0);
+  const activeTotal = isGlobalActive ? kpis.totalCost : (activeChartNode?.data?.total || 0);
+  const activeInsumosBreakdown = isGlobalActive ? globalInsumosBreakdown : (activeChartNode?.data?.insumosBreakdown || {});
   const costUnitarioLabelMap = {
     directos: 'Costo Unit. Directo Real',
     indirectos: 'Costo Unit. Indirecto Real',

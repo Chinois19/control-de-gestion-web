@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { 
   Search, 
   Menu, 
@@ -17,6 +17,8 @@ import {
   ChevronRight,
   Settings,
   User,
+  LogOut,
+  Shield,
   LayoutDashboard,
   ClipboardList,
   Stethoscope,
@@ -37,7 +39,11 @@ import PharmacyDashboard from './components/PharmacyDashboard';
 import SigcomDashboard from './components/SigcomDashboard';
 import SolicitudesDashboard from './components/SolicitudesDashboard';
 import LaboratoryDashboard from './components/LaboratoryDashboard';
+import LoginScreen, { getSession, createSession, destroySession, refreshSession } from './components/LoginScreen';
+import UserManagementPanel from './components/UserManagementPanel';
 import './App.css';
+
+const SESSION_TIMEOUT_MS = 30 * 60 * 1000; // 30 minutes
 
 // HD Images
 const imgSurgical = "/surgical_hd.png";
@@ -362,6 +368,45 @@ const searchIndex = [
 ];
 
 function App() {
+  // ─── AUTH STATE ────────────────────────────────────────────────────────────
+  const [session, setSession] = useState(() => getSession());
+  const [showUserMgmt, setShowUserMgmt] = useState(false);
+  const inactivityTimer = useRef(null);
+
+  const handleLogin = useCallback((newSession) => {
+    setSession(newSession);
+  }, []);
+
+  const handleLogout = useCallback(() => {
+    destroySession();
+    setSession(null);
+    setShowUserMgmt(false);
+  }, []);
+
+  // Reset inactivity timer on any user action
+  const resetTimer = useCallback(() => {
+    refreshSession();
+    if (inactivityTimer.current) clearTimeout(inactivityTimer.current);
+    inactivityTimer.current = setTimeout(handleLogout, SESSION_TIMEOUT_MS);
+  }, [handleLogout]);
+
+  useEffect(() => {
+    if (!session) return;
+    const events = ['mousedown', 'mousemove', 'keydown', 'scroll', 'touchstart', 'click'];
+    events.forEach(ev => window.addEventListener(ev, resetTimer, { passive: true }));
+    resetTimer(); // Start timer immediately
+    return () => {
+      events.forEach(ev => window.removeEventListener(ev, resetTimer));
+      if (inactivityTimer.current) clearTimeout(inactivityTimer.current);
+    };
+  }, [session, resetTimer]);
+
+  // ─── RENDER LOGIN IF NOT AUTHENTICATED ────────────────────────────────────
+  if (!session) {
+    return <LoginScreen onLogin={handleLogin} />;
+  }
+
+  // ─── APP STATE ─────────────────────────────────────────────────────────────
   const [activeView, setActiveView] = useState('home');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [expandedMenu, setExpandedMenu] = useState(null);
@@ -478,6 +523,16 @@ function App() {
 
   return (
     <div className="App">
+      {/* User Management Modal */}
+      <AnimatePresence>
+        {showUserMgmt && (
+          <UserManagementPanel
+            currentUser={session}
+            onClose={() => setShowUserMgmt(false)}
+          />
+        )}
+      </AnimatePresence>
+
       {/* Premium Glass Nav */}
       <nav className="premium-nav">
         <button 
@@ -499,9 +554,35 @@ function App() {
           <span className="nav-link" onClick={() => navigateToView('home')}>BIENVENIDA</span>
           <span className="nav-link" onClick={() => navigateToView('produccion_general')}>ESTADÍSTICAS</span>
           <span className="nav-link" onClick={() => navigateToView('repositorio')}>REPOSITORIO</span>
-          <div style={{ width: '32px', height: '32px', background: '#eee', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <User size={16} />
+
+          {/* User badge */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: '#f1f5f9', borderRadius: '40px', padding: '5px 14px 5px 8px', border: '1px solid #e2e8f0' }}>
+            <div style={{ width: '28px', height: '28px', background: session.role === 'admin' ? 'linear-gradient(135deg,#6366f1,#8b5cf6)' : 'linear-gradient(135deg,#0ea5e9,#38bdf8)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              {session.role === 'admin' ? <Shield size={14} color="white" /> : <User size={14} color="white" />}
+            </div>
+            <span style={{ fontSize: '0.78rem', fontWeight: 700, color: '#334155', maxWidth: '100px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{session.name}</span>
           </div>
+
+          {/* Admin: user management button */}
+          {session.role === 'admin' && (
+            <button
+              onClick={() => setShowUserMgmt(true)}
+              title="Gestión de usuarios"
+              style={{ background: '#ede9fe', border: 'none', borderRadius: '10px', padding: '8px 12px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', color: '#6366f1', fontWeight: 700, fontSize: '0.78rem', fontFamily: 'inherit' }}
+            >
+              <Shield size={15} />
+              <span style={{ display: 'none' }} className="nav-label">Usuarios</span>
+            </button>
+          )}
+
+          {/* Logout button */}
+          <button
+            onClick={handleLogout}
+            title="Cerrar sesión"
+            style={{ background: '#fee2e2', border: 'none', borderRadius: '10px', padding: '8px 12px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', color: '#dc2626', fontWeight: 700, fontSize: '0.78rem', fontFamily: 'inherit' }}
+          >
+            <LogOut size={15} />
+          </button>
         </div>
       </nav>
 
