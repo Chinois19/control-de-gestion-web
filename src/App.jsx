@@ -365,6 +365,13 @@ const searchIndex = [
     path: 'Servicios de Apoyo ➔ Laboratorio',
     desc: 'Panel analítico ejecutivo de exámenes procesados, tiempos de respuesta (TAT), rechazo de muestras y cuadratura REM 03.',
     action: { view: 'laboratorio' }
+  },
+  {
+    keys: ['acuerdo', 'programacion', 'acuerdo de programacion', 'minsal', 'minsal 2026', 'villarrica', 'indice funcional', 'grd', 'iema', 'impacto', 'estancias evitables', 'ges', 'cumplimiento ges', 'suspension quirurgica', 'mediana iq', 'mediana cne', 'registros ges', 'cma', 'cirugia mayor ambulatoria', 'metas minsal', 'compromisos de gestion'],
+    title: 'Acuerdo de Programación MINSAL 2026',
+    path: 'Indicadores de Gestión ➔ Acuerdo de Programación',
+    desc: 'Metas, compromisos y evolución del Índice Funcional (GRD), IEMA, Impacto, Cumplimiento GES y Suspensión Quirúrgica para el Hospital de Villarrica.',
+    action: { view: 'acuerdo_minsal' }
   }
 ];
 
