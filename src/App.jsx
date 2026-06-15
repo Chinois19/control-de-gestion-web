@@ -39,6 +39,7 @@ import PharmacyDashboard from './components/PharmacyDashboard';
 import SigcomDashboard from './components/SigcomDashboard';
 import SolicitudesDashboard from './components/SolicitudesDashboard';
 import LaboratoryDashboard from './components/LaboratoryDashboard';
+import AcuerdoMinsalDashboard from './components/AcuerdoMinsalDashboard';
 import LoginScreen, { getSession, createSession, destroySession, refreshSession } from './components/LoginScreen';
 import UserManagementPanel from './components/UserManagementPanel';
 import './App.css';
@@ -917,6 +918,9 @@ function App() {
               )}
               {activeView === 'solicitudes_ciudadanas' && (
                 <SolicitudesDashboard onBack={() => navigateToView('home')} />
+              )}
+              {activeView === 'acuerdo_minsal' && (
+                <AcuerdoMinsalDashboard onBack={() => navigateToView('home')} />
               )}
             </div>
           )}
