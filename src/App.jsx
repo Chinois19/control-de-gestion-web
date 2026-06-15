@@ -401,10 +401,6 @@ function App() {
     };
   }, [session, resetTimer]);
 
-  // ─── RENDER LOGIN IF NOT AUTHENTICATED ────────────────────────────────────
-  if (!session) {
-    return <LoginScreen onLogin={handleLogin} />;
-  }
 
   // ─── APP STATE ─────────────────────────────────────────────────────────────
   const [activeView, setActiveView] = useState('home');
@@ -520,6 +516,11 @@ function App() {
     e.stopPropagation();
     setExpandedSubMenu(expandedSubMenu === id ? null : id);
   };
+
+  // ─── RENDER LOGIN IF NOT AUTHENTICATED ────────────────────────────────────
+  if (!session) {
+    return <LoginScreen onLogin={handleLogin} />;
+  }
 
   return (
     <div className="App">
