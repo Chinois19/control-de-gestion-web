@@ -13,6 +13,7 @@ import {
 
 export default function AcuerdoMinsalDashboard({ onBack }) {
   const [rawData, setRawData] = useState([]);
+  const [nominaData, setNominaData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [selectedId, setSelectedId] = useState('indice_funcional');
@@ -31,6 +32,17 @@ export default function AcuerdoMinsalDashboard({ onBack }) {
       if (!response.ok) throw new Error('No se pudo cargar el archivo de datos del Acuerdo de Programación.');
       const data = await response.json();
       setRawData(data);
+
+      try {
+        const nominaResponse = await fetch('/data/nomina_registros_ges.json');
+        if (nominaResponse.ok) {
+          const nData = await nominaResponse.json();
+          setNominaData(nData);
+        }
+      } catch (errNomina) {
+        console.error("Error al cargar la nómina de registros GES:", errNomina);
+      }
+
     } catch (err) {
       console.error(err);
       setError('Error al cargar los datos. Asegúrate de ejecutar el actualizador G:\\.');
@@ -89,6 +101,7 @@ export default function AcuerdoMinsalDashboard({ onBack }) {
           cumplimientoGes: parsePercent(row["6.1 % Cumplimiento GES"]),
           cumplimientoGesExceptuadas: parsePercent(row["6.2 % Cumplimiento GES EG"]),
           cumplimientoGesOnc: parsePercent(row["7. % Cumplimiento GES Oncológico"]),
+          cumplimientoGesOncExceptuadas: parsePercent(row["7. % Cumplimiento GES Oncológico EG"]),
           suspensionQca: parsePercent(row["8. % SUSPENSION QCA"]),
           medianaIQ: parseVal(row["9. MEDIANA IQ"]),
           medianaCNE: parseVal(row["10. MEDIANA CNE"]),
@@ -116,6 +129,7 @@ export default function AcuerdoMinsalDashboard({ onBack }) {
       cumplimientoGes: parsePercent(totalRow["6.1 % Cumplimiento GES"]),
       cumplimientoGesExceptuadas: parsePercent(totalRow["6.2 % Cumplimiento GES EG"]),
       cumplimientoGesOnc: parsePercent(totalRow["7. % Cumplimiento GES Oncológico"]),
+      cumplimientoGesOncExceptuadas: parsePercent(totalRow["7. % Cumplimiento GES Oncológico EG"]),
       suspensionQca: parsePercent(totalRow["8. % SUSPENSION QCA"]),
       medianaIQ: parseVal(totalRow["9. MEDIANA IQ"]),
       medianaCNE: parseVal(totalRow["10. MEDIANA CNE"]),
@@ -265,7 +279,7 @@ export default function AcuerdoMinsalDashboard({ onBack }) {
       },
       {
         id: 'ges_oncologico',
-        name: '7. GES Oncológico',
+        name: '7.1 GES Oncológico',
         formulaSnippet: 'GO Onc. Cumplidas / Total',
         formula: '((N° GO Oncológicas Cumplidas + Exceptuadas) / Total GO Oncológicas Atendidas e Incumplidas) * 100',
         value: yearlyTotals.cumplimientoGesOnc ? `${yearlyTotals.cumplimientoGesOnc.toFixed(2)}%` : '80.62%',
@@ -281,6 +295,25 @@ export default function AcuerdoMinsalDashboard({ onBack }) {
         isPercentage: true,
         insightsVillarrica: 'El cumplimiento oncológico registra un preocupante 80.62% acumulado, gatillado por un descenso severo en marzo donde bajó a 80.62%.',
         insightsImpacto: 'La prioridad oncológica es absoluta. Un retraso en estas garantías genera un impacto clínico severo para los pacientes y repercusiones legales inmediatas.'
+      },
+      {
+        id: 'ges_oncologico_exceptuadas',
+        name: '7.2 GES Oncológico Exceptuadas',
+        formulaSnippet: 'GO Onc. Exceptuadas / Total',
+        formula: '(Garantías Oncológicas Exceptuadas en el periodo t / Total de Garantías Oncológicas Atendidas) * 100',
+        value: yearlyTotals.cumplimientoGesOncExceptuadas ? `${yearlyTotals.cumplimientoGesOncExceptuadas.toFixed(2)}%` : '3.88%',
+        metaValue: 7.0,
+        meta: '≤ 7.00%',
+        status: 'success',
+        statusText: 'CUMPLE ✅',
+        icon: <AlertCircle size={18} />,
+        source: 'SIGGES / FONASA',
+        methodology: 'Porcentaje de garantías GES Oncológicas exceptuadas por motivos médicos o administrativos justificados.',
+        chartKey: 'cumplimientoGesOncExceptuadas',
+        chartType: 'line',
+        isPercentage: true,
+        insightsVillarrica: 'El porcentaje de garantías oncológicas exceptuadas es de 3.88%, manteniéndose por debajo del límite de tolerancia del 7.00%.',
+        insightsImpacto: 'Refleja un control clínico y administrativo en la justificación de excepciones en pacientes oncológicos, evitando excesos no autorizados.'
       },
       {
         id: 'suspension_qca',
@@ -398,6 +431,67 @@ export default function AcuerdoMinsalDashboard({ onBack }) {
     
     return [finalMin, finalMax];
   }, [chartData, activeIndicator]);
+
+  const stackedChartData = useMemo(() => {
+    if (!nominaData || nominaData.length === 0) return [];
+    
+    const monthsOrder = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+    
+    const activeMonths = Array.from(new Set(nominaData.map(d => d.mesDigitacion)))
+      .sort((a, b) => monthsOrder.indexOf(a) - monthsOrder.indexOf(b));
+      
+    return activeMonths.map(month => {
+      const monthRecords = nominaData.filter(d => d.mesDigitacion === month);
+      const counts = {
+        name: month,
+        '<=5 DIAS': 0,
+        '6 A 30 DIAS': 0,
+        '31 A 60 DIAS': 0,
+        '61 A 90 DIAS': 0,
+        '91 A 120 DIAS': 0,
+        'MAS 120 DIAS': 0
+      };
+      
+      monthRecords.forEach(r => {
+        const rng = r.rangoDias;
+        if (counts[rng] !== undefined) {
+          counts[rng]++;
+        }
+      });
+      
+      return counts;
+    });
+  }, [nominaData]);
+
+  const topFails = useMemo(() => {
+    if (!nominaData || nominaData.length === 0) return [];
+    
+    const failsMap = {};
+    nominaData.forEach(r => {
+      const key = `${r.problema} - ${r.etapa}`;
+      if (!failsMap[key]) {
+        failsMap[key] = {
+          problema: r.problema,
+          etapa: r.etapa,
+          count: 0,
+          total: 0
+        };
+      }
+      failsMap[key].total++;
+      if (r.rangoDias !== '<=5 DIAS') {
+        failsMap[key].count++;
+      }
+    });
+    
+    return Object.values(failsMap)
+      .filter(f => f.count > 0)
+      .map(f => ({
+        ...f,
+        pct: (f.count / f.total) * 100
+      }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 5);
+  }, [nominaData]);
 
   if (loading) {
     return (
@@ -587,7 +681,21 @@ export default function AcuerdoMinsalDashboard({ onBack }) {
                 </p>
                 <div style={{ height: '320px', width: '100%' }}>
                   <ResponsiveContainer width="100%" height="100%">
-                    {activeIndicator.chartType === 'bar' ? (
+                    {activeIndicator.id === 'registros_ges' ? (
+                      <BarChart data={stackedChartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.15} />
+                        <XAxis dataKey="name" tick={{ fontSize: 11, fontWeight: 600 }} />
+                        <YAxis tick={{ fontSize: 11 }} />
+                        <Tooltip content={<CustomTooltipStacked />} />
+                        <Legend wrapperStyle={{ fontSize: '11px', fontWeight: 600 }} />
+                        <Bar dataKey="<=5 DIAS" stackId="a" fill="#10b981" name="Dentro de Plazo (≤5 días)" />
+                        <Bar dataKey="6 A 30 DIAS" stackId="a" fill="#f59e0b" name="Retraso Leve (6-30)" />
+                        <Bar dataKey="31 A 60 DIAS" stackId="a" fill="#ea580c" name="Retraso Moderado (31-60)" />
+                        <Bar dataKey="61 A 90 DIAS" stackId="a" fill="#dc2626" name="Retraso Grave (61-90)" />
+                        <Bar dataKey="91 A 120 DIAS" stackId="a" fill="#b91c1c" name="Retraso Crítico (91-120)" />
+                        <Bar dataKey="MAS 120 DIAS" stackId="a" fill="#581c87" name="Fuera de Rango (>120)" />
+                      </BarChart>
+                    ) : activeIndicator.chartType === 'bar' ? (
                       <BarChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                         <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.15} />
                         <XAxis dataKey="name" tick={{ fontSize: 11, fontWeight: 600 }} />
@@ -667,6 +775,70 @@ export default function AcuerdoMinsalDashboard({ onBack }) {
               </div>
             </div>
 
+            {/* Bottleneck Analysis Table (Only for Indicator 11 - Registros GES) */}
+            {activeIndicator.id === 'registros_ges' && topFails.length > 0 && (
+              <div style={{ background: '#ffffff', borderRadius: '24px', border: '1px solid #e2e8f0', padding: '24px', boxShadow: '0 4px 20px rgba(0,0,0,0.02)', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                <h3 style={{ fontSize: '1rem', fontWeight: 800, color: '#991b1b', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <ShieldAlert size={18} color="#ef4444" />
+                  Puntos Críticos de Demora en Registro (Top 5 Incumplimientos)
+                </h3>
+                <p style={{ fontSize: '0.82rem', color: '#64748b', margin: 0 }}>
+                  Detalle de problemas y etapas de salud donde se concentran los mayores retrasos de digitación (&gt;5 días hábiles) en el Hospital de Villarrica.
+                </p>
+                
+                <div style={{ overflowX: 'auto' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
+                    <thead>
+                      <tr style={{ borderBottom: '2px solid #f1f5f9', textAlign: 'left', color: '#64748b' }}>
+                        <th style={{ padding: '10px 12px', fontWeight: 700 }}>Problema de Salud (GES)</th>
+                        <th style={{ padding: '10px 12px', fontWeight: 700 }}>Etapa / Estado de Salud</th>
+                        <th style={{ padding: '10px 12px', fontWeight: 700, textAlign: 'center' }}>Casos Retrasados</th>
+                        <th style={{ padding: '10px 12px', fontWeight: 700, textAlign: 'center' }}>Tasa de Retraso</th>
+                        <th style={{ padding: '10px 12px', fontWeight: 700 }}>Acción Correctiva Propuesta</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {topFails.map((fail, idx) => {
+                        let suggestion = "Revisar proceso de notificación local.";
+                        if (fail.problema.includes("VIH")) {
+                          suggestion = "Digitalización inmediata al ingreso de la notificación obligatoria. Técnico GES exclusivo para VIH.";
+                        } else if (fail.problema.includes("INFARTO") || fail.problema.includes("MIOCARDIO")) {
+                          suggestion = "Automatizar envío de ECG a digitación en urgencia. Cargar plantilla preestablecida.";
+                        } else if (fail.problema.includes("REFRACCIÓN") || fail.problema.includes("LENTES")) {
+                          suggestion = "Establecer canal directo con Unidad de Oftalmología para reportar entregas semanalmente.";
+                        } else if (fail.problema.includes("AYUDAS")) {
+                          suggestion = "Controlar firmas de entrega en bodega kinesiológica y digitalizar en el día de retiro.";
+                        } else if (fail.problema.includes("HIPOACUSIA")) {
+                          suggestion = "Coordinación con Otorrinolaringología para entrega y registro simultáneo de audífonos.";
+                        }
+                        
+                        return (
+                          <tr key={idx} style={{ borderBottom: '1px solid #f1f5f9', background: idx % 2 === 0 ? 'transparent' : '#fafafa' }}>
+                            <td style={{ padding: '12px 12px', fontWeight: 700, color: '#1e293b' }}>{fail.problema}</td>
+                            <td style={{ padding: '12px 12px', color: '#475569' }}>{fail.etapa}</td>
+                            <td style={{ padding: '12px 12px', textAlign: 'center', fontWeight: 800, color: '#ef4444' }}>{fail.count}</td>
+                            <td style={{ padding: '12px 12px', textAlign: 'center' }}>
+                              <span style={{ 
+                                padding: '3px 8px', 
+                                borderRadius: '6px', 
+                                background: fail.pct > 70 ? '#ffebee' : '#fff3e0', 
+                                color: fail.pct > 70 ? '#c62828' : '#e65100', 
+                                fontWeight: 800,
+                                fontSize: '0.78rem'
+                              }}>
+                                {fail.pct.toFixed(1)}%
+                              </span>
+                            </td>
+                            <td style={{ padding: '12px 12px', color: '#15803d', fontWeight: 600 }}>{suggestion}</td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
           </div>
         )}
 
@@ -674,6 +846,36 @@ export default function AcuerdoMinsalDashboard({ onBack }) {
     </div>
   );
 }
+
+// Custom Tooltip component for Stacked Bar Chart
+const CustomTooltipStacked = ({ active, payload, label }) => {
+  if (active && payload && payload.length) {
+    const total = payload.reduce((acc, entry) => acc + (entry.value || 0), 0);
+    return (
+      <div style={{ background: 'white', padding: '14px', borderRadius: '12px', boxShadow: '0 8px 20px rgba(0,0,0,0.12)', border: '1px solid #e2e8f0' }}>
+        <p style={{ fontWeight: 800, margin: '0 0 8px 0', color: '#0f172a', fontSize: '0.88rem' }}>{label}</p>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+          {payload.slice().reverse().map((entry, idx) => (
+            <div key={idx} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px', fontSize: '0.8rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: entry.color }} />
+                <span style={{ color: '#475569', fontWeight: 600 }}>{entry.name}:</span>
+              </div>
+              <span style={{ color: '#0f172a', fontWeight: 800 }}>
+                {entry.value} ({total > 0 ? ((entry.value / total) * 100).toFixed(1) : 0}%)
+              </span>
+            </div>
+          ))}
+          <div style={{ borderTop: '1px solid #f1f5f9', marginTop: '6px', paddingTop: '6px', display: 'flex', justifyContent: 'space-between', fontSize: '0.82rem', fontWeight: 800 }}>
+            <span style={{ color: '#0f172a' }}>Total Registros:</span>
+            <span style={{ color: '#2563eb' }}>{total}</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+  return null;
+};
 
 // Custom Tooltip component for Recharts
 const CustomTooltip = ({ active, payload, label, isPercentage }) => {
