@@ -1,5 +1,5 @@
 {
-  "lastUpdated": "2026-06-15T20:13:09.868Z",
+  "lastUpdated": "2026-06-15T21:23:58.768Z",
   "groupings": {
     "Hospitalización": [
       {
@@ -28586,6 +28586,1927 @@
       "id": "2026-3-95",
       "year": 2026,
       "month": 3,
+      "costCenter": "TOTAL",
+      "rrhh": 3055968434.000001,
+      "gastosGenerales": 611532345.5690819,
+      "insumos": 638820608.679837,
+      "directos": 4306321388.2489195,
+      "indirectos": 2224302558.600179,
+      "total": 6530623946.849098,
+      "productionDetails": {},
+      "productionTotal": 0,
+      "insumosBreakdown": {
+        "COMBUSTIBLES Y LUBRICANTES": 5251212,
+        "EQUIPOS MENORES": 11278112,
+        "LIBROS, TEXTOS, UTILES DE ENSEÑANZA Y PUBLICACIONES": 705169,
+        "MATERIAL DE ODONTOLOGÍA": 3158712,
+        "MATERIAL DE OSTEOSÍNTESIS Y PRÓTESIS": 6295620,
+        "MATERIAL MEDICO QUIRURGICO": 93624996,
+        "MATERIALES DE CURACIÓN": 7444552,
+        "MATERIALES DE OFICINA, PRODUCTOS DE PAPEL E IMPRESOS": 5542271,
+        "MATERIALES INFORMATICOS": 758879,
+        "MATERIALES Y ELEMENTOS DE ASEO": 9644630,
+        "MEDICAMENTOS": 353693072.679837,
+        "OTROS INSUMOS Y MATERIALES": 11265512,
+        "PRODUCTOS QUÍMICOS": 104707903,
+        "REPUESTOS Y ACCESORIOS PARA MANTENIMIENTO Y REPARACIONES DE VEHICULOS": 604150,
+        "VÍVERES": 24845818
+      }
+    },
+    {
+      "id": "2026-4-2",
+      "year": 2026,
+      "month": 4,
+      "costCenter": "HOSPITALIZACIÓN MEDICINA INTERNA",
+      "rrhh": 186688082.72582898,
+      "gastosGenerales": 35562942.953211434,
+      "insumos": 42195596.67516521,
+      "directos": 264446622.3542056,
+      "indirectos": 297948039.13934076,
+      "total": 562394661.4935464,
+      "productionDetails": {
+        "Egreso": 241,
+        "DCO": 1858,
+        "N. Camas": 63
+      },
+      "productionTotal": 241,
+      "insumosBreakdown": {
+        "LIBROS, TEXTOS, UTILES DE ENSEÑANZA Y PUBLICACIONES": 47181,
+        "MEDICAMENTOS": 42148415.67516521
+      }
+    },
+    {
+      "id": "2026-4-3",
+      "year": 2026,
+      "month": 4,
+      "costCenter": "HOSPITALIZACIÓN QUIRÚRGICA",
+      "rrhh": 95388987.27928296,
+      "gastosGenerales": 15703724.043671919,
+      "insumos": 26215305.95780961,
+      "directos": 137308017.2807645,
+      "indirectos": 111020348.66842838,
+      "total": 248328365.94919288,
+      "productionDetails": {
+        "Egreso": 169,
+        "DCO": 891,
+        "N. Camas": 16
+      },
+      "productionTotal": 169,
+      "insumosBreakdown": {
+        "EQUIPOS MENORES": 203433,
+        "MATERIAL DE OSTEOSÍNTESIS Y PRÓTESIS": 1859424,
+        "MATERIAL MEDICO QUIRURGICO": 7069567,
+        "MATERIALES DE CURACIÓN": 2337028,
+        "MATERIALES DE OFICINA, PRODUCTOS DE PAPEL E IMPRESOS": 346651,
+        "MATERIALES Y ELEMENTOS DE ASEO": 483396,
+        "MEDICAMENTOS": 13335360.957809608,
+        "OTROS INSUMOS Y MATERIALES": 580446
+      }
+    },
+    {
+      "id": "2026-4-4",
+      "year": 2026,
+      "month": 4,
+      "costCenter": "HOSPITALIZACIÓN OBSTETRICIA",
+      "rrhh": 164086247.64663103,
+      "gastosGenerales": 6318842.380308027,
+      "insumos": 3025071.323312996,
+      "directos": 173430161.35025206,
+      "indirectos": 80382726.79742688,
+      "total": 253812888.14767894,
+      "productionDetails": {
+        "Egreso": 120,
+        "DCO": 343,
+        "N. Camas": 12
+      },
+      "productionTotal": 120,
+      "insumosBreakdown": {
+        "EQUIPOS MENORES": 13190,
+        "MATERIAL MEDICO QUIRURGICO": 1046769,
+        "MATERIALES DE CURACIÓN": 95365,
+        "MATERIALES Y ELEMENTOS DE ASEO": 139840,
+        "MEDICAMENTOS": 1670285.3233129962,
+        "OTROS INSUMOS Y MATERIALES": 59622
+      }
+    },
+    {
+      "id": "2026-4-5",
+      "year": 2026,
+      "month": 4,
+      "costCenter": "HOSPITALIZACIÓN GINECOLOGÍA",
+      "rrhh": 35785633.799144365,
+      "gastosGenerales": 1307346.6993740746,
+      "insumos": 2704394.459152462,
+      "directos": 39797374.957670905,
+      "indirectos": 54524298.14950317,
+      "total": 94321673.10717407,
+      "productionDetails": {
+        "Egreso": 26,
+        "DCO": 61,
+        "N. Camas": 8
+      },
+      "productionTotal": 26,
+      "insumosBreakdown": {
+        "EQUIPOS MENORES": 13190,
+        "MATERIAL MEDICO QUIRURGICO": 1046770,
+        "MATERIALES DE CURACIÓN": 95365,
+        "MATERIALES Y ELEMENTOS DE ASEO": 139840,
+        "MEDICAMENTOS": 1349607.459152462,
+        "OTROS INSUMOS Y MATERIALES": 59622
+      }
+    },
+    {
+      "id": "2026-4-6",
+      "year": 2026,
+      "month": 4,
+      "costCenter": "HOSPITALIZACIÓN PEDIATRÍA",
+      "rrhh": 28992691.465151817,
+      "gastosGenerales": 11385571.516180556,
+      "insumos": 689477.2643967413,
+      "directos": 41067740.24572912,
+      "indirectos": 35609458.44648199,
+      "total": 76677198.6922111,
+      "productionDetails": {
+        "Egreso": 47,
+        "DCO": 203,
+        "N. Camas": 10
+      },
+      "productionTotal": 47,
+      "insumosBreakdown": {
+        "MEDICAMENTOS": 689477.2643967413
+      }
+    },
+    {
+      "id": "2026-4-7",
+      "year": 2026,
+      "month": 4,
+      "costCenter": "HOSPITALIZACIÓN TRAUMATOLOGÍA PEDIÁTRICA",
+      "rrhh": 0,
+      "gastosGenerales": 0,
+      "insumos": 0,
+      "directos": 0,
+      "indirectos": 0,
+      "total": 0,
+      "productionDetails": {
+        "Egreso": 0,
+        "DCO": 0,
+        "N. Camas": 0
+      },
+      "productionTotal": 0,
+      "insumosBreakdown": {}
+    },
+    {
+      "id": "2026-4-8",
+      "year": 2026,
+      "month": 4,
+      "costCenter": "QUIRÓFANOS DERMATOLOGÍA",
+      "rrhh": 0,
+      "gastosGenerales": 0,
+      "insumos": 0,
+      "directos": 0,
+      "indirectos": 0,
+      "total": 0,
+      "productionDetails": {
+        "Intervencion quirurgica": 0
+      },
+      "productionTotal": 0,
+      "insumosBreakdown": {}
+    },
+    {
+      "id": "2026-4-9",
+      "year": 2026,
+      "month": 4,
+      "costCenter": "QUIRÓFANOS DIGESTIVA",
+      "rrhh": 33937681.748448454,
+      "gastosGenerales": 2458345.7466950626,
+      "insumos": 8953609,
+      "directos": 45349636.49514352,
+      "indirectos": 18806046.102842726,
+      "total": 64155682.59798624,
+      "productionDetails": {
+        "Intervencion quirurgica": 64
+      },
+      "productionTotal": 64,
+      "insumosBreakdown": {
+        "MATERIAL MEDICO QUIRURGICO": 7894826,
+        "MEDICAMENTOS": 1058783
+      }
+    },
+    {
+      "id": "2026-4-10",
+      "year": 2026,
+      "month": 4,
+      "costCenter": "QUIRÓFANOS GINECOLOGÍA",
+      "rrhh": 17693077.567102358,
+      "gastosGenerales": 2213691.7466950626,
+      "insumos": 2831279,
+      "directos": 22738048.31379742,
+      "indirectos": 10022086.160818698,
+      "total": 32760134.474616118,
+      "productionDetails": {
+        "Intervencion quirurgica": 33
+      },
+      "productionTotal": 33,
+      "insumosBreakdown": {
+        "MATERIAL MEDICO QUIRURGICO": 2285344,
+        "MEDICAMENTOS": 545935
+      }
+    },
+    {
+      "id": "2026-4-11",
+      "year": 2026,
+      "month": 4,
+      "costCenter": "QUIRÓFANOS OBSTETRICIA",
+      "rrhh": 18522655.791658357,
+      "gastosGenerales": 2380056.7466950626,
+      "insumos": 7260383,
+      "directos": 28163095.53835342,
+      "indirectos": 12899664.083002198,
+      "total": 41062759.62135562,
+      "productionDetails": {
+        "Intervencion quirurgica": 37
+      },
+      "productionTotal": 37,
+      "insumosBreakdown": {
+        "MATERIAL MEDICO QUIRURGICO": 6648274,
+        "MEDICAMENTOS": 612109
+      }
+    },
+    {
+      "id": "2026-4-12",
+      "year": 2026,
+      "month": 4,
+      "costCenter": "QUIRÓFANOS ODONTOLOGICA",
+      "rrhh": 0,
+      "gastosGenerales": 0,
+      "insumos": 0,
+      "directos": 0,
+      "indirectos": 0,
+      "total": 0,
+      "productionDetails": {
+        "Intervencion quirurgica": 0
+      },
+      "productionTotal": 0,
+      "insumosBreakdown": {}
+    },
+    {
+      "id": "2026-4-13",
+      "year": 2026,
+      "month": 4,
+      "costCenter": "QUIRÓFANOS OFTALMOLOGÍA",
+      "rrhh": 0,
+      "gastosGenerales": 0,
+      "insumos": 0,
+      "directos": 0,
+      "indirectos": 0,
+      "total": 0,
+      "productionDetails": {
+        "Intervencion quirurgica": 0
+      },
+      "productionTotal": 0,
+      "insumosBreakdown": {}
+    },
+    {
+      "id": "2026-4-14",
+      "year": 2026,
+      "month": 4,
+      "costCenter": "QUIRÓFANOS OTORRINOLARINGOLOGÍA",
+      "rrhh": 2498589.5104326014,
+      "gastosGenerales": 1969037.7466950626,
+      "insumos": 432060,
+      "directos": 4899687.257127664,
+      "indirectos": 3635724.3531530695,
+      "total": 8535411.610280734,
+      "productionDetails": {
+        "Intervencion quirurgica": 4
+      },
+      "productionTotal": 4,
+      "insumosBreakdown": {
+        "MATERIAL MEDICO QUIRURGICO": 415517,
+        "MEDICAMENTOS": 16543
+      }
+    },
+    {
+      "id": "2026-4-15",
+      "year": 2026,
+      "month": 4,
+      "costCenter": "QUIRÓFANOS PROCTOLOGÍA",
+      "rrhh": 506651.6132820191,
+      "gastosGenerales": 2203905.7466950626,
+      "insumos": 481691,
+      "directos": 3192248.359977082,
+      "indirectos": 871257.9218714597,
+      "total": 4063506.2818485415,
+      "productionDetails": {
+        "Intervencion quirurgica": 1
+      },
+      "productionTotal": 1,
+      "insumosBreakdown": {
+        "MATERIAL MEDICO QUIRURGICO": 415517,
+        "MEDICAMENTOS": 66174
+      }
+    },
+    {
+      "id": "2026-4-16",
+      "year": 2026,
+      "month": 4,
+      "costCenter": "QUIRÓFANOS TRAUMATOLOGÍA Y ORTOPEDIA",
+      "rrhh": 22015125.42682975,
+      "gastosGenerales": 2203905.7466950626,
+      "insumos": 5210507,
+      "directos": 29429538.173524812,
+      "indirectos": 15971059.211394414,
+      "total": 45400597.384919226,
+      "productionDetails": {
+        "Intervencion quirurgica": 48
+      },
+      "productionTotal": 48,
+      "insumosBreakdown": {
+        "MATERIAL MEDICO QUIRURGICO": 5193964,
+        "MEDICAMENTOS": 16543
+      }
+    },
+    {
+      "id": "2026-4-17",
+      "year": 2026,
+      "month": 4,
+      "costCenter": "QUIRÓFANOS UROLOGÍA",
+      "rrhh": 11694340.367933616,
+      "gastosGenerales": 2047326.7466950626,
+      "insumos": 1209605,
+      "directos": 14951272.114628678,
+      "indirectos": 6148977.969897315,
+      "total": 21100250.084525995,
+      "productionDetails": {
+        "Intervencion quirurgica": 25
+      },
+      "productionTotal": 25,
+      "insumosBreakdown": {
+        "MATERIAL MEDICO QUIRURGICO": 415517,
+        "MEDICAMENTOS": 794088
+      }
+    },
+    {
+      "id": "2026-4-18",
+      "year": 2026,
+      "month": 4,
+      "costCenter": "QUIRÓFANOS CIRUGÍA PLÁSTICA",
+      "rrhh": 12492947.552163007,
+      "gastosGenerales": 2017968.7466950626,
+      "insumos": 1053407,
+      "directos": 15564323.298858069,
+      "indirectos": 9878069.883974286,
+      "total": 25442393.182832353,
+      "productionDetails": {
+        "Intervencion quirurgica": 26
+      },
+      "productionTotal": 26,
+      "insumosBreakdown": {
+        "MATERIAL MEDICO QUIRURGICO": 623276,
+        "MEDICAMENTOS": 430131
+      }
+    },
+    {
+      "id": "2026-4-19",
+      "year": 2026,
+      "month": 4,
+      "costCenter": "UNIDAD DE CUIDADOS INTENSIVOS ADULTOS",
+      "rrhh": 63978481.346453905,
+      "gastosGenerales": 9971406.331246916,
+      "insumos": 5777008,
+      "directos": 79726895.67770082,
+      "indirectos": 43030816.388196826,
+      "total": 122757712.06589764,
+      "productionDetails": {
+        "Transferencia": 12,
+        "DCO": 274,
+        "Egreso": 2,
+        "N. Camas": 3
+      },
+      "productionTotal": 2,
+      "insumosBreakdown": {
+        "EQUIPOS MENORES": 643299,
+        "LIBROS, TEXTOS, UTILES DE ENSEÑANZA Y PUBLICACIONES": 24240,
+        "MATERIAL DE ODONTOLOGÍA": 13605,
+        "MATERIAL MEDICO QUIRURGICO": 2915842,
+        "MATERIALES DE CURACIÓN": 506734,
+        "MATERIALES DE OFICINA, PRODUCTOS DE PAPEL E IMPRESOS": 53083,
+        "MATERIALES Y ELEMENTOS DE ASEO": 163018,
+        "MEDICAMENTOS": 1204399,
+        "OTROS INSUMOS Y MATERIALES": 185714,
+        "PRODUCTOS QUÍMICOS": 67074
+      }
+    },
+    {
+      "id": "2026-4-20",
+      "year": 2026,
+      "month": 4,
+      "costCenter": "UNIDAD DE TRATAMIENTO INTENSIVO ADULTO",
+      "rrhh": 78437419.62808512,
+      "gastosGenerales": 16021156.782536423,
+      "insumos": 7967060,
+      "directos": 102425636.41062155,
+      "indirectos": 38159657.849926405,
+      "total": 140585294.26054797,
+      "productionDetails": {
+        "Transferencia": 69,
+        "DCO": 380,
+        "Egreso": 8,
+        "N. Camas": 9
+      },
+      "productionTotal": 8,
+      "insumosBreakdown": {
+        "EQUIPOS MENORES": 888366,
+        "LIBROS, TEXTOS, UTILES DE ENSEÑANZA Y PUBLICACIONES": 14994,
+        "MATERIAL DE ODONTOLOGÍA": 18787,
+        "MATERIAL MEDICO QUIRURGICO": 4026639,
+        "MATERIALES DE CURACIÓN": 699776,
+        "MATERIALES DE OFICINA, PRODUCTOS DE PAPEL E IMPRESOS": 73305,
+        "MATERIALES Y ELEMENTOS DE ASEO": 225121,
+        "MEDICAMENTOS": 1663217,
+        "OTROS INSUMOS Y MATERIALES": 256462,
+        "PRODUCTOS QUÍMICOS": 92626,
+        "VÍVERES": 7767
+      }
+    },
+    {
+      "id": "2026-4-21",
+      "year": 2026,
+      "month": 4,
+      "costCenter": "EMERGENCIAS GINECO OBSTÉTRICAS",
+      "rrhh": 63519241.47745647,
+      "gastosGenerales": 3968731.051671298,
+      "insumos": 2124570,
+      "directos": 69612542.52912778,
+      "indirectos": 25332942.867138598,
+      "total": 94945485.39626637,
+      "productionDetails": {
+        "Atención": 623
+      },
+      "productionTotal": 623,
+      "insumosBreakdown": {
+        "LIBROS, TEXTOS, UTILES DE ENSEÑANZA Y PUBLICACIONES": 2311,
+        "MATERIAL MEDICO QUIRURGICO": 250894,
+        "MATERIALES DE CURACIÓN": 15522,
+        "MATERIALES Y ELEMENTOS DE ASEO": 83538,
+        "MEDICAMENTOS": 1766672,
+        "OTROS INSUMOS Y MATERIALES": 5633
+      }
+    },
+    {
+      "id": "2026-4-22",
+      "year": 2026,
+      "month": 4,
+      "costCenter": "EMERGENCIAS ODONTOLOGICAS",
+      "rrhh": 0,
+      "gastosGenerales": 0,
+      "insumos": 0,
+      "directos": 0,
+      "indirectos": 0,
+      "total": 0,
+      "productionDetails": {
+        "Atención": 0
+      },
+      "productionTotal": 0,
+      "insumosBreakdown": {}
+    },
+    {
+      "id": "2026-4-23",
+      "year": 2026,
+      "month": 4,
+      "costCenter": "EMERGENCIAS",
+      "rrhh": 324800064.65212756,
+      "gastosGenerales": 28351182.07168272,
+      "insumos": 184409210,
+      "directos": 537560456.7238103,
+      "indirectos": 297426565.40985376,
+      "total": 834987022.1336641,
+      "productionDetails": {
+        "Atención": 3166
+      },
+      "productionTotal": 3166,
+      "insumosBreakdown": {
+        "EQUIPOS MENORES": 200092,
+        "LIBROS, TEXTOS, UTILES DE ENSEÑANZA Y PUBLICACIONES": 35597,
+        "MATERIAL MEDICO QUIRURGICO": 8752805,
+        "MATERIALES DE CURACIÓN": 801707,
+        "MATERIALES DE OFICINA, PRODUCTOS DE PAPEL E IMPRESOS": 276865,
+        "MATERIALES Y ELEMENTOS DE ASEO": 341902,
+        "MEDICAMENTOS": 172758969,
+        "OTROS INSUMOS Y MATERIALES": 1241273
+      }
+    },
+    {
+      "id": "2026-4-24",
+      "year": 2026,
+      "month": 4,
+      "costCenter": "CONSULTA DE REHABILITACIÓN",
+      "rrhh": 0,
+      "gastosGenerales": 0,
+      "insumos": 0,
+      "directos": 0,
+      "indirectos": 0,
+      "total": 0,
+      "productionDetails": {
+        "Consulta": 0,
+        "Atención": 0
+      },
+      "productionTotal": 0,
+      "insumosBreakdown": {}
+    },
+    {
+      "id": "2026-4-25",
+      "year": 2026,
+      "month": 4,
+      "costCenter": "CONSULTA MEDICINA INTERNA",
+      "rrhh": 21168142.256684497,
+      "gastosGenerales": 5169559.698504013,
+      "insumos": 11372342,
+      "directos": 37710043.95518851,
+      "indirectos": 49361317.69222417,
+      "total": 87071361.64741269,
+      "productionDetails": {
+        "Consulta": 299,
+        "Atención": 0
+      },
+      "productionTotal": 299,
+      "insumosBreakdown": {
+        "EQUIPOS MENORES": 252333,
+        "MEDICAMENTOS": 11120009
+      }
+    },
+    {
+      "id": "2026-4-26",
+      "year": 2026,
+      "month": 4,
+      "costCenter": "CONSULTA NEUROLOGÍA",
+      "rrhh": 19222567.2513369,
+      "gastosGenerales": 638109.6985040127,
+      "insumos": 26730972,
+      "directos": 46591648.94984091,
+      "indirectos": 27847510.96224198,
+      "total": 74439159.9120829,
+      "productionDetails": {
+        "Consulta": 106,
+        "Atención": 0
+      },
+      "productionTotal": 106,
+      "insumosBreakdown": {
+        "EQUIPOS MENORES": 156089,
+        "MEDICAMENTOS": 26574883
+      }
+    },
+    {
+      "id": "2026-4-27",
+      "year": 2026,
+      "month": 4,
+      "costCenter": "CONSULTA CARDIOLOGÍA",
+      "rrhh": 517806.4171122994,
+      "gastosGenerales": 638109.6985040127,
+      "insumos": 2904387,
+      "directos": 4060303.115616312,
+      "indirectos": 10767250.2976201,
+      "total": 14827553.413236413,
+      "productionDetails": {
+        "Consulta": 50,
+        "Atención": 0
+      },
+      "productionTotal": 50,
+      "insumosBreakdown": {
+        "EQUIPOS MENORES": 24061,
+        "LIBROS, TEXTOS, UTILES DE ENSEÑANZA Y PUBLICACIONES": 9779,
+        "MATERIAL MEDICO QUIRURGICO": 165227,
+        "MATERIALES DE CURACIÓN": 151413,
+        "MEDICAMENTOS": 2553907
+      }
+    },
+    {
+      "id": "2026-4-28",
+      "year": 2026,
+      "month": 4,
+      "costCenter": "CONSULTA DERMATOLOGÍA",
+      "rrhh": 1321590.64171123,
+      "gastosGenerales": 638109.6985040127,
+      "insumos": 4055112,
+      "directos": 6014812.340215243,
+      "indirectos": 20307003.715669796,
+      "total": 26321816.05588504,
+      "productionDetails": {
+        "Consulta": 93,
+        "Atención": 0
+      },
+      "productionTotal": 93,
+      "insumosBreakdown": {
+        "EQUIPOS MENORES": 21593,
+        "LIBROS, TEXTOS, UTILES DE ENSEÑANZA Y PUBLICACIONES": 6342,
+        "MATERIAL MEDICO QUIRURGICO": 102206,
+        "MATERIALES DE CURACIÓN": 93661,
+        "MEDICAMENTOS": 3831310
+      }
+    },
+    {
+      "id": "2026-4-29",
+      "year": 2026,
+      "month": 4,
+      "costCenter": "CONSULTA PSIQUIATRÍA",
+      "rrhh": 108389232.94385026,
+      "gastosGenerales": 12279720.783406489,
+      "insumos": 372361,
+      "directos": 121041314.72725675,
+      "indirectos": 33149156.124948695,
+      "total": 154190470.85220546,
+      "productionDetails": {
+        "Consulta": 724,
+        "Atención": 0
+      },
+      "productionTotal": 724,
+      "insumosBreakdown": {
+        "EQUIPOS MENORES": 339323,
+        "LIBROS, TEXTOS, UTILES DE ENSEÑANZA Y PUBLICACIONES": 2845,
+        "MATERIAL MEDICO QUIRURGICO": 15755,
+        "MATERIALES DE CURACIÓN": 14438
+      }
+    },
+    {
+      "id": "2026-4-30",
+      "year": 2026,
+      "month": 4,
+      "costCenter": "CONSULTA ENDOCRINOLOGÍA",
+      "rrhh": 4973472.994652406,
+      "gastosGenerales": 638109.6985040127,
+      "insumos": 2357975,
+      "directos": 7969557.693156419,
+      "indirectos": 2410902.274062508,
+      "total": 10380459.967218928,
+      "productionDetails": {
+        "Consulta": 52,
+        "Atención": 0
+      },
+      "productionTotal": 52,
+      "insumosBreakdown": {
+        "EQUIPOS MENORES": 48122,
+        "MATERIAL MEDICO QUIRURGICO": 14139,
+        "MATERIALES DE CURACIÓN": 12957,
+        "MEDICAMENTOS": 2282757
+      }
+    },
+    {
+      "id": "2026-4-31",
+      "year": 2026,
+      "month": 4,
+      "costCenter": "CONSULTA NEFROLOGÍA",
+      "rrhh": 0,
+      "gastosGenerales": 0,
+      "insumos": 0,
+      "directos": 0,
+      "indirectos": 0,
+      "total": 0,
+      "productionDetails": {
+        "Consulta": 0,
+        "Atención": 0
+      },
+      "productionTotal": 0,
+      "insumosBreakdown": {}
+    },
+    {
+      "id": "2026-4-32",
+      "year": 2026,
+      "month": 4,
+      "costCenter": "CONSULTA GASTROENTEROLOGÍA",
+      "rrhh": 1319818.0962566845,
+      "gastosGenerales": 638109.6985040127,
+      "insumos": 1403735,
+      "directos": 3361662.794760697,
+      "indirectos": 1206566.479782471,
+      "total": 4568229.274543168,
+      "productionDetails": {
+        "Consulta": 37,
+        "Atención": 0
+      },
+      "productionTotal": 37,
+      "insumosBreakdown": {
+        "LIBROS, TEXTOS, UTILES DE ENSEÑANZA Y PUBLICACIONES": 237,
+        "MATERIAL MEDICO QUIRURGICO": 31510,
+        "MATERIALES DE CURACIÓN": 28876,
+        "MEDICAMENTOS": 1343112
+      }
+    },
+    {
+      "id": "2026-4-33",
+      "year": 2026,
+      "month": 4,
+      "costCenter": "PROGRAMA MANEJO DEL DOLOR",
+      "rrhh": 13823677,
+      "gastosGenerales": 1213964.7922759266,
+      "insumos": 23079887,
+      "directos": 38117528.79227593,
+      "indirectos": 12985318.782343319,
+      "total": 51102847.57461925,
+      "productionDetails": {
+        "Consulta": 148,
+        "Atención": 0
+      },
+      "productionTotal": 148,
+      "insumosBreakdown": {
+        "EQUIPOS MENORES": 101797,
+        "LIBROS, TEXTOS, UTILES DE ENSEÑANZA Y PUBLICACIONES": 16832,
+        "MEDICAMENTOS": 22961258
+      }
+    },
+    {
+      "id": "2026-4-34",
+      "year": 2026,
+      "month": 4,
+      "costCenter": "CONSULTA SALUD OCUPACIONAL",
+      "rrhh": 11360297,
+      "gastosGenerales": 4971609.698504013,
+      "insumos": 438791,
+      "directos": 16770697.698504012,
+      "indirectos": 8946714.047668833,
+      "total": 25717411.746172845,
+      "productionDetails": {
+        "Consulta": 172,
+        "Atención": 0
+      },
+      "productionTotal": 172,
+      "insumosBreakdown": {
+        "EQUIPOS MENORES": 66014,
+        "LIBROS, TEXTOS, UTILES DE ENSEÑANZA Y PUBLICACIONES": 7527,
+        "MEDICAMENTOS": 365250
+      }
+    },
+    {
+      "id": "2026-4-35",
+      "year": 2026,
+      "month": 4,
+      "costCenter": "CONSULTA ANESTESIOLOGIA",
+      "rrhh": 12150624.949768271,
+      "gastosGenerales": 638109.6985040127,
+      "insumos": 563291,
+      "directos": 13352025.648272283,
+      "indirectos": 3605963.132662036,
+      "total": 16957988.78093432,
+      "productionDetails": {
+        "Consulta": 75,
+        "Atención": 0
+      },
+      "productionTotal": 75,
+      "insumosBreakdown": {
+        "EQUIPOS MENORES": 29614,
+        "LIBROS, TEXTOS, UTILES DE ENSEÑANZA Y PUBLICACIONES": 40657,
+        "MATERIAL MEDICO QUIRURGICO": 66656,
+        "MATERIALES DE CURACIÓN": 61083,
+        "MEDICAMENTOS": 365281
+      }
+    },
+    {
+      "id": "2026-4-36",
+      "year": 2026,
+      "month": 4,
+      "costCenter": "PROGRAMA ENFERMEDADES DE TRANSMISIÓN SEXUAL",
+      "rrhh": 0,
+      "gastosGenerales": 0,
+      "insumos": 0,
+      "directos": 0,
+      "indirectos": 0,
+      "total": 0,
+      "productionDetails": {
+        "Consulta": 0,
+        "Atención": 0
+      },
+      "productionTotal": 0,
+      "insumosBreakdown": {}
+    },
+    {
+      "id": "2026-4-37",
+      "year": 2026,
+      "month": 4,
+      "costCenter": "CONSULTA DE INMUNOLOGÍA",
+      "rrhh": 4416985.5882352935,
+      "gastosGenerales": 638109.6985040127,
+      "insumos": 1318123,
+      "directos": 6373218.2867393065,
+      "indirectos": 2557267.3916198364,
+      "total": 8930485.678359143,
+      "productionDetails": {
+        "Consulta": 124,
+        "Atención": 0
+      },
+      "productionTotal": 124,
+      "insumosBreakdown": {
+        "EQUIPOS MENORES": 64780,
+        "LIBROS, TEXTOS, UTILES DE ENSEÑANZA Y PUBLICACIONES": 2015,
+        "MATERIAL MEDICO QUIRURGICO": 19391,
+        "MATERIALES DE CURACIÓN": 17770,
+        "MEDICAMENTOS": 1214167
+      }
+    },
+    {
+      "id": "2026-4-38",
+      "year": 2026,
+      "month": 4,
+      "costCenter": "CONSULTA MEDICINA FAMILIAR",
+      "rrhh": 1707402.7914438504,
+      "gastosGenerales": 638109.6985040127,
+      "insumos": 1799769,
+      "directos": 4145281.489947863,
+      "indirectos": 1810132.3452815788,
+      "total": 5955413.8352294415,
+      "productionDetails": {
+        "Consulta": 60,
+        "Atención": 0
+      },
+      "productionTotal": 60,
+      "insumosBreakdown": {
+        "EQUIPOS MENORES": 2468,
+        "MEDICAMENTOS": 1797301
+      }
+    },
+    {
+      "id": "2026-4-39",
+      "year": 2026,
+      "month": 4,
+      "costCenter": "CONSULTA CIRUGÍA GENERAL",
+      "rrhh": 16885092.620320857,
+      "gastosGenerales": 638109.6985040127,
+      "insumos": 1599031,
+      "directos": 19122233.31882487,
+      "indirectos": 18271677.20799741,
+      "total": 37393910.526822284,
+      "productionDetails": {
+        "Consulta": 369,
+        "Atención": 0
+      },
+      "productionTotal": 369,
+      "insumosBreakdown": {
+        "EQUIPOS MENORES": 175214,
+        "LIBROS, TEXTOS, UTILES DE ENSEÑANZA Y PUBLICACIONES": 21751,
+        "MATERIAL MEDICO QUIRURGICO": 42418,
+        "MATERIALES DE CURACIÓN": 38871,
+        "MEDICAMENTOS": 1320777
+      }
+    },
+    {
+      "id": "2026-4-40",
+      "year": 2026,
+      "month": 4,
+      "costCenter": "CONSULTA UROLOGÍA",
+      "rrhh": 6620983.7967914445,
+      "gastosGenerales": 638109.6985040127,
+      "insumos": 7194180,
+      "directos": 14453273.495295458,
+      "indirectos": 27913534.97705316,
+      "total": 42366808.472348616,
+      "productionDetails": {
+        "Consulta": 257,
+        "Atención": 0
+      },
+      "productionTotal": 257,
+      "insumosBreakdown": {
+        "EQUIPOS MENORES": 78353,
+        "LIBROS, TEXTOS, UTILES DE ENSEÑANZA Y PUBLICACIONES": 12683,
+        "MATERIAL MEDICO QUIRURGICO": 1616,
+        "MATERIALES DE CURACIÓN": 1481,
+        "MEDICAMENTOS": 7100047
+      }
+    },
+    {
+      "id": "2026-4-41",
+      "year": 2026,
+      "month": 4,
+      "costCenter": "CONSULTA OFTALMOLOGÍA",
+      "rrhh": 3172470.502673797,
+      "gastosGenerales": 638109.6985040127,
+      "insumos": 3767336,
+      "directos": 7577916.201177809,
+      "indirectos": 14736168.10710286,
+      "total": 22314084.30828067,
+      "productionDetails": {
+        "Consulta": 690,
+        "Atención": 0
+      },
+      "productionTotal": 690,
+      "insumosBreakdown": {
+        "EQUIPOS MENORES": 423229,
+        "LIBROS, TEXTOS, UTILES DE ENSEÑANZA Y PUBLICACIONES": 3793,
+        "MATERIAL MEDICO QUIRURGICO": 114730,
+        "MATERIALES DE CURACIÓN": 105138,
+        "MEDICAMENTOS": 3120446
+      }
+    },
+    {
+      "id": "2026-4-42",
+      "year": 2026,
+      "month": 4,
+      "costCenter": "CONSULTA OTORRINOLARINGOLOGÍA",
+      "rrhh": 1204053.8021390375,
+      "gastosGenerales": 638109.6985040127,
+      "insumos": 678979,
+      "directos": 2521142.5006430503,
+      "indirectos": 8579316.336472008,
+      "total": 11100458.837115059,
+      "productionDetails": {
+        "Consulta": 154,
+        "Atención": 0
+      },
+      "productionTotal": 154,
+      "insumosBreakdown": {
+        "EQUIPOS MENORES": 31465,
+        "LIBROS, TEXTOS, UTILES DE ENSEÑANZA Y PUBLICACIONES": 3971,
+        "MATERIAL MEDICO QUIRURGICO": 51305,
+        "MATERIALES DE CURACIÓN": 47016,
+        "MEDICAMENTOS": 545222
+      }
+    },
+    {
+      "id": "2026-4-43",
+      "year": 2026,
+      "month": 4,
+      "costCenter": "CONSULTA CIRUGÍA PROCTOLOGÍA",
+      "rrhh": 1824320.834224599,
+      "gastosGenerales": 638109.6985040127,
+      "insumos": 652829,
+      "directos": 3115259.5327286115,
+      "indirectos": 881394.755147267,
+      "total": 3996654.2878758786,
+      "productionDetails": {
+        "Consulta": 39,
+        "Atención": 0
+      },
+      "productionTotal": 39,
+      "insumosBreakdown": {
+        "EQUIPOS MENORES": 20976,
+        "MATERIAL MEDICO QUIRURGICO": 277128,
+        "MATERIALES DE CURACIÓN": 253959,
+        "MEDICAMENTOS": 100766
+      }
+    },
+    {
+      "id": "2026-4-44",
+      "year": 2026,
+      "month": 4,
+      "costCenter": "CONSULTA CIRUGÍA MAXILOFACIAL",
+      "rrhh": 0,
+      "gastosGenerales": 0,
+      "insumos": 0,
+      "directos": 0,
+      "indirectos": 0,
+      "total": 0,
+      "productionDetails": {
+        "Consulta": 0,
+        "Atención": 0
+      },
+      "productionTotal": 0,
+      "insumosBreakdown": {}
+    },
+    {
+      "id": "2026-4-45",
+      "year": 2026,
+      "month": 4,
+      "costCenter": "CONSULTA DE TRAUMATOLOGÍA",
+      "rrhh": 8067303.334938189,
+      "gastosGenerales": 638109.6985040127,
+      "insumos": 252743,
+      "directos": 8958156.033442201,
+      "indirectos": 23750861.259321664,
+      "total": 32709017.292763866,
+      "productionDetails": {
+        "Consulta": 454,
+        "Atención": 0
+      },
+      "productionTotal": 454,
+      "insumosBreakdown": {
+        "EQUIPOS MENORES": 226421,
+        "MATERIAL MEDICO QUIRURGICO": 13735,
+        "MATERIALES DE CURACIÓN": 12587
+      }
+    },
+    {
+      "id": "2026-4-46",
+      "year": 2026,
+      "month": 4,
+      "costCenter": "CONSULTA PEDIATRÍA GENERAL",
+      "rrhh": 9579814.96238557,
+      "gastosGenerales": 638109.6985040127,
+      "insumos": 2430294,
+      "directos": 12648218.660889583,
+      "indirectos": 5975388.018596057,
+      "total": 18623606.67948564,
+      "productionDetails": {
+        "Consulta": 325,
+        "Atención": 0
+      },
+      "productionTotal": 325,
+      "insumosBreakdown": {
+        "EQUIPOS MENORES": 132028,
+        "LIBROS, TEXTOS, UTILES DE ENSEÑANZA Y PUBLICACIONES": 11853,
+        "MEDICAMENTOS": 2286413
+      }
+    },
+    {
+      "id": "2026-4-47",
+      "year": 2026,
+      "month": 4,
+      "costCenter": "CONSULTA NEUROLOGÍA PEDIÁTRICA",
+      "rrhh": 4146026.470588235,
+      "gastosGenerales": 638109.6985040127,
+      "insumos": 4908762,
+      "directos": 9692898.16909225,
+      "indirectos": 3781613.065347269,
+      "total": 13474511.234439518,
+      "productionDetails": {
+        "Consulta": 104,
+        "Atención": 0
+      },
+      "productionTotal": 104,
+      "insumosBreakdown": {
+        "EQUIPOS MENORES": 39485,
+        "LIBROS, TEXTOS, UTILES DE ENSEÑANZA Y PUBLICACIONES": 7882,
+        "MATERIAL MEDICO QUIRURGICO": 148260,
+        "MATERIALES DE CURACIÓN": 135864,
+        "MEDICAMENTOS": 4577271
+      }
+    },
+    {
+      "id": "2026-4-48",
+      "year": 2026,
+      "month": 4,
+      "costCenter": "CONSULTA TRAUMATOLOGÍA PEDIÁTRICA",
+      "rrhh": 4369680.529411765,
+      "gastosGenerales": 638109.6985040127,
+      "insumos": 211795,
+      "directos": 5219585.227915778,
+      "indirectos": 2655673.419726371,
+      "total": 7875258.647642149,
+      "productionDetails": {
+        "Consulta": 187,
+        "Atención": 0
+      },
+      "productionTotal": 187,
+      "insumosBreakdown": {
+        "EQUIPOS MENORES": 41336,
+        "LIBROS, TEXTOS, UTILES DE ENSEÑANZA Y PUBLICACIONES": 2556,
+        "MATERIAL MEDICO QUIRURGICO": 86451,
+        "MATERIALES DE CURACIÓN": 79223,
+        "MEDICAMENTOS": 2229
+      }
+    },
+    {
+      "id": "2026-4-49",
+      "year": 2026,
+      "month": 4,
+      "costCenter": "CONSULTA CIRUGÍA PEDIÁTRICA",
+      "rrhh": 6724738.9572192505,
+      "gastosGenerales": 26939.04009661836,
+      "insumos": 112658,
+      "directos": 6864335.997315869,
+      "indirectos": 1878531.8412446599,
+      "total": 8742867.838560529,
+      "productionDetails": {
+        "Consulta": 107,
+        "Atención": 0
+      },
+      "productionTotal": 107,
+      "insumosBreakdown": {
+        "EQUIPOS MENORES": 25682,
+        "LIBROS, TEXTOS, UTILES DE ENSEÑANZA Y PUBLICACIONES": 17182,
+        "MATERIAL MEDICO QUIRURGICO": 25855,
+        "MATERIALES DE CURACIÓN": 23693,
+        "MEDICAMENTOS": 20246
+      }
+    },
+    {
+      "id": "2026-4-50",
+      "year": 2026,
+      "month": 4,
+      "costCenter": "CONSULTA GINECOLOGICA",
+      "rrhh": 20772676.70588235,
+      "gastosGenerales": 638109.6985040127,
+      "insumos": 6361234,
+      "directos": 27772020.404386364,
+      "indirectos": 27040779.715086177,
+      "total": 54812800.11947254,
+      "productionDetails": {
+        "Consulta": 436,
+        "Atención": 0
+      },
+      "productionTotal": 436,
+      "insumosBreakdown": {
+        "EQUIPOS MENORES": 5151950,
+        "LIBROS, TEXTOS, UTILES DE ENSEÑANZA Y PUBLICACIONES": 10508,
+        "MATERIAL MEDICO QUIRURGICO": 27066,
+        "MATERIALES DE CURACIÓN": 24804,
+        "MEDICAMENTOS": 1146906
+      }
+    },
+    {
+      "id": "2026-4-51",
+      "year": 2026,
+      "month": 4,
+      "costCenter": "CONSULTA CIRUGÍA DIGESTIVA",
+      "rrhh": 2954891.2085561496,
+      "gastosGenerales": 26939.04009661836,
+      "insumos": 89364,
+      "directos": 3071194.248652768,
+      "indirectos": 893535.8562701037,
+      "total": 3964730.1049228716,
+      "productionDetails": {
+        "Consulta": 24,
+        "Atención": 0
+      },
+      "productionTotal": 24,
+      "insumosBreakdown": {
+        "EQUIPOS MENORES": 16582,
+        "LIBROS, TEXTOS, UTILES DE ENSEÑANZA Y PUBLICACIONES": 1278,
+        "MEDICAMENTOS": 71504
+      }
+    },
+    {
+      "id": "2026-4-52",
+      "year": 2026,
+      "month": 4,
+      "costCenter": "CONSULTA OBSTETRICIA",
+      "rrhh": 13237819.433155082,
+      "gastosGenerales": 638109.6985040127,
+      "insumos": 1157232,
+      "directos": 15033161.131659094,
+      "indirectos": 14257058.059557863,
+      "total": 29290219.191216957,
+      "productionDetails": {
+        "Consulta": 197,
+        "Atención": 0
+      },
+      "productionTotal": 197,
+      "insumosBreakdown": {
+        "EQUIPOS MENORES": 15887,
+        "LIBROS, TEXTOS, UTILES DE ENSEÑANZA Y PUBLICACIONES": 4686,
+        "MATERIAL MEDICO QUIRURGICO": 341556,
+        "MATERIALES DE CURACIÓN": 97734,
+        "MEDICAMENTOS": 697369
+      }
+    },
+    {
+      "id": "2026-4-53",
+      "year": 2026,
+      "month": 4,
+      "costCenter": "CONSULTA DE MASTOLOGÍA",
+      "rrhh": 2608428.1443850263,
+      "gastosGenerales": 638109.6985040127,
+      "insumos": 571425,
+      "directos": 3817962.842889039,
+      "indirectos": 1626019.4717114896,
+      "total": 5443982.314600528,
+      "productionDetails": {
+        "Consulta": 158,
+        "Atención": 0
+      },
+      "productionTotal": 158,
+      "insumosBreakdown": {
+        "EQUIPOS MENORES": 10565,
+        "MEDICAMENTOS": 560860
+      }
+    },
+    {
+      "id": "2026-4-54",
+      "year": 2026,
+      "month": 4,
+      "costCenter": "QUIRÓFANO AMBULATORIO DE EMERGENCIA",
+      "rrhh": 11579046.57968215,
+      "gastosGenerales": 2106043.7466950626,
+      "insumos": 438631,
+      "directos": 14123721.326377213,
+      "indirectos": 6231576.97330413,
+      "total": 20355298.299681343,
+      "productionDetails": {
+        "Intervencion quirurgica": 17
+      },
+      "productionTotal": 17,
+      "insumosBreakdown": {
+        "EQUIPOS MENORES": 2556,
+        "MATERIAL MEDICO QUIRURGICO": 80795,
+        "MATERIALES DE CURACIÓN": 74041,
+        "MEDICAMENTOS": 281239
+      }
+    },
+    {
+      "id": "2026-4-55",
+      "year": 2026,
+      "month": 4,
+      "costCenter": "QUIRÓFANOS MAYOR AMBULATORIA",
+      "rrhh": 69857932.19555251,
+      "gastosGenerales": 3114019.7466950626,
+      "insumos": 2485867,
+      "directos": 75457818.94224757,
+      "indirectos": 43520995.01716003,
+      "total": 118978813.9594076,
+      "productionDetails": {
+        "Intervencion quirurgica": 143
+      },
+      "productionTotal": 143,
+      "insumosBreakdown": {
+        "EQUIPOS MENORES": 17182,
+        "MATERIAL MEDICO QUIRURGICO": 53729,
+        "MATERIALES DE CURACIÓN": 49237,
+        "MEDICAMENTOS": 2365719
+      }
+    },
+    {
+      "id": "2026-4-56",
+      "year": 2026,
+      "month": 4,
+      "costCenter": "QUIROFANO MAYOR AMBULATORIO OFTALMOLOGÍA",
+      "rrhh": 49355280.56987719,
+      "gastosGenerales": 2654069.7466950626,
+      "insumos": 1892903,
+      "directos": 53902253.31657226,
+      "indirectos": 26006574.20568688,
+      "total": 79908827.52225913,
+      "productionDetails": {
+        "Intervencion quirurgica": 108
+      },
+      "productionTotal": 108,
+      "insumosBreakdown": {
+        "EQUIPOS MENORES": 10508,
+        "MATERIAL MEDICO QUIRURGICO": 66132,
+        "MATERIALES DE CURACIÓN": 29566,
+        "MEDICAMENTOS": 1786697
+      }
+    },
+    {
+      "id": "2026-4-57",
+      "year": 2026,
+      "month": 4,
+      "costCenter": "QUIROFANO MAYOR AMBULATORIO OTORRINOLARINGOLOGÍA",
+      "rrhh": 11198411.843869446,
+      "gastosGenerales": 2726018.7466950626,
+      "insumos": 975456,
+      "directos": 14899886.590564508,
+      "indirectos": 5279646.054154429,
+      "total": 20179532.644718938,
+      "productionDetails": {
+        "Intervencion quirurgica": 20
+      },
+      "productionTotal": 20,
+      "insumosBreakdown": {
+        "EQUIPOS MENORES": 1278,
+        "MATERIAL MEDICO QUIRURGICO": 444557,
+        "MATERIALES DE CURACIÓN": 198751,
+        "MEDICAMENTOS": 330870
+      }
+    },
+    {
+      "id": "2026-4-58",
+      "year": 2026,
+      "month": 4,
+      "costCenter": "QUIROFANO MAYOR AMBULATORIO GINECOLOGÍA",
+      "rrhh": 20563119.88318865,
+      "gastosGenerales": 2252836.7466950626,
+      "insumos": 1092941,
+      "directos": 23908897.629883714,
+      "indirectos": 10890112.632470895,
+      "total": 34799010.26235461,
+      "productionDetails": {
+        "Intervencion quirurgica": 42
+      },
+      "productionTotal": 42,
+      "insumosBreakdown": {
+        "EQUIPOS MENORES": 4686,
+        "MATERIAL MEDICO QUIRURGICO": 271878,
+        "MATERIALES DE CURACIÓN": 121550,
+        "MEDICAMENTOS": 694827
+      }
+    },
+    {
+      "id": "2026-4-59",
+      "year": 2026,
+      "month": 4,
+      "costCenter": "CONSULTA NUTRICIÓN",
+      "rrhh": 2007016,
+      "gastosGenerales": 233454.76774537048,
+      "insumos": 8840881,
+      "directos": 11081351.76774537,
+      "indirectos": 3171353.5086320876,
+      "total": 14252705.276377458,
+      "productionDetails": {
+        "Consulta": 82,
+        "Atención": 0
+      },
+      "productionTotal": 82,
+      "insumosBreakdown": {
+        "MATERIAL MEDICO QUIRURGICO": 33066,
+        "MATERIALES DE CURACIÓN": 14783,
+        "MEDICAMENTOS": 8793032
+      }
+    },
+    {
+      "id": "2026-4-60",
+      "year": 2026,
+      "month": 4,
+      "costCenter": "CONSULTA OTROS PROFESIONALES",
+      "rrhh": 9600059.227272728,
+      "gastosGenerales": 233454.76774537048,
+      "insumos": 857020,
+      "directos": 10690533.995018099,
+      "indirectos": 29141567.766879037,
+      "total": 39832101.76189713,
+      "productionDetails": {
+        "Consulta": 1548,
+        "Atención": 0
+      },
+      "productionTotal": 1548,
+      "insumosBreakdown": {
+        "MATERIAL MEDICO QUIRURGICO": 121243,
+        "MATERIALES DE CURACIÓN": 54205,
+        "MATERIALES DE OFICINA, PRODUCTOS DE PAPEL E IMPRESOS": 44353,
+        "MEDICAMENTOS": 637219
+      }
+    },
+    {
+      "id": "2026-4-61",
+      "year": 2026,
+      "month": 4,
+      "costCenter": "CONSULTA ODONTOLOGÍA",
+      "rrhh": 83649077.86096257,
+      "gastosGenerales": 6132078.566111731,
+      "insumos": 4537315,
+      "directos": 94318471.4270743,
+      "indirectos": 116384296.73989989,
+      "total": 210702768.1669742,
+      "productionDetails": {
+        "Consulta": 2179,
+        "Atención": 0
+      },
+      "productionTotal": 2179,
+      "insumosBreakdown": {
+        "MATERIAL DE ODONTOLOGÍA": 3126320,
+        "MATERIAL DE OSTEOSÍNTESIS Y PRÓTESIS": 428233,
+        "OTROS INSUMOS Y MATERIALES": 982762
+      }
+    },
+    {
+      "id": "2026-4-62",
+      "year": 2026,
+      "month": 4,
+      "costCenter": "HOSPITALIZACIÓN EN CASA",
+      "rrhh": 21842115,
+      "gastosGenerales": 3000000,
+      "insumos": 865771,
+      "directos": 25707886,
+      "indirectos": 7440718.327641437,
+      "total": 33148604.327641435,
+      "productionDetails": {
+        "Visita": 858,
+        "N. Camas": 0
+      },
+      "productionTotal": 858,
+      "insumosBreakdown": {
+        "EQUIPOS MENORES": 61078,
+        "MATERIALES DE OFICINA, PRODUCTOS DE PAPEL E IMPRESOS": 11496,
+        "MATERIALES Y ELEMENTOS DE ASEO": 2587,
+        "MEDICAMENTOS": 488061,
+        "OTROS INSUMOS Y MATERIALES": 302549
+      }
+    },
+    {
+      "id": "2026-4-63",
+      "year": 2026,
+      "month": 4,
+      "costCenter": "CENTRO DE COSTOS EXTERNO",
+      "rrhh": 69210856.1178676,
+      "gastosGenerales": 3000000,
+      "insumos": 0,
+      "directos": 72210856.1178676,
+      "indirectos": 218049724.83172017,
+      "total": 290260580.94958776,
+      "productionDetails": {
+        "Servicio": 0
+      },
+      "productionTotal": 0,
+      "insumosBreakdown": {}
+    },
+    {
+      "id": "2026-4-64",
+      "year": 2026,
+      "month": 4,
+      "costCenter": "PROCEDIMIENTOS DE CABEZA Y CUELLO",
+      "rrhh": 3084444,
+      "gastosGenerales": 2443493.2357348776,
+      "insumos": 1327485,
+      "directos": 6855422.235734878,
+      "indirectos": 1845272.6253982256,
+      "total": 8700694.861133104,
+      "productionDetails": {},
+      "productionTotal": 0,
+      "insumosBreakdown": {
+        "MATERIAL MEDICO QUIRURGICO": 381321,
+        "MATERIALES DE CURACIÓN": 946164
+      }
+    },
+    {
+      "id": "2026-4-65",
+      "year": 2026,
+      "month": 4,
+      "costCenter": "PROCEDIMIENTOS DE CARDIOLOGÍA",
+      "rrhh": 4251263,
+      "gastosGenerales": 2443493.2357348776,
+      "insumos": 171375,
+      "directos": 6866131.235734878,
+      "indirectos": 1848155.1647759438,
+      "total": 8714286.400510821,
+      "productionDetails": {},
+      "productionTotal": 0,
+      "insumosBreakdown": {
+        "MATERIAL MEDICO QUIRURGICO": 171375
+      }
+    },
+    {
+      "id": "2026-4-66",
+      "year": 2026,
+      "month": 4,
+      "costCenter": "PROCEDIMIENTOS DE DERMATOLOGÍA",
+      "rrhh": 5022897.636363637,
+      "gastosGenerales": 2443493.2357348776,
+      "insumos": 171375,
+      "directos": 7637765.872098515,
+      "indirectos": 10652613.657962691,
+      "total": 18290379.530061208,
+      "productionDetails": {},
+      "productionTotal": 0,
+      "insumosBreakdown": {
+        "MATERIAL MEDICO QUIRURGICO": 171375
+      }
+    },
+    {
+      "id": "2026-4-67",
+      "year": 2026,
+      "month": 4,
+      "costCenter": "PROCEDIMIENTOS DE GINECO-OBSTETRICIA",
+      "rrhh": 9209250.941176472,
+      "gastosGenerales": 2443493.2357348776,
+      "insumos": 184947,
+      "directos": 11837691.17691135,
+      "indirectos": 3186348.954964266,
+      "total": 15024040.131875616,
+      "productionDetails": {},
+      "productionTotal": 0,
+      "insumosBreakdown": {
+        "MATERIAL MEDICO QUIRURGICO": 171375,
+        "MEDICAMENTOS": 13572
+      }
+    },
+    {
+      "id": "2026-4-68",
+      "year": 2026,
+      "month": 4,
+      "costCenter": "PROCEDIMIENTOS DE ODONTOLOGÍA",
+      "rrhh": 11125296,
+      "gastosGenerales": 2443493.2357348776,
+      "insumos": 171375,
+      "directos": 13740164.235734878,
+      "indirectos": 28326986.48474533,
+      "total": 42067150.72048021,
+      "productionDetails": {},
+      "productionTotal": 0,
+      "insumosBreakdown": {
+        "MATERIAL MEDICO QUIRURGICO": 171375
+      }
+    },
+    {
+      "id": "2026-4-69",
+      "year": 2026,
+      "month": 4,
+      "costCenter": "PROCEDIMIENTOS DE OFTALMOLOGÍA",
+      "rrhh": 5200501.224598931,
+      "gastosGenerales": 2443493.2357348776,
+      "insumos": 171375,
+      "directos": 7815369.460333809,
+      "indirectos": 2103661.4269144796,
+      "total": 9919030.887248289,
+      "productionDetails": {},
+      "productionTotal": 0,
+      "insumosBreakdown": {
+        "MATERIAL MEDICO QUIRURGICO": 171375
+      }
+    },
+    {
+      "id": "2026-4-70",
+      "year": 2026,
+      "month": 4,
+      "costCenter": "PROCEDIMIENTOS DE OTORRINOLARINGOLOGÍA",
+      "rrhh": 3265762.550802139,
+      "gastosGenerales": 2443493.2357348776,
+      "insumos": 171375,
+      "directos": 5880630.786537017,
+      "indirectos": 1582888.2069300527,
+      "total": 7463518.993467069,
+      "productionDetails": {},
+      "productionTotal": 0,
+      "insumosBreakdown": {
+        "MATERIAL MEDICO QUIRURGICO": 171375
+      }
+    },
+    {
+      "id": "2026-4-71",
+      "year": 2026,
+      "month": 4,
+      "costCenter": "PROCEDIMIENTOS DE TRAUMATOLOGÍA",
+      "rrhh": 7874334,
+      "gastosGenerales": 4109464.235734877,
+      "insumos": 171375,
+      "directos": 12155173.235734876,
+      "indirectos": 3271805.5369306314,
+      "total": 15426978.772665508,
+      "productionDetails": {},
+      "productionTotal": 0,
+      "insumosBreakdown": {
+        "MATERIAL MEDICO QUIRURGICO": 171375
+      }
+    },
+    {
+      "id": "2026-4-72",
+      "year": 2026,
+      "month": 4,
+      "costCenter": "PROCEDIMIENTOS DE UROLOGÍA",
+      "rrhh": 7935898.326203209,
+      "gastosGenerales": 3651343.235734877,
+      "insumos": 171375,
+      "directos": 11758616.561938087,
+      "indirectos": 3165064.4567442336,
+      "total": 14923681.01868232,
+      "productionDetails": {},
+      "productionTotal": 0,
+      "insumosBreakdown": {
+        "MATERIAL MEDICO QUIRURGICO": 171375
+      }
+    },
+    {
+      "id": "2026-4-73",
+      "year": 2026,
+      "month": 4,
+      "costCenter": "PROCEDIMIENTOS ENDOSCÓPICOS",
+      "rrhh": 19645208.470588237,
+      "gastosGenerales": 3673021.6791938287,
+      "insumos": 316521,
+      "directos": 23634751.149782065,
+      "indirectos": 7494205.451158516,
+      "total": 31128956.60094058,
+      "productionDetails": {},
+      "productionTotal": 0,
+      "insumosBreakdown": {
+        "MATERIAL MEDICO QUIRURGICO": 171375,
+        "MATERIALES Y ELEMENTOS DE ASEO": 80679,
+        "OTROS INSUMOS Y MATERIALES": 64467
+      }
+    },
+    {
+      "id": "2026-4-74",
+      "year": 2026,
+      "month": 4,
+      "costCenter": "PROCEDIMIENTOS DE NEUROLOGÍA",
+      "rrhh": 2179246,
+      "gastosGenerales": 2443493.2357348776,
+      "insumos": 171375,
+      "directos": 4794114.235734878,
+      "indirectos": 1290430.7653174333,
+      "total": 6084545.001052312,
+      "productionDetails": {},
+      "productionTotal": 0,
+      "insumosBreakdown": {
+        "MATERIAL MEDICO QUIRURGICO": 171375
+      }
+    },
+    {
+      "id": "2026-4-75",
+      "year": 2026,
+      "month": 4,
+      "costCenter": "QUIRÓFANOS MENOR AMBULATORIA",
+      "rrhh": 29875302.21523013,
+      "gastosGenerales": 2443493.2357348776,
+      "insumos": 1560951,
+      "directos": 33879746.45096501,
+      "indirectos": 10730455.944013748,
+      "total": 44610202.39497876,
+      "productionDetails": {},
+      "productionTotal": 0,
+      "insumosBreakdown": {
+        "MATERIAL MEDICO QUIRURGICO": 1542387,
+        "MATERIALES DE CURACIÓN": 18564
+      }
+    },
+    {
+      "id": "2026-4-76",
+      "year": 2026,
+      "month": 4,
+      "costCenter": "SALAS DE PARTO",
+      "rrhh": 5381270.600000001,
+      "gastosGenerales": 8591135.453029633,
+      "insumos": 693236,
+      "directos": 14665642.053029634,
+      "indirectos": 11753637.36113823,
+      "total": 26419279.414167866,
+      "productionDetails": {},
+      "productionTotal": 0,
+      "insumosBreakdown": {
+        "EQUIPOS MENORES": 22756,
+        "LIBROS, TEXTOS, UTILES DE ENSEÑANZA Y PUBLICACIONES": 6465,
+        "MATERIAL MEDICO QUIRURGICO": 171375,
+        "MATERIALES Y ELEMENTOS DE ASEO": 202750,
+        "OTROS INSUMOS Y MATERIALES": 57840,
+        "PRODUCTOS QUÍMICOS": 232050
+      }
+    },
+    {
+      "id": "2026-4-77",
+      "year": 2026,
+      "month": 4,
+      "costCenter": "LABORATORIO CLÍNICO",
+      "rrhh": 63404049.548128344,
+      "gastosGenerales": 6846583.235734878,
+      "insumos": 90779252,
+      "directos": 161029884.78386322,
+      "indirectos": 46457205.15857283,
+      "total": 207487089.94243604,
+      "productionDetails": {},
+      "productionTotal": 0,
+      "insumosBreakdown": {
+        "EQUIPOS MENORES": 317730,
+        "MATERIAL MEDICO QUIRURGICO": 3374648,
+        "MATERIALES Y ELEMENTOS DE ASEO": 108237,
+        "OTROS INSUMOS Y MATERIALES": 443648,
+        "PRODUCTOS QUÍMICOS": 86534989
+      }
+    },
+    {
+      "id": "2026-4-78",
+      "year": 2026,
+      "month": 4,
+      "costCenter": "TOMA DE MUESTRA",
+      "rrhh": 5796965.451871658,
+      "gastosGenerales": 4902550.122652779,
+      "insumos": 374960,
+      "directos": 11074475.574524436,
+      "indirectos": 2980914.364659936,
+      "total": 14055389.939184371,
+      "productionDetails": {},
+      "productionTotal": 0,
+      "insumosBreakdown": {
+        "MATERIAL MEDICO QUIRURGICO": 374960
+      }
+    },
+    {
+      "id": "2026-4-80",
+      "year": 2026,
+      "month": 4,
+      "costCenter": "MAMOGRAFÍA",
+      "rrhh": 9848866,
+      "gastosGenerales": 2443493.2357348776,
+      "insumos": 90530,
+      "directos": 12382889.235734878,
+      "indirectos": 3333099.8068845435,
+      "total": 15715989.042619422,
+      "productionDetails": {},
+      "productionTotal": 0,
+      "insumosBreakdown": {
+        "MATERIAL MEDICO QUIRURGICO": 90530
+      }
+    },
+    {
+      "id": "2026-4-81",
+      "year": 2026,
+      "month": 4,
+      "costCenter": "IMAGENOLOGÍA",
+      "rrhh": 84805577.98930483,
+      "gastosGenerales": 9820663.896488585,
+      "insumos": 1812392,
+      "directos": 96438633.88579342,
+      "indirectos": 26831986.59917963,
+      "total": 123270620.48497304,
+      "productionDetails": {},
+      "productionTotal": 0,
+      "insumosBreakdown": {
+        "LIBROS, TEXTOS, UTILES DE ENSEÑANZA Y PUBLICACIONES": 1616,
+        "MATERIAL MEDICO QUIRURGICO": 814775,
+        "MATERIALES DE CURACIÓN": 87096,
+        "MATERIALES DE OFICINA, PRODUCTOS DE PAPEL E IMPRESOS": 149354,
+        "MATERIALES Y ELEMENTOS DE ASEO": 455548,
+        "OTROS INSUMOS Y MATERIALES": 304003
+      }
+    },
+    {
+      "id": "2026-4-82",
+      "year": 2026,
+      "month": 4,
+      "costCenter": "REHABILITACIÓN",
+      "rrhh": 82827853,
+      "gastosGenerales": 4902550.122652779,
+      "insumos": 4933714,
+      "directos": 92664117.12265278,
+      "indirectos": 26498793.499828078,
+      "total": 119162910.62248087,
+      "productionDetails": {},
+      "productionTotal": 0,
+      "insumosBreakdown": {
+        "EQUIPOS MENORES": 428381,
+        "MATERIAL DE OSTEOSÍNTESIS Y PRÓTESIS": 4007963,
+        "MATERIAL MEDICO QUIRURGICO": 371453,
+        "MATERIALES DE OFICINA, PRODUCTOS DE PAPEL E IMPRESOS": 23622,
+        "MATERIALES Y ELEMENTOS DE ASEO": 3908,
+        "OTROS INSUMOS Y MATERIALES": 98387
+      }
+    },
+    {
+      "id": "2026-4-84",
+      "year": 2026,
+      "month": 4,
+      "costCenter": "DIALISIS PERITONEAL",
+      "rrhh": 15701188.272727273,
+      "gastosGenerales": 7568400,
+      "insumos": 22483305,
+      "directos": 45752893.27272727,
+      "indirectos": 28845567.957432143,
+      "total": 74598461.23015942,
+      "productionDetails": {},
+      "productionTotal": 0,
+      "insumosBreakdown": {
+        "EQUIPOS MENORES": 105553,
+        "MATERIAL MEDICO QUIRURGICO": 16364384,
+        "MATERIALES DE OFICINA, PRODUCTOS DE PAPEL E IMPRESOS": 21714,
+        "MATERIALES Y ELEMENTOS DE ASEO": 98258,
+        "MEDICAMENTOS": 2215836,
+        "OTROS INSUMOS Y MATERIALES": 3677560
+      }
+    },
+    {
+      "id": "2026-4-85",
+      "year": 2026,
+      "month": 4,
+      "costCenter": "SERVICIO FARMACEUTICO",
+      "rrhh": 57220154,
+      "gastosGenerales": 6132078.566111731,
+      "insumos": 23490773,
+      "directos": 86843005.56611173,
+      "indirectos": 23894318.260442834,
+      "total": 110737323.82655457,
+      "productionDetails": {},
+      "productionTotal": 0,
+      "insumosBreakdown": {
+        "MATERIAL MEDICO QUIRURGICO": 4664523,
+        "MATERIALES DE CURACIÓN": 1061,
+        "MATERIALES DE OFICINA, PRODUCTOS DE PAPEL E IMPRESOS": 640591,
+        "MATERIALES Y ELEMENTOS DE ASEO": 217730,
+        "OTROS INSUMOS Y MATERIALES": 35549,
+        "PRODUCTOS QUÍMICOS": 8925941,
+        "VÍVERES": 9005378
+      }
+    },
+    {
+      "id": "2026-4-86",
+      "year": 2026,
+      "month": 4,
+      "costCenter": "AMBULANCIA",
+      "rrhh": 48926533,
+      "gastosGenerales": 1556365.1183024696,
+      "insumos": 1181382,
+      "directos": 51664280.11830247,
+      "indirectos": 16546948.25405483,
+      "total": 68211228.37235731,
+      "productionDetails": {},
+      "productionTotal": 0,
+      "insumosBreakdown": {
+        "EQUIPOS MENORES": 528182,
+        "MATERIAL MEDICO QUIRURGICO": 271127,
+        "MATERIALES DE CURACIÓN": 9038,
+        "MATERIALES DE OFICINA, PRODUCTOS DE PAPEL E IMPRESOS": 22931,
+        "MATERIALES Y ELEMENTOS DE ASEO": 93898,
+        "OTROS INSUMOS Y MATERIALES": 256206
+      }
+    },
+    {
+      "id": "2026-4-87",
+      "year": 2026,
+      "month": 4,
+      "costCenter": "CENTRAL DE ESTERILIZACIÓN",
+      "rrhh": 52133223,
+      "gastosGenerales": 9182142.217294756,
+      "insumos": 13498546,
+      "directos": 74813911.21729475,
+      "indirectos": 21694057.163795814,
+      "total": 96507968.38109057,
+      "productionDetails": {},
+      "productionTotal": 0,
+      "insumosBreakdown": {
+        "MATERIAL MEDICO QUIRURGICO": 9263658,
+        "MATERIALES DE CURACIÓN": 88431,
+        "MATERIALES DE OFICINA, PRODUCTOS DE PAPEL E IMPRESOS": 557423,
+        "MATERIALES INFORMATICOS": 560599,
+        "MATERIALES Y ELEMENTOS DE ASEO": 1094562,
+        "OTROS INSUMOS Y MATERIALES": 1449338,
+        "PRODUCTOS QUÍMICOS": 484535
+      }
+    },
+    {
+      "id": "2026-4-89",
+      "year": 2026,
+      "month": 4,
+      "costCenter": "SERVICIO DE ALIMENTACIÓN",
+      "rrhh": 55745275,
+      "gastosGenerales": 15952742.462600317,
+      "insumos": 18924120,
+      "directos": 90622137.46260032,
+      "indirectos": 27505565.96257303,
+      "total": 118127703.42517334,
+      "productionDetails": {},
+      "productionTotal": 0,
+      "insumosBreakdown": {
+        "MATERIAL MEDICO QUIRURGICO": 1748772,
+        "MATERIALES DE OFICINA, PRODUCTOS DE PAPEL E IMPRESOS": 321521,
+        "MATERIALES Y ELEMENTOS DE ASEO": 900572,
+        "OTROS INSUMOS Y MATERIALES": 304341,
+        "VÍVERES": 15648914
+      }
+    },
+    {
+      "id": "2026-4-90",
+      "year": 2026,
+      "month": 4,
+      "costCenter": "LAVANDERIA Y ROPERIA",
+      "rrhh": 6508757,
+      "gastosGenerales": 6132078.566111731,
+      "insumos": 85940,
+      "directos": 12726775.566111732,
+      "indirectos": 3425663.6213182197,
+      "total": 16152439.187429952,
+      "productionDetails": {},
+      "productionTotal": 0,
+      "insumosBreakdown": {
+        "MATERIAL MEDICO QUIRURGICO": 85940
+      }
+    },
+    {
+      "id": "2026-4-91",
+      "year": 2026,
+      "month": 4,
+      "costCenter": "TRANSPORTE GENERAL",
+      "rrhh": 2884600,
+      "gastosGenerales": 389091.2795756174,
+      "insumos": 5337152,
+      "directos": 8610843.279575616,
+      "indirectos": 2317778.954966423,
+      "total": 10928622.234542038,
+      "productionDetails": {},
+      "productionTotal": 0,
+      "insumosBreakdown": {
+        "COMBUSTIBLES Y LUBRICANTES": 5251212,
+        "MATERIAL MEDICO QUIRURGICO": 85940
+      }
+    },
+    {
+      "id": "2026-4-92",
+      "year": 2026,
+      "month": 4,
+      "costCenter": "MANTENIMIENTO",
+      "rrhh": 31436577,
+      "gastosGenerales": 31428714.23573488,
+      "insumos": 85940,
+      "directos": 62951231.23573488,
+      "indirectos": 16944570.259859875,
+      "total": 79895801.49559475,
+      "productionDetails": {},
+      "productionTotal": 0,
+      "insumosBreakdown": {
+        "MATERIAL MEDICO QUIRURGICO": 85940
+      }
+    },
+    {
+      "id": "2026-4-94",
+      "year": 2026,
+      "month": 4,
+      "costCenter": "ADMINISTRACIÓN",
+      "rrhh": 612237385.6629968,
+      "gastosGenerales": 254270442.12329403,
+      "insumos": 19376836,
+      "directos": 885884663.7862908,
+      "indirectos": 34793601.90205735,
+      "total": 920678265.688348,
+      "productionDetails": {},
+      "productionTotal": 0,
+      "insumosBreakdown": {
+        "EQUIPOS MENORES": 321285,
+        "LIBROS, TEXTOS, UTILES DE ENSEÑANZA Y PUBLICACIONES": 388388,
+        "MATERIAL MEDICO QUIRURGICO": 601588,
+        "MATERIALES DE OFICINA, PRODUCTOS DE PAPEL E IMPRESOS": 2999362,
+        "MATERIALES INFORMATICOS": 198280,
+        "MATERIALES Y ELEMENTOS DE ASEO": 4809246,
+        "OTROS INSUMOS Y MATERIALES": 900090,
+        "PRODUCTOS QUÍMICOS": 8370688,
+        "REPUESTOS Y ACCESORIOS PARA MANTENIMIENTO Y REPARACIONES DE VEHICULOS": 604150,
+        "VÍVERES": 183759
+      }
+    },
+    {
+      "id": "2026-4-95",
+      "year": 2026,
+      "month": 4,
       "costCenter": "TOTAL",
       "rrhh": 3055968434.000001,
       "gastosGenerales": 611532345.5690819,

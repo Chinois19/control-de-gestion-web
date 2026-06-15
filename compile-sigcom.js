@@ -3,7 +3,83 @@ import path from 'path';
 import pkg from 'xlsx';
 const { readFile, utils } = pkg;
 
-const SIGCOM_DATA_DIR = path.join(process.cwd(), 'src', 'data', 'SIGCOM');
+const G_DRIVE_SIGCOM_DIR = 'G:\\Unidades compartidas\\ASUR\\SIGCOM';
+const LOCAL_SIGCOM_DIR = path.join(process.cwd(), 'src', 'data', 'SIGCOM');
+
+const syncFromGDrive = () => {
+  if (!fs.existsSync(G_DRIVE_SIGCOM_DIR)) {
+    console.log('G Drive SIGCOM directory not detected. Using local SIGCOM data.');
+    return;
+  }
+  console.log('G Drive SIGCOM directory detected. Syncing new files to local repository...');
+  
+  if (!fs.existsSync(LOCAL_SIGCOM_DIR)) {
+    fs.mkdirSync(LOCAL_SIGCOM_DIR, { recursive: true });
+  }
+
+  const gAgrupaciones = path.join(G_DRIVE_SIGCOM_DIR, 'Agrupaciones SIGCOM.xlsx');
+  const lAgrupaciones = path.join(LOCAL_SIGCOM_DIR, 'Agrupaciones SIGCOM.xlsx');
+  if (fs.existsSync(gAgrupaciones)) {
+    try {
+      fs.copyFileSync(gAgrupaciones, lAgrupaciones);
+      console.log('Synced Agrupaciones SIGCOM.xlsx');
+    } catch (e) {
+      console.error('Failed to sync Agrupaciones SIGCOM.xlsx:', e.message);
+    }
+  }
+
+  const years = ['SIGCOM 2025', 'SIGCOM 2026'];
+  for (const year of years) {
+    const gYearPath = path.join(G_DRIVE_SIGCOM_DIR, year);
+    const lYearPath = path.join(LOCAL_SIGCOM_DIR, year);
+    if (!fs.existsSync(gYearPath)) continue;
+
+    if (!fs.existsSync(lYearPath)) {
+      fs.mkdirSync(lYearPath, { recursive: true });
+    }
+
+    const months = fs.readdirSync(gYearPath);
+    for (const month of months) {
+      const gMonthPath = path.join(gYearPath, month);
+      const lMonthPath = path.join(lYearPath, month);
+      if (!fs.statSync(gMonthPath).isDirectory()) continue;
+
+      if (!fs.existsSync(lMonthPath)) {
+        fs.mkdirSync(lMonthPath, { recursive: true });
+      }
+
+      const files = fs.readdirSync(gMonthPath);
+      for (const file of files) {
+        const gFilePath = path.join(gMonthPath, file);
+        const lFilePath = path.join(lMonthPath, file);
+        if (fs.statSync(gFilePath).isFile()) {
+          let shouldCopy = false;
+          if (!fs.existsSync(lFilePath)) {
+            shouldCopy = true;
+          } else {
+            const gStat = fs.statSync(gFilePath);
+            const lStat = fs.statSync(lFilePath);
+            if (gStat.size !== lStat.size || gStat.mtimeMs > lStat.mtimeMs) {
+              shouldCopy = true;
+            }
+          }
+          if (shouldCopy) {
+            try {
+              fs.copyFileSync(gFilePath, lFilePath);
+              console.log(`Synced file: ${year}/${month}/${file}`);
+            } catch (e) {
+              console.error(`Failed to sync file ${file}:`, e.message);
+            }
+          }
+        }
+      }
+    }
+  }
+};
+
+syncFromGDrive();
+
+const SIGCOM_DATA_DIR = LOCAL_SIGCOM_DIR;
 const OUTPUT_FILE = path.join(process.cwd(), 'src', 'data', 'sigcom_data.json');
 const AGRUPACIONES_FILE = path.join(SIGCOM_DATA_DIR, 'Agrupaciones SIGCOM.xlsx');
 

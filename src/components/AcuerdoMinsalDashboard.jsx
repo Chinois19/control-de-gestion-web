@@ -378,6 +378,27 @@ export default function AcuerdoMinsalDashboard({ onBack }) {
     });
   }, [processedData, activeIndicator]);
 
+  const yAxisDomain = useMemo(() => {
+    const vals = chartData.map(d => d.Valor).filter(v => v !== null && v !== undefined);
+    if (vals.length === 0) return [0, 100];
+    let min = Math.min(...vals);
+    let max = Math.max(...vals);
+    
+    if (activeIndicator.metaValue !== undefined && typeof activeIndicator.metaValue === 'number') {
+      min = Math.min(min, activeIndicator.metaValue);
+      max = Math.max(max, activeIndicator.metaValue);
+    }
+    
+    const diff = max - min;
+    const pad = diff === 0 ? 0.2 : diff * 0.2;
+    
+    const isPositiveOnly = activeIndicator.id !== 'impacto';
+    const finalMin = isPositiveOnly ? Math.max(0, min - pad) : (min - pad);
+    const finalMax = max + pad;
+    
+    return [finalMin, finalMax];
+  }, [chartData, activeIndicator]);
+
   if (loading) {
     return (
       <div className="loader-container" style={{ height: '70vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '20px', color: 'var(--text-dark)' }}>
@@ -432,27 +453,26 @@ export default function AcuerdoMinsalDashboard({ onBack }) {
       </div>
 
       {/* Main Grid Layout - Sidebar (Left) + Content (Right) */}
-      <div style={{ display: 'grid', gridTemplateColumns: '360px 1fr', gap: '24px', alignItems: 'start' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '380px 1fr', gap: '24px', alignItems: 'start' }}>
         
         {/* LEFT COLUMN: Indicators List */}
-        <div style={{ display: 'flex', flexDirection: 'column', maxHeight: '820px', overflowY: 'auto', paddingRight: '4px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', maxHeight: '845px', overflowY: 'auto', paddingRight: '6px', paddingBottom: '16px' }}>
           {indicatorsList.map((ind) => {
             const isSelected = selectedId === ind.id;
             return (
               <motion.div
                 key={ind.id}
-                whileHover={{ x: 4 }}
+                whileHover={{ y: -2, x: 2 }}
                 onClick={() => setSelectedId(ind.id)}
                 style={{
                   display: 'flex',
                   alignItems: 'center',
-                  padding: '14px 18px',
-                  borderRadius: '16px',
+                  padding: '18px 22px',
+                  borderRadius: '20px',
                   background: isSelected ? 'linear-gradient(135deg, #eff6ff, #dbeafe)' : '#ffffff',
                   border: isSelected ? '2px solid #2563eb' : '1px solid #e2e8f0',
                   cursor: 'pointer',
-                  marginBottom: '10px',
-                  boxShadow: isSelected ? '0 4px 12px rgba(37, 99, 235, 0.1)' : '0 2px 4px rgba(0,0,0,0.02)',
+                  boxShadow: isSelected ? '0 10px 25px rgba(37, 99, 235, 0.12)' : '0 4px 10px rgba(0,0,0,0.03)',
                   transition: 'all 0.2s ease',
                   position: 'relative',
                   overflow: 'hidden'
@@ -460,34 +480,39 @@ export default function AcuerdoMinsalDashboard({ onBack }) {
               >
                 {/* Accent line on selected */}
                 {isSelected && (
-                  <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: '4px', background: '#2563eb' }} />
+                  <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: '5px', background: '#2563eb' }} />
                 )}
                 
-                <div style={{ flex: 1 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-                    <span style={{ fontSize: '0.85rem', fontWeight: 800, color: isSelected ? '#1e40af' : '#1e293b', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <span style={{ color: isSelected ? '#2563eb' : '#64748b' }}>{ind.icon}</span>
+                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px' }}>
+                    <span style={{ fontSize: '0.88rem', fontWeight: 800, color: isSelected ? '#1e3a8a' : '#334155', display: 'flex', alignItems: 'center', gap: '8px', lineHeight: '1.3' }}>
+                      <span style={{ color: isSelected ? '#3b82f6' : '#64748b', display: 'inline-flex', flexShrink: 0 }}>{ind.icon}</span>
                       {ind.name}
                     </span>
-                    <span style={{ fontSize: '0.7rem', color: '#94a3b8', fontStyle: 'italic', fontWeight: 600 }}>
-                      {ind.formulaSnippet}
-                    </span>
                   </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
-                    <span style={{ fontSize: '1.4rem', fontWeight: 900, color: '#0f172a', lineHeight: 1 }}>
+                  
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: '4px' }}>
+                    <span style={{ fontSize: '1.6rem', fontWeight: 950, color: '#0f172a', letterSpacing: '-0.5px', lineHeight: 1 }}>
                       {ind.value}
                     </span>
-                    <span style={{ 
-                      fontSize: '0.72rem', 
-                      padding: '2px 8px', 
-                      borderRadius: '8px', 
-                      background: ind.status === 'success' ? '#dcfce7' : '#fee2e2',
-                      color: ind.status === 'success' ? '#15803d' : '#b91c1c',
-                      fontWeight: 800,
-                      border: ind.status === 'success' ? '1px solid rgba(21, 128, 61, 0.15)' : '1px solid rgba(185, 28, 28, 0.15)'
-                    }}>
-                      {ind.statusText}
-                    </span>
+                    
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '6px' }}>
+                      <span style={{ fontSize: '0.68rem', color: isSelected ? '#2563eb' : '#94a3b8', fontStyle: 'italic', fontWeight: 700 }}>
+                        {ind.formulaSnippet}
+                      </span>
+                      <span style={{ 
+                        fontSize: '0.72rem', 
+                        padding: '4px 10px', 
+                        borderRadius: '8px', 
+                        background: ind.status === 'success' ? '#dcfce7' : ind.status === 'warning' ? '#ffedd5' : '#fee2e2',
+                        color: ind.status === 'success' ? '#15803d' : ind.status === 'warning' ? '#c2410c' : '#b91c1c',
+                        fontWeight: 800,
+                        letterSpacing: '0.2px',
+                        border: ind.status === 'success' ? '1px solid rgba(21, 128, 61, 0.15)' : ind.status === 'warning' ? '1px solid rgba(194, 65, 12, 0.15)' : '1px solid rgba(185, 28, 28, 0.15)'
+                      }}>
+                        {ind.statusText}
+                      </span>
+                    </div>
                   </div>
                 </div>
               </motion.div>
@@ -513,18 +538,9 @@ export default function AcuerdoMinsalDashboard({ onBack }) {
                   </p>
                 </div>
                 
-                {/* Select controls like in screenshot */}
-                <div style={{ display: 'flex', gap: '12px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.5px' }}>SERVICIO:</span>
-                    <select 
-                      value={selectedService}
-                      onChange={(e) => setSelectedService(e.target.value)}
-                      style={{ padding: '6px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '0.8rem', fontWeight: 700, background: '#f8fafc', color: '#0f172a' }}
-                    >
-                      <option value="villarrica">Hospital de Villarrica</option>
-                      <option value="araucania_sur" disabled>Servicio Salud Araucanía Sur</option>
-                    </select>
+                <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                  <div style={{ fontSize: '0.82rem', fontWeight: 800, color: '#1e40af', background: '#eff6ff', padding: '6px 12px', borderRadius: '8px', border: '1px solid #bfdbfe', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    🏥 Hospital de Villarrica
                   </div>
                   
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -585,7 +601,7 @@ export default function AcuerdoMinsalDashboard({ onBack }) {
                       <LineChart data={chartData} margin={{ top: 10, right: 30, left: -20, bottom: 0 }}>
                         <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.15} />
                         <XAxis dataKey="name" tick={{ fontSize: 11, fontWeight: 600 }} />
-                        <YAxis tick={{ fontSize: 11 }} />
+                        <YAxis tick={{ fontSize: 11 }} domain={yAxisDomain} />
                         <Tooltip content={<CustomTooltip isPercentage={activeIndicator.isPercentage} />} />
                         {activeIndicator.metaValue !== undefined && typeof activeIndicator.metaValue === 'number' && (
                           <ReferenceLine 
