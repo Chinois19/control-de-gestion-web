@@ -142,11 +142,11 @@ const indicatorCards = [
     desc: 'Análisis detallado de la actividad clínica y uso de recursos bajo estándares MINSAL.'
   },
   { 
-    id: 'indicadores', 
-    title: 'Metas Sanitarias 2026', 
+    id: 'ley18834', 
+    title: 'Metas Sanitarias Ley 18.834', 
     image: imgStats, 
-    type: 'Cumplimiento Leyes',
-    desc: 'Monitoreo de compromisos de gestión y metas de eficiencia institucional.'
+    type: 'Estatuto Administrativo',
+    desc: 'Monitoreo oficial de metas de gestión y atención para el personal regulado.'
   },
   { 
     id: 'estadistica', 
@@ -222,11 +222,18 @@ const searchIndex = [
     action: { view: 'estadistica' }
   },
   {
-    keys: ['metas', 'metas sanitarias', 'compromisos', 'comgest', 'ley 18834', 'ley 19664', 'ley 15707', 'leyes', 'cumplimiento', 'incentivo', 'desempeño', 'indicador metas'],
-    title: 'Monitoreo de Metas Sanitarias 2026',
-    path: 'Indicadores de Gestión ➔ Metas Sanitarias',
-    desc: 'Seguimiento de cumplimiento de leyes de salud y metas de eficiencia institucional.',
+    keys: ['metas', 'metas sanitarias', 'compromisos', 'comgest', 'ley 19664', 'ley 15707', 'leyes', 'cumplimiento', 'incentivo', 'desempeño', 'indicador metas'],
+    title: 'Otras Metas Sanitarias (Leyes 19.664 y 15.707)',
+    path: 'Indicadores de Gestión ➔ Otras Metas Sanitarias',
+    desc: 'Seguimiento de cumplimiento de otras leyes de salud y metas de eficiencia institucional.',
     action: { view: 'indicadores' }
+  },
+  {
+    keys: ['ley 18834', '18834', 'ley 18.834', 'ley 18', 'metas sanitarias ley 18834', 'estatuto administrativo'],
+    title: 'Metas Sanitarias Ley 18.834',
+    path: 'Indicadores de Gestión ➔ Metas Sanitarias ➔ Ley 18.834',
+    desc: 'Monitoreo oficial de las metas de gestión y atención para el personal regulado bajo el Estatuto Administrativo.',
+    action: { view: 'ley18834' }
   },
   {
     keys: ['documentos', 'repositorio', 'normas', 'resoluciones', 'archivos', 'pdf', 'descargar manual', 'circulares', 'reglamentos', 'biblioteca'],
@@ -863,7 +870,7 @@ function App() {
               )}
               {activeView === 'urgencia' && <div style={{ color: 'var(--text-dark)' }}><h1>Panel de Urgencia</h1><button onClick={() => navigateToView('produccion_general')}>Volver</button></div>}
               {(activeView === 'estadistica' || activeView === 'quirurgica') && <SurgicalDashboard onBack={() => navigateToView(activeView === 'estadistica' ? 'home' : 'produccion_general')} />}
-              {activeView === 'indicadores' && <HealthGoals onBack={() => navigateToView('home')} />}
+              {(activeView === 'indicadores' || activeView === 'ley19664' || activeView === 'ley15707') && <HealthGoals onBack={() => navigateToView('home')} />}
               {activeView === 'ley18834' && <HealthGoalsLey18834 onBack={() => navigateToView('home')} />}
               {activeView === 'repositorio' && <DocumentRepository onBack={() => navigateToView('home')} />}
               {activeView === 'mamografias' && (
