@@ -116,8 +116,9 @@ const compileData = () => {
       if (!month) continue;
 
       const files = fs.readdirSync(monthPath);
-      const cuboFile = files.find(f => f.startsWith('Cubo 9') && f.endsWith('.xlsx'));
-      const formato4File = files.find(f => f.startsWith('Formato_4') && f.endsWith('.xlsx'));
+      const monthStr = month.toString().padStart(2, '0');
+      const cuboFile = files.find(f => f.startsWith('Cubo 9') && f.includes(`_${monthStr}_`) && (f.endsWith('.xlsx') || f.endsWith('.xls')));
+      const formato4File = files.find(f => (f.startsWith('Formato_4') || f.startsWith('Planilla_4')) && (f.endsWith('.xlsx') || f.endsWith('.xls')));
 
       if (!cuboFile) continue;
 

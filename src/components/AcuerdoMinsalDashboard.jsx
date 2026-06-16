@@ -8,8 +8,49 @@ import {
 } from 'lucide-react';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
-  LineChart, Line, ReferenceLine
+  LineChart, Line, ReferenceLine, LabelList
 } from 'recharts';
+
+const CustomChartLabel = (props) => {
+  const { x, y, width, value, isPercentage } = props;
+  if (value === null || value === undefined || value === 0) return null;
+  
+  const labelWidth = isPercentage ? 50 : 46;
+  const labelHeight = 22;
+  
+  // Posición X: centro de la barra si hay width, sino el propio x
+  const posX = width !== undefined ? x + width / 2 : x;
+  // Posición Y: arriba del punto/barra
+  const posY = y - 16;
+
+  const displayValue = isPercentage 
+    ? `${value.toFixed(1)}%` 
+    : (Number.isInteger(value) ? value.toLocaleString('es-CL') : value.toFixed(1));
+
+  return (
+    <g>
+      <rect 
+        x={posX - labelWidth / 2} 
+        y={posY - labelHeight / 2} 
+        width={labelWidth} 
+        height={labelHeight} 
+        fill="rgba(37, 99, 235, 0.15)" 
+        rx={6} 
+        stroke="rgba(37, 99, 235, 0.3)"
+      />
+      <text 
+        x={posX} 
+        y={posY + 1} 
+        fill="#1e3a8a" 
+        textAnchor="middle" 
+        dominantBaseline="middle"
+        style={{ fontSize: '10px', fontWeight: '800' }}
+      >
+        {displayValue}
+      </text>
+    </g>
+  );
+};
 
 export default function AcuerdoMinsalDashboard({ onBack }) {
   const [rawData, setRawData] = useState([]);
@@ -79,21 +120,29 @@ export default function AcuerdoMinsalDashboard({ onBack }) {
   const processedData = useMemo(() => {
     if (!rawData || rawData.length === 0) return [];
     
+    // Programación CMA Villarrica 2026 (desde presentación oficial)
+    const programmedCMA = {
+      'Jan-26': 308, 'Feb-26': 207, 'Mar-26': 259, 'Apr-26': 259,
+      'May-26': 272, 'Jun-26': 272, 'Jul-26': 259, 'Aug-26': 272,
+      'Sep-26': 233, 'Oct-26': 302, 'Nov-26': 285, 'Dec-26': 233
+    };
+
     return rawData
       .filter(row => {
         const mes = cleanMonthName(row.Mes);
         return mes && mes !== 'Total año 2026' && mes !== 'META' && !mes.includes('Total');
       })
       .map(row => {
+        const mes = cleanMonthName(row.Mes);
         const egresos = parseVal(row["Egresos 2026"]);
         const cma = parseVal(row["CMA 2026"]);
         const hasData = egresos !== null || cma !== null;
 
         return {
-          mes: cleanMonthName(row.Mes),
+          mes: mes,
           acuerdoEgresos: parseVal(row["Acuerdo Egresos"]),
           egresos2026: egresos,
-          acuerdoCma: parseVal(row["Acuerdo CMA"]),
+          acuerdoCma: programmedCMA[mes] || parseVal(row["Acuerdo CMA"]),
           cma2026: cma,
           indiceFuncional: parseVal(row["1. Indice Funcional"]),
           iema: parseVal(row["2. IEMA"]),
@@ -112,9 +161,27 @@ export default function AcuerdoMinsalDashboard({ onBack }) {
   }, [rawData]);
 
   const yearlyTotals = useMemo(() => {
-    if (!rawData || rawData.length === 0) return null;
+    if (!rawData || rawData.length === 0 || !processedData) return null;
     const totalRow = rawData.find(row => cleanMonthName(row.Mes).includes('Total año 2026'));
     if (!totalRow) return null;
+
+    let cmaRealAFecha = 0;
+    let cmaEsperadoAFecha = 0;
+    let egresosRealAFecha = 0;
+    let egresosEsperadoAFecha = 0;
+    
+    processedData.forEach(d => {
+       if (d.cma2026 !== null) {
+           cmaRealAFecha += d.cma2026;
+           cmaEsperadoAFecha += (d.acuerdoCma || 0);
+       }
+       if (d.egresos2026 !== null) {
+           egresosRealAFecha += d.egresos2026;
+           egresosEsperadoAFecha += (d.acuerdoEgresos || 0);
+       }
+    });
+
+    const cmaMetaAnual = 3161; // Total programado CMA 2026 Villarrica
 
     return {
       acuerdoEgresos: parseVal(totalRow["Acuerdo Egresos"]),
@@ -122,6 +189,11 @@ export default function AcuerdoMinsalDashboard({ onBack }) {
       peso2026: parseVal(totalRow["Peso 2026"]),
       acuerdoCma: parseVal(totalRow["Acuerdo CMA"]),
       cma2026: parseVal(totalRow["CMA 2026"]),
+      cmaRealAFecha,
+      cmaEsperadoAFecha,
+      cmaMetaAnual,
+      egresosRealAFecha,
+      egresosEsperadoAFecha,
       pesoCma2026: parseVal(totalRow["Peso CMA 2026"]),
       indiceFuncional: parseVal(totalRow["1. Indice Funcional"]),
       iema: parseVal(totalRow["2. IEMA"]),
@@ -135,7 +207,7 @@ export default function AcuerdoMinsalDashboard({ onBack }) {
       medianaCNE: parseVal(totalRow["10. MEDIANA CNE"]),
       registrosGes: parsePercent(totalRow["11. Registros GES"])
     };
-  }, [rawData]);
+  }, [rawData, processedData]);
 
   // List of all indicators mapping for the sidebar
   const indicatorsList = useMemo(() => {
@@ -165,40 +237,44 @@ export default function AcuerdoMinsalDashboard({ onBack }) {
         id: 'egresos_hospitalarios',
         name: 'Egresos Hospitalarios',
         formulaSnippet: 'Egresos / Acuerdo',
-        formula: 'Egresos Reales registrados en el período t / Meta de Egresos Comprometidos',
-        value: yearlyTotals.egresos2026 ? yearlyTotals.egresos2026.toLocaleString('es-CL') : '2,213',
-        metaValue: yearlyTotals.acuerdoEgresos || 3973,
-        meta: `${(yearlyTotals.acuerdoEgresos || 3973).toLocaleString('es-CL')} pac.`,
-        status: 'warning',
-        statusText: `${yearlyTotals.acuerdoEgresos ? ((yearlyTotals.egresos2026 / yearlyTotals.acuerdoEgresos) * 100).toFixed(1) : '55.7'}% Avance`,
+        formula: 'Egresos Reales registrados a la fecha / Meta de Egresos Comprometidos a la fecha',
+        value: yearlyTotals.egresosRealAFecha ? yearlyTotals.egresosRealAFecha.toLocaleString('es-CL') : '2,213',
+        metaValue: yearlyTotals.egresosEsperadoAFecha || 3973,
+        meta: `${(yearlyTotals.egresosEsperadoAFecha || 3973).toLocaleString('es-CL')} pac. (Meta a la fecha)`,
+        status: (yearlyTotals.egresosRealAFecha >= yearlyTotals.egresosEsperadoAFecha) ? 'success' : 'warning',
+        statusText: (yearlyTotals.egresosRealAFecha >= yearlyTotals.egresosEsperadoAFecha) ? 'CUMPLE ✅' : `${yearlyTotals.egresosEsperadoAFecha ? ((yearlyTotals.egresosRealAFecha / yearlyTotals.egresosEsperadoAFecha) * 100).toFixed(1) : '55.7'}% Avance`,
+        cumplimientoPeriodo: yearlyTotals.egresosEsperadoAFecha ? ((yearlyTotals.egresosRealAFecha / yearlyTotals.egresosEsperadoAFecha) * 100).toFixed(1) : null,
+        cumplimientoAnual: yearlyTotals.acuerdoEgresos ? ((yearlyTotals.egresosRealAFecha / yearlyTotals.acuerdoEgresos) * 100).toFixed(1) : null,
         icon: <Target size={18} />,
         source: 'Sistema GRD / Fonasa',
-        methodology: 'Total de egresos registrados bajo la metodología de financiamiento GRD del establecimiento durante el periodo de evaluación.',
+        methodology: 'Total de egresos registrados bajo la metodología de financiamiento GRD del establecimiento comparado con la meta a la fecha.',
         chartKey: 'egresos2026',
         acuerdoKey: 'acuerdoEgresos',
         chartType: 'bar',
         isPercentage: false,
-        insightsVillarrica: `El establecimiento ha reportado ${yearlyTotals.egresos2026?.toLocaleString('es-CL')} egresos, lo que equivale a un ${((yearlyTotals.egresos2026 / yearlyTotals.acuerdoEgresos) * 100).toFixed(1)}% de la meta anual acordada.`,
-        insightsImpacto: 'La falta de consolidación en los datos de los últimos meses distorsiona el avance acumulado anual. Es prioritaria la normalización de registros de hospitalización.'
+        insightsVillarrica: `El establecimiento ha reportado ${yearlyTotals.egresosRealAFecha?.toLocaleString('es-CL')} egresos, logrando un ${((yearlyTotals.egresosRealAFecha / yearlyTotals.egresosEsperadoAFecha) * 100).toFixed(1)}% de la meta programada a la fecha.`,
+        insightsImpacto: 'La consolidación de datos de egresos es clave para asegurar la correcta evaluación de los indicadores de producción hospitalaria.'
       },
       {
         id: 'cma',
         name: 'Cirugía Mayor Ambulatoria (CMA)',
         formulaSnippet: 'CMA / Acuerdo',
-        formula: 'Egresos CMA reales en período t / Meta de Egresos CMA Comprometidos',
-        value: yearlyTotals.cma2026 ? yearlyTotals.cma2026.toLocaleString('es-CL') : '1,159',
-        metaValue: yearlyTotals.acuerdoCma || 2012,
-        meta: `${(yearlyTotals.acuerdoCma || 2012).toLocaleString('es-CL')} pac.`,
-        status: 'warning',
-        statusText: `${yearlyTotals.acuerdoCma ? ((yearlyTotals.cma2026 / yearlyTotals.acuerdoCma) * 100).toFixed(1) : '57.6'}% Avance`,
+        formula: 'Egresos CMA reales a la fecha / Meta de Egresos CMA Programados a la fecha',
+        value: yearlyTotals.cmaRealAFecha ? yearlyTotals.cmaRealAFecha.toLocaleString('es-CL') : (yearlyTotals.cma2026 ? yearlyTotals.cma2026.toLocaleString('es-CL') : '1,159'),
+        metaValue: yearlyTotals.cmaEsperadoAFecha || 1033,
+        meta: `${(yearlyTotals.cmaEsperadoAFecha || 1033).toLocaleString('es-CL')} pac. (Meta a la fecha)`,
+        status: (yearlyTotals.cmaRealAFecha >= yearlyTotals.cmaEsperadoAFecha) ? 'success' : 'warning',
+        statusText: (yearlyTotals.cmaRealAFecha >= yearlyTotals.cmaEsperadoAFecha) ? 'CUMPLE ✅' : `${yearlyTotals.cmaEsperadoAFecha ? ((yearlyTotals.cmaRealAFecha / yearlyTotals.cmaEsperadoAFecha) * 100).toFixed(1) : '57.6'}% Avance`,
+        cumplimientoPeriodo: yearlyTotals.cmaEsperadoAFecha ? ((yearlyTotals.cmaRealAFecha / yearlyTotals.cmaEsperadoAFecha) * 100).toFixed(1) : null,
+        cumplimientoAnual: yearlyTotals.cmaMetaAnual ? ((yearlyTotals.cmaRealAFecha / yearlyTotals.cmaMetaAnual) * 100).toFixed(1) : null,
         icon: <Scissors size={18} />,
         source: 'Sistema GRD / Fonasa',
-        methodology: 'Intervenciones quirúrgicas mayores realizadas de manera ambulatoria que son reportadas bajo el programa 05 GRD.',
+        methodology: 'Intervenciones quirúrgicas mayores realizadas de manera ambulatoria (05 GRD). El avance se evalúa comparando lo ejecutado con la programación mensual esperada hasta la fecha.',
         chartKey: 'cma2026',
         acuerdoKey: 'acuerdoCma',
         chartType: 'bar',
         isPercentage: false,
-        insightsVillarrica: `Se registran ${yearlyTotals.cma2026?.toLocaleString('es-CL')} cirugías ambulatorias, alcanzando el ${((yearlyTotals.cma2026 / yearlyTotals.acuerdoCma) * 100).toFixed(1)}% de la meta.`,
+        insightsVillarrica: `Se registran ${yearlyTotals.cmaRealAFecha?.toLocaleString('es-CL')} cirugías ambulatorias, logrando un ${((yearlyTotals.cmaRealAFecha / yearlyTotals.cmaEsperadoAFecha) * 100).toFixed(1)}% de cumplimiento respecto a lo programado a la fecha (${yearlyTotals.cmaEsperadoAFecha?.toLocaleString('es-CL')} pac.).`,
         insightsImpacto: 'CMA representa un pilar crítico de eficiencia para evitar estancias hospitalarias innecesarias. Mantener el flujo resolutivo ayuda directamente a la puntuación del Índice Funcional.'
       },
       {
@@ -547,10 +623,10 @@ export default function AcuerdoMinsalDashboard({ onBack }) {
       </div>
 
       {/* Main Grid Layout - Sidebar (Left) + Content (Right) */}
-      <div style={{ display: 'grid', gridTemplateColumns: '380px 1fr', gap: '24px', alignItems: 'start' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '450px 1fr', gap: '24px', alignItems: 'start' }}>
         
         {/* LEFT COLUMN: Indicators List */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', maxHeight: '845px', overflowY: 'auto', paddingRight: '6px', paddingBottom: '16px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', maxHeight: '845px', overflowY: 'auto', paddingRight: '16px', paddingBottom: '16px' }}>
           {indicatorsList.map((ind) => {
             const isSelected = selectedId === ind.id;
             return (
@@ -569,7 +645,8 @@ export default function AcuerdoMinsalDashboard({ onBack }) {
                   boxShadow: isSelected ? '0 10px 25px rgba(37, 99, 235, 0.12)' : '0 4px 10px rgba(0,0,0,0.03)',
                   transition: 'all 0.2s ease',
                   position: 'relative',
-                  overflow: 'hidden'
+                  overflow: 'hidden',
+                  flexShrink: 0
                 }}
               >
                 {/* Accent line on selected */}
@@ -676,13 +753,33 @@ export default function AcuerdoMinsalDashboard({ onBack }) {
 
               {/* Chart Section */}
               <div style={{ position: 'relative' }}>
-                <p style={{ fontSize: '0.72rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '12px' }}>
-                  Evolución Mensual
-                </p>
-                <div style={{ height: '320px', width: '100%' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                  <p style={{ fontSize: '0.72rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '1px', margin: 0 }}>
+                    Evolución Mensual
+                  </p>
+                  
+                  {/* Etiquetas de Cumplimiento */}
+                  {(activeIndicator.cumplimientoPeriodo || activeIndicator.cumplimientoAnual) && (
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      {activeIndicator.cumplimientoPeriodo && (
+                        <div style={{ background: 'rgba(59, 130, 246, 0.08)', border: '1px solid rgba(59, 130, 246, 0.2)', padding: '4px 10px', borderRadius: '6px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <span style={{ fontSize: '0.68rem', fontWeight: 700, color: '#3b82f6', textTransform: 'uppercase' }}>% Período:</span>
+                          <span style={{ fontSize: '0.85rem', fontWeight: 900, color: '#1d4ed8' }}>{activeIndicator.cumplimientoPeriodo}%</span>
+                        </div>
+                      )}
+                      {activeIndicator.cumplimientoAnual && (
+                        <div style={{ background: 'rgba(37, 99, 235, 0.08)', border: '1px solid rgba(37, 99, 235, 0.2)', padding: '4px 10px', borderRadius: '6px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <span style={{ fontSize: '0.68rem', fontWeight: 700, color: '#2563eb', textTransform: 'uppercase' }}>% Anual:</span>
+                          <span style={{ fontSize: '0.85rem', fontWeight: 900, color: '#1e3a8a' }}>{activeIndicator.cumplimientoAnual}%</span>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+                <div style={{ height: '360px', width: '100%' }}>
                   <ResponsiveContainer width="100%" height="100%">
                     {activeIndicator.id === 'registros_ges' ? (
-                      <BarChart data={stackedChartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                      <BarChart data={stackedChartData} margin={{ top: 20, right: 10, left: -20, bottom: 0 }}>
                         <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.15} />
                         <XAxis dataKey="name" tick={{ fontSize: 11, fontWeight: 600 }} />
                         <YAxis tick={{ fontSize: 11 }} />
@@ -696,17 +793,19 @@ export default function AcuerdoMinsalDashboard({ onBack }) {
                         <Bar dataKey="MAS 120 DIAS" stackId="a" fill="#581c87" name="Fuera de Rango (>120)" />
                       </BarChart>
                     ) : activeIndicator.chartType === 'bar' ? (
-                      <BarChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                      <BarChart data={chartData} margin={{ top: 35, right: 10, left: -20, bottom: 0 }}>
                         <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.15} />
                         <XAxis dataKey="name" tick={{ fontSize: 11, fontWeight: 600 }} />
                         <YAxis tick={{ fontSize: 11 }} />
                         <Tooltip content={<CustomTooltip isPercentage={activeIndicator.isPercentage} />} />
                         <Legend />
                         <Bar name="Programado (Acuerdo)" dataKey="Acuerdo" fill="#cbd5e1" radius={[4, 4, 0, 0]} />
-                        <Bar name="Ejecutado Real" dataKey="Valor" fill="#2563eb" radius={[4, 4, 0, 0]} />
+                        <Bar name="Ejecutado Real" dataKey="Valor" fill="#2563eb" radius={[4, 4, 0, 0]}>
+                          <LabelList dataKey="Valor" content={<CustomChartLabel isPercentage={activeIndicator.isPercentage} />} />
+                        </Bar>
                       </BarChart>
                     ) : (
-                      <LineChart data={chartData} margin={{ top: 10, right: 30, left: -20, bottom: 0 }}>
+                      <LineChart data={chartData} margin={{ top: 35, right: 30, left: -20, bottom: 0 }}>
                         <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.15} />
                         <XAxis dataKey="name" tick={{ fontSize: 11, fontWeight: 600 }} />
                         <YAxis tick={{ fontSize: 11 }} domain={yAxisDomain} />
@@ -734,7 +833,9 @@ export default function AcuerdoMinsalDashboard({ onBack }) {
                           dot={{ r: 5, fill: '#2563eb', strokeWidth: 2 }} 
                           activeDot={{ r: 8 }}
                           connectNulls={false}
-                        />
+                        >
+                          <LabelList dataKey="Valor" content={<CustomChartLabel isPercentage={activeIndicator.isPercentage} />} />
+                        </Line>
                       </LineChart>
                     )}
                   </ResponsiveContainer>

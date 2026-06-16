@@ -40,6 +40,7 @@ import SigcomDashboard from './components/SigcomDashboard';
 import SolicitudesDashboard from './components/SolicitudesDashboard';
 import LaboratoryDashboard from './components/LaboratoryDashboard';
 import AcuerdoMinsalDashboard from './components/AcuerdoMinsalDashboard';
+import HealthGoalsLey18834 from './components/HealthGoalsLey18834';
 import LoginScreen, { getSession, createSession, destroySession, refreshSession } from './components/LoginScreen';
 import UserManagementPanel from './components/UserManagementPanel';
 import './App.css';
@@ -863,6 +864,7 @@ function App() {
               {activeView === 'urgencia' && <div style={{ color: 'var(--text-dark)' }}><h1>Panel de Urgencia</h1><button onClick={() => navigateToView('produccion_general')}>Volver</button></div>}
               {(activeView === 'estadistica' || activeView === 'quirurgica') && <SurgicalDashboard onBack={() => navigateToView(activeView === 'estadistica' ? 'home' : 'produccion_general')} />}
               {activeView === 'indicadores' && <HealthGoals onBack={() => navigateToView('home')} />}
+              {activeView === 'ley18834' && <HealthGoalsLey18834 onBack={() => navigateToView('home')} />}
               {activeView === 'repositorio' && <DocumentRepository onBack={() => navigateToView('home')} />}
               {activeView === 'mamografias' && (
                 <MammographyDashboard 
