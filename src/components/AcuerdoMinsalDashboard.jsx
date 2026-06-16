@@ -120,13 +120,6 @@ export default function AcuerdoMinsalDashboard({ onBack }) {
   const processedData = useMemo(() => {
     if (!rawData || rawData.length === 0) return [];
     
-    // Programación CMA Villarrica 2026 (desde presentación oficial)
-    const programmedCMA = {
-      'Jan-26': 308, 'Feb-26': 207, 'Mar-26': 259, 'Apr-26': 259,
-      'May-26': 272, 'Jun-26': 272, 'Jul-26': 259, 'Aug-26': 272,
-      'Sep-26': 233, 'Oct-26': 302, 'Nov-26': 285, 'Dec-26': 233
-    };
-
     return rawData
       .filter(row => {
         const mes = cleanMonthName(row.Mes);
@@ -142,7 +135,7 @@ export default function AcuerdoMinsalDashboard({ onBack }) {
           mes: mes,
           acuerdoEgresos: parseVal(row["Acuerdo Egresos"]),
           egresos2026: egresos,
-          acuerdoCma: programmedCMA[mes] || parseVal(row["Acuerdo CMA"]),
+          acuerdoCma: parseVal(row["Acuerdo CMA"]),
           cma2026: cma,
           indiceFuncional: parseVal(row["1. Indice Funcional"]),
           iema: parseVal(row["2. IEMA"]),
@@ -181,7 +174,7 @@ export default function AcuerdoMinsalDashboard({ onBack }) {
        }
     });
 
-    const cmaMetaAnual = 3161; // Total programado CMA 2026 Villarrica
+    const cmaMetaAnual = parseVal(totalRow["Acuerdo CMA"]);
 
     return {
       acuerdoEgresos: parseVal(totalRow["Acuerdo Egresos"]),

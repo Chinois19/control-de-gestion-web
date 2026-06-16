@@ -11,7 +11,7 @@ import {
 } from 'recharts';
 
 // Datos Oficiales Ley 18.834 - Hospital Villarrica 2026
-const ley18834Data = [
+const initialLey18834Data = [
   {
     id: 'meta1',
     name: '1. Cumplimiento GES',
@@ -115,10 +115,69 @@ const ley18834Data = [
 ];
 
 export default function HealthGoalsLey18834({ onBack }) {
-  const [activeTab, setActiveTab] = useState(ley18834Data[0].id);
+  const [activeTab, setActiveTab] = useState(initialLey18834Data[0].id);
+  const [ley18834Data, setLey18834Data] = useState(initialLey18834Data);
+  const [loading, setLoading] = useState(true);
 
-  const activeMeta = useMemo(() => ley18834Data.find(m => m.id === activeTab), [activeTab]);
-  const cumplimientoGlobal = useMemo(() => ley18834Data.reduce((acc, curr) => acc + curr.puntaje, 0), []);
+  useEffect(() => {
+    fetch('/data/ley18834_villarrica_raw.json')
+      .then(res => res.json())
+      .then(data => {
+        if (!data || data.length === 0) {
+          setLoading(false);
+          return;
+        }
+
+        const getRow = (indicadorText) => data.find(row => row[2] && row[2].includes(indicadorText));
+
+        const gesRow = getRow("Garantías Explicitas de Salud");
+        const mantRow = getRow("Total Trazadoras");
+        const transRow = getRow("temáticas transversales relevantes");
+        const rcpRow = getRow("reanimación cardiopulmonar");
+        const iaasRow = getRow("prevención y control de infecciones");
+        
+        const parseValue = (val) => val ? parseFloat(val) * 100 : 0;
+        const parsePuntaje = (val) => val ? parseFloat(val) * 100 : 0;
+
+        setLey18834Data(prev => prev.map(meta => {
+          let newValue = meta.value;
+          let newPuntaje = meta.puntaje;
+
+          if (meta.id === 'meta1' && gesRow) {
+            newValue = parseValue(gesRow[11]);
+            newPuntaje = parsePuntaje(gesRow[12]);
+          }
+          if (meta.id === 'meta2' && mantRow) {
+            newValue = parseValue(mantRow[11]);
+            newPuntaje = parsePuntaje(mantRow[12]);
+          }
+          if (meta.id === 'meta3' && transRow) {
+            newValue = parseValue(transRow[11]);
+            newPuntaje = parsePuntaje(transRow[12]);
+          }
+          if (meta.id === 'meta4' && rcpRow) {
+            newValue = parseValue(rcpRow[11]);
+            newPuntaje = parsePuntaje(rcpRow[12]);
+          }
+          if (meta.id === 'meta5' && iaasRow) {
+            newValue = parseValue(iaasRow[11]);
+            newPuntaje = parsePuntaje(iaasRow[12]);
+          }
+          
+          const newStatus = newValue >= meta.meta ? 'success' : newValue >= (meta.meta * 0.8) ? 'warning' : 'danger';
+          
+          return { ...meta, value: Number(newValue.toFixed(1)), puntaje: newPuntaje, status: newStatus };
+        }));
+        setLoading(false);
+      })
+      .catch(e => {
+        console.error("Error loading Ley 18834 data:", e);
+        setLoading(false);
+      });
+  }, []);
+
+  const activeMeta = useMemo(() => ley18834Data.find(m => m.id === activeTab), [activeTab, ley18834Data]);
+  const cumplimientoGlobal = useMemo(() => ley18834Data.reduce((acc, curr) => acc + curr.puntaje, 0), [ley18834Data]);
 
   const renderStatusBadge = (status) => {
     switch (status) {
