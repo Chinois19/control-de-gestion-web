@@ -7,7 +7,7 @@ import {
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, 
   ResponsiveContainer, LineChart, Line, ReferenceLine, AreaChart, Area, 
-  Cell, PieChart, Pie
+  Cell, PieChart, Pie, LabelList
 } from 'recharts';
 
 // Datos Oficiales Ley 18.834 - Hospital Villarrica 2026
@@ -199,11 +199,13 @@ export default function HealthGoalsLey18834({ onBack }) {
 
   const CustomTooltip = ({ active, payload, label }) => {
     if (active && payload && payload.length) {
+      const val = payload[0].value;
+      const displayVal = Number.isInteger(val) ? val : Number(val).toFixed(2);
       return (
         <div style={{ background: 'white', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '12px', boxShadow: '0 10px 25px rgba(0,0,0,0.1)' }}>
           <p style={{ margin: '0 0 4px 0', fontWeight: 800, color: '#1e293b' }}>{label}</p>
           <p style={{ margin: 0, color: activeMeta.color, fontWeight: 700 }}>
-            {payload[0].value}%
+            {displayVal}%
           </p>
         </div>
       );
@@ -372,7 +374,9 @@ export default function HealthGoalsLey18834({ onBack }) {
                         <YAxis tick={{ fontSize: 12, fill: '#64748b' }} axisLine={false} tickLine={false} />
                         <RechartsTooltip content={<CustomTooltip />} />
                         <ReferenceLine y={activeMeta.meta} stroke="#ef4444" strokeDasharray="4 4" label={{ value: 'Meta', position: 'insideTopLeft', fill: '#ef4444', fontSize: 11, fontWeight: 'bold' }} />
-                        <Bar dataKey="valor" fill={activeMeta.color} radius={[6, 6, 0, 0]} />
+                        <Bar dataKey="valor" fill={activeMeta.color} radius={[6, 6, 0, 0]}>
+                          <LabelList dataKey="valor" position="top" formatter={(val) => Number.isInteger(val) ? val : Number(val).toFixed(2)} style={{ fontSize: 11, fontWeight: 700, fill: '#475569' }} />
+                        </Bar>
                       </BarChart>
                     ) : activeMeta.chartType === 'line' ? (
                       <LineChart data={activeMeta.history} margin={{ top: 20, right: 10, left: -20, bottom: 0 }}>
@@ -381,7 +385,9 @@ export default function HealthGoalsLey18834({ onBack }) {
                         <YAxis tick={{ fontSize: 12, fill: '#64748b' }} axisLine={false} tickLine={false} />
                         <RechartsTooltip content={<CustomTooltip />} />
                         <ReferenceLine y={activeMeta.meta} stroke="#ef4444" strokeDasharray="4 4" label={{ value: 'Meta Máx', position: 'insideTopLeft', fill: '#ef4444', fontSize: 11, fontWeight: 'bold' }} />
-                        <Line type="monotone" dataKey="valor" stroke={activeMeta.color} strokeWidth={4} dot={{ r: 6, fill: activeMeta.color, strokeWidth: 2, stroke: 'white' }} activeDot={{ r: 8 }} />
+                        <Line type="monotone" dataKey="valor" stroke={activeMeta.color} strokeWidth={4} dot={{ r: 6, fill: activeMeta.color, strokeWidth: 2, stroke: 'white' }} activeDot={{ r: 8 }}>
+                          <LabelList dataKey="valor" position="top" formatter={(val) => Number.isInteger(val) ? val : Number(val).toFixed(2)} style={{ fontSize: 11, fontWeight: 700, fill: '#475569' }} offset={10} />
+                        </Line>
                       </LineChart>
                     ) : activeMeta.chartType === 'area' ? (
                       <AreaChart data={activeMeta.history} margin={{ top: 20, right: 10, left: -20, bottom: 0 }}>
@@ -408,7 +414,7 @@ export default function HealthGoalsLey18834({ onBack }) {
                         </Pie>
                         <RechartsTooltip />
                         <text x="50%" y="50%" textAnchor="middle" dominantBaseline="middle" style={{ fontSize: '1.5rem', fontWeight: 900, fill: '#0f172a' }}>
-                          {activeMeta.history[0].value}%
+                          {Number.isInteger(activeMeta.history[0].value) ? activeMeta.history[0].value : Number(activeMeta.history[0].value).toFixed(2)}%
                         </text>
                       </PieChart>
                     )}
