@@ -163,6 +163,9 @@ export default function AcuerdoMinsalDashboard({ onBack }) {
     let egresosRealAFecha = 0;
     let egresosEsperadoAFecha = 0;
     
+    let latestMedianaIQ = null;
+    let latestMedianaCNE = null;
+
     processedData.forEach(d => {
        if (d.cma2026 !== null) {
            cmaRealAFecha += d.cma2026;
@@ -172,6 +175,8 @@ export default function AcuerdoMinsalDashboard({ onBack }) {
            egresosRealAFecha += d.egresos2026;
            egresosEsperadoAFecha += (d.acuerdoEgresos || 0);
        }
+       if (d.medianaIQ !== null) latestMedianaIQ = d.medianaIQ;
+       if (d.medianaCNE !== null) latestMedianaCNE = d.medianaCNE;
     });
 
     const cmaMetaAnual = parseVal(totalRow["Acuerdo CMA"]);
@@ -196,8 +201,8 @@ export default function AcuerdoMinsalDashboard({ onBack }) {
       cumplimientoGesOnc: parsePercent(totalRow["7. % Cumplimiento GES Oncológico"]),
       cumplimientoGesOncExceptuadas: parsePercent(totalRow["7. % Cumplimiento GES Oncológico EG"]),
       suspensionQca: parsePercent(totalRow["8. % SUSPENSION QCA"]),
-      medianaIQ: parseVal(totalRow["9. MEDIANA IQ"]),
-      medianaCNE: parseVal(totalRow["10. MEDIANA CNE"]),
+      medianaIQ: latestMedianaIQ !== null ? latestMedianaIQ : parseVal(totalRow["9. MEDIANA IQ"]),
+      medianaCNE: latestMedianaCNE !== null ? latestMedianaCNE : parseVal(totalRow["10. MEDIANA CNE"]),
       registrosGes: parsePercent(totalRow["11. Registros GES"])
     };
   }, [rawData, processedData]);
