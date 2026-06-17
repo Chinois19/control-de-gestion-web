@@ -621,72 +621,126 @@ export default function AcuerdoMinsalDashboard({ onBack }) {
       </div>
 
       {/* Main Grid Layout - Sidebar (Left) + Content (Right) */}
-      <div style={{ display: 'grid', gridTemplateColumns: '450px 1fr', gap: '24px', alignItems: 'start' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '300px 1fr', gap: '24px', alignItems: 'start' }}>
         
         {/* LEFT COLUMN: Indicators List */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', maxHeight: '845px', overflowY: 'auto', paddingRight: '16px', paddingBottom: '16px' }}>
-          {indicatorsList.map((ind) => {
-            const isSelected = selectedId === ind.id;
-            return (
-              <motion.div
-                key={ind.id}
-                whileHover={{ y: -2, x: 2 }}
-                onClick={() => setSelectedId(ind.id)}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  padding: '18px 22px',
-                  borderRadius: '20px',
-                  background: isSelected ? 'linear-gradient(135deg, #eff6ff, #dbeafe)' : '#ffffff',
-                  border: isSelected ? '2px solid #2563eb' : '1px solid #e2e8f0',
-                  cursor: 'pointer',
-                  boxShadow: isSelected ? '0 10px 25px rgba(37, 99, 235, 0.12)' : '0 4px 10px rgba(0,0,0,0.03)',
-                  transition: 'all 0.2s ease',
-                  position: 'relative',
-                  overflow: 'hidden',
-                  flexShrink: 0
-                }}
-              >
-                {/* Accent line on selected */}
-                {isSelected && (
-                  <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: '5px', background: '#2563eb' }} />
-                )}
-                
-                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px' }}>
-                    <span style={{ fontSize: '0.88rem', fontWeight: 800, color: isSelected ? '#1e3a8a' : '#334155', display: 'flex', alignItems: 'center', gap: '8px', lineHeight: '1.3' }}>
-                      <span style={{ color: isSelected ? '#3b82f6' : '#64748b', display: 'inline-flex', flexShrink: 0 }}>{ind.icon}</span>
-                      {ind.name}
-                    </span>
-                  </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', maxHeight: '845px', overflowY: 'auto', paddingRight: '12px', paddingBottom: '16px' }}>
+          {(() => {
+            const prodIds = ['egresos_hospitalarios', 'cma'];
+            const prodIndicators = indicatorsList.filter(ind => prodIds.includes(ind.id));
+            const gestIndicators = indicatorsList.filter(ind => !prodIds.includes(ind.id));
+            
+            const renderCard = (ind) => {
+              const isSelected = selectedId === ind.id;
+              return (
+                <motion.div
+                  key={ind.id}
+                  whileHover={{ y: -1, x: 1 }}
+                  onClick={() => setSelectedId(ind.id)}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    padding: '10px 14px',
+                    borderRadius: '12px',
+                    background: isSelected ? 'linear-gradient(135deg, #eff6ff, #dbeafe)' : '#ffffff',
+                    border: isSelected ? '2px solid #2563eb' : '1px solid #e2e8f0',
+                    cursor: 'pointer',
+                    boxShadow: isSelected ? '0 6px 15px rgba(37, 99, 235, 0.08)' : '0 2px 6px rgba(0,0,0,0.02)',
+                    transition: 'all 0.2s ease',
+                    position: 'relative',
+                    overflow: 'hidden',
+                    flexShrink: 0
+                  }}
+                >
+                  {/* Accent line on selected */}
+                  {isSelected && (
+                    <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: '4px', background: '#2563eb' }} />
+                  )}
                   
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: '4px' }}>
-                    <span style={{ fontSize: '1.6rem', fontWeight: 950, color: '#0f172a', letterSpacing: '-0.5px', lineHeight: 1 }}>
-                      {ind.value}
-                    </span>
-                    
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '6px' }}>
-                      <span style={{ fontSize: '0.68rem', color: isSelected ? '#2563eb' : '#94a3b8', fontStyle: 'italic', fontWeight: 700 }}>
-                        {ind.formulaSnippet}
-                      </span>
-                      <span style={{ 
-                        fontSize: '0.72rem', 
-                        padding: '4px 10px', 
-                        borderRadius: '8px', 
-                        background: ind.status === 'success' ? '#dcfce7' : ind.status === 'warning' ? '#ffedd5' : '#fee2e2',
-                        color: ind.status === 'success' ? '#15803d' : ind.status === 'warning' ? '#c2410c' : '#b91c1c',
-                        fontWeight: 800,
-                        letterSpacing: '0.2px',
-                        border: ind.status === 'success' ? '1px solid rgba(21, 128, 61, 0.15)' : ind.status === 'warning' ? '1px solid rgba(194, 65, 12, 0.15)' : '1px solid rgba(185, 28, 28, 0.15)'
-                      }}>
-                        {ind.statusText}
+                  <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '6px' }}>
+                      <span style={{ fontSize: '0.78rem', fontWeight: 800, color: isSelected ? '#1e3a8a' : '#334155', display: 'flex', alignItems: 'center', gap: '6px', lineHeight: '1.2' }}>
+                        <span style={{ color: isSelected ? '#3b82f6' : '#64748b', display: 'inline-flex', flexShrink: 0, transform: 'scale(0.9)' }}>{ind.icon}</span>
+                        {ind.name}
                       </span>
                     </div>
+                    
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: '2px' }}>
+                      <span style={{ fontSize: '1.25rem', fontWeight: 950, color: '#0f172a', letterSpacing: '-0.3px', lineHeight: 1 }}>
+                        {ind.value}
+                      </span>
+                      
+                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '4px' }}>
+                        <span style={{ fontSize: '0.6rem', color: isSelected ? '#2563eb' : '#94a3b8', fontStyle: 'italic', fontWeight: 700 }}>
+                          {ind.formulaSnippet}
+                        </span>
+                        <span style={{ 
+                          fontSize: '0.65rem', 
+                          padding: '2px 6px', 
+                          borderRadius: '6px', 
+                          background: ind.status === 'success' ? '#dcfce7' : ind.status === 'warning' ? '#ffedd5' : '#fee2e2',
+                          color: ind.status === 'success' ? '#15803d' : ind.status === 'warning' ? '#c2410c' : '#b91c1c',
+                          fontWeight: 800,
+                          letterSpacing: '0.1px',
+                          border: ind.status === 'success' ? '1px solid rgba(21, 128, 61, 0.15)' : ind.status === 'warning' ? '1px solid rgba(194, 65, 12, 0.15)' : '1px solid rgba(185, 28, 28, 0.15)'
+                        }}>
+                          {ind.statusText}
+                        </span>
+                      </div>
+                    </div>
                   </div>
+                </motion.div>
+              );
+            };
+
+            return (
+              <>
+                {/* Grupo: Indicadores de Producción */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  <div style={{ 
+                    fontSize: '0.78rem', 
+                    fontWeight: 800, 
+                    color: '#64748b', 
+                    textTransform: 'uppercase', 
+                    letterSpacing: '1px',
+                    paddingLeft: '6px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    borderBottom: '1px solid #e2e8f0',
+                    paddingBottom: '8px',
+                    marginBottom: '4px'
+                  }}>
+                    <span>📊</span>
+                    <span>Indicadores de producción</span>
+                  </div>
+                  {prodIndicators.map(renderCard)}
                 </div>
-              </motion.div>
+
+                {/* Grupo: Indicadores de Gestión */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  <div style={{ 
+                    fontSize: '0.78rem', 
+                    fontWeight: 800, 
+                    color: '#64748b', 
+                    textTransform: 'uppercase', 
+                    letterSpacing: '1px',
+                    paddingLeft: '6px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    borderBottom: '1px solid #e2e8f0',
+                    paddingBottom: '8px',
+                    marginBottom: '4px'
+                  }}>
+                    <span>⚙️</span>
+                    <span>Indicadores de Gestión</span>
+                  </div>
+                  {gestIndicators.map(renderCard)}
+                </div>
+              </>
             );
-          })}
+          })()}
         </div>
 
         {/* RIGHT COLUMN: Temporal Evolution & Insights */}
