@@ -144,27 +144,32 @@ export default function HealthGoalsLey18834({ onBack }) {
           let newPuntaje = meta.puntaje;
 
           if (meta.id === 'meta1' && gesRow) {
-            newValue = parseValue(gesRow[11]);
+            newValue = parseValue(gesRow[9]);
             newPuntaje = parsePuntaje(gesRow[12]);
           }
           if (meta.id === 'meta2' && mantRow) {
-            newValue = parseValue(mantRow[11]);
+            newValue = parseValue(mantRow[9]);
             newPuntaje = parsePuntaje(mantRow[12]);
           }
           if (meta.id === 'meta3' && transRow) {
-            newValue = parseValue(transRow[11]);
+            newValue = parseValue(transRow[9]);
             newPuntaje = parsePuntaje(transRow[12]);
           }
           if (meta.id === 'meta4' && rcpRow) {
-            newValue = parseValue(rcpRow[11]);
+            newValue = parseValue(rcpRow[9]);
             newPuntaje = parsePuntaje(rcpRow[12]);
           }
           if (meta.id === 'meta5' && iaasRow) {
-            newValue = parseValue(iaasRow[11]);
+            newValue = parseValue(iaasRow[9]);
             newPuntaje = parsePuntaje(iaasRow[12]);
           }
           
-          const newStatus = newValue >= meta.meta ? 'success' : newValue >= (meta.meta * 0.8) ? 'warning' : 'danger';
+          let newStatus;
+          if (meta.id === 'meta1') {
+            newStatus = newValue >= 99.5 ? 'success' : 'danger';
+          } else {
+            newStatus = newValue >= meta.meta ? 'success' : newValue >= (meta.meta * 0.8) ? 'warning' : 'danger';
+          }
           
           return { ...meta, value: Number(newValue.toFixed(1)), puntaje: newPuntaje, status: newStatus };
         }));
