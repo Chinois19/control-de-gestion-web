@@ -93,14 +93,8 @@ async function fetchAndCache(name, token, cacheFileName) {
       fs.mkdirSync(cacheDir, { recursive: true });
     }
 
-    const now = new Date();
-    const day = now.getDay();
-    const diff = now.getDate() - day + (day === 0 ? -6 : 1);
-    const lastMonday = new Date(now.setDate(diff));
-    lastMonday.setHours(8, 0, 0, 0);
-
     const cacheData = {
-      lastUpdated: lastMonday.toISOString(),
+      lastUpdated: new Date().toISOString(),
       records: records
     };
 

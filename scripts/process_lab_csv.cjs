@@ -6,7 +6,7 @@ const readline = require('readline');
 // línea por línea usando Streams para no colapsar la memoria RAM.
 
 const sigcomDir = path.join(__dirname, 'src', 'data', 'SIGCOM');
-const outputFile = path.join(__dirname, 'public', 'data', 'laboratory_cached.json');
+const outputFile = path.join(__dirname, '..', 'public', 'data', 'laboratory_cached.json.gz');
 
 async function processAllCSV() {
   const aggregatedData = {};
@@ -136,7 +136,9 @@ async function processAllCSV() {
     records: outputRecords
   };
 
-  fs.writeFileSync(outputFile, JSON.stringify(finalJson, null, 2));
+  const zlib = require('zlib');
+  const compressed = zlib.gzipSync(JSON.stringify(finalJson));
+  fs.writeFileSync(outputFile, compressed);
   console.log(`\n======================================================`);
   console.log(`✅ Procesamiento Completado.`);
   console.log(`   Total filas crudas leídas: ${totalRowsProcessed.toLocaleString()}`);

@@ -5,7 +5,7 @@ const ExcelJS = require('exceljs'); // Para streaming de los pesados
 
 // Archivos de Origen y Destino
 const dataDir = path.join(__dirname, '..', 'src', 'data', 'Producción Laboratorio');
-const outputFile = path.join(__dirname, '..', 'public', 'data', 'laboratory_cached.json');
+const outputFile = path.join(__dirname, '..', 'public', 'data', 'laboratory_cached.json.gz');
 
 async function processExcelFiles() {
   const aggregatedData = {};
@@ -214,8 +214,12 @@ async function processExcelFiles() {
 
   const outputRecordsCount = Object.keys(aggregatedData).length;
   
-  console.log(`Guardando JSON ultra-comprimido de forma progresiva...`);
-  const outStream = fs.createWriteStream(outputFile);
+  console.log(`Guardando JSON ultra-comprimido (GZIP) de forma progresiva...`);
+  const zlib = require('zlib');
+  const fileOut = fs.createWriteStream(outputFile);
+  const outStream = zlib.createGzip();
+  outStream.pipe(fileOut);
+  
   outStream.write(`{\n  "lastUpdated": "${new Date().toISOString()}",\n  "total_raw_rows": ${totalRowsProcessed},\n  "dictionary": ${JSON.stringify(globalDictionary)},\n  "records": [\n`);
   
   const keys = Object.keys(aggregatedData);
@@ -235,7 +239,7 @@ async function processExcelFiles() {
     console.log(`✅ Procesamiento de Excel Completado.`);
     console.log(`   Total filas crudas leídas: ${totalRowsProcessed.toLocaleString()}`);
     console.log(`   Filas agrupadas generadas (Caché Indexado): ${outputRecordsCount.toLocaleString()}`);
-    console.log(`   Archivo guardado en: public/data/laboratory_cached.json`);
+    console.log(`   Archivo guardado en: public/data/laboratory_cached.json.gz`);
     console.log(`======================================================\n`);
   });
 }

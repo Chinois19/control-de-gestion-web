@@ -183,9 +183,11 @@ export default function LaboratoryDashboard({ onBack }) {
     async function fetchLabData() {
       try {
         setLoading(true);
-        const response = await fetch('/data/laboratory_cached.json');
+        const response = await fetch('/data/laboratory_cached.json.gz');
         if (!response.ok) throw new Error('Error al cargar datos del laboratorio.');
-        const data = await response.json();
+        const ds = new DecompressionStream('gzip');
+        const decompressedStream = response.body.pipeThrough(ds);
+        const data = await new Response(decompressedStream).json();
         
         const dictionary = data.dictionary || {};
         

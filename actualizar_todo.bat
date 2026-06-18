@@ -38,7 +38,6 @@ echo ===================================================
 echo   SUBIENDO CAMBIOS A PRODUCCION...
 echo ===================================================
 git add public/ src/data/sigcom_data.json update-pharmacy.bat actualizar_todo.bat
-git add -f public/data/laboratory_cached.json
 git commit -m "chore: actualizacion completa de paneles desde VPN"
 git push
 
