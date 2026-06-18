@@ -159,7 +159,7 @@ export default function LaboratoryDashboard({ onBack }) {
 
   // Advanced Filters
   const [startDate, setStartDate] = useState('2026-01-01');
-  const [endDate, setEndDate] = useState('2026-03-31');
+  const [endDate, setEndDate] = useState('2026-06-30');
   const [selectedSections, setSelectedSections] = useState([]);
   const [selectedProcedencias, setSelectedProcedencias] = useState([]);
   const [selectedEdades, setSelectedEdades] = useState([]);
@@ -558,7 +558,7 @@ export default function LaboratoryDashboard({ onBack }) {
 
                 <div className="filter-summary-actions">
                   <button type="button" onClick={() => { 
-                    setStartDate('2026-01-01'); setEndDate('2026-03-31'); 
+                    setStartDate('2026-01-01'); setEndDate('2026-06-30'); 
                     setSelectedSections(uniqueSections); setSelectedProcedencias(uniqueProcedencias); 
                     setSelectedOrigenes(uniqueOrigenes); setSelectedServicios(uniqueServicios);
                     setSelectedSexos(uniqueSexos); setSelectedEdades(uniqueEdades);
