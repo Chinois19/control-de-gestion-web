@@ -567,6 +567,78 @@ function App() {
           <span style={{ fontWeight: 800, fontSize: '1.1rem', color: 'var(--text-dark)', letterSpacing: '-0.5px' }}>CG <span style={{ color: 'var(--primary-accent)' }}>VILLARRICA</span></span>
         </div>
 
+        {/* Global Compact Search for Submenus */}
+        {activeView !== 'home' && (
+          <div className="smart-search-container" style={{ position: 'relative', width: '350px', marginLeft: '24px' }}>
+            <div className="smart-search-bar" style={{ height: '42px', borderRadius: '21px', background: '#f1f5f9', boxShadow: 'none', border: '1px solid #e2e8f0' }}>
+              <Search size={18} color="#64748b" />
+              <input 
+                placeholder="Busca ej. 'NSP', 'pabellón'..." 
+                value={searchQuery} 
+                onChange={(e) => setSearchQuery(e.target.value)} 
+                style={{ fontSize: '0.9rem', background: 'transparent' }}
+              />
+            </div>
+
+            <AnimatePresence>
+              {searchResults.length > 0 && (
+                <motion.div 
+                  className="search-results-dropdown"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 10 }}
+                  style={{
+                    position: 'absolute',
+                    top: 'calc(100% + 8px)',
+                    left: 0,
+                    width: '500px',
+                    background: 'rgba(255, 255, 255, 0.98)',
+                    backdropFilter: 'blur(16px)',
+                    borderRadius: '16px',
+                    border: '1px solid rgba(0, 0, 0, 0.08)',
+                    boxShadow: '0 20px 40px rgba(0,0,0,0.15)',
+                    zIndex: 2000,
+                    maxHeight: '400px',
+                    overflowY: 'auto',
+                    padding: '8px'
+                  }}
+                >
+                  <div style={{ padding: '6px 12px', fontSize: '0.72rem', fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                    Resultados de Búsqueda Temática
+                  </div>
+                  {searchResults.map((result, idx) => (
+                    <div
+                      key={idx}
+                      className="search-result-item"
+                      onMouseEnter={() => setHoveredIdx(idx)}
+                      onMouseLeave={() => setHoveredIdx(null)}
+                      onClick={() => handleSearchResultClick(result.action)}
+                      style={{
+                        padding: '12px 16px',
+                        borderRadius: '12px',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '2px',
+                        transition: 'background 0.2s',
+                        background: hoveredIdx === idx ? 'rgba(0, 0, 0, 0.04)' : 'transparent',
+                        borderBottom: idx < searchResults.length - 1 ? '1px solid rgba(0,0,0,0.03)' : 'none',
+                        textAlign: 'left'
+                      }}
+                    >
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span style={{ fontSize: '0.92rem', fontWeight: '700', color: '#1a365d' }}>{result.title}</span>
+                        <span style={{ fontSize: '0.7rem', fontWeight: '800', color: '#64748b', background: 'rgba(0,0,0,0.05)', padding: '2px 8px', borderRadius: '20px' }}>{result.path}</span>
+                      </div>
+                      <span style={{ fontSize: '0.78rem', color: '#64748b', lineHeight: '1.3' }}>{result.desc}</span>
+                    </div>
+                  ))}
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        )}
+
         <div className="nav-links" style={{ marginLeft: 'auto' }}>
           <span className="nav-link" onClick={() => navigateToView('home')}>BIENVENIDA</span>
           <span className="nav-link" onClick={() => navigateToView('produccion_general')}>ESTADÍSTICAS</span>
