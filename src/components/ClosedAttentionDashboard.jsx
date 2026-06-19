@@ -1353,6 +1353,9 @@ export default function ClosedAttentionDashboard({ onBack }) {
     const admissionsMap = new Map();
     const activeMap = new Map();
     const activePatientsList = [];
+    // Set global para deduplicación RUT+fecha en el Grand Total de días cama
+    // (igual que metodología REM 20 / Cuadratura MINSAL)
+    const uniquePatientDayGlobal = new Set();
 
     censoCleaned.forEach(r => {
       const pIn = r.parsedIngreso;
@@ -1363,6 +1366,8 @@ export default function ClosedAttentionDashboard({ onBack }) {
       const ptype = getPatientType(r);
       const srvMapped = mapService(r.servicio_ingreso);
       const cc = r.cuenta_corriente || r.id || `temp-${Math.random()}`;
+      // Clave de deduplicación: RUT o cuenta corriente como fallback
+      const rutKey = r.rut_paciente || r.cuenta_corriente || r.recordId;
 
       // 1. Admission count — incluye TODOS los ingresos (traslados internos incluidos)
       // para alinear con el total del REM 20 (que suma ingresosMismoHospital al total)
@@ -1391,6 +1396,16 @@ export default function ClosedAttentionDashboard({ onBack }) {
           group.patients.add(cc);
           group.bedDays += diffDays;
 
+          // Deduplicación global por RUT+fecha: recorre cada día del solapamiento
+          // y lo agrega al Set global (si ya existe, no duplica)
+          const cursor = new Date(oStart);
+          while (cursor <= oEnd) {
+            uniquePatientDayGlobal.add(
+              `${rutKey}|${cursor.getFullYear()}-${cursor.getMonth()}-${cursor.getDate()}`
+            );
+            cursor.setDate(cursor.getDate() + 1);
+          }
+
           activePatientsList.push({
             ...r,
             Categoria_Edad: ptype,
@@ -1418,7 +1433,6 @@ export default function ClosedAttentionDashboard({ onBack }) {
     const ingresosRows = [];
     const diasCamaRows = [];
     let grandTotalIngresos = 0;
-    let grandTotalBedDays = 0;
 
     types.forEach(ptype => {
       const srvs = servicesByType[ptype] || [];
@@ -1470,8 +1484,11 @@ export default function ClosedAttentionDashboard({ onBack }) {
       });
 
       grandTotalIngresos += subtotalIngresos;
-      grandTotalBedDays += subtotalBedDays;
     });
+
+    // Grand Total de días cama: deduplicado por RUT+fecha (metodología MINSAL/Cuadratura)
+    // Cada paciente cuenta solo 1 vez por día, aunque haya transitado por múltiples servicios
+    const grandTotalBedDays = uniquePatientDayGlobal.size;
 
     return {
       ingresos: ingresosRows,
