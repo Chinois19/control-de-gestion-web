@@ -1510,19 +1510,22 @@ export default function ClosedAttentionDashboard({ onBack }) {
     const exportData = iaasCamasData.activePatients.map(p => ({
       "Cuenta Corriente": p.cuenta_corriente || '',
       "RUT Paciente": p.rut_paciente || '',
-      "Nombre Paciente": p.nombre_paciente || '',
+      "Nombre Completo": p.nombre_completo || '',
+      "Fecha Nacimiento": p.fecha_nacimiento || '',
       "Fecha Ingreso": p.fecha_ingreso || '',
       "Fecha Egreso": p.fecha_egreso || 'Hospitalizado',
       "Servicio Ingreso": p.servicio_ingreso || '',
       "Servicio Mapeado": p.Servicio_Mapeado || '',
+      "Categoría de Edad": p.Categoria_Edad || '',
       "Edad Años": p.edad_años || 0,
       "Edad Meses": p.edad_meses || 0,
       "Edad Días": p.edad_dias || 0,
-      "Categoría de Edad": p.Categoria_Edad || '',
       "Días Cama en Periodo": p.Dias_Cama_Periodo || 0,
       "Procedencia": p.procedencia || '',
       "Condición de Egreso": p.condicion_egreso || '',
-      "Diagnóstico Ingreso": p.diagnostico_ingreso || ''
+      "Diagnóstico (CIE-10)": p.hipostesis_ingreso || '',
+      "Glosa Diagnóstico": p.hipostesis_diagnostico || '',
+      "Grupo Diagnóstico": p.grandes_grupos || ''
     }));
 
     const worksheet = XLSX.utils.json_to_sheet(exportData);
@@ -1543,9 +1546,27 @@ export default function ClosedAttentionDashboard({ onBack }) {
       wch: Math.max(Number(max_width[col_idx]), 12)
     }));
 
-    const startStr = startDate ? startDate.replace(/-/g, '') : 'inicio';
-    const endStr = endDate ? endDate.replace(/-/g, '') : 'fin';
-    XLSX.writeFile(workbook, `Base_Pacientes_Acostados_${startStr}_${endStr}.xlsx`);
+    const startStr = startDate ? startDate.replace(/[^a-zA-Z0-9]/g, '') : 'inicio';
+    const endStr = endDate ? endDate.replace(/[^a-zA-Z0-9]/g, '') : 'fin';
+    const fileName = `Base_Pacientes_Acostados_${startStr}_${endStr}.xlsx`;
+
+    try {
+      const wbout = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+      const blob = new Blob([wbout], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = fileName;
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(() => {
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }, 100);
+    } catch (error) {
+      console.error("Error al descargar usando blob, intentando con fallback:", error);
+      XLSX.writeFile(workbook, fileName);
+    }
   };
 
   // (toggle logic now handled inside <MultiSelectDropdown />)
