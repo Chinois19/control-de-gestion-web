@@ -33,6 +33,8 @@ import {
   Info
 } from 'lucide-react';
 
+import * as XLSX from 'xlsx';
+
 // ─── Custom MultiSelect with Search ────────────────────────────────────────
 function MultiSelectDropdown({ label, selectedValues, setSelectedValues, options, placeholder, dropdownKey, activeDropdown, setActiveDropdown }) {
   const [searchTerm, setSearchTerm] = React.useState('');
@@ -188,6 +190,7 @@ export default function ClosedAttentionDashboard({ onBack }) {
   
   // Revised Tab layout with 4 strategic clinical sections
   const [activeTab, setActiveTab] = useState('general_stats'); // 'general_stats', 'clinical_stats', 'occupancy', 'census'
+  const [censusSubTab, setCensusSubTab] = useState('demographics'); // 'demographics', 'iaas_camas'
   
   const [lastUpdatedCenso, setLastUpdatedCenso] = useState('Nunca');
   const [lastUpdatedCuadratura, setLastUpdatedCuadratura] = useState('Nunca');
@@ -288,12 +291,19 @@ export default function ClosedAttentionDashboard({ onBack }) {
     loadAllData();
   }, []);
 
-  // Helper date parsing (DD-MM-YYYY string to Date object)
+  // Helper date parsing (supports YYYY-MM-DD, DD-MM-YYYY, and slashes)
   const parseDDMMYYYY = (str) => {
     if (!str) return null;
-    const parts = str.trim().split('-');
+    const cleanStr = str.trim().replace(/\//g, '-');
+    const parts = cleanStr.split('-');
     if (parts.length === 3) {
-      return new Date(parseInt(parts[2], 10), parseInt(parts[1], 10) - 1, parseInt(parts[0], 10));
+      if (parts[0].length === 4) {
+        // YYYY-MM-DD
+        return new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+      } else {
+        // DD-MM-YYYY
+        return new Date(parseInt(parts[2], 10), parseInt(parts[1], 10) - 1, parseInt(parts[0], 10));
+      }
     }
     return null;
   };
@@ -1299,6 +1309,244 @@ export default function ClosedAttentionDashboard({ onBack }) {
       conditions
     };
   }, [filteredCenso, startDate, endDate]);
+
+  // Resumen IAAS y Gestión de Camas
+  const iaasCamasData = useMemo(() => {
+    const monitorStart = startDate ? new Date(startDate + 'T00:00:00') : null;
+    const monitorEnd = endDate ? new Date(endDate + 'T23:59:59') : null;
+
+    if (!monitorStart || !monitorEnd) {
+      return { ingresos: [], diasCama: [], grandTotalIngresos: 0, grandTotalBedDays: 0, activePatients: [] };
+    }
+
+    const mapService = (srv) => {
+      const s = (srv || '').trim().toLowerCase();
+      if (s.includes('basico') || s.includes('básico') || s.includes('403')) return 'MQ CUIDADOS BÁSICOS (403)';
+      if (s.includes('medio') || s.includes('404')) return 'MQ CUIDADOS MEDIOS (404)';
+      if (s.includes('mater') || s.includes('mujer') || s.includes('416')) return 'MQ DE LA MUJER (416)';
+      if (s.includes('uci') || s.includes('intensivo') || s.includes('405')) return 'UCI (405)';
+      if (s.includes('uti') || s.includes('intermedio') || s.includes('406')) return 'UTI (406)';
+      if (s.includes('infantil') || s.includes('pediat') || s.includes('408')) return 'MQ INFANTIL (408)';
+      if (s.includes('neo') || s.includes('cuna')) return 'NEONATOLOGÍA';
+      return srv || 'Otros Servicios';
+    };
+
+    const getPatientType = (r) => {
+      const years = parseInt(r.edad_años) || 0;
+      const months = parseInt(r.edad_meses) || 0;
+      const days = parseInt(r.edad_dias) || 0;
+      if (years >= 15) return 'Adultos';
+      if (years >= 2) return 'Pediátricos';
+      if (years === 1 || months >= 1 || days > 28) return 'Lactantes';
+      return 'Neonatos';
+    };
+
+    const admissionsMap = new Map();
+    const activeMap = new Map();
+    const activePatientsList = [];
+
+    censoCleaned.forEach(r => {
+      const pIn = r.parsedIngreso;
+      const pEg = r.isCurrentlyHospitalized ? new Date(2026, 4, 18) : r.parsedEgreso;
+
+      if (!pIn) return;
+
+      const ptype = getPatientType(r);
+      const srvMapped = mapService(r.servicio_ingreso);
+      const cc = r.cuenta_corriente || r.id || `temp-${Math.random()}`;
+
+      // 1. Admission count
+      if (pIn >= monitorStart && pIn <= monitorEnd) {
+        const key = `${ptype}||${srvMapped}`;
+        admissionsMap.set(key, (admissionsMap.get(key) || 0) + 1);
+      }
+
+      // 2. Bed Days
+      if (pIn <= monitorEnd) {
+        const actualEnd = pEg && pEg < monitorEnd ? pEg : monitorEnd;
+        if (!pEg || pEg >= monitorStart) {
+          const key = `${ptype}||${srvMapped}`;
+          
+          const oStart = pIn > monitorStart ? pIn : monitorStart;
+          const oEnd = actualEnd;
+          
+          let diffTime = oEnd.getTime() - oStart.getTime();
+          let diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
+          if (diffDays <= 0) diffDays = 1;
+
+          if (!activeMap.has(key)) {
+            activeMap.set(key, { patients: new Set(), bedDays: 0 });
+          }
+          const group = activeMap.get(key);
+          group.patients.add(cc);
+          group.bedDays += diffDays;
+
+          activePatientsList.push({
+            ...r,
+            Categoria_Edad: ptype,
+            Servicio_Mapeado: srvMapped,
+            Dias_Cama_Periodo: diffDays
+          });
+        }
+      }
+    });
+
+    const types = ['Adultos', 'Lactantes', 'Neonatos', 'Pediátricos'];
+    const servicesByType = {
+      Adultos: [
+        'MQ CUIDADOS BÁSICOS (403)',
+        'MQ CUIDADOS MEDIOS (404)',
+        'MQ DE LA MUJER (416)',
+        'UCI (405)',
+        'UTI (406)'
+      ],
+      Lactantes: ['MQ INFANTIL (408)'],
+      Neonatos: ['MQ INFANTIL (408)'],
+      Pediátricos: ['MQ INFANTIL (408)']
+    };
+
+    const ingresosRows = [];
+    const diasCamaRows = [];
+    let grandTotalIngresos = 0;
+    let grandTotalBedDays = 0;
+
+    types.forEach(ptype => {
+      const srvs = servicesByType[ptype] || [];
+      let subtotalIngresos = 0;
+      let subtotalBedDays = 0;
+      const srvPatientsSet = new Set();
+
+      srvs.forEach(srv => {
+        const key = `${ptype}||${srv}`;
+        const countIng = admissionsMap.get(key) || 0;
+        subtotalIngresos += countIng;
+
+        const group = activeMap.get(key) || { patients: new Set(), bedDays: 0 };
+        const countPat = group.patients.size;
+        const countDays = group.bedDays;
+
+        subtotalBedDays += countDays;
+        group.patients.forEach(cc => srvPatientsSet.add(cc));
+
+        ingresosRows.push({
+          type: ptype,
+          service: srv,
+          total: countIng,
+          isSubtotal: false
+        });
+
+        diasCamaRows.push({
+          type: ptype,
+          service: srv,
+          patients: countPat,
+          bedDays: countDays,
+          isSubtotal: false
+        });
+      });
+
+      ingresosRows.push({
+        type: `Total ${ptype}`,
+        service: '',
+        total: subtotalIngresos,
+        isSubtotal: true
+      });
+
+      diasCamaRows.push({
+        type: `Total ${ptype}`,
+        service: '',
+        patients: srvPatientsSet.size,
+        bedDays: subtotalBedDays,
+        isSubtotal: true
+      });
+
+      grandTotalIngresos += subtotalIngresos;
+      grandTotalBedDays += subtotalBedDays;
+    });
+
+    return {
+      ingresos: ingresosRows,
+      diasCama: diasCamaRows,
+      grandTotalIngresos,
+      grandTotalBedDays,
+      activePatients: activePatientsList
+    };
+  }, [censoCleaned, startDate, endDate]);
+
+  const uniqueMonths = useMemo(() => {
+    const monthsMap = new Map();
+    censoCleaned.forEach(r => {
+      const date = r.parsedIngreso;
+      if (date) {
+        const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+        const label = date.toLocaleDateString('es-CL', { month: 'long', year: 'numeric' });
+        const capLabel = label.charAt(0).toUpperCase() + label.slice(1);
+        monthsMap.set(key, capLabel);
+      }
+    });
+    return Array.from(monthsMap.entries())
+      .sort((a, b) => b[0].localeCompare(a[0]))
+      .map(([value, label]) => ({ value, label }));
+  }, [censoCleaned]);
+
+  const handleCensusMonthSelect = (monthStr) => {
+    if (!monthStr) return;
+    const [year, month] = monthStr.split('-').map(Number);
+    const firstDay = `${year}-${String(month).padStart(2, '0')}-01`;
+    const lastDayDate = new Date(year, month, 0);
+    const lastDay = `${year}-${String(month).padStart(2, '0')}-${String(lastDayDate.getDate()).padStart(2, '0')}`;
+    
+    setStartDateInput(firstDay);
+    setEndDateInput(lastDay);
+    setStartDate(firstDay);
+    setEndDate(lastDay);
+  };
+
+  const handleDownloadExcel = () => {
+    if (!iaasCamasData.activePatients || iaasCamasData.activePatients.length === 0) {
+      alert("No hay pacientes registrados en el periodo seleccionado.");
+      return;
+    }
+
+    const exportData = iaasCamasData.activePatients.map(p => ({
+      "Cuenta Corriente": p.cuenta_corriente || '',
+      "RUT Paciente": p.rut_paciente || '',
+      "Nombre Paciente": p.nombre_paciente || '',
+      "Fecha Ingreso": p.fecha_ingreso || '',
+      "Fecha Egreso": p.fecha_egreso || 'Hospitalizado',
+      "Servicio Ingreso": p.servicio_ingreso || '',
+      "Servicio Mapeado": p.Servicio_Mapeado || '',
+      "Edad Años": p.edad_años || 0,
+      "Edad Meses": p.edad_meses || 0,
+      "Edad Días": p.edad_dias || 0,
+      "Categoría de Edad": p.Categoria_Edad || '',
+      "Días Cama en Periodo": p.Dias_Cama_Periodo || 0,
+      "Procedencia": p.procedencia || '',
+      "Condición de Egreso": p.condicion_egreso || '',
+      "Diagnóstico Ingreso": p.diagnostico_ingreso || ''
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(exportData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Base_Datos_Pacientes");
+    
+    const max_width = exportData.reduce((w, r) => {
+      Object.keys(r).forEach((key, col_idx) => {
+        const val = String(r[key]);
+        if (val.length > (w[col_idx] || 0)) {
+          w[col_idx] = val.length;
+        }
+      });
+      return w;
+    }, {});
+    
+    worksheet['!cols'] = Object.keys(max_width).map(col_idx => ({
+      wch: Math.max(Number(max_width[col_idx]), 12)
+    }));
+
+    const startStr = startDate ? startDate.replace(/-/g, '') : 'inicio';
+    const endStr = endDate ? endDate.replace(/-/g, '') : 'fin';
+    XLSX.writeFile(workbook, `Base_Pacientes_Acostados_${startStr}_${endStr}.xlsx`);
+  };
 
   // (toggle logic now handled inside <MultiSelectDropdown />)
 
@@ -3294,127 +3542,325 @@ export default function ClosedAttentionDashboard({ onBack }) {
               {/* TAB 4: CENSO ASISTENCIAL & ALTAS */}
               {activeTab === 'census' && (
                 <motion.div key="census" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -15 }} className="tab-pane-layout">
-                  {/* Census Key KPIs */}
-                  <div className="metrics-summary-bar">
-                    <div className="metric-box glass-card border-glow-cyan card-glow-green" style={{ borderLeft: '6px solid #22c55e' }}>
-                      <span className="m-label">TOTAL INGRESOS (ADMISSIONS)</span>
-                      <h3 className="m-value green-txt">{censusBreakdowns.admissions.toLocaleString()}</h3>
-                      <p className="m-desc">Ingresos registrados en el período</p>
-                    </div>
-
-                    <div className="metric-box glass-card border-glow-cyan card-glow-blue" style={{ borderLeft: '6px solid #3b82f6' }}>
-                      <span className="m-label">TOTAL EGRESOS CLÍNICOS</span>
-                      <h3 className="m-value blue-txt">{censusBreakdowns.discharges.toLocaleString()}</h3>
-                      <p className="m-desc">Excluye Traslado Servicio (Minsal)</p>
-                    </div>
-
-                    <div className="metric-box glass-card border-glow-cyan card-glow-red" style={{ borderLeft: '6px solid #ef4444' }}>
-                      <span className="m-label">PROMEDIO DÍAS ESTADA (ALOS)</span>
-                      <h3 className="m-value red-txt">{metrics.current.totalDiasEstada > 0 ? (metrics.current.totalDiasEstada / metrics.current.totalEgresosNetos).toFixed(1) : '0.0'} <span style={{ fontSize: '1rem', color: '#64748b' }}>días</span></h3>
-                      <p className="m-desc">Permanencia media hospitalaria</p>
-                    </div>
-
-                    <div className="metric-box glass-card border-glow-cyan card-glow-indigo" style={{ borderLeft: '6px solid #6366f1' }}>
-                      <span className="m-label">MORTALIDAD HOSPITALARIA</span>
-                      <h3 className="m-value indigo-txt">{metrics.current.lethalityRate.toFixed(1)}%</h3>
-                      <p className="m-desc">{censusBreakdowns.deceasedCount} óbitos de egresos netos</p>
-                    </div>
+                  {/* Census Sub-navigation */}
+                  <div style={{ display: 'flex', gap: '10px', marginBottom: '20px', borderBottom: '1px solid rgba(0,0,0,0.08)', paddingBottom: '10px' }}>
+                    <button 
+                      onClick={() => setCensusSubTab('demographics')}
+                      style={{
+                        padding: '8px 16px',
+                        borderRadius: '8px',
+                        fontSize: '0.85rem',
+                        fontWeight: '700',
+                        background: censusSubTab === 'demographics' ? 'linear-gradient(135deg, #06b6d4, #0891b2)' : 'transparent',
+                        color: censusSubTab === 'demographics' ? '#ffffff' : '#64748b',
+                        border: 'none',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s',
+                        boxShadow: censusSubTab === 'demographics' ? '0 4px 12px rgba(8,145,178,0.15)' : 'none'
+                      }}
+                    >
+                      Indicadores y Demografía
+                    </button>
+                    <button 
+                      onClick={() => setCensusSubTab('iaas_camas')}
+                      style={{
+                        padding: '8px 16px',
+                        borderRadius: '8px',
+                        fontSize: '0.85rem',
+                        fontWeight: '700',
+                        background: censusSubTab === 'iaas_camas' ? 'linear-gradient(135deg, #06b6d4, #0891b2)' : 'transparent',
+                        color: censusSubTab === 'iaas_camas' ? '#ffffff' : '#64748b',
+                        border: 'none',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s',
+                        boxShadow: censusSubTab === 'iaas_camas' ? '0 4px 12px rgba(8,145,178,0.15)' : 'none'
+                      }}
+                    >
+                      Resumen IAAS / Gestión de Camas
+                    </button>
                   </div>
 
-                  {/* Demographic & Clinical Insights Grid */}
-                  <div className="census-insights-grid" style={{ marginTop: '20px' }}>
-                    {/* Top 5 Diagnoses */}
-                    <div className="glass-card insight-block border-glow-cyan">
-                      <h3 className="bc-title" style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#0f172a' }}>
-                        <Heart size={18} style={{ color: '#ef4444' }} /> Grandes Grupos de Diagnóstico Críticos
-                      </h3>
-                      <p className="bc-subtitle">Distribución y volumen de ingresos según CIE-10</p>
-                      
-                      <div className="top-diagnoses-list" style={{ marginTop: '20px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
-                        {censusBreakdowns.topDiagnoses.length === 0 ? (
-                          <div style={{ color: 'rgba(0,0,0,0.4)', textAlign: 'center', padding: '20px' }}>Sin diagnósticos registrados</div>
-                        ) : (
-                          censusBreakdowns.topDiagnoses.map((diag, idx) => {
-                            const maxDiagCount = censusBreakdowns.topDiagnoses[0].count;
-                            const fillPercent = ((diag.count / maxDiagCount) * 100).toFixed(0);
-                            return (
-                              <div key={idx} className="diag-item">
-                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px', fontSize: '0.82rem', fontWeight: '700', color: '#1e293b' }}>
-                                  <span style={{ maxWidth: '280px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={diag.name}>
-                                    {idx + 1}. {diag.name}
-                                  </span>
-                                  <span style={{ color: '#06b6d4' }}>{diag.count} pac.</span>
-                                </div>
-                                <div className="bar-bg" style={{ background: 'rgba(0, 0, 0, 0.04)', height: '8px', borderRadius: '4px', overflow: 'hidden' }}>
-                                  <div className="bar-fill" style={{ width: `${fillPercent}%`, height: '100%', background: 'linear-gradient(90deg, #06b6d4, #3b82f6)' }}></div>
-                                </div>
-                              </div>
-                            );
-                          })
-                        )}
-                      </div>
-                    </div>
+                  {censusSubTab === 'demographics' && (
+                    <>
+                      {/* Census Key KPIs */}
+                      <div className="metrics-summary-bar">
+                        <div className="metric-box glass-card border-glow-cyan card-glow-green" style={{ borderLeft: '6px solid #22c55e' }}>
+                          <span className="m-label">TOTAL INGRESOS (ADMISSIONS)</span>
+                          <h3 className="m-value green-txt">{censusBreakdowns.admissions.toLocaleString()}</h3>
+                          <p className="m-desc">Ingresos registrados en el período</p>
+                        </div>
 
-                    {/* Patient Admission Origin Procedencia */}
-                    <div className="glass-card insight-block border-glow-cyan">
-                      <h3 className="bc-title" style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#0f172a' }}>
-                        <MapPin size={18} style={{ color: '#3b82f6' }} /> Procedencia del Paciente (Orígenes)
-                      </h3>
-                      <p className="bc-subtitle">Canales de derivación e ingreso a hospitalización</p>
-                      
-                      <div className="origins-list" style={{ marginTop: '20px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
-                        {censusBreakdowns.origins.length === 0 ? (
-                          <div style={{ color: 'rgba(0,0,0,0.4)', textAlign: 'center', padding: '20px' }}>Sin datos de origen</div>
-                        ) : (
-                          censusBreakdowns.origins.slice(0, 5).map((org, idx) => {
-                            const maxOrgCount = censusBreakdowns.origins[0].count;
-                            const fillPercent = ((org.count / maxOrgCount) * 100).toFixed(0);
-                            return (
-                              <div key={idx} className="org-item">
-                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px', fontSize: '0.82rem', fontWeight: '700', color: '#1e293b' }}>
-                                  <span>{org.name}</span>
-                                  <span style={{ color: '#3b82f6' }}>{org.count}</span>
-                                </div>
-                                <div className="bar-bg" style={{ background: 'rgba(0, 0, 0, 0.04)', height: '8px', borderRadius: '4px', overflow: 'hidden' }}>
-                                  <div className="bar-fill" style={{ width: `${fillPercent}%`, height: '100%', background: 'linear-gradient(90deg, #3b82f6, #6366f1)' }}></div>
-                                </div>
-                              </div>
-                            );
-                          })
-                        )}
-                      </div>
-                    </div>
+                        <div className="metric-box glass-card border-glow-cyan card-glow-blue" style={{ borderLeft: '6px solid #3b82f6' }}>
+                          <span className="m-label">TOTAL EGRESOS CLÍNICOS</span>
+                          <h3 className="m-value blue-txt">{censusBreakdowns.discharges.toLocaleString()}</h3>
+                          <p className="m-desc">Excluye Traslado Servicio (Minsal)</p>
+                        </div>
 
-                    {/* Discharge Conditions */}
-                    <div className="glass-card insight-block border-glow-cyan">
-                      <h3 className="bc-title" style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#10b981' }}>
-                        <ClipboardCheck size={18} style={{ color: '#10b981' }} /> Condición de Egreso (Altas)
-                      </h3>
-                      <p className="bc-subtitle">Resultados clínicos de las hospitalizaciones cerradas</p>
-                      
-                      <div className="discharge-list" style={{ marginTop: '20px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
-                        {censusBreakdowns.conditions.length === 0 ? (
-                          <div style={{ color: 'rgba(0,0,0,0.4)', textAlign: 'center', padding: '20px' }}>Sin egresos cerrados en este rango</div>
-                        ) : (
-                          censusBreakdowns.conditions.slice(0, 5).map((dc, idx) => {
-                            const maxDcCount = censusBreakdowns.conditions[0].count;
-                            const fillPercent = ((dc.count / maxDcCount) * 100).toFixed(0);
-                            return (
-                              <div key={idx} className="dc-item">
-                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px', fontSize: '0.82rem', fontWeight: '700', color: '#1e293b' }}>
-                                  <span>{dc.name || 'Sin Especificar'}</span>
-                                  <span style={{ color: '#10b981' }}>{dc.count} pac.</span>
-                                </div>
-                                <div className="bar-bg" style={{ background: 'rgba(0, 0, 0, 0.04)', height: '8px', borderRadius: '4px', overflow: 'hidden' }}>
-                                  <div className="bar-fill" style={{ width: `${fillPercent}%`, height: '100%', background: 'linear-gradient(90deg, #10b981, #059669)' }}></div>
-                                </div>
-                              </div>
-                            );
-                          })
-                        )}
+                        <div className="metric-box glass-card border-glow-cyan card-glow-red" style={{ borderLeft: '6px solid #ef4444' }}>
+                          <span className="m-label">PROMEDIO DÍAS ESTADA (ALOS)</span>
+                          <h3 className="m-value red-txt">{metrics.current.totalDiasEstada > 0 ? (metrics.current.totalDiasEstada / metrics.current.totalEgresosNetos).toFixed(1) : '0.0'} <span style={{ fontSize: '1rem', color: '#64748b' }}>días</span></h3>
+                          <p className="m-desc">Permanencia media hospitalaria</p>
+                        </div>
+
+                        <div className="metric-box glass-card border-glow-cyan card-glow-indigo" style={{ borderLeft: '6px solid #6366f1' }}>
+                          <span className="m-label">MORTALIDAD HOSPITALARIA</span>
+                          <h3 className="m-value indigo-txt">{metrics.current.lethalityRate.toFixed(1)}%</h3>
+                          <p className="m-desc">{censusBreakdowns.deceasedCount} óbitos de egresos netos</p>
+                        </div>
+                      </div>
+
+                      {/* Demographic & Clinical Insights Grid */}
+                      <div className="census-insights-grid" style={{ marginTop: '20px' }}>
+                        {/* Top 5 Diagnoses */}
+                        <div className="glass-card insight-block border-glow-cyan">
+                          <h3 className="bc-title" style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#0f172a' }}>
+                            <Heart size={18} style={{ color: '#ef4444' }} /> Grandes Grupos de Diagnóstico Críticos
+                          </h3>
+                          <p className="bc-subtitle">Distribución y volumen de ingresos según CIE-10</p>
+                          
+                          <div className="top-diagnoses-list" style={{ marginTop: '20px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                            {censusBreakdowns.topDiagnoses.length === 0 ? (
+                              <div style={{ color: 'rgba(0,0,0,0.4)', textAlign: 'center', padding: '20px' }}>Sin diagnósticos registrados</div>
+                            ) : (
+                              censusBreakdowns.topDiagnoses.map((diag, idx) => {
+                                const maxDiagCount = censusBreakdowns.topDiagnoses[0].count;
+                                const fillPercent = ((diag.count / maxDiagCount) * 100).toFixed(0);
+                                return (
+                                  <div key={idx} className="diag-item">
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px', fontSize: '0.82rem', fontWeight: '700', color: '#1e293b' }}>
+                                      <span style={{ maxWidth: '280px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={diag.name}>
+                                        {idx + 1}. {diag.name}
+                                      </span>
+                                      <span style={{ color: '#06b6d4' }}>{diag.count} pac.</span>
+                                    </div>
+                                    <div className="bar-bg" style={{ background: 'rgba(0, 0, 0, 0.04)', height: '8px', borderRadius: '4px', overflow: 'hidden' }}>
+                                      <div className="bar-fill" style={{ width: `${fillPercent}%`, height: '100%', background: 'linear-gradient(90deg, #06b6d4, #3b82f6)' }}></div>
+                                    </div>
+                                  </div>
+                                );
+                              })
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Patient Admission Origin Procedencia */}
+                        <div className="glass-card insight-block border-glow-cyan">
+                          <h3 className="bc-title" style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#0f172a' }}>
+                            <MapPin size={18} style={{ color: '#3b82f6' }} /> Procedencia del Paciente (Orígenes)
+                          </h3>
+                          <p className="bc-subtitle">Canales de derivación e ingreso a hospitalización</p>
+                          
+                          <div className="origins-list" style={{ marginTop: '20px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                            {censusBreakdowns.origins.length === 0 ? (
+                              <div style={{ color: 'rgba(0,0,0,0.4)', textAlign: 'center', padding: '20px' }}>Sin datos de origen</div>
+                            ) : (
+                              censusBreakdowns.origins.slice(0, 5).map((org, idx) => {
+                                const maxOrgCount = censusBreakdowns.origins[0].count;
+                                const fillPercent = ((org.count / maxOrgCount) * 100).toFixed(0);
+                                return (
+                                  <div key={idx} className="org-item">
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px', fontSize: '0.82rem', fontWeight: '700', color: '#1e293b' }}>
+                                      <span>{org.name}</span>
+                                      <span style={{ color: '#3b82f6' }}>{org.count}</span>
+                                    </div>
+                                    <div className="bar-bg" style={{ background: 'rgba(0, 0, 0, 0.04)', height: '8px', borderRadius: '4px', overflow: 'hidden' }}>
+                                      <div className="bar-fill" style={{ width: `${fillPercent}%`, height: '100%', background: 'linear-gradient(90deg, #3b82f6, #6366f1)' }}></div>
+                                    </div>
+                                  </div>
+                                );
+                              })
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Discharge Conditions */}
+                        <div className="glass-card insight-block border-glow-cyan">
+                          <h3 className="bc-title" style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#10b981' }}>
+                            <ClipboardCheck size={18} style={{ color: '#10b981' }} /> Condición de Egreso (Altas)
+                          </h3>
+                          <p className="bc-subtitle">Resultados clínicos de las hospitalizaciones cerradas</p>
+                          
+                          <div className="discharge-list" style={{ marginTop: '20px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                            {censusBreakdowns.conditions.length === 0 ? (
+                              <div style={{ color: 'rgba(0,0,0,0.4)', textAlign: 'center', padding: '20px' }}>Sin egresos cerrados en este rango</div>
+                            ) : (
+                              censusBreakdowns.conditions.slice(0, 5).map((dc, idx) => {
+                                const maxDcCount = censusBreakdowns.conditions[0].count;
+                                const fillPercent = ((dc.count / maxDcCount) * 100).toFixed(0);
+                                return (
+                                  <div key={idx} className="dc-item">
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px', fontSize: '0.82rem', fontWeight: '700', color: '#1e293b' }}>
+                                      <span>{dc.name || 'Sin Especificar'}</span>
+                                      <span style={{ color: '#10b981' }}>{dc.count} pac.</span>
+                                    </div>
+                                    <div className="bar-bg" style={{ background: 'rgba(0, 0, 0, 0.04)', height: '8px', borderRadius: '4px', overflow: 'hidden' }}>
+                                      <div className="bar-fill" style={{ width: `${fillPercent}%`, height: '100%', background: 'linear-gradient(90deg, #10b981, #059669)' }}></div>
+                                    </div>
+                                  </div>
+                                );
+                              })
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </>
+                  )}
+
+                  {censusSubTab === 'iaas_camas' && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                      {/* Controls Card */}
+                      <div className="glass-card" style={{ padding: '20px', display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: '15px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '25px' }}>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+                            <label style={{ fontSize: '0.68rem', fontWeight: '800', color: '#475569', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                              Acceso Rápido por Mes
+                            </label>
+                            <select 
+                              onChange={(e) => handleCensusMonthSelect(e.target.value)}
+                              style={{
+                                padding: '10px 16px',
+                                borderRadius: '8px',
+                                border: '1px solid rgba(0,0,0,0.08)',
+                                background: '#ffffff',
+                                color: '#0f172a',
+                                fontWeight: '700',
+                                fontSize: '0.85rem',
+                                cursor: 'pointer',
+                                minWidth: '220px',
+                                outline: 'none',
+                                boxShadow: '0 2px 4px rgba(0,0,0,0.02)'
+                              }}
+                              defaultValue=""
+                            >
+                              <option value="" disabled>Seleccione un mes...</option>
+                              {uniqueMonths.map(m => (
+                                <option key={m.value} value={m.value}>{m.label}</option>
+                              ))}
+                            </select>
+                          </div>
+                          
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+                            <span style={{ fontSize: '0.68rem', fontWeight: '800', color: '#475569', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                              Periodo Activo
+                            </span>
+                            <span style={{ fontSize: '0.9rem', fontWeight: '750', color: '#0f172a' }}>
+                              {startDate ? parseDDMMYYYY(startDate).toLocaleDateString('es-CL', { day: 'numeric', month: 'long', year: 'numeric' }) : ''} al{' '}
+                              {endDate ? parseDDMMYYYY(endDate).toLocaleDateString('es-CL', { day: 'numeric', month: 'long', year: 'numeric' }) : ''}
+                            </span>
+                          </div>
+                        </div>
+
+                        <button 
+                          onClick={handleDownloadExcel}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            padding: '12px 24px',
+                            background: 'linear-gradient(135deg, #10b981, #059669)',
+                            color: '#ffffff',
+                            border: 'none',
+                            borderRadius: '8px',
+                            fontWeight: '700',
+                            fontSize: '0.85rem',
+                            cursor: 'pointer',
+                            boxShadow: '0 4px 12px rgba(16,185,129,0.2)',
+                            transition: 'all 0.2s'
+                          }}
+                        >
+                          <FileText size={16} /> Descargar Base de Datos (.xlsx)
+                        </button>
+                      </div>
+
+                      {/* Tables Grid */}
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.15fr', gap: '20px', alignItems: 'start' }}>
+                        
+                        {/* Table 1: Ingresos */}
+                        <div className="glass-card" style={{ padding: '24px' }}>
+                          <h3 style={{ fontSize: '0.95rem', fontWeight: '800', color: '#1e293b', marginBottom: '18px', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '1px solid rgba(0,0,0,0.05)', paddingBottom: '8px' }}>
+                            TOTAL INGRESOS {startDate ? parseDDMMYYYY(startDate).toLocaleDateString('es-CL', { month: 'long', year: 'numeric' }).toUpperCase() : ''}
+                          </h3>
+                          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.82rem' }}>
+                            <thead>
+                              <tr style={{ borderBottom: '2px solid rgba(0,0,0,0.06)' }}>
+                                <th style={{ textAlign: 'left', padding: '10px 12px', fontWeight: '800', color: '#475569' }}>Tipo de pacientes</th>
+                                <th style={{ textAlign: 'left', padding: '10px 12px', fontWeight: '800', color: '#475569' }}>SERVICIO DE INGRESO</th>
+                                <th style={{ textAlign: 'right', padding: '10px 12px', fontWeight: '800', color: '#475569' }}>Total</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {iaasCamasData.ingresos.map((row, idx) => (
+                                <tr 
+                                  key={idx} 
+                                  style={{ 
+                                    borderBottom: row.isSubtotal ? '2px solid rgba(0,0,0,0.08)' : '1px solid rgba(0,0,0,0.03)',
+                                    fontWeight: row.isSubtotal ? '700' : '500',
+                                    background: row.isSubtotal ? 'rgba(8,145,178,0.03)' : 'transparent',
+                                    color: row.isSubtotal ? '#0891b2' : '#1e293b'
+                                  }}
+                                >
+                                  <td style={{ padding: '10px 12px' }}>{row.type}</td>
+                                  <td style={{ padding: '10px 12px', color: row.isSubtotal ? 'transparent' : '#475569' }}>{row.service}</td>
+                                  <td style={{ padding: '10px 12px', textAlign: 'right' }}>{row.total}</td>
+                                </tr>
+                              ))}
+                              {/* Grand Total Row */}
+                              <tr style={{ background: 'rgba(8,145,178,0.08)', fontWeight: '800', color: '#0e7490', borderTop: '2px double #0891b2' }}>
+                                <td style={{ padding: '12px' }}>Total general</td>
+                                <td style={{ padding: '12px' }}></td>
+                                <td style={{ padding: '12px', textAlign: 'right' }}>{iaasCamasData.grandTotalIngresos}</td>
+                              </tr>
+                            </tbody>
+                          </table>
+                        </div>
+
+                        {/* Table 2: Dias Cama */}
+                        <div className="glass-card" style={{ padding: '24px' }}>
+                          <h3 style={{ fontSize: '0.95rem', fontWeight: '800', color: '#1e293b', marginBottom: '18px', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '1px solid rgba(0,0,0,0.05)', paddingBottom: '8px' }}>
+                            Días cama ocupados {startDate ? parseDDMMYYYY(startDate).toLocaleDateString('es-CL', { month: 'long', year: 'numeric' }).toUpperCase() : ''}
+                          </h3>
+                          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.82rem' }}>
+                            <thead>
+                              <tr style={{ borderBottom: '2px solid rgba(0,0,0,0.06)' }}>
+                                <th style={{ textAlign: 'left', padding: '10px 12px', fontWeight: '800', color: '#475569' }}>Tipo de pacientes</th>
+                                <th style={{ textAlign: 'left', padding: '10px 12px', fontWeight: '800', color: '#475569' }}>SERVICIO DE INGRESO</th>
+                                <th style={{ textAlign: 'right', padding: '10px 12px', fontWeight: '800', color: '#475569' }}>TOTAL PACIENTES</th>
+                                <th style={{ textAlign: 'right', padding: '10px 12px', fontWeight: '800', color: '#475569' }}>TOTAL DÍAS CAMAS OCUPADOS</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {iaasCamasData.diasCama.map((row, idx) => (
+                                <tr 
+                                  key={idx} 
+                                  style={{ 
+                                    borderBottom: row.isSubtotal ? '2px solid rgba(0,0,0,0.08)' : '1px solid rgba(0,0,0,0.03)',
+                                    fontWeight: row.isSubtotal ? '700' : '500',
+                                    background: row.isSubtotal ? 'rgba(8,145,178,0.03)' : 'transparent',
+                                    color: row.isSubtotal ? '#0891b2' : '#1e293b'
+                                  }}
+                                >
+                                  <td style={{ padding: '10px 12px' }}>{row.type}</td>
+                                  <td style={{ padding: '10px 12px', color: row.isSubtotal ? 'transparent' : '#475569' }}>{row.service}</td>
+                                  <td style={{ padding: '10px 12px', textAlign: 'right' }}>{row.patients}</td>
+                                  <td style={{ padding: '10px 12px', textAlign: 'right' }}>{row.bedDays}</td>
+                                </tr>
+                              ))}
+                              {/* Grand Total Row */}
+                              <tr style={{ background: 'rgba(8,145,178,0.08)', fontWeight: '800', color: '#0e7490', borderTop: '2px double #0891b2' }}>
+                                <td style={{ padding: '12px' }}>Total general</td>
+                                <td style={{ padding: '12px' }}></td>
+                                <td style={{ padding: '12px', textAlign: 'right' }}>
+                                  {iaasCamasData.diasCama.filter(r => r.isSubtotal).reduce((sum, r) => sum + r.patients, 0)}
+                                </td>
+                                <td style={{ padding: '12px', textAlign: 'right' }}>{iaasCamasData.grandTotalBedDays}</td>
+                              </tr>
+                            </tbody>
+                          </table>
+                        </div>
+
                       </div>
                     </div>
-                  </div>
+                  )}
                 </motion.div>
               )}
 
