@@ -1364,12 +1364,9 @@ export default function ClosedAttentionDashboard({ onBack }) {
       const srvMapped = mapService(r.servicio_ingreso);
       const cc = r.cuenta_corriente || r.id || `temp-${Math.random()}`;
 
-      // 1. Admission count — excluye 'Servicio De Hospitalizacion' (traslados internos)
-      // para alinear con metodología REM 20 (ingresos netos)
-      const esTraslado = (r.procedenciaClean || '').toLowerCase().includes('hospitalizacion') ||
-                         (r.procedenciaClean || '').toLowerCase().includes('hospitalización') ||
-                         (r.procedenciaClean || '').toLowerCase().includes('servicio de');
-      if (pIn >= monitorStart && pIn <= monitorEnd && !esTraslado) {
+      // 1. Admission count — incluye TODOS los ingresos (traslados internos incluidos)
+      // para alinear con el total del REM 20 (que suma ingresosMismoHospital al total)
+      if (pIn >= monitorStart && pIn <= monitorEnd) {
         const key = `${ptype}||${srvMapped}`;
         admissionsMap.set(key, (admissionsMap.get(key) || 0) + 1);
       }
