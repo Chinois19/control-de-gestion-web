@@ -197,7 +197,7 @@ export default function ClosedAttentionDashboard({ onBack }) {
 
   // Sidebar Period Monitoring Filters (Dynamic: Jan 1st to 2 days before today)
   const getInitialDates = () => {
-    const today = new Date(2026, 4, 18); // May 18, 2026 (based on local metadata context)
+    const today = new Date(); // Fecha actual dinámica
     const beforeYesterday = new Date(today.getTime() - 2 * 24 * 60 * 60 * 1000);
     const beforeYesterdayStr = beforeYesterday.toISOString().split('T')[0];
     return {
@@ -397,7 +397,7 @@ export default function ClosedAttentionDashboard({ onBack }) {
       let calculatedDays = 0;
       if (parsedIngreso) {
         if (isCurrentlyHospitalized) {
-          const today = new Date(2026, 4, 18); // May 18, 2026
+          const today = new Date(); // Fecha actual dinámica
           const diffTime = Math.abs(today - parsedIngreso);
           calculatedDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) || 1;
         } else if (parsedEgreso) {
@@ -574,7 +574,7 @@ export default function ClosedAttentionDashboard({ onBack }) {
         // Works for patients admitted before the period (e.g. Jan 1) and discharged after or still active (e.g. March stays = 31 days)
         const pIngreso = r.parsedIngreso;
         if (pIngreso && pIngreso <= monitorEnd) {
-          const pEgreso = r.isCurrentlyHospitalized ? new Date(2026, 4, 18) : r.parsedEgreso;
+          const pEgreso = r.isCurrentlyHospitalized ? new Date() : r.parsedEgreso;
           if (pEgreso && pEgreso >= monitorStart) {
             // Finding overlap intersection boundaries
             const overlapStart = pIngreso < monitorStart ? monitorStart : pIngreso;
@@ -1002,7 +1002,7 @@ export default function ClosedAttentionDashboard({ onBack }) {
         // C. Bed days overlap logic
         const pIngreso = r.parsedIngreso;
         if (pIngreso && pIngreso <= monitorEnd) {
-          const pEgreso = r.isCurrentlyHospitalized ? new Date(2026, 4, 18) : r.parsedEgreso;
+          const pEgreso = r.isCurrentlyHospitalized ? new Date() : r.parsedEgreso;
           if (pEgreso && pEgreso >= monitorStart) {
             const overlapStart = pIngreso < monitorStart ? monitorStart : pIngreso;
             const overlapEnd = pEgreso > monitorEnd ? monitorEnd : pEgreso;
@@ -1196,7 +1196,7 @@ export default function ClosedAttentionDashboard({ onBack }) {
 
         const pIngreso = r.parsedIngreso;
         if (pIngreso && pIngreso <= monitorEnd) {
-          const pEgreso = r.isCurrentlyHospitalized ? new Date(2026, 4, 18) : r.parsedEgreso;
+          const pEgreso = r.isCurrentlyHospitalized ? new Date() : r.parsedEgreso;
           if (pEgreso && pEgreso >= monitorStart) {
             const overlapStart = pIngreso < monitorStart ? monitorStart : pIngreso;
             const overlapEnd = pEgreso > monitorEnd ? monitorEnd : pEgreso;
@@ -1331,13 +1331,22 @@ export default function ClosedAttentionDashboard({ onBack }) {
       return srv || 'Otros Servicios';
     };
 
+    // Calcula tipo de paciente desde fecha_nacimiento (evita encoding roto de edad_años)
     const getPatientType = (r) => {
-      const years = parseInt(r.edad_años) || 0;
-      const months = parseInt(r.edad_meses) || 0;
-      const days = parseInt(r.edad_dias) || 0;
-      if (years >= 15) return 'Adultos';
-      if (years >= 2) return 'Pediátricos';
-      if (years === 1 || months >= 1 || days > 28) return 'Lactantes';
+      const parseFechaDDMMYYYY = (s) => {
+        if (!s) return null;
+        const p = s.split('-');
+        if (p.length !== 3) return null;
+        return new Date(parseInt(p[2]), parseInt(p[1]) - 1, parseInt(p[0]));
+      };
+      const nac = parseFechaDDMMYYYY(r.fecha_nacimiento);
+      const ref = r.parsedIngreso || new Date();
+      if (!nac) return 'Adultos'; // fallback seguro
+      const totalDays = (ref - nac) / (1000 * 60 * 60 * 24);
+      const años = totalDays / 365.25;
+      if (años >= 15) return 'Adultos';
+      if (años >= 2) return 'Pediátricos';
+      if (totalDays >= 28) return 'Lactantes';
       return 'Neonatos';
     };
 
@@ -1347,7 +1356,7 @@ export default function ClosedAttentionDashboard({ onBack }) {
 
     censoCleaned.forEach(r => {
       const pIn = r.parsedIngreso;
-      const pEg = r.isCurrentlyHospitalized ? new Date(2026, 4, 18) : r.parsedEgreso;
+      const pEg = r.isCurrentlyHospitalized ? new Date() : r.parsedEgreso;
 
       if (!pIn) return;
 
@@ -1355,8 +1364,12 @@ export default function ClosedAttentionDashboard({ onBack }) {
       const srvMapped = mapService(r.servicio_ingreso);
       const cc = r.cuenta_corriente || r.id || `temp-${Math.random()}`;
 
-      // 1. Admission count
-      if (pIn >= monitorStart && pIn <= monitorEnd) {
+      // 1. Admission count — excluye 'Servicio De Hospitalizacion' (traslados internos)
+      // para alinear con metodología REM 20 (ingresos netos)
+      const esTraslado = (r.procedenciaClean || '').toLowerCase().includes('hospitalizacion') ||
+                         (r.procedenciaClean || '').toLowerCase().includes('hospitalización') ||
+                         (r.procedenciaClean || '').toLowerCase().includes('servicio de');
+      if (pIn >= monitorStart && pIn <= monitorEnd && !esTraslado) {
         const key = `${ptype}||${srvMapped}`;
         admissionsMap.set(key, (admissionsMap.get(key) || 0) + 1);
       }
@@ -1501,32 +1514,64 @@ export default function ClosedAttentionDashboard({ onBack }) {
     setEndDate(lastDay);
   };
 
+  // Calcula edad continua real (años, meses, días) desde fecha_nacimiento hasta fecha_ingreso
+  const calcEdadContinua = (fechaNacStr, fechaRefStr) => {
+    const parseFecha = (s) => {
+      if (!s) return null;
+      const parts = s.split('-');
+      if (parts.length !== 3) return null;
+      if (parts[0].length === 4) return new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+      return new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0]));
+    };
+    const nacimiento = parseFecha(fechaNacStr);
+    const referencia = parseFecha(fechaRefStr) || new Date();
+    if (!nacimiento || isNaN(nacimiento.getTime())) return { años: '', meses: '', dias: '' };
+
+    let años = referencia.getFullYear() - nacimiento.getFullYear();
+    let meses = referencia.getMonth() - nacimiento.getMonth();
+    let dias = referencia.getDate() - nacimiento.getDate();
+
+    if (dias < 0) {
+      meses--;
+      const ultimoDiaMesAnterior = new Date(referencia.getFullYear(), referencia.getMonth(), 0).getDate();
+      dias += ultimoDiaMesAnterior;
+    }
+    if (meses < 0) {
+      años--;
+      meses += 12;
+    }
+    return { años, meses, dias };
+  };
+
   const handleDownloadExcel = () => {
     if (!iaasCamasData.activePatients || iaasCamasData.activePatients.length === 0) {
       alert("No hay pacientes registrados en el periodo seleccionado.");
       return;
     }
 
-    const exportData = iaasCamasData.activePatients.map(p => ({
-      "Cuenta Corriente": p.cuenta_corriente || '',
-      "RUT Paciente": p.rut_paciente || '',
-      "Nombre Completo": p.nombre_completo || '',
-      "Fecha Nacimiento": p.fecha_nacimiento || '',
-      "Fecha Ingreso": p.fecha_ingreso || '',
-      "Fecha Egreso": p.fecha_egreso || 'Hospitalizado',
-      "Servicio Ingreso": p.servicio_ingreso || '',
-      "Servicio Mapeado": p.Servicio_Mapeado || '',
-      "Categoría de Edad": p.Categoria_Edad || '',
-      "Edad Años": p.edad_años || 0,
-      "Edad Meses": p.edad_meses || 0,
-      "Edad Días": p.edad_dias || 0,
-      "Días Cama en Periodo": p.Dias_Cama_Periodo || 0,
-      "Procedencia": p.procedencia || '',
-      "Condición de Egreso": p.condicion_egreso || '',
-      "Diagnóstico (CIE-10)": p.hipostesis_ingreso || '',
-      "Glosa Diagnóstico": p.hipostesis_diagnostico || '',
-      "Grupo Diagnóstico": p.grandes_grupos || ''
-    }));
+    const exportData = iaasCamasData.activePatients.map(p => {
+      const edad = calcEdadContinua(p.fecha_nacimiento, p.fecha_ingreso);
+      return {
+        "Cuenta Corriente": p.cuenta_corriente || '',
+        "RUT Paciente": p.rut_paciente || '',
+        "Nombre Completo": p.nombre_completo || '',
+        "Fecha Nacimiento": p.fecha_nacimiento || '',
+        "Fecha Ingreso": p.fecha_ingreso || '',
+        "Fecha Egreso": p.fecha_egreso || 'Hospitalizado',
+        "Servicio Ingreso": p.servicio_ingreso || '',
+        "Servicio Mapeado": p.Servicio_Mapeado || '',
+        "Categoría de Edad": p.Categoria_Edad || '',
+        "Edad (Años)": edad.años !== '' ? edad.años : '',
+        "Edad (Meses)": edad.meses !== '' ? edad.meses : '',
+        "Edad (Días)": edad.dias !== '' ? edad.dias : '',
+        "Días Cama en Periodo": p.Dias_Cama_Periodo || 0,
+        "Procedencia": p.procedencia || '',
+        "Condición de Egreso": p.condicion_egreso || '',
+        "Diagnóstico (CIE-10)": p.hipostesis_ingreso || '',
+        "Glosa Diagnóstico": p.hipostesis_diagnostico || '',
+        "Grupo Diagnóstico": p.grandes_grupos || ''
+      };
+    });
 
     const worksheet = XLSX.utils.json_to_sheet(exportData);
     const workbook = XLSX.utils.book_new();
@@ -1719,7 +1764,7 @@ export default function ClosedAttentionDashboard({ onBack }) {
       if (inServiceIngreso || inServiceEgreso) {
         const pIngreso = r.parsedIngreso;
         if (pIngreso && pIngreso <= monitorEnd) {
-          const pEgreso = r.isCurrentlyHospitalized ? new Date(2026, 4, 18) : r.parsedEgreso;
+          const pEgreso = r.isCurrentlyHospitalized ? new Date() : r.parsedEgreso;
           if (pEgreso && pEgreso >= monitorStart) {
             const overlapStart = pIngreso < monitorStart ? monitorStart : pIngreso;
             const overlapEnd   = pEgreso  > monitorEnd   ? monitorEnd   : pEgreso;
@@ -3796,84 +3841,122 @@ export default function ClosedAttentionDashboard({ onBack }) {
                       {/* Tables Grid */}
                       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.15fr', gap: '20px', alignItems: 'start' }}>
                         
-                        {/* Table 1: Ingresos */}
+                        {/* Table 1: Ingresos - con headers azul oscuro y rowspan por tipo */}
                         <div className="glass-card" style={{ padding: '24px' }}>
                           <h3 style={{ fontSize: '0.95rem', fontWeight: '800', color: '#1e293b', marginBottom: '18px', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '1px solid rgba(0,0,0,0.05)', paddingBottom: '8px' }}>
-                            TOTAL INGRESOS {startDate ? parseDDMMYYYY(startDate).toLocaleDateString('es-CL', { month: 'long', year: 'numeric' }).toUpperCase() : ''}
+                            TOTAL INGRESOS {startDate ? parseDDMMYYYY(startDate)?.toLocaleDateString('es-CL', { month: 'long', year: 'numeric' }).toUpperCase() : ''}
                           </h3>
                           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.82rem' }}>
                             <thead>
-                              <tr style={{ borderBottom: '2px solid rgba(0,0,0,0.06)' }}>
-                                <th style={{ textAlign: 'left', padding: '10px 12px', fontWeight: '800', color: '#475569' }}>Tipo de pacientes</th>
-                                <th style={{ textAlign: 'left', padding: '10px 12px', fontWeight: '800', color: '#475569' }}>SERVICIO DE INGRESO</th>
-                                <th style={{ textAlign: 'right', padding: '10px 12px', fontWeight: '800', color: '#475569' }}>Total</th>
+                              <tr>
+                                <th style={{ textAlign: 'left', padding: '10px 12px', fontWeight: '700', color: '#ffffff', background: '#1e3a6e', borderRadius: '6px 0 0 0' }}>Tipo de Pacientes</th>
+                                <th style={{ textAlign: 'left', padding: '10px 12px', fontWeight: '700', color: '#ffffff', background: '#1e3a6e' }}>Servicio de Ingreso</th>
+                                <th style={{ textAlign: 'right', padding: '10px 12px', fontWeight: '700', color: '#ffffff', background: '#1e3a6e', borderRadius: '0 6px 0 0' }}>Total</th>
                               </tr>
                             </thead>
                             <tbody>
-                              {iaasCamasData.ingresos.map((row, idx) => (
-                                <tr 
-                                  key={idx} 
-                                  style={{ 
-                                    borderBottom: row.isSubtotal ? '2px solid rgba(0,0,0,0.08)' : '1px solid rgba(0,0,0,0.03)',
-                                    fontWeight: row.isSubtotal ? '700' : '500',
-                                    background: row.isSubtotal ? 'rgba(8,145,178,0.03)' : 'transparent',
-                                    color: row.isSubtotal ? '#0891b2' : '#1e293b'
-                                  }}
-                                >
-                                  <td style={{ padding: '10px 12px' }}>{row.type}</td>
-                                  <td style={{ padding: '10px 12px', color: row.isSubtotal ? 'transparent' : '#475569' }}>{row.service}</td>
-                                  <td style={{ padding: '10px 12px', textAlign: 'right' }}>{row.total}</td>
-                                </tr>
-                              ))}
-                              {/* Grand Total Row */}
-                              <tr style={{ background: 'rgba(8,145,178,0.08)', fontWeight: '800', color: '#0e7490', borderTop: '2px double #0891b2' }}>
-                                <td style={{ padding: '12px' }}>Total general</td>
-                                <td style={{ padding: '12px' }}></td>
-                                <td style={{ padding: '12px', textAlign: 'right' }}>{iaasCamasData.grandTotalIngresos}</td>
+                              {(() => {
+                                const rows = [];
+                                let i = 0;
+                                while (i < iaasCamasData.ingresos.length) {
+                                  const row = iaasCamasData.ingresos[i];
+                                  if (row.isSubtotal) {
+                                    rows.push(
+                                      <tr key={`sub-${i}`} style={{ borderBottom: '2px solid rgba(8,145,178,0.15)', fontWeight: '700', background: 'rgba(8,145,178,0.06)', color: '#0891b2' }}>
+                                        <td colSpan={2} style={{ padding: '9px 12px' }}>{row.type}</td>
+                                        <td style={{ padding: '9px 12px', textAlign: 'right' }}>{row.total}</td>
+                                      </tr>
+                                    );
+                                    i++;
+                                  } else {
+                                    // Contar cuántas filas detalle tiene este grupo
+                                    let j = i;
+                                    while (j < iaasCamasData.ingresos.length && !iaasCamasData.ingresos[j].isSubtotal) j++;
+                                    const spanCount = j - i;
+                                    iaasCamasData.ingresos.slice(i, j).forEach((detRow, k) => {
+                                      rows.push(
+                                        <tr key={`det-${i}-${k}`} style={{ borderBottom: '1px solid rgba(0,0,0,0.04)', color: '#1e293b' }}>
+                                          {k === 0 && (
+                                            <td rowSpan={spanCount} style={{ padding: '9px 12px', fontWeight: '600', color: '#334155', verticalAlign: 'middle', borderRight: '2px solid rgba(8,145,178,0.12)', background: 'rgba(248,250,252,0.8)' }}>
+                                              {detRow.type}
+                                            </td>
+                                          )}
+                                          <td style={{ padding: '9px 12px', color: '#64748b' }}>{detRow.service}</td>
+                                          <td style={{ padding: '9px 12px', textAlign: 'right', fontWeight: '500' }}>{detRow.total}</td>
+                                        </tr>
+                                      );
+                                    });
+                                    i = j;
+                                  }
+                                }
+                                return rows;
+                              })()}
+                              <tr style={{ background: '#1e3a6e', fontWeight: '800', color: '#ffffff' }}>
+                                <td colSpan={2} style={{ padding: '11px 12px', borderRadius: '0 0 0 6px' }}>Total General</td>
+                                <td style={{ padding: '11px 12px', textAlign: 'right', borderRadius: '0 0 6px 0' }}>{iaasCamasData.grandTotalIngresos}</td>
                               </tr>
                             </tbody>
                           </table>
                         </div>
 
-                        {/* Table 2: Dias Cama */}
+                        {/* Table 2: Dias Cama - con headers azul oscuro y rowspan por tipo */}
                         <div className="glass-card" style={{ padding: '24px' }}>
                           <h3 style={{ fontSize: '0.95rem', fontWeight: '800', color: '#1e293b', marginBottom: '18px', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '1px solid rgba(0,0,0,0.05)', paddingBottom: '8px' }}>
-                            Días cama ocupados {startDate ? parseDDMMYYYY(startDate).toLocaleDateString('es-CL', { month: 'long', year: 'numeric' }).toUpperCase() : ''}
+                            Días Cama Ocupados {startDate ? parseDDMMYYYY(startDate)?.toLocaleDateString('es-CL', { month: 'long', year: 'numeric' }).toUpperCase() : ''}
                           </h3>
                           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.82rem' }}>
                             <thead>
-                              <tr style={{ borderBottom: '2px solid rgba(0,0,0,0.06)' }}>
-                                <th style={{ textAlign: 'left', padding: '10px 12px', fontWeight: '800', color: '#475569' }}>Tipo de pacientes</th>
-                                <th style={{ textAlign: 'left', padding: '10px 12px', fontWeight: '800', color: '#475569' }}>SERVICIO DE INGRESO</th>
-                                <th style={{ textAlign: 'right', padding: '10px 12px', fontWeight: '800', color: '#475569' }}>TOTAL PACIENTES</th>
-                                <th style={{ textAlign: 'right', padding: '10px 12px', fontWeight: '800', color: '#475569' }}>TOTAL DÍAS CAMAS OCUPADOS</th>
+                              <tr>
+                                <th style={{ textAlign: 'left', padding: '10px 12px', fontWeight: '700', color: '#ffffff', background: '#1e3a6e', borderRadius: '6px 0 0 0' }}>Tipo de Pacientes</th>
+                                <th style={{ textAlign: 'left', padding: '10px 12px', fontWeight: '700', color: '#ffffff', background: '#1e3a6e' }}>Servicio de Ingreso</th>
+                                <th style={{ textAlign: 'right', padding: '10px 12px', fontWeight: '700', color: '#ffffff', background: '#1e3a6e' }}>Pacientes</th>
+                                <th style={{ textAlign: 'right', padding: '10px 12px', fontWeight: '700', color: '#ffffff', background: '#1e3a6e', borderRadius: '0 6px 0 0' }}>Días Cama</th>
                               </tr>
                             </thead>
                             <tbody>
-                              {iaasCamasData.diasCama.map((row, idx) => (
-                                <tr 
-                                  key={idx} 
-                                  style={{ 
-                                    borderBottom: row.isSubtotal ? '2px solid rgba(0,0,0,0.08)' : '1px solid rgba(0,0,0,0.03)',
-                                    fontWeight: row.isSubtotal ? '700' : '500',
-                                    background: row.isSubtotal ? 'rgba(8,145,178,0.03)' : 'transparent',
-                                    color: row.isSubtotal ? '#0891b2' : '#1e293b'
-                                  }}
-                                >
-                                  <td style={{ padding: '10px 12px' }}>{row.type}</td>
-                                  <td style={{ padding: '10px 12px', color: row.isSubtotal ? 'transparent' : '#475569' }}>{row.service}</td>
-                                  <td style={{ padding: '10px 12px', textAlign: 'right' }}>{row.patients}</td>
-                                  <td style={{ padding: '10px 12px', textAlign: 'right' }}>{row.bedDays}</td>
-                                </tr>
-                              ))}
-                              {/* Grand Total Row */}
-                              <tr style={{ background: 'rgba(8,145,178,0.08)', fontWeight: '800', color: '#0e7490', borderTop: '2px double #0891b2' }}>
-                                <td style={{ padding: '12px' }}>Total general</td>
-                                <td style={{ padding: '12px' }}></td>
-                                <td style={{ padding: '12px', textAlign: 'right' }}>
+                              {(() => {
+                                const rows = [];
+                                let i = 0;
+                                while (i < iaasCamasData.diasCama.length) {
+                                  const row = iaasCamasData.diasCama[i];
+                                  if (row.isSubtotal) {
+                                    rows.push(
+                                      <tr key={`sub-${i}`} style={{ borderBottom: '2px solid rgba(8,145,178,0.15)', fontWeight: '700', background: 'rgba(8,145,178,0.06)', color: '#0891b2' }}>
+                                        <td colSpan={2} style={{ padding: '9px 12px' }}>{row.type}</td>
+                                        <td style={{ padding: '9px 12px', textAlign: 'right' }}>{row.patients}</td>
+                                        <td style={{ padding: '9px 12px', textAlign: 'right' }}>{row.bedDays}</td>
+                                      </tr>
+                                    );
+                                    i++;
+                                  } else {
+                                    let j = i;
+                                    while (j < iaasCamasData.diasCama.length && !iaasCamasData.diasCama[j].isSubtotal) j++;
+                                    const spanCount = j - i;
+                                    iaasCamasData.diasCama.slice(i, j).forEach((detRow, k) => {
+                                      rows.push(
+                                        <tr key={`det-${i}-${k}`} style={{ borderBottom: '1px solid rgba(0,0,0,0.04)', color: '#1e293b' }}>
+                                          {k === 0 && (
+                                            <td rowSpan={spanCount} style={{ padding: '9px 12px', fontWeight: '600', color: '#334155', verticalAlign: 'middle', borderRight: '2px solid rgba(8,145,178,0.12)', background: 'rgba(248,250,252,0.8)' }}>
+                                              {detRow.type}
+                                            </td>
+                                          )}
+                                          <td style={{ padding: '9px 12px', color: '#64748b' }}>{detRow.service}</td>
+                                          <td style={{ padding: '9px 12px', textAlign: 'right', fontWeight: '500' }}>{detRow.patients}</td>
+                                          <td style={{ padding: '9px 12px', textAlign: 'right', fontWeight: '500' }}>{detRow.bedDays}</td>
+                                        </tr>
+                                      );
+                                    });
+                                    i = j;
+                                  }
+                                }
+                                return rows;
+                              })()}
+                              <tr style={{ background: '#1e3a6e', fontWeight: '800', color: '#ffffff' }}>
+                                <td colSpan={2} style={{ padding: '11px 12px', borderRadius: '0 0 0 6px' }}>Total General</td>
+                                <td style={{ padding: '11px 12px', textAlign: 'right' }}>
                                   {iaasCamasData.diasCama.filter(r => r.isSubtotal).reduce((sum, r) => sum + r.patients, 0)}
                                 </td>
-                                <td style={{ padding: '12px', textAlign: 'right' }}>{iaasCamasData.grandTotalBedDays}</td>
+                                <td style={{ padding: '11px 12px', textAlign: 'right', borderRadius: '0 0 6px 0' }}>{iaasCamasData.grandTotalBedDays}</td>
                               </tr>
                             </tbody>
                           </table>
