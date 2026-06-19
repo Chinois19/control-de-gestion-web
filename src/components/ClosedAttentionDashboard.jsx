@@ -382,17 +382,24 @@ export default function ClosedAttentionDashboard({ onBack }) {
       // Hospitalized status
       const isCurrentlyHospitalized = !r.fecha_egreso || r.fecha_egreso.trim() === '';
 
-      // Compute stay length
-      let calculatedDays = parseInt(r.cantidad_dias_hospitalizacion, 10) || 0;
-      if (isCurrentlyHospitalized && parsedIngreso) {
-        const today = new Date(2026, 4, 18); // May 18, 2026
-        const diffTime = Math.abs(today - parsedIngreso);
-        calculatedDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      // Compute stay length dynamically using a consistent exclusive formula (egreso - ingreso, min 1 if same day)
+      // to avoid inconsistencies from database calculation changes (exclusive vs inclusive transition in March 2026).
+      let calculatedDays = 0;
+      if (parsedIngreso) {
+        if (isCurrentlyHospitalized) {
+          const today = new Date(2026, 4, 18); // May 18, 2026
+          const diffTime = Math.abs(today - parsedIngreso);
+          calculatedDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) || 1;
+        } else if (parsedEgreso) {
+          const diffTime = Math.abs(parsedEgreso - parsedIngreso);
+          const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
+          calculatedDays = diffDays === 0 ? 1 : diffDays;
+        }
       }
 
       return {
         ...r,
-        recordId: r.id || String(idx),
+        recordId: r.cuenta_corriente || r.id || String(idx),
         parsedIngreso,
         parsedEgreso,
         ymdIngreso,
@@ -1449,8 +1456,8 @@ export default function ClosedAttentionDashboard({ onBack }) {
             const overlapEnd   = pEgreso  > monitorEnd   ? monitorEnd   : pEgreso;
 
             if (overlapStart <= overlapEnd) {
-              // Clave de deduplicación: RUT del paciente + fecha del día
-              const rutKey = r.rut_paciente || r.recordId;
+              // Clave de deduplicación: RUT del paciente o Cuenta Corriente (Hospitalización) + fecha del día
+              const rutKey = r.rut_paciente || r.cuenta_corriente || r.recordId;
               const cursor = new Date(overlapStart);
               while (cursor <= overlapEnd) {
                 const dayKey = `${rutKey}-${cursor.getFullYear()}-${cursor.getMonth()}-${cursor.getDate()}`;
