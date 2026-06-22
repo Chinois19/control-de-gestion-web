@@ -25,6 +25,7 @@ import {
   Scissors
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Analytics } from '@vercel/analytics/react';
 import SurgicalDashboard from './components/SurgicalDashboard';
 import DocumentRepository from './components/DocumentRepository';
 import HealthGoals from './components/HealthGoals';
@@ -1019,6 +1020,7 @@ function App() {
         <p style={{ fontWeight: 700, fontSize: '0.92rem', opacity: 0.9 }}>© 2026 Departamento de Control de Gestión • Hospital Villarrica</p>
         <p style={{ fontSize: '0.75rem', marginTop: '6px', opacity: 0.45, fontWeight: 800, letterSpacing: '1px' }}>BY GPS</p>
       </footer>
+      <Analytics />
     </div>
   );
 }
