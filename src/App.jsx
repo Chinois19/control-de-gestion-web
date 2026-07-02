@@ -380,6 +380,13 @@ const searchIndex = [
     path: 'Indicadores de Gestión ➔ Acuerdo de Programación',
     desc: 'Metas, compromisos y evolución del Índice Funcional (GRD), IEMA, Impacto, Cumplimiento GES y Suspensión Quirúrgica para el Hospital de Villarrica.',
     action: { view: 'acuerdo_minsal' }
+  },
+  {
+    keys: ['iaas', 'infecciones asociadas', 'gestion de camas', 'resumen iaas', 'infeccion hospitalaria', 'ingresos camas', 'dias cama ocupados', 'tipo de pacientes', 'adultos lactantes neonatos pediatricos', 'iaas minsal'],
+    title: 'Resumen IAAS y Gestión de Camas (Atención Cerrada)',
+    path: 'Atención Cerrada ➔ Censo ➔ IAAS',
+    desc: 'Total Ingresos del Período y Días Cama Ocupados desglosados por tipo de paciente (Adultos, Lactantes, Neonatos, Pediátricos) y servicio clínico.',
+    action: { view: 'atencion_cerrada', initialTab: 'census', initialSubTab: 'iaas_camas', scrollId: 'iaas-camas-section' }
   }
 ];
 
@@ -426,6 +433,8 @@ function App() {
   const [searchQuery, setSearchQuery] = useState('');
   const [mammographyInitialTab, setMammographyInitialTab] = useState('summary');
   const [mammographyFilterNsp, setMammographyFilterNsp] = useState(false);
+  const [closedAttentionInitialTab, setClosedAttentionInitialTab] = useState(null);
+  const [closedAttentionInitialSubTab, setClosedAttentionInitialSubTab] = useState(null);
   const [hoveredIdx, setHoveredIdx] = useState(null);
 
   useEffect(() => {
@@ -435,6 +444,8 @@ function App() {
   const navigateToView = (view) => {
     setMammographyInitialTab('summary');
     setMammographyFilterNsp(false);
+    setClosedAttentionInitialTab(null);
+    setClosedAttentionInitialSubTab(null);
     setActiveView(view);
   };
 
@@ -512,6 +523,18 @@ function App() {
       setMammographyFilterNsp(false);
     }
 
+    // Handle ClosedAttentionDashboard tab navigation
+    if (action.initialTab) {
+      setClosedAttentionInitialTab(action.initialTab);
+    } else {
+      setClosedAttentionInitialTab(null);
+    }
+    if (action.initialSubTab) {
+      setClosedAttentionInitialSubTab(action.initialSubTab);
+    } else {
+      setClosedAttentionInitialSubTab(null);
+    }
+
     setActiveView(action.view);
     
     if (action.scrollId) {
@@ -524,7 +547,7 @@ function App() {
             el.classList.remove('search-highlight-pulse');
           }, 3000);
         }
-      }, 400);
+      }, 600);
     }
   };
 
@@ -937,7 +960,10 @@ function App() {
               )}
               {(activeView === 'atencion_cerrada' || activeView === 'censo') && (
                 <ClosedAttentionDashboard 
-                  onBack={() => navigateToView('produccion_general')} 
+                  key={`closed-${closedAttentionInitialTab || 'default'}-${closedAttentionInitialSubTab || 'default'}`}
+                  onBack={() => navigateToView('produccion_general')}
+                  initialTab={closedAttentionInitialTab}
+                  initialSubTab={closedAttentionInitialSubTab}
                 />
               )}
               {activeView === 'urgencia' && <div style={{ color: 'var(--text-dark)' }}><h1>Panel de Urgencia</h1><button onClick={() => navigateToView('produccion_general')}>Volver</button></div>}

@@ -182,15 +182,15 @@ function MultiSelectDropdown({ label, selectedValues, setSelectedValues, options
 }
 // ────────────────────────────────────────────────────────────────────────────
 
-export default function ClosedAttentionDashboard({ onBack }) {
+export default function ClosedAttentionDashboard({ onBack, initialTab, initialSubTab }) {
   const [censoRaw, setCensoRaw] = useState([]);
   const [cuadraturaRaw, setCuadraturaRaw] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   
   // Revised Tab layout with 4 strategic clinical sections
-  const [activeTab, setActiveTab] = useState('general_stats'); // 'general_stats', 'clinical_stats', 'occupancy', 'census'
-  const [censusSubTab, setCensusSubTab] = useState('demographics'); // 'demographics', 'iaas_camas'
+  const [activeTab, setActiveTab] = useState(initialTab || 'general_stats'); // 'general_stats', 'clinical_stats', 'occupancy', 'census'
+  const [censusSubTab, setCensusSubTab] = useState(initialSubTab || 'demographics'); // 'demographics', 'iaas_camas'
   
   const [lastUpdatedCenso, setLastUpdatedCenso] = useState('Nunca');
   const [lastUpdatedCuadratura, setLastUpdatedCuadratura] = useState('Nunca');
@@ -1376,47 +1376,49 @@ export default function ClosedAttentionDashboard({ onBack }) {
         admissionsMap.set(key, (admissionsMap.get(key) || 0) + 1);
       }
 
-      // 2. Bed Days
+      // 2. Bed Days — misma lógica de solapamiento y deduplicación que el REM 20
       if (pIn <= monitorEnd) {
-        const actualEnd = pEg && pEg < monitorEnd ? pEg : monitorEnd;
-        if (!pEg || pEg >= monitorStart) {
+        const pEgRaw = r.isCurrentlyHospitalized ? new Date() : r.parsedEgreso;
+        if (pEgRaw && pEgRaw >= monitorStart) {
           const key = `${ptype}||${srvMapped}`;
-          
-          const oStart = pIn > monitorStart ? pIn : monitorStart;
-          const oEnd = actualEnd;
-          
-          let diffTime = oEnd.getTime() - oStart.getTime();
-          let diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
-          if (diffDays <= 0) diffDays = 1;
 
-          if (!activeMap.has(key)) {
-            activeMap.set(key, { patients: new Set(), bedDays: 0 });
+          const oStart = pIn < monitorStart ? monitorStart : pIn;
+          // Mismo cálculo que REM 20: si el egreso supera el fin del período, se usa el fin
+          const oEnd   = pEgRaw > monitorEnd ? monitorEnd : pEgRaw;
+
+          if (oStart <= oEnd) {
+            let diffTime = oEnd.getTime() - oStart.getTime();
+            // +1 día para contar INCLUSIVE (misma lógica que el cursor del set)
+            let diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24)) + 1;
+            if (diffDays <= 0) diffDays = 1;
+
+            if (!activeMap.has(key)) {
+              activeMap.set(key, { patients: new Set(), bedDays: 0 });
+            }
+            const group = activeMap.get(key);
+            group.patients.add(cc);
+            group.bedDays += diffDays;
+
+            // Deduplicación global por RUT+fecha — idéntica al REM 20
+            const cursor = new Date(oStart);
+            while (cursor <= oEnd) {
+              uniquePatientDayGlobal.add(
+                `${rutKey}-${cursor.getFullYear()}-${cursor.getMonth()}-${cursor.getDate()}`
+              );
+              cursor.setDate(cursor.getDate() + 1);
+            }
+
+            activePatientsList.push({
+              ...r,
+              Categoria_Edad: ptype,
+              Servicio_Mapeado: srvMapped,
+              Dias_Cama_Periodo: diffDays
+            });
           }
-          const group = activeMap.get(key);
-          group.patients.add(cc);
-          group.bedDays += diffDays;
-
-          // Deduplicación global por RUT+fecha: recorre cada día del solapamiento
-          // y lo agrega al Set global (si ya existe, no duplica)
-          const cursor = new Date(oStart);
-          while (cursor <= oEnd) {
-            uniquePatientDayGlobal.add(
-              `${rutKey}|${cursor.getFullYear()}-${cursor.getMonth()}-${cursor.getDate()}`
-            );
-            cursor.setDate(cursor.getDate() + 1);
-          }
-
-          activePatientsList.push({
-            ...r,
-            Categoria_Edad: ptype,
-            Servicio_Mapeado: srvMapped,
-            Dias_Cama_Periodo: diffDays
-          });
         }
       }
     });
 
-    const types = ['Adultos', 'Lactantes', 'Neonatos', 'Pediátricos'];
     const servicesByType = {
       Adultos: [
         'MQ CUIDADOS BÁSICOS (403)',
@@ -1426,13 +1428,30 @@ export default function ClosedAttentionDashboard({ onBack }) {
         'UTI (406)'
       ],
       Lactantes: ['MQ INFANTIL (408)'],
-      Neonatos: ['MQ INFANTIL (408)'],
+      Neonatos: ['MQ INFANTIL (408)', 'NEONATOLOGÍA'],
       Pediátricos: ['MQ INFANTIL (408)']
     };
+
+    // Dinámicamente asegurar que cualquier servicio no listado (ej: Otros Servicios) se agregue a la tabla
+    admissionsMap.forEach((_, key) => {
+      const [ptype, srv] = key.split('||');
+      if (servicesByType[ptype] && !servicesByType[ptype].includes(srv)) {
+        servicesByType[ptype].push(srv);
+      }
+    });
+    activeMap.forEach((_, key) => {
+      const [ptype, srv] = key.split('||');
+      if (servicesByType[ptype] && !servicesByType[ptype].includes(srv)) {
+        servicesByType[ptype].push(srv);
+      }
+    });
 
     const ingresosRows = [];
     const diasCamaRows = [];
     let grandTotalIngresos = 0;
+
+    // Orden canónico de tipos de paciente para la tabla IAAS (metodología MINSAL)
+    const types = ['Adultos', 'Pediátricos', 'Lactantes', 'Neonatos'];
 
     types.forEach(ptype => {
       const srvs = servicesByType[ptype] || [];
@@ -1829,33 +1848,25 @@ export default function ClosedAttentionDashboard({ onBack }) {
         countCuadraturaDays++;
         if (selectedRemService === 'Todas') {
           diasCamaDisponibles += r.total_camas_habilitadas || 0;
-          diasCamaOcupadas += r.total_camas_ocupadas || 0;
+          // diasCamaOcupadas omitido para forzar el uso del totalBedDaysDedup (Censo de pacientes)
         } else {
           const s = selectedRemService.toLowerCase();
           if (s.includes('basico') || s.includes('básico')) {
             diasCamaDisponibles += r.cuidados_basicos_disponibles || 0;
-            diasCamaOcupadas += r.cuidados_basicos_ocupadas || 0;
           } else if (s.includes('medio')) {
             diasCamaDisponibles += r.cuidados_medios_disponibles || 0;
-            diasCamaOcupadas += r.cuidados_medios_ocupadas || 0;
           } else if (s.includes('uci') || s.includes('intensivo')) {
             diasCamaDisponibles += r.uci_disponibles || 0;
-            diasCamaOcupadas += r.uci_ocupadas || 0;
           } else if (s.includes('uti') || s.includes('intermedio')) {
             diasCamaDisponibles += r.uti_disponibles || 0;
-            diasCamaOcupadas += r.uti_ocupadas || 0;
           } else if (s.includes('mater') || s.includes('mujer') || s.includes('obstet') || s.includes('ginec')) {
             diasCamaDisponibles += r.maternidad_disponibles || 0;
-            diasCamaOcupadas += r.maternidad_ocupadas || 0;
           } else if (s.includes('pediat') || s.includes('infantil')) {
             diasCamaDisponibles += r.infantil_disponibles || 0;
-            diasCamaOcupadas += r.infantil_ocupadas || 0;
           } else if (s.includes('neo') || s.includes('cuna')) {
             diasCamaDisponibles += r.neonatologia_disponibles || 0;
-            diasCamaOcupadas += r.neonatologia_ocupadas || 0;
           } else {
             diasCamaDisponibles += r.total_camas_habilitadas || 0;
-            diasCamaOcupadas += r.total_camas_ocupadas || 0;
           }
         }
       }
@@ -3787,7 +3798,7 @@ export default function ClosedAttentionDashboard({ onBack }) {
                   )}
 
                   {censusSubTab === 'iaas_camas' && (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                    <div id="iaas-camas-section" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                       {/* Controls Card */}
                       <div className="glass-card" style={{ padding: '20px', display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: '15px' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '25px' }}>
@@ -3858,7 +3869,11 @@ export default function ClosedAttentionDashboard({ onBack }) {
                         {/* Table 1: Ingresos - con headers azul oscuro y rowspan por tipo */}
                         <div className="glass-card" style={{ padding: '24px' }}>
                           <h3 style={{ fontSize: '0.95rem', fontWeight: '800', color: '#1e293b', marginBottom: '18px', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '1px solid rgba(0,0,0,0.05)', paddingBottom: '8px' }}>
-                            TOTAL INGRESOS {startDate ? parseDDMMYYYY(startDate)?.toLocaleDateString('es-CL', { month: 'long', year: 'numeric' }).toUpperCase() : ''}
+                            TOTAL INGRESOS {startDate && endDate
+                              ? (startDate === endDate.slice(0, 7) + '-01' || startDate.slice(0, 7) === endDate.slice(0, 7)
+                                ? (new Date(startDate + 'T00:00:00')).toLocaleDateString('es-CL', { month: 'long', year: 'numeric' }).toUpperCase()
+                                : `PERIODO ${(new Date(startDate + 'T00:00:00')).toLocaleDateString('es-CL', { day: '2-digit', month: 'short' }).toUpperCase()} – ${(new Date(endDate + 'T00:00:00')).toLocaleDateString('es-CL', { day: '2-digit', month: 'short', year: 'numeric' }).toUpperCase()}`)
+                              : ''}
                           </h3>
                           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.82rem' }}>
                             <thead>
@@ -3970,7 +3985,12 @@ export default function ClosedAttentionDashboard({ onBack }) {
                                 <td style={{ padding: '11px 12px', textAlign: 'right' }}>
                                   {iaasCamasData.diasCama.filter(r => r.isSubtotal).reduce((sum, r) => sum + r.patients, 0)}
                                 </td>
-                                <td style={{ padding: '11px 12px', textAlign: 'right', borderRadius: '0 0 6px 0' }}>{iaasCamasData.grandTotalBedDays}</td>
+                                <td style={{ padding: '11px 12px', textAlign: 'right', borderRadius: '0 0 6px 0' }}>{iaasCamasData.grandTotalBedDays.toLocaleString()}</td>
+                              </tr>
+                              <tr>
+                                <td colSpan={4} style={{ padding: '8px 12px', fontSize: '0.7rem', color: '#64748b', fontStyle: 'italic', background: 'rgba(8,145,178,0.03)', borderTop: '1px solid rgba(0,0,0,0.04)' }}>
+                                  ✦ El Total General está deduplicado mediante metodología MINSAL (cada paciente cuenta solo 1 vez por día). Los subtotales por servicio incluyen la suma de días en caso de traslados internos.
+                                </td>
                               </tr>
                             </tbody>
                           </table>

@@ -80,11 +80,11 @@ export function saveUsers(users) {
 // ─── SESSION MANAGEMENT ──────────────────────────────────────────────────────
 export function getSession() {
   try {
-    const raw = sessionStorage.getItem(SESSION_KEY);
+    const raw = localStorage.getItem(SESSION_KEY);
     if (!raw) return null;
     const session = JSON.parse(raw);
     if (Date.now() > session.expiresAt) {
-      sessionStorage.removeItem(SESSION_KEY);
+      localStorage.removeItem(SESSION_KEY);
       return null;
     }
     return session;
@@ -102,21 +102,21 @@ export function createSession(user) {
     loginAt: Date.now(),
     expiresAt: Date.now() + SESSION_TIMEOUT_MS
   };
-  sessionStorage.setItem(SESSION_KEY, JSON.stringify(session));
+  localStorage.setItem(SESSION_KEY, JSON.stringify(session));
   return session;
 }
 
 export function destroySession() {
-  sessionStorage.removeItem(SESSION_KEY);
+  localStorage.removeItem(SESSION_KEY);
 }
 
 export function refreshSession() {
   try {
-    const raw = sessionStorage.getItem(SESSION_KEY);
+    const raw = localStorage.getItem(SESSION_KEY);
     if (!raw) return;
     const session = JSON.parse(raw);
     session.expiresAt = Date.now() + SESSION_TIMEOUT_MS;
-    sessionStorage.setItem(SESSION_KEY, JSON.stringify(session));
+    localStorage.setItem(SESSION_KEY, JSON.stringify(session));
   } catch (_) { /* ignore */ }
 }
 

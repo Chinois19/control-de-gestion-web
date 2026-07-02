@@ -1462,6 +1462,8 @@ export default function EndoscopyDashboard({ onBack, initialTab = 'summary', ini
 
         .pivot-table-wrapper {
           overflow-x: auto;
+          overflow-y: auto;
+          max-height: 800px;
           border-radius: 16px;
           border: 1px solid rgba(0,0,0,0.06);
           box-shadow: 0 4px 12px rgba(0,0,0,0.01);
@@ -1481,6 +1483,9 @@ export default function EndoscopyDashboard({ onBack, initialTab = 'summary', ini
         }
 
         .pivot-table th {
+          position: sticky;
+          top: 0;
+          z-index: 20;
           background: #f8fafc;
           color: #475569;
           font-weight: 700;
@@ -1496,6 +1501,7 @@ export default function EndoscopyDashboard({ onBack, initialTab = 'summary', ini
 
         .pivot-table th.sticky-cell {
           background: #f8fafc;
+          z-index: 30;
         }
 
         .pivot-table td.sticky-cell {
