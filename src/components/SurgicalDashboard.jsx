@@ -515,6 +515,108 @@ const PivotTableTabla = ({ data }) => {
   );
 };
 
+const TopSuspensionesGRD = ({ data, grdData }) => {
+  const suspMap = {};
+  data.forEach(r => {
+    if (r.estado === 'Suspendido' && !(r.tipo_paciente === 'Condicional' && r.cirugia_realizada !== 'Si')) {
+      const code = r.codigo_iq || r.intervencion_propuesta || 'SIN CODIGO';
+      if (!suspMap[code]) suspMap[code] = 0;
+      suspMap[code]++;
+    }
+  });
+
+  const allSusp = Object.entries(suspMap).map(([code, count]) => ({ code, count }));
+  const getGrdMatch = (code) => {
+    const codePrefix = code.split('-')[0].trim();
+    if (codePrefix) {
+      const exactMatch = grdData.find(g => String(g['__EMPTY']) === String(codePrefix));
+      if (exactMatch) return exactMatch;
+    }
+    const txt = code.toLowerCase();
+    const fuzzMatch = grdData.find(g => {
+      const proc = (g['Procedimiento principal'] || '').toLowerCase();
+      if (txt.includes('faco') && txt.includes('catarata') && proc.includes('catarata')) return true;
+      if (txt.includes('colecistectomía') && txt.includes('laparo') && proc.includes('colecistectomia laparoscopica')) return true;
+      return false;
+    });
+    return fuzzMatch || null;
+  };
+
+  const allRows = allSusp.map(item => {
+    const match = getGrdMatch(item.code);
+    const pesoMedio = match ? match['Peso Medio GRD'] : 0;
+    const valorUnitario = match ? match[' Valorización unitaria promedio FONASA '] : 0;
+    const pxq = item.count * valorUnitario;
+    
+    return {
+      ...item,
+      grd: match ? match['Procedimiento principal'] : 'Sin homologación',
+      pesoMedio,
+      valorUnitario,
+      pxq
+    };
+  }).sort((a, b) => b.pxq - a.pxq);
+
+  const totalSuspensionsCount = allRows.reduce((sum, r) => sum + r.count, 0);
+  const homologatedRows = allRows.filter(r => r.grd !== 'Sin homologación');
+  const unhomologatedRows = allRows.filter(r => r.grd === 'Sin homologación');
+  const tableRows = [...homologatedRows];
+  
+  if (unhomologatedRows.length > 0) {
+    const remainingCount = unhomologatedRows.reduce((sum, r) => sum + r.count, 0);
+    const remainingPxq = unhomologatedRows.reduce((sum, r) => sum + r.pxq, 0);
+    tableRows.push({
+      code: 'Otros códigos quirúrgicos',
+      count: remainingCount,
+      grd: '-',
+      pesoMedio: null,
+      valorUnitario: null,
+      pxq: remainingPxq,
+      isGrouped: true
+    });
+  }
+
+  return (
+    <div style={{ marginTop: '24px', background: 'white', padding: '24px', borderRadius: '16px', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }}>
+      <h3 style={{ fontSize: '1.25rem', color: '#1e293b', marginBottom: '16px', fontWeight: 800 }}>Impacto Financiero de Suspensiones (Valorización GRD)</h3>
+      <div style={{ overflowX: 'auto' }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.875rem' }}>
+          <thead>
+            <tr style={{ background: '#f8fafc', borderBottom: '2px solid #e2e8f0' }}>
+              <th style={{ padding: '12px', textAlign: 'left', color: '#64748b' }}>Intervención Suspendida (Código IQ)</th>
+              <th style={{ padding: '12px', textAlign: 'right', color: '#64748b' }}>Cant. Suspendidas</th>
+              <th style={{ padding: '12px', textAlign: 'right', color: '#64748b' }}>% Total Susp.</th>
+              <th style={{ padding: '12px', textAlign: 'left', color: '#64748b' }}>Procedimiento GRD Homologado</th>
+              <th style={{ padding: '12px', textAlign: 'right', color: '#64748b' }}>Peso Medio</th>
+              <th style={{ padding: '12px', textAlign: 'right', color: '#64748b' }}>Valor Unitario</th>
+              <th style={{ padding: '12px', textAlign: 'right', color: '#b91c1c', fontWeight: 'bold' }}>Pérdida Financiera (PxQ)</th>
+            </tr>
+          </thead>
+          <tbody>
+            {tableRows.map((row, idx) => (
+              <tr key={idx} style={{ borderBottom: '1px solid #f1f5f9', background: row.isGrouped ? '#f8fafc' : 'transparent' }}>
+                <td style={{ padding: '12px', maxWidth: '300px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontWeight: row.isGrouped ? 700 : 400, fontStyle: row.isGrouped ? 'italic' : 'normal' }} title={row.code}>{row.code}</td>
+                <td style={{ padding: '12px', textAlign: 'right', fontWeight: 700 }}>{row.count}</td>
+                <td style={{ padding: '12px', textAlign: 'right', fontWeight: 700 }}>{totalSuspensionsCount > 0 ? ((row.count / totalSuspensionsCount) * 100).toFixed(1) : 0}%</td>
+                <td style={{ padding: '12px', color: row.grd === 'Sin homologación' ? '#94a3b8' : 'inherit' }}>{row.grd}</td>
+                <td style={{ padding: '12px', textAlign: 'right' }}>{row.pesoMedio ? row.pesoMedio.toFixed(4) : '-'}</td>
+                <td style={{ padding: '12px', textAlign: 'right' }}>{row.valorUnitario ? `$${Math.round(row.valorUnitario).toLocaleString()}` : '-'}</td>
+                <td style={{ padding: '12px', textAlign: 'right', color: '#b91c1c', fontWeight: 700 }}>{row.pxq ? `$${Math.round(row.pxq).toLocaleString()}` : '-'}</td>
+              </tr>
+            ))}
+            <tr style={{ background: '#fef2f2', borderTop: '2px solid #fecaca' }}>
+              <td colSpan={6} style={{ padding: '12px', textAlign: 'right', fontWeight: 800, color: '#7f1d1d' }}>Pérdida Financiera Total Estimada:</td>
+              <td style={{ padding: '12px', textAlign: 'right', fontWeight: 800, color: '#7f1d1d' }}>
+                ${Math.round(tableRows.reduce((sum, row) => sum + row.pxq, 0)).toLocaleString()}
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+};
+
 export default function SurgicalDashboard({ onBack }) {
   const [activeTab, setActiveTab] = useState('libro'); // We start on 'libro' based on user request
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -524,6 +626,7 @@ export default function SurgicalDashboard({ onBack }) {
   const [disponibilidadData, setDisponibilidadData] = useState([]);
   const [libroData, setLibroData] = useState([]);
   const [rawDataLibro, setRawDataLibro] = useState([]);
+  const [grdData, setGrdData] = useState([]);
 
   // Sidebar Filters for Libro
   const [dateRange, setDateRange] = useState({ start: '2025-01-01', end: '2026-12-31' });
@@ -551,15 +654,17 @@ export default function SurgicalDashboard({ onBack }) {
     async function loadData() {
       try {
         setLoading(true);
-        const [tablaRes, dispRes, libroRes] = await Promise.all([
+        const [tablaRes, dispRes, libroRes, grdRes] = await Promise.all([
           fetch('/data/pabellon_tabla_cached.json'),
           fetch('/data/pabellon_disponibilidad_cached.json'),
-          fetch('/data/libro_pabellon_cached.json').catch(() => ({ json: () => ({ records: [] }) }))
+          fetch('/data/libro_pabellon_cached.json').catch(() => ({ json: () => ({ records: [] }) })),
+          fetch('/data/valorizacion_grd.json').catch(() => ({ json: () => ([]) }))
         ]);
 
         const tablaJson = await tablaRes.json();
         const dispJson = await dispRes.json();
         const libroJson = await libroRes.json();
+        const grdJson = await grdRes.json();
 
         const normalizeDate = (dStr) => {
           if (!dStr) return null;
@@ -581,6 +686,7 @@ export default function SurgicalDashboard({ onBack }) {
         setDisponibilidadData(dispJson.records || []);
         setRawDataLibro(normalizedLibro);
         setLibroData(normalizedLibro);
+        setGrdData(grdJson || []);
       } catch (err) {
         console.error("Error loading surgical data:", err);
       } finally {
@@ -661,6 +767,7 @@ export default function SurgicalDashboard({ onBack }) {
   const filteredTabla = useMemo(() => {
     return tablaData.filter(r => {
       if (r.eliminada === true || r.eliminada === "true") return false;
+      if (r.tipo_paciente === 'Condicional' && r.cirugia_realizada !== 'Si') return false; // Exclude condicionales no realizados
       if (!r.fecha_programacion) return false;
       const dateOnly = r.fecha_programacion.substring(0, 10);
       if (dateOnly < dateRange.start || dateOnly > dateRange.end) return false;
@@ -824,8 +931,8 @@ export default function SurgicalDashboard({ onBack }) {
       name,
       prog: data.prog,
       susp: data.susp,
-      prob: data.prog > 0 ? parseFloat(((data.susp / data.prog) * 100).toFixed(1)) : 0
-    })).filter(x => x.prog >= 5 && x.prob > 0).sort((a,b) => b.prob - a.prob);
+      prob: suspendidos > 0 ? parseFloat(((data.susp / suspendidos) * 100).toFixed(1)) : 0
+    })).filter(x => x.susp > 0).sort((a,b) => b.susp - a.susp);
 
     return {
       sunburstCausas,
@@ -1412,7 +1519,7 @@ export default function SurgicalDashboard({ onBack }) {
                   </>
                 )}
 
-                {activeTab === 'tabla' && (
+                {(activeTab === 'tabla' || activeTab === 'informe-crr') && (
                   <div>
                     {/* KPI CARDS PARA TABLA */}
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginBottom: '24px' }}>
@@ -1511,17 +1618,23 @@ export default function SurgicalDashboard({ onBack }) {
 
                       {/* Horizontal Bar Chart for Especialidades */}
                       <div style={{ background: 'white', padding: '24px', borderRadius: '16px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px rgba(0,0,0,0.02)' }}>
-                        <h3 style={{ margin: '0 0 8px 0', fontSize: '1.1rem', fontWeight: 700, color: '#0f172a' }}>Probabilidad de Suspensión por Especialidad</h3>
-                        <p style={{ margin: '0 0 24px 0', fontSize: '0.8rem', color: '#64748b' }}>% histórico de pacientes suspendidos sobre el programado total (n&gt;5)</p>
+                        <h3 style={{ margin: '0 0 8px 0', fontSize: '1.1rem', fontWeight: 700, color: '#0f172a' }}>Número de suspensiones según especialidad quirúrgica y porcentaje respecto de las suspensiones totales</h3>
+                        <p style={{ margin: '0 0 24px 0', fontSize: '0.8rem', color: '#64748b' }}>Porcentaje relativo de cada especialidad sobre el total de suspensiones</p>
                         <div style={{ height: '350px' }}>
                           <ResponsiveContainer width="100%" height="100%">
                             <ComposedChart layout="vertical" data={tablaInsights.topEspProb} margin={{ top: 0, right: 30, left: 0, bottom: 0 }}>
                               <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} opacity={0.3} />
-                              <XAxis type="number" hide />
-                              <YAxis dataKey="name" type="category" axisLine={false} tickLine={false} tick={{ fill: '#475569', fontSize: 11 }} width={140} />
-                              <RechartsTooltip cursor={{ fill: '#f1f5f9' }} contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 15px rgba(0,0,0,0.1)' }} formatter={(value) => [`${value}%`, 'Probabilidad']} />
-                              <Bar dataKey="prob" fill="#ef4444" radius={[0, 4, 4, 0]} barSize={20}>
-                                <LabelList dataKey="prob" position="right" fill="#ef4444" fontSize={11} fontWeight={700} formatter={(v) => `${v}%`} />
+                              <XAxis type="number" hide domain={[0, 'dataMax']} />
+                              <YAxis dataKey="name" type="category" width={120} tick={{ fontSize: 11, fill: '#64748b' }} axisLine={false} tickLine={false} />
+                              <RechartsTooltip 
+                                contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }}
+                                formatter={(value, name, props) => {
+                                  if (name === 'prob') return [`${value}%`, '% Total Susp.'];
+                                  return [value, name];
+                                }}
+                              />
+                              <Bar dataKey="prob" fill="#ef4444" radius={[0, 4, 4, 0]} barSize={24}>
+                                <LabelList dataKey="prob" position="right" formatter={(val) => `${val}%`} style={{ fill: '#ef4444', fontSize: '11px', fontWeight: 600 }} />
                               </Bar>
                             </ComposedChart>
                           </ResponsiveContainer>
@@ -1529,6 +1642,8 @@ export default function SurgicalDashboard({ onBack }) {
                       </div>
 
                     </div>
+                    
+                    <TopSuspensionesGRD data={filteredTabla} grdData={grdData} />
 
                     {/* PIVOT TABLE TABLA */}
                     <div style={{ marginTop: '32px' }}>
