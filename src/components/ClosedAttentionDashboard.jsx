@@ -2825,12 +2825,22 @@ export default function ClosedAttentionDashboard({ onBack, initialTab, initialSu
                         return d.estada;
                       });
 
+                      const minVal = Math.min(...trendValues);
                       const maxVal = Math.max(...trendValues) || 1;
                       const isSustitucion = selectedIndicator === 'sustitucion';
-                      const yMinBound = isSustitucion ? Math.min(-1, ...trendValues) : 0;
-                      const yMaxBound = maxVal * 1.15;
+                      // Smart Y-axis: zoom into the data range with padding (avoids all values cramped at top)
+                      const dataPadding = (maxVal - minVal) * 0.25 || maxVal * 0.1;
+                      const yMinBound = isSustitucion ? Math.min(-1, minVal - dataPadding) : Math.max(0, minVal - dataPadding);
+                      const yMaxBound = maxVal + dataPadding;
                       const range = yMaxBound - yMinBound || 1;
                       const scale = 140 / range;
+
+                      // Dynamic X spacing: distribute evenly across SVG width regardless of number of months
+                      const nPoints = clinicalStatsTrendData.length;
+                      const svgW = 880;
+                      const xStart = 80;
+                      const xEnd = svgW - 40;
+                      const xStep = nPoints > 1 ? (xEnd - xStart) / (nPoints - 1) : 0;
 
                       const points = clinicalStatsTrendData.map((d, idx) => {
                         let val = d.estada;
@@ -2843,7 +2853,7 @@ export default function ClosedAttentionDashboard({ onBack, initialTab, initialSu
                         else if (selectedIndicator === 'egresos') val = d.egresos;
                         else if (selectedIndicator === 'ingresos') val = d.ingresos;
 
-                        const x = 80 + idx * 190;
+                        const x = nPoints === 1 ? (xStart + xEnd) / 2 : xStart + idx * xStep;
                         const y = 180 - (val - yMinBound) * scale;
                         return { x, y, val, label: d.label, fullLabel: d.fullLabel };
                       });
@@ -3049,7 +3059,7 @@ export default function ClosedAttentionDashboard({ onBack, initialTab, initialSu
                                     exit={{ opacity: 0, scale: 0.95 }}
                                     style={{ 
                                       position: 'absolute',
-                                      left: `${Math.min(Math.max(hoveredIndicatorNode.idx * 190 + 30, 20), 720)}px`,
+                                      left: `${Math.min(Math.max((hoveredIndicatorNode.x / 920) * 100, 5), 75)}%`,
                                       top: '140px',
                                       padding: '14px',
                                       background: 'rgba(255, 255, 255, 0.98)',
