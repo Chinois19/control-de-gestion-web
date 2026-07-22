@@ -1080,13 +1080,25 @@ export default function ClosedAttentionDashboard({ onBack, initialTab, initialSu
 
   // Tab 2: Monthly trend points for the line chart (Dynamic based on selectedClinicalService)
   const clinicalStatsTrendData = useMemo(() => {
-    const monthsList = [
-      { key: '2026-01', start: '2026-01-01', end: '2026-01-31', shortLabel: 'Ene', fullLabel: 'Enero 2026' },
-      { key: '2026-02', start: '2026-02-01', end: '2026-02-28', shortLabel: 'Feb', fullLabel: 'Febrero 2026' },
-      { key: '2026-03', start: '2026-03-01', end: '2026-03-31', shortLabel: 'Mar', fullLabel: 'Marzo 2026' },
-      { key: '2026-04', start: '2026-04-01', end: '2026-04-30', shortLabel: 'Abr', fullLabel: 'Abril 2026' },
-      { key: '2026-05', start: '2026-05-01', end: '2026-05-31', shortLabel: 'May', fullLabel: 'Mayo 2026' }
-    ];
+    // Generate months dynamically from January of the current year up to the current month
+    const shortLabels = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+    const fullLabels = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+    const daysInMonth = (year, month) => new Date(year, month + 1, 0).getDate();
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    const currentMonth = now.getMonth(); // 0-indexed
+    const monthsList = [];
+    for (let m = 0; m <= currentMonth; m++) {
+      const mm = String(m + 1).padStart(2, '0');
+      const lastDay = daysInMonth(currentYear, m);
+      monthsList.push({
+        key: `${currentYear}-${mm}`,
+        start: `${currentYear}-${mm}-01`,
+        end: `${currentYear}-${mm}-${lastDay}`,
+        shortLabel: shortLabels[m],
+        fullLabel: `${fullLabels[m]} ${currentYear}`
+      });
+    }
 
     const computeClinicalMetrics = (start, end, serviceFilter) => {
       let totalIngresos = 0;
