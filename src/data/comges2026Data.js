@@ -1,5 +1,5 @@
 // Dataset Oficial COMGES 2026 - Hospital de Villarrica
-// Actualizado con definición del SSAS: Indicadores 2.2, 4.2 y 6.1 marcados sin medición actual por dudas metodológicas a definir por SSAS.
+// Ingesta completa de datos mensuales desde la hoja 'resumen gonzalo' para 3.2 (P75 Médica), 3.3 (P75 Odontológica), 3.4 (P75 Quirúrgica), 5.1 (GES Oncológico) y 4.3 (Gasto Personas Naturales)
 
 export const COMGES_META = {
   hospital: "Hospital de Villarrica",
@@ -484,25 +484,122 @@ export const COMGES_INDICATORS = [
     "name": "3.2. Monitoreo del percentil 75 de la lista de espera de consulta nueva de especialidad médica",
     "ponderacion": "4.29%",
     "type": "comges",
-    "target": "Reducción o mantención del Percentil 75 respecto al año base",
-    "frequency": "Mensual / Semestral",
-    "dataSource": "Repositorio Nacional de Listas de Espera (SIGTE) MINSAL",
-    "definition": "Evalúa la reducción de los días de espera para el 75% de las personas que aguardan por una Consulta Nueva de Especialidad Médica (CNE) en el Hospital de Villarrica.",
+    "target": "≥ 50.0% de avance en resolución P75",
+    "frequency": "Mensual (Planilla Resumen)",
+    "dataSource": "Repositorio Nacional de Listas de Espera (SIGTE) MINSAL / Hoja 'resumen gonzalo'",
+    "definition": "Evalúa la proporción acumulada de resoluciones/egresos de la lista de espera de Consulta Nueva de Especialidad Médica (CNE) respecto a la línea base del P75.",
     "objective": "Reducir la antigüedad y los tiempos de espera de los usuarios en lista de espera médica.",
     "formula": {
-      "numerator": "Percentil 75 de días de espera de las solicitudes de CNE activas al corte de evaluación.",
-      "denominator": "Percentil 75 comprometido como línea base institucional.",
-      "expression": "Percentil 75 (días de espera calculados)"
+      "numerator": "Egresos acumulados de la lista de espera CNE Médica.",
+      "denominator": "Línea base institucional de la lista CNE Médica.",
+      "expression": "(Egresos CNE Médica / Línea Base P75) × 100"
     },
-    "evalRules": "Evaluación de disminución porcentual sobre el P75 de la lista médica.",
-    "monthlyData": [],
+    "evalRules": "Evaluación mensual según registro de egresos y avance del P75 en planilla oficial.",
+    "monthlyData": [
+      {
+        "month": "Enero",
+        "numerator": 0,
+        "denominator": 0,
+        "result": null,
+        "resultFormatted": "-",
+        "status": "Sin Dato"
+      },
+      {
+        "month": "Febrero",
+        "numerator": 0,
+        "denominator": 0,
+        "result": null,
+        "resultFormatted": "-",
+        "status": "Sin Dato"
+      },
+      {
+        "month": "Marzo",
+        "numerator": 0,
+        "denominator": 0,
+        "result": null,
+        "resultFormatted": "-",
+        "status": "Sin Dato"
+      },
+      {
+        "month": "Abril",
+        "numerator": 489,
+        "denominator": 2048,
+        "result": 23.88,
+        "resultFormatted": "23.88%",
+        "status": "No Cumple"
+      },
+      {
+        "month": "Mayo",
+        "numerator": 965,
+        "denominator": 2075,
+        "result": 46.51,
+        "resultFormatted": "46.51%",
+        "status": "En Riesgo"
+      },
+      {
+        "month": "Junio",
+        "numerator": 1104,
+        "denominator": 2077,
+        "result": 53.15,
+        "resultFormatted": "53.15%",
+        "status": "Cumple"
+      },
+      {
+        "month": "Julio",
+        "numerator": 0,
+        "denominator": 0,
+        "result": null,
+        "resultFormatted": "-",
+        "status": "Sin Dato"
+      },
+      {
+        "month": "Agosto",
+        "numerator": 0,
+        "denominator": 0,
+        "result": null,
+        "resultFormatted": "-",
+        "status": "Sin Dato"
+      },
+      {
+        "month": "Septiembre",
+        "numerator": 0,
+        "denominator": 0,
+        "result": null,
+        "resultFormatted": "-",
+        "status": "Sin Dato"
+      },
+      {
+        "month": "Octubre",
+        "numerator": 0,
+        "denominator": 0,
+        "result": null,
+        "resultFormatted": "-",
+        "status": "Sin Dato"
+      },
+      {
+        "month": "Noviembre",
+        "numerator": 0,
+        "denominator": 0,
+        "result": null,
+        "resultFormatted": "-",
+        "status": "Sin Dato"
+      },
+      {
+        "month": "Diciembre",
+        "numerator": 0,
+        "denominator": 0,
+        "result": null,
+        "resultFormatted": "-",
+        "status": "Sin Dato"
+      }
+    ],
     "summaryYTD": {
-      "numerator": "-",
-      "denominator": "-",
-      "result": 185,
-      "resultFormatted": "185 días",
+      "numerator": 1104,
+      "denominator": 2077,
+      "result": 53.15,
+      "resultFormatted": "53.15%",
       "status": "Cumple",
-      "observation": "Comportamiento alineado con la meta de reducción de esperas médicas."
+      "observation": "Acumulado a Junio 2026: 53.15% de egresos resueltos sobre la línea base (Meta ≥ 50%)."
     }
   },
   {
@@ -512,25 +609,122 @@ export const COMGES_INDICATORS = [
     "name": "3.3. Monitoreo del percentil 75 de la lista de espera de consulta nueva de especialidad odontológica",
     "ponderacion": "4.29%",
     "type": "comges",
-    "target": "Reducción del Percentil 75 de espera odontológica",
-    "frequency": "Semestral",
-    "dataSource": "SIGTE / Registro de Especialidades Odontológicas",
-    "definition": "Indicador Compuesto. Mide los días de espera del percentil 75 de solicitudes activas para atención con especialidades odontológicas en el hospital.",
+    "target": "≥ 50.0% de avance en resolución P75",
+    "frequency": "Mensual (Planilla Resumen)",
+    "dataSource": "SIGTE / Registro de Especialidades Odontológicas / Hoja 'resumen gonzalo'",
+    "definition": "Indicador Compuesto. Mide el avance porcentual acumulado de egresos de la lista de espera odontológica respecto de la línea base.",
     "objective": "Acelerar la resolución diagnóstica y terapéutica odontológica en el nivel secundario.",
     "formula": {
-      "numerator": "Percentil 75 de días acumulados en lista de espera odontológica.",
-      "denominator": "Línea base institucional de esperas odontológicas.",
-      "expression": "Percentil 75 Odontológico (Días)"
+      "numerator": "Egresos acumulados de lista de espera odontológica.",
+      "denominator": "Línea base institucional odontológica.",
+      "expression": "(Egresos Odontológicos / Línea Base P75) × 100"
     },
-    "evalRules": "Indicador Compuesto evaluado en la red del Servicio de Salud Araucanía Sur.",
-    "monthlyData": [],
+    "evalRules": "Indicador Compuesto evaluado mensualmente en la red.",
+    "monthlyData": [
+      {
+        "month": "Enero",
+        "numerator": 0,
+        "denominator": 0,
+        "result": null,
+        "resultFormatted": "-",
+        "status": "Sin Dato"
+      },
+      {
+        "month": "Febrero",
+        "numerator": 0,
+        "denominator": 0,
+        "result": null,
+        "resultFormatted": "-",
+        "status": "Sin Dato"
+      },
+      {
+        "month": "Marzo",
+        "numerator": 0,
+        "denominator": 0,
+        "result": null,
+        "resultFormatted": "-",
+        "status": "Sin Dato"
+      },
+      {
+        "month": "Abril",
+        "numerator": 878,
+        "denominator": 1353,
+        "result": 64.89,
+        "resultFormatted": "64.89%",
+        "status": "Cumple"
+      },
+      {
+        "month": "Mayo",
+        "numerator": 757,
+        "denominator": 1353,
+        "result": 55.95,
+        "resultFormatted": "55.95%",
+        "status": "Cumple"
+      },
+      {
+        "month": "Junio",
+        "numerator": 878,
+        "denominator": 1353,
+        "result": 64.89,
+        "resultFormatted": "64.89%",
+        "status": "Cumple"
+      },
+      {
+        "month": "Julio",
+        "numerator": 0,
+        "denominator": 0,
+        "result": null,
+        "resultFormatted": "-",
+        "status": "Sin Dato"
+      },
+      {
+        "month": "Agosto",
+        "numerator": 0,
+        "denominator": 0,
+        "result": null,
+        "resultFormatted": "-",
+        "status": "Sin Dato"
+      },
+      {
+        "month": "Septiembre",
+        "numerator": 0,
+        "denominator": 0,
+        "result": null,
+        "resultFormatted": "-",
+        "status": "Sin Dato"
+      },
+      {
+        "month": "Octubre",
+        "numerator": 0,
+        "denominator": 0,
+        "result": null,
+        "resultFormatted": "-",
+        "status": "Sin Dato"
+      },
+      {
+        "month": "Noviembre",
+        "numerator": 0,
+        "denominator": 0,
+        "result": null,
+        "resultFormatted": "-",
+        "status": "Sin Dato"
+      },
+      {
+        "month": "Diciembre",
+        "numerator": 0,
+        "denominator": 0,
+        "result": null,
+        "resultFormatted": "-",
+        "status": "Sin Dato"
+      }
+    ],
     "summaryYTD": {
-      "numerator": "-",
-      "denominator": "-",
-      "result": 140,
-      "resultFormatted": "140 días",
+      "numerator": 878,
+      "denominator": 1353,
+      "result": 64.89,
+      "resultFormatted": "64.89%",
       "status": "Cumple",
-      "observation": "Avance sostenido en resolución de interconsultas maxilofaciales."
+      "observation": "Acumulado a Junio 2026: 64.89% de avance en egresos odontológicos (Meta ≥ 50%)."
     }
   },
   {
@@ -540,25 +734,122 @@ export const COMGES_INDICATORS = [
     "name": "3.4. Monitoreo del percentil 75 de la lista de espera de intervenciones quirúrgicas mayores y menores",
     "ponderacion": "4.29%",
     "type": "comges",
-    "target": "Reducción del Percentil 75 quirúrgico No GES",
-    "frequency": "Mensual / Semestral",
-    "dataSource": "SIGTE / Sistema de Gestión de Pabellones Quirúrgicos",
-    "definition": "Monitorea la antigüedad en días de espera del percentil 75 de pacientes en lista de espera quirúrgica no GES mayores y menores en el establecimiento.",
+    "target": "≥ 50.0% de avance en resolución P75",
+    "frequency": "Mensual (Planilla Resumen)",
+    "dataSource": "SIGTE / Sistema de Pabellones Quirúrgicos / Hoja 'resumen gonzalo'",
+    "definition": "Monitorea el avance de egresos de la lista de espera quirúrgica No GES mayores y menores sobre la línea base comprometida.",
     "objective": "Disminuir los tiempos de espera de intervención quirúrgica de pacientes electivos no GES.",
     "formula": {
-      "numerator": "Percentil 75 de días transcurridos desde el ingreso del paciente a la lista quirúrgica.",
-      "denominator": "Meta de días establecida por el MINSAL.",
-      "expression": "Percentil 75 Quirúrgico (Días)"
+      "numerator": "Egresos acumulados de lista de espera quirúrgica No GES.",
+      "denominator": "Línea base de la lista de espera quirúrgica P75.",
+      "expression": "(Egresos Quirúrgicos / Línea Base P75) × 100"
     },
     "evalRules": "Priorización obligatoria por antigüedad y riesgo biomédico.",
-    "monthlyData": [],
+    "monthlyData": [
+      {
+        "month": "Enero",
+        "numerator": 0,
+        "denominator": 0,
+        "result": null,
+        "resultFormatted": "-",
+        "status": "Sin Dato"
+      },
+      {
+        "month": "Febrero",
+        "numerator": 0,
+        "denominator": 0,
+        "result": null,
+        "resultFormatted": "-",
+        "status": "Sin Dato"
+      },
+      {
+        "month": "Marzo",
+        "numerator": 78,
+        "denominator": 367,
+        "result": 21.25,
+        "resultFormatted": "21.25%",
+        "status": "No Cumple"
+      },
+      {
+        "month": "Abril",
+        "numerator": 107,
+        "denominator": 368,
+        "result": 29.08,
+        "resultFormatted": "29.08%",
+        "status": "No Cumple"
+      },
+      {
+        "month": "Mayo",
+        "numerator": 153,
+        "denominator": 376,
+        "result": 40.69,
+        "resultFormatted": "40.69%",
+        "status": "En Riesgo"
+      },
+      {
+        "month": "Junio",
+        "numerator": 196,
+        "denominator": 381,
+        "result": 51.44,
+        "resultFormatted": "51.44%",
+        "status": "Cumple"
+      },
+      {
+        "month": "Julio",
+        "numerator": 0,
+        "denominator": 0,
+        "result": null,
+        "resultFormatted": "-",
+        "status": "Sin Dato"
+      },
+      {
+        "month": "Agosto",
+        "numerator": 0,
+        "denominator": 0,
+        "result": null,
+        "resultFormatted": "-",
+        "status": "Sin Dato"
+      },
+      {
+        "month": "Septiembre",
+        "numerator": 0,
+        "denominator": 0,
+        "result": null,
+        "resultFormatted": "-",
+        "status": "Sin Dato"
+      },
+      {
+        "month": "Octubre",
+        "numerator": 0,
+        "denominator": 0,
+        "result": null,
+        "resultFormatted": "-",
+        "status": "Sin Dato"
+      },
+      {
+        "month": "Noviembre",
+        "numerator": 0,
+        "denominator": 0,
+        "result": null,
+        "resultFormatted": "-",
+        "status": "Sin Dato"
+      },
+      {
+        "month": "Diciembre",
+        "numerator": 0,
+        "denominator": 0,
+        "result": null,
+        "resultFormatted": "-",
+        "status": "Sin Dato"
+      }
+    ],
     "summaryYTD": {
-      "numerator": "-",
-      "denominator": "-",
-      "result": 220,
-      "resultFormatted": "220 días",
-      "status": "En Riesgo",
-      "observation": "Plan de extensión horaria activado en tabla quirúrgica."
+      "numerator": 196,
+      "denominator": 381,
+      "result": 51.44,
+      "resultFormatted": "51.44%",
+      "status": "Cumple",
+      "observation": "Acumulado a Junio 2026: 51.44% de avance de resolución quirúrgica (Meta ≥ 50%)."
     }
   },
   {
@@ -598,7 +889,7 @@ export const COMGES_INDICATORS = [
     "type": "comges",
     "target": "≤ 100% del marco presupuestario autorizado",
     "frequency": "Mensual / Trimestral",
-    "dataSource": "SIGFE / Subdepartamento de Finanzas y Presupuesto",
+    "dataSource": "SIGFE / Subdepartamento de Finanzas y Presupuesto / Hoja 'resumen gonzalo'",
     "definition": "Indicador Compuesto y con Requisitos. Cuantifica el ajuste del gasto ejecutado por contrataciones en honorarios médicos y no médicos (personas naturales) respecto al marco presupuestario vigente.",
     "objective": "Mantener la sostenibilidad financiera y la disciplina presupuestaria en la contratación de personal honorario.",
     "formula": {
@@ -607,14 +898,111 @@ export const COMGES_INDICATORS = [
       "expression": "(Gasto Honorarios Devengado / Marco Presupuestario Vigente) × 100"
     },
     "evalRules": "Indicador Compuesto con Requisito. Monitoreo estricto del devengamiento presupuestario en SIGFE.",
-    "monthlyData": [],
+    "monthlyData": [
+      {
+        "month": "Enero",
+        "numerator": 0,
+        "denominator": 0,
+        "result": null,
+        "resultFormatted": "-",
+        "status": "Sin Dato"
+      },
+      {
+        "month": "Febrero",
+        "numerator": 0,
+        "denominator": 0,
+        "result": null,
+        "resultFormatted": "-",
+        "status": "Sin Dato"
+      },
+      {
+        "month": "Marzo",
+        "numerator": 3223649,
+        "denominator": 3876000,
+        "result": 83.17,
+        "resultFormatted": "83.17%",
+        "status": "Cumple"
+      },
+      {
+        "month": "Abril",
+        "numerator": 0,
+        "denominator": 0,
+        "result": null,
+        "resultFormatted": "-",
+        "status": "Sin Dato"
+      },
+      {
+        "month": "Mayo",
+        "numerator": 0,
+        "denominator": 0,
+        "result": null,
+        "resultFormatted": "-",
+        "status": "Sin Dato"
+      },
+      {
+        "month": "Junio",
+        "numerator": 0,
+        "denominator": 0,
+        "result": null,
+        "resultFormatted": "-",
+        "status": "Sin Dato"
+      },
+      {
+        "month": "Julio",
+        "numerator": 0,
+        "denominator": 0,
+        "result": null,
+        "resultFormatted": "-",
+        "status": "Sin Dato"
+      },
+      {
+        "month": "Agosto",
+        "numerator": 0,
+        "denominator": 0,
+        "result": null,
+        "resultFormatted": "-",
+        "status": "Sin Dato"
+      },
+      {
+        "month": "Septiembre",
+        "numerator": 0,
+        "denominator": 0,
+        "result": null,
+        "resultFormatted": "-",
+        "status": "Sin Dato"
+      },
+      {
+        "month": "Octubre",
+        "numerator": 0,
+        "denominator": 0,
+        "result": null,
+        "resultFormatted": "-",
+        "status": "Sin Dato"
+      },
+      {
+        "month": "Noviembre",
+        "numerator": 0,
+        "denominator": 0,
+        "result": null,
+        "resultFormatted": "-",
+        "status": "Sin Dato"
+      },
+      {
+        "month": "Diciembre",
+        "numerator": 0,
+        "denominator": 0,
+        "result": null,
+        "resultFormatted": "-",
+        "status": "Sin Dato"
+      }
+    ],
     "summaryYTD": {
-      "numerator": "$ 480.000.000",
-      "denominator": "$ 510.000.000",
-      "result": 94.1,
-      "resultFormatted": "94.1%",
+      "numerator": "$ 3.223.649",
+      "denominator": "$ 3.876.000",
+      "result": 83.17,
+      "resultFormatted": "83.17%",
       "status": "Cumple",
-      "observation": "Ejecución presupuestaria dentro de la glosa autorizada sin sobregiros."
+      "observation": "Ejecución presupuestaria al primer trimestre: 83.17% (dentro del marco autorizado)."
     }
   },
   {
@@ -624,9 +1012,9 @@ export const COMGES_INDICATORS = [
     "name": "5.1. Nivel de cumplimiento efectivo de garantías GES en problemas de salud oncológicos",
     "ponderacion": "4.25%",
     "type": "comges",
-    "target": "100% de cumplimiento en oportunidad de garantías oncológicas GES",
+    "target": "≥ 99.5%",
     "frequency": "Mensual",
-    "dataSource": "SIGGES MINSAL / Registro Oncológico Hospitalario",
+    "dataSource": "SIGGES MINSAL / Registro Oncológico / Hoja 'resumen gonzalo'",
     "definition": "Indicador Compuesto. Mide en forma específica el cumplimiento de la garantía de oportunidad en los problemas de salud GES del área oncológica en el Hospital de Villarrica.",
     "objective": "Asegurar que ningún paciente con sospecha o confirmación diagnóstica de cáncer sufra retrasos en su tratamiento u oportunidad legal.",
     "formula": {
@@ -635,14 +1023,111 @@ export const COMGES_INDICATORS = [
       "expression": "(Garantías Oncológicas Cumplidas / Garantías Oncológicas Vencidas) × 100"
     },
     "evalRules": "Indicador Compuesto. Cero tolerancia a retrasos no justificados en oportunidad oncológica.",
-    "monthlyData": [],
+    "monthlyData": [
+      {
+        "month": "Enero",
+        "numerator": 152,
+        "denominator": 160,
+        "result": 95.0,
+        "resultFormatted": "95.00%",
+        "status": "En Riesgo"
+      },
+      {
+        "month": "Febrero",
+        "numerator": 187,
+        "denominator": 199,
+        "result": 93.97,
+        "resultFormatted": "93.97%",
+        "status": "En Riesgo"
+      },
+      {
+        "month": "Marzo",
+        "numerator": 208,
+        "denominator": 258,
+        "result": 80.62,
+        "resultFormatted": "80.62%",
+        "status": "No Cumple"
+      },
+      {
+        "month": "Abril",
+        "numerator": 208,
+        "denominator": 285,
+        "result": 72.98,
+        "resultFormatted": "72.98%",
+        "status": "No Cumple"
+      },
+      {
+        "month": "Mayo",
+        "numerator": 361,
+        "denominator": 431,
+        "result": 83.76,
+        "resultFormatted": "83.76%",
+        "status": "No Cumple"
+      },
+      {
+        "month": "Junio",
+        "numerator": 354,
+        "denominator": 452,
+        "result": 78.32,
+        "resultFormatted": "78.32%",
+        "status": "No Cumple"
+      },
+      {
+        "month": "Julio",
+        "numerator": 0,
+        "denominator": 0,
+        "result": null,
+        "resultFormatted": "-",
+        "status": "Sin Dato"
+      },
+      {
+        "month": "Agosto",
+        "numerator": 0,
+        "denominator": 0,
+        "result": null,
+        "resultFormatted": "-",
+        "status": "Sin Dato"
+      },
+      {
+        "month": "Septiembre",
+        "numerator": 0,
+        "denominator": 0,
+        "result": null,
+        "resultFormatted": "-",
+        "status": "Sin Dato"
+      },
+      {
+        "month": "Octubre",
+        "numerator": 0,
+        "denominator": 0,
+        "result": null,
+        "resultFormatted": "-",
+        "status": "Sin Dato"
+      },
+      {
+        "month": "Noviembre",
+        "numerator": 0,
+        "denominator": 0,
+        "result": null,
+        "resultFormatted": "-",
+        "status": "Sin Dato"
+      },
+      {
+        "month": "Diciembre",
+        "numerator": 0,
+        "denominator": 0,
+        "result": null,
+        "resultFormatted": "-",
+        "status": "Sin Dato"
+      }
+    ],
     "summaryYTD": {
-      "numerator": 412,
-      "denominator": 420,
-      "result": 98.1,
-      "resultFormatted": "98.1%",
-      "status": "Cumple",
-      "observation": "Monitoreo semanal del comité oncológico hospitalario."
+      "numerator": 354,
+      "denominator": 452,
+      "result": 78.32,
+      "resultFormatted": "78.32%",
+      "status": "No Cumple",
+      "observation": "Acumulado a Junio 2026: 78.32% vs Meta ≥ 99.5%."
     }
   },
   {
