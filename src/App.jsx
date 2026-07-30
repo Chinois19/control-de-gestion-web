@@ -40,6 +40,7 @@ import SigcomDashboard from './components/SigcomDashboard';
 import SolicitudesDashboard from './components/SolicitudesDashboard';
 import LaboratoryDashboard from './components/LaboratoryDashboard';
 import AcuerdoMinsalDashboard from './components/AcuerdoMinsalDashboard';
+import ComgesDashboard from './components/ComgesDashboard';
 import HealthGoalsLey18834 from './components/HealthGoalsLey18834';
 import LoginScreen, { getSession, createSession, destroySession, refreshSession } from './components/LoginScreen';
 import UserManagementPanel from './components/UserManagementPanel';
@@ -387,6 +388,13 @@ const searchIndex = [
     path: 'Atención Cerrada ➔ Censo ➔ IAAS',
     desc: 'Total Ingresos del Período y Días Cama Ocupados desglosados por tipo de paciente (Adultos, Lactantes, Neonatos, Pediátricos) y servicio clínico.',
     action: { view: 'atencion_cerrada', initialTab: 'census', initialSubTab: 'iaas_camas', scrollId: 'iaas-camas-section' }
+  },
+  {
+    keys: ['comges', 'comges 2026', 'compromisos de gestion', 'orientaciones tecnicas', 'ot minsal', 'formulas comges', 'indicadores minsal', 'metas comges', 'ecicep', 'donantes', 'tiempos de espera', 'p75', 'gasto personas naturales', 'ambulatorizacion', 'hospital digital'],
+    title: 'Compromisos de Gestión (COMGES) 2026',
+    path: 'Indicadores de Gestión ➔ COMGES 2026',
+    desc: 'Evaluación mensual de los 23 indicadores normados por el MINSAL, fichas técnicas, fórmulas de cálculo y orientaciones técnicas institucionales.',
+    action: { view: 'comgest' }
   }
 ];
 
@@ -1035,6 +1043,9 @@ function App() {
               )}
               {activeView === 'acuerdo_minsal' && (
                 <AcuerdoMinsalDashboard onBack={() => navigateToView('home')} />
+              )}
+              {activeView === 'comgest' && (
+                <ComgesDashboard onBack={() => navigateToView('home')} />
               )}
             </div>
           )}
