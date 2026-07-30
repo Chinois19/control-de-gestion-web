@@ -922,7 +922,87 @@ export default function ComgesDashboard({ onBack }) {
                         <span style={{ fontSize: '12px', color: '#64748b' }}>Hospital de Villarrica</span>
                       </div>
 
-                      {selectedIndicator.monthlyData && selectedIndicator.monthlyData.length > 0 ? (
+                      {(selectedIndicator.id === '3.3.1' || selectedIndicator.id === '3.3.2') ? (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+                          {/* Table 3.3.1: Excluye Ortodoncia */}
+                          {(() => {
+                            const ind331 = COMGES_INDICATORS.find(i => i.id === '3.3.1') || selectedIndicator;
+                            return (
+                              <div style={{ background: '#f8fafc', padding: '16px', borderRadius: '16px', border: '1px solid #e2e8f0' }}>
+                                <h5 style={{ fontSize: '14px', fontWeight: 800, color: '#1e293b', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                  <span style={{ background: '#0d9488', color: '#ffffff', padding: '2px 8px', borderRadius: '6px', fontSize: '11px' }}>3.3.1</span>
+                                  Monitoreo P75 Consulta Nueva Odontológica (Excluye Ortodoncia)
+                                </h5>
+                                <div style={{ overflowX: 'auto', border: '1px solid #cbd5e1', borderRadius: '10px', background: '#ffffff' }}>
+                                  <table className="comges-table">
+                                    <thead>
+                                      <tr>
+                                        <th>Mes</th>
+                                        <th style={{ textAlign: 'right' }}>Línea Base (P75)</th>
+                                        <th style={{ textAlign: 'right' }}>Lista de Espera</th>
+                                        <th style={{ textAlign: 'right' }}>Egresos (Numerador)</th>
+                                        <th style={{ textAlign: 'right' }}>Resultado %</th>
+                                        <th style={{ textAlign: 'center' }}>Estado</th>
+                                      </tr>
+                                    </thead>
+                                    <tbody>
+                                      {ind331.monthlyData.map((row, idx) => (
+                                        <tr key={idx} style={row.month === 'Junio' ? { background: '#f0fdf4' } : {}}>
+                                          <td style={{ fontWeight: 700, color: '#0f172a' }}>{row.month}</td>
+                                          <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>1353</td>
+                                          <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>{row.denominator ? row.denominator - row.numerator : '-'}</td>
+                                          <td style={{ textAlign: 'right', fontFamily: 'monospace', fontWeight: 700 }}>{row.numerator}</td>
+                                          <td style={{ textAlign: 'right', fontWeight: 800, color: '#0f172a' }}>{row.resultFormatted}</td>
+                                          <td style={{ textAlign: 'center' }}>{getStatusBadge(row.status)}</td>
+                                        </tr>
+                                      ))}
+                                    </tbody>
+                                  </table>
+                                </div>
+                              </div>
+                            );
+                          })()}
+
+                          {/* Table 3.3.2: Ortodoncia */}
+                          {(() => {
+                            const ind332 = COMGES_INDICATORS.find(i => i.id === '3.3.2') || selectedIndicator;
+                            return (
+                              <div style={{ background: '#f8fafc', padding: '16px', borderRadius: '16px', border: '1px solid #e2e8f0' }}>
+                                <h5 style={{ fontSize: '14px', fontWeight: 800, color: '#1e293b', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                  <span style={{ background: '#0284c7', color: '#ffffff', padding: '2px 8px', borderRadius: '6px', fontSize: '11px' }}>3.3.2</span>
+                                  Monitoreo P75 Consulta Nueva Odontológica (Ortodoncia)
+                                </h5>
+                                <div style={{ overflowX: 'auto', border: '1px solid #cbd5e1', borderRadius: '10px', background: '#ffffff' }}>
+                                  <table className="comges-table">
+                                    <thead>
+                                      <tr>
+                                        <th>Mes</th>
+                                        <th style={{ textAlign: 'right' }}>Línea Base (P75)</th>
+                                        <th style={{ textAlign: 'right' }}>Lista de Espera</th>
+                                        <th style={{ textAlign: 'right' }}>Egresos (Numerador)</th>
+                                        <th style={{ textAlign: 'right' }}>Resultado %</th>
+                                        <th style={{ textAlign: 'center' }}>Estado</th>
+                                      </tr>
+                                    </thead>
+                                    <tbody>
+                                      {ind332.monthlyData.map((row, idx) => (
+                                        <tr key={idx} style={row.month === 'Junio' ? { background: '#f0fdf4' } : {}}>
+                                          <td style={{ fontWeight: 700, color: '#0f172a' }}>{row.month}</td>
+                                          <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>{row.denominator || '-'}</td>
+                                          <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>{row.month === 'Abril' ? 559 : row.month === 'Mayo' ? 487 : row.month === 'Junio' ? 421 : '-'}</td>
+                                          <td style={{ textAlign: 'right', fontFamily: 'monospace', fontWeight: 700 }}>{row.numerator}</td>
+                                          <td style={{ textAlign: 'right', fontWeight: 800, color: '#0f172a' }}>{row.resultFormatted}</td>
+                                          <td style={{ textAlign: 'center' }}>{getStatusBadge(row.status)}</td>
+                                        </tr>
+                                      ))}
+                                    </tbody>
+                                  </table>
+                                </div>
+                              </div>
+                            );
+                          })()}
+                        </div>
+                      ) : selectedIndicator.monthlyData && selectedIndicator.monthlyData.length > 0 ? (
                         <>
                           <div style={{ overflowX: 'auto', border: '1px solid #e2e8f0', borderRadius: '12px' }}>
                             <table className="comges-table">

@@ -1,5 +1,5 @@
 // Dataset Oficial COMGES 2026 - Hospital de Villarrica
-// Limpieza de frases en indicadores Sin Medición y eliminación de Atención Abierta en Ausentismo Villarrica.
+// Separación de COMGES 3.3 en 3.3.1 (Excluye Ortodoncia) y 3.3.2 (Ortodoncia) según planilla resumen oficial.
 
 export const COMGES_META = {
   hospital: "Hospital de Villarrica",
@@ -7,7 +7,7 @@ export const COMGES_META = {
   year: 2026,
   version: "Versión Final Julio 2026 (MINSAL)",
   lastUpdatedMonth: "Mayo 2026 (Ausentismo Ord 1934)",
-  totalIndicators: 11,
+  totalIndicators: 12,
   totalDomains: 6,
   sourceFiles: [
     "Minuta COMGES 2026 FINAL.pdf",
@@ -604,23 +604,23 @@ export const COMGES_INDICATORS = [
     }
   },
   {
-    "id": "3.3",
-    "code": "COMGES 3.3",
+    "id": "3.3.1",
+    "code": "COMGES 3.3.1",
     "domainId": "comges-3",
-    "name": "3.3. Monitoreo del percentil 75 de la lista de espera de consulta nueva de especialidad odontológica",
+    "name": "3.3.1. Monitoreo del percentil 75 de la lista de espera de consulta nueva odontológica (Excluye Ortodoncia)",
     "ponderacion": "4.29%",
     "type": "comges",
     "target": "≥ 50.0% de avance en resolución P75",
     "frequency": "Mensual (Planilla Resumen)",
-    "dataSource": "SIGTE / Registro de Especialidades Odontológicas / Hoja 'resumen gonzalo'",
-    "definition": "Indicador Compuesto. Mide el avance porcentual acumulado de egresos de la lista de espera odontológica respecto de la línea base.",
+    "dataSource": "SIGTE / Registro de Especialidades Odontológicas / Hoja 'resumen gonzalo' (Cols 15-18)",
+    "definition": "Mide el avance porcentual acumulado de egresos de la lista de espera odontológica excluyendo ortodoncia respecto de la línea base comprometida.",
     "objective": "Acelerar la resolución diagnóstica y terapéutica odontológica en el nivel secundario.",
     "formula": {
-      "numerator": "Egresos acumulados de lista de espera odontológica.",
-      "denominator": "Línea base institucional odontológica.",
-      "expression": "(Egresos Odontológicos / Línea Base P75) × 100"
+      "numerator": "Egresos acumulados de lista de espera odontológica (excluye ortodoncia).",
+      "denominator": "Línea base institucional odontológica (excluye ortodoncia).",
+      "expression": "(Egresos Odontológicos ex Ortodoncia / Línea Base P75) × 100"
     },
-    "evalRules": "Indicador Compuesto evaluado mensualmente en la red.",
+    "evalRules": "Evaluado mensualmente en la red.",
     "monthlyData": [
       {
         "month": "Enero",
@@ -725,7 +725,132 @@ export const COMGES_INDICATORS = [
       "result": 64.89,
       "resultFormatted": "64.89%",
       "status": "Cumple",
-      "observation": "Acumulado a Junio 2026: 64.89% de avance en egresos odontológicos (Meta ≥ 50%)."
+      "observation": "Acumulado a Junio 2026: 64.89% de avance en egresos odontológicos ex ortodoncia (Meta ≥ 50%)."
+    }
+  },
+  {
+    "id": "3.3.2",
+    "code": "COMGES 3.3.2",
+    "domainId": "comges-3",
+    "name": "3.3.2. Monitoreo del percentil 75 de la lista de espera de consulta nueva odontológica (Ortodoncia)",
+    "ponderacion": "4.29%",
+    "type": "comges",
+    "target": "≥ 50.0% de avance en resolución P75",
+    "frequency": "Mensual (Planilla Resumen)",
+    "dataSource": "SIGTE / Registro de Especialidades Odontológicas / Hoja 'resumen gonzalo' (Cols 19-22)",
+    "definition": "Mide el avance porcentual acumulado de egresos de la lista de espera de ortodoncia respecto de la línea base comprometida.",
+    "objective": "Acelerar la resolución de la especialidad de ortodoncia en el nivel secundario.",
+    "formula": {
+      "numerator": "Egresos acumulados de lista de espera de ortodoncia.",
+      "denominator": "Línea base institucional de ortodoncia.",
+      "expression": "(Egresos Ortodoncia / Línea Base P75 Ortodoncia) × 100"
+    },
+    "evalRules": "Evaluado mensualmente en la red.",
+    "monthlyData": [
+      {
+        "month": "Enero",
+        "numerator": 0,
+        "denominator": 0,
+        "result": null,
+        "resultFormatted": "-",
+        "status": "Sin Dato"
+      },
+      {
+        "month": "Febrero",
+        "numerator": 0,
+        "denominator": 0,
+        "result": null,
+        "resultFormatted": "-",
+        "status": "Sin Dato"
+      },
+      {
+        "month": "Marzo",
+        "numerator": 0,
+        "denominator": 0,
+        "result": null,
+        "resultFormatted": "-",
+        "status": "Sin Dato"
+      },
+      {
+        "month": "Abril",
+        "numerator": 51,
+        "denominator": 610,
+        "result": 8.36,
+        "resultFormatted": "8.36%",
+        "status": "No Cumple"
+      },
+      {
+        "month": "Mayo",
+        "numerator": 124,
+        "denominator": 611,
+        "result": 20.29,
+        "resultFormatted": "20.29%",
+        "status": "No Cumple"
+      },
+      {
+        "month": "Junio",
+        "numerator": 190,
+        "denominator": 611,
+        "result": 31.1,
+        "resultFormatted": "31.10%",
+        "status": "En Riesgo"
+      },
+      {
+        "month": "Julio",
+        "numerator": 0,
+        "denominator": 0,
+        "result": null,
+        "resultFormatted": "-",
+        "status": "Sin Dato"
+      },
+      {
+        "month": "Agosto",
+        "numerator": 0,
+        "denominator": 0,
+        "result": null,
+        "resultFormatted": "-",
+        "status": "Sin Dato"
+      },
+      {
+        "month": "Septiembre",
+        "numerator": 0,
+        "denominator": 0,
+        "result": null,
+        "resultFormatted": "-",
+        "status": "Sin Dato"
+      },
+      {
+        "month": "Octubre",
+        "numerator": 0,
+        "denominator": 0,
+        "result": null,
+        "resultFormatted": "-",
+        "status": "Sin Dato"
+      },
+      {
+        "month": "Noviembre",
+        "numerator": 0,
+        "denominator": 0,
+        "result": null,
+        "resultFormatted": "-",
+        "status": "Sin Dato"
+      },
+      {
+        "month": "Diciembre",
+        "numerator": 0,
+        "denominator": 0,
+        "result": null,
+        "resultFormatted": "-",
+        "status": "Sin Dato"
+      }
+    ],
+    "summaryYTD": {
+      "numerator": 190,
+      "denominator": 611,
+      "result": 31.1,
+      "resultFormatted": "31.10%",
+      "status": "En Riesgo",
+      "observation": "Acumulado a Junio 2026: 31.10% de avance en egresos de ortodoncia (Meta ≥ 50%)."
     }
   },
   {
