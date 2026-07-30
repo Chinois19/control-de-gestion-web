@@ -1704,5 +1704,130 @@ export const COMGES_INDICATORS = [
       ],
       "ageDistributionNote": "En la red SSAS, la mayor carga de días por LMC se concentra entre los 35 a 44 años (39.330 días) y 25 a 34 años (32.469 días), respondiendo a una dotación predominantemente joven."
     }
+  },
+  {
+    "id": "M2.7",
+    "code": "MONITOREO 2.7",
+    "domainId": "monitoreo",
+    "name": "Porcentaje de accesos vasculares mediante Fístula Arteriovenosa (FAV) en pacientes con IRC en Hemodiálisis",
+    "ponderacion": "Monitoreo",
+    "type": "monitoreo",
+    "target": "En Monitoreo",
+    "frequency": "Mensual (Planilla COMGES 2026 hoja '2,7 FAV EN IRC')",
+    "dataSource": "PLANILLA COMGES 2026.xlsx (Hoja '2,7 FAV EN IRC') / Registros de Nefrología y Dialisis Hospital Villarrica",
+    "definition": "Mide el porcentaje de pacientes con Insuficiencia Renal Crónica (IRC) en programa de hemodiálisis que cuentan con un acceso vascular definitivo mediante Fístula Arteriovenosa (FAV) autóloga o protésica normofuncionante.",
+    "objective": "Aumentar la prevalencia de accesos vasculares definitivos (FAV) y disminuir el uso prolongado de catéteres venosos centrales en pacientes con hemodiálisis.",
+    "formula": {
+      "numerator": "N° de pacientes en hemodiálisis con fístula arteriovenosa (FAV) normofuncionante.",
+      "denominator": "N° total de pacientes prevalentes en programa de hemodiálisis en el establecimiento.",
+      "expression": "(Pacientes con FAV Normofuncionante / Total Pacientes en Hemodiálisis) × 100"
+    },
+    "evalRules": "Monitoreo mensual continuo. Seguimiento del uso de FAV en la Unidad de Nefrología/Diálisis.",
+    "monthlyData": [
+      {
+        "month": "Enero",
+        "numerator": 0,
+        "denominator": 0,
+        "result": null,
+        "resultFormatted": "-",
+        "status": "Sin Dato"
+      },
+      {
+        "month": "Febrero",
+        "numerator": 0,
+        "denominator": 0,
+        "result": null,
+        "resultFormatted": "-",
+        "status": "Sin Dato"
+      },
+      {
+        "month": "Marzo",
+        "numerator": 113,
+        "denominator": 195,
+        "result": 57.95,
+        "resultFormatted": "57.95%",
+        "status": "Cumple"
+      },
+      {
+        "month": "Abril",
+        "numerator": 115,
+        "denominator": 201,
+        "result": 57.21,
+        "resultFormatted": "57.21%",
+        "status": "Cumple"
+      },
+      {
+        "month": "Mayo",
+        "numerator": 0,
+        "denominator": 0,
+        "result": null,
+        "resultFormatted": "-",
+        "status": "Pendiente Actualización"
+      },
+      {
+        "month": "Junio",
+        "numerator": 0,
+        "denominator": 0,
+        "result": null,
+        "resultFormatted": "-",
+        "status": "Pendiente Actualización"
+      },
+      {
+        "month": "Julio",
+        "numerator": 0,
+        "denominator": 0,
+        "result": null,
+        "resultFormatted": "-",
+        "status": "Pendiente Actualización"
+      },
+      {
+        "month": "Agosto",
+        "numerator": 0,
+        "denominator": 0,
+        "result": null,
+        "resultFormatted": "-",
+        "status": "Pendiente Actualización"
+      },
+      {
+        "month": "Septiembre",
+        "numerator": 0,
+        "denominator": 0,
+        "result": null,
+        "resultFormatted": "-",
+        "status": "Pendiente Actualización"
+      },
+      {
+        "month": "Octubre",
+        "numerator": 0,
+        "denominator": 0,
+        "result": null,
+        "resultFormatted": "-",
+        "status": "Pendiente Actualización"
+      },
+      {
+        "month": "Noviembre",
+        "numerator": 0,
+        "denominator": 0,
+        "result": null,
+        "resultFormatted": "-",
+        "status": "Pendiente Actualización"
+      },
+      {
+        "month": "Diciembre",
+        "numerator": 0,
+        "denominator": 0,
+        "result": null,
+        "resultFormatted": "-",
+        "status": "Pendiente Actualización"
+      }
+    ],
+    "summaryYTD": {
+      "numerator": 228,
+      "denominator": 396,
+      "result": 57.58,
+      "resultFormatted": "57.58%",
+      "status": "Cumple",
+      "observation": "Acumulado a Abril 2026: 57.58% de prevalencia de FAV (228 pacientes con FAV sobre 396 totales en hemodiálisis)."
+    }
   }
 ];
