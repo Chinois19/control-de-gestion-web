@@ -1954,5 +1954,130 @@ export const COMGES_INDICATORS = [
       "status": "Cumple",
       "observation": "Acumulado a Mayo 2026: 28.07% de cobertura en Peritoneodiálisis (48 registros en PD sobre 171 totales en diálisis)."
     }
+  },
+  {
+    "id": "M1.7",
+    "code": "MONITOREO 1.7",
+    "domainId": "monitoreo",
+    "name": "Porcentaje de Altas de Consultas Médicas de Especialidad (Líneas Generales)",
+    "ponderacion": "Monitoreo",
+    "type": "monitoreo",
+    "target": "En Monitoreo (Graficado a Julio)",
+    "frequency": "Mensual (Planilla COMGES 2026 hoja '1,7 ALTAS')",
+    "dataSource": "PLANILLA COMGES 2026.xlsx (Hoja '1,7 ALTAS') / Registro REM-A07 / SIGTE",
+    "definition": "Mide en líneas generales la proporción acumulada de altas de consultas médicas de especialidad respecto del total de atenciones especializadas realizadas en el Hospital de Villarrica, según planteamiento general del MINSAL (Graficado a Julio).",
+    "objective": "Promover la resolutividad diagnóstica y terapéutica y la gestión efectiva del egreso de pacientes en consulta médica de especialidad.",
+    "formula": {
+      "numerator": "N° total de altas de especialidad médica en el periodo (acumulado a Julio).",
+      "denominator": "N° total de consultas médicas de especialidad realizadas en el periodo (acumulado a Julio).",
+      "expression": "(Altas Médicas de Especialidad / Total Consultas de Especialidad) × 100"
+    },
+    "evalRules": "Graficado a Julio en líneas generales de acuerdo al planteamiento MINSAL.",
+    "monthlyData": [
+      {
+        "month": "Enero",
+        "numerator": 773,
+        "denominator": 5255,
+        "result": 14.71,
+        "resultFormatted": "14.71%",
+        "status": "Cumple"
+      },
+      {
+        "month": "Febrero",
+        "numerator": 751,
+        "denominator": 4297,
+        "result": 17.48,
+        "resultFormatted": "17.48%",
+        "status": "Cumple"
+      },
+      {
+        "month": "Marzo",
+        "numerator": 846,
+        "denominator": 5800,
+        "result": 14.59,
+        "resultFormatted": "14.59%",
+        "status": "Cumple"
+      },
+      {
+        "month": "Abril",
+        "numerator": 726,
+        "denominator": 5910,
+        "result": 12.28,
+        "resultFormatted": "12.28%",
+        "status": "Cumple"
+      },
+      {
+        "month": "Mayo",
+        "numerator": 877,
+        "denominator": 5026,
+        "result": 17.45,
+        "resultFormatted": "17.45%",
+        "status": "Cumple"
+      },
+      {
+        "month": "Junio",
+        "numerator": 966,
+        "denominator": 4580,
+        "result": 21.09,
+        "resultFormatted": "21.09%",
+        "status": "Cumple"
+      },
+      {
+        "month": "Julio",
+        "numerator": 908,
+        "denominator": 5080,
+        "result": 17.87,
+        "resultFormatted": "17.87%",
+        "status": "Cumple"
+      },
+      {
+        "month": "Agosto",
+        "numerator": 0,
+        "denominator": 0,
+        "result": null,
+        "resultFormatted": "-",
+        "status": "Corte a Julio"
+      },
+      {
+        "month": "Septiembre",
+        "numerator": 0,
+        "denominator": 0,
+        "result": null,
+        "resultFormatted": "-",
+        "status": "Corte a Julio"
+      },
+      {
+        "month": "Octubre",
+        "numerator": 0,
+        "denominator": 0,
+        "result": null,
+        "resultFormatted": "-",
+        "status": "Corte a Julio"
+      },
+      {
+        "month": "Noviembre",
+        "numerator": 0,
+        "denominator": 0,
+        "result": null,
+        "resultFormatted": "-",
+        "status": "Corte a Julio"
+      },
+      {
+        "month": "Diciembre",
+        "numerator": 0,
+        "denominator": 0,
+        "result": null,
+        "resultFormatted": "-",
+        "status": "Corte a Julio"
+      }
+    ],
+    "summaryYTD": {
+      "numerator": 5847,
+      "denominator": 35948,
+      "result": 16.27,
+      "resultFormatted": "16.27%",
+      "status": "Cumple",
+      "observation": "Acumulado General a Julio 2026: 16.27% de tasa global de altas médicas (5.847 altas otorgadas de 35.948 consultas totales de especialidad)."
+    }
   }
 ];
