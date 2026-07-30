@@ -485,7 +485,7 @@ export const COMGES_INDICATORS = [
     "name": "3.2. Monitoreo del percentil 75 de la lista de espera de consulta nueva de especialidad médica",
     "ponderacion": "4.29%",
     "type": "comges",
-    "target": "≥ 50.0% de avance en resolución P75",
+    "target": "≥ 95.0%",
     "frequency": "Mensual (Planilla Resumen)",
     "dataSource": "Repositorio Nacional de Listas de Espera (SIGTE) MINSAL / Hoja 'resumen gonzalo'",
     "definition": "Evalúa la proporción acumulada de resoluciones/egresos de la lista de espera de Consulta Nueva de Especialidad Médica (CNE) respecto a la línea base del P75.",
@@ -535,7 +535,7 @@ export const COMGES_INDICATORS = [
         "denominator": 2075,
         "result": 46.51,
         "resultFormatted": "46.51%",
-        "status": "En Riesgo"
+        "status": "No Cumple"
       },
       {
         "month": "Junio",
@@ -543,7 +543,7 @@ export const COMGES_INDICATORS = [
         "denominator": 2077,
         "result": 53.15,
         "resultFormatted": "53.15%",
-        "status": "Cumple"
+        "status": "No Cumple"
       },
       {
         "month": "Julio",
@@ -599,8 +599,8 @@ export const COMGES_INDICATORS = [
       "denominator": 2077,
       "result": 53.15,
       "resultFormatted": "53.15%",
-      "status": "Cumple",
-      "observation": "Acumulado a Junio 2026: 53.15% de egresos resueltos sobre la línea base (Meta ≥ 50%)."
+      "status": "No Cumple",
+      "observation": "Acumulado a Junio 2026: 53.15% de avance en resolución P75 (Meta ≥ 95.0%)."
     }
   },
   {
@@ -610,7 +610,7 @@ export const COMGES_INDICATORS = [
     "name": "3.3.1. Monitoreo del percentil 75 de la lista de espera de consulta nueva odontológica (Excluye Ortodoncia)",
     "ponderacion": "4.29%",
     "type": "comges",
-    "target": "≥ 50.0% de avance en resolución P75",
+    "target": "≥ 95.0%",
     "frequency": "Mensual (Planilla Resumen)",
     "dataSource": "SIGTE / Registro de Especialidades Odontológicas / Hoja 'resumen gonzalo' (Cols 15-18)",
     "definition": "Mide el avance porcentual acumulado de egresos de la lista de espera odontológica excluyendo ortodoncia respecto de la línea base comprometida.",
@@ -660,7 +660,7 @@ export const COMGES_INDICATORS = [
         "denominator": 1353,
         "result": 55.95,
         "resultFormatted": "55.95%",
-        "status": "Cumple"
+        "status": "No Cumple"
       },
       {
         "month": "Junio",
@@ -668,7 +668,7 @@ export const COMGES_INDICATORS = [
         "denominator": 1353,
         "result": 64.89,
         "resultFormatted": "64.89%",
-        "status": "Cumple"
+        "status": "No Cumple"
       },
       {
         "month": "Julio",
@@ -724,8 +724,8 @@ export const COMGES_INDICATORS = [
       "denominator": 1353,
       "result": 64.89,
       "resultFormatted": "64.89%",
-      "status": "Cumple",
-      "observation": "Acumulado a Junio 2026: 64.89% de avance en egresos odontológicos ex ortodoncia (Meta ≥ 50%)."
+      "status": "No Cumple",
+      "observation": "Acumulado a Junio 2026: 64.89% de avance en resolución P75 (Meta ≥ 95.0%)."
     }
   },
   {
@@ -735,7 +735,7 @@ export const COMGES_INDICATORS = [
     "name": "3.3.2. Monitoreo del percentil 75 de la lista de espera de consulta nueva odontológica (Ortodoncia)",
     "ponderacion": "4.29%",
     "type": "comges",
-    "target": "≥ 50.0% de avance en resolución P75",
+    "target": "≥ 95.0%",
     "frequency": "Mensual (Planilla Resumen)",
     "dataSource": "SIGTE / Registro de Especialidades Odontológicas / Hoja 'resumen gonzalo' (Cols 19-22)",
     "definition": "Mide el avance porcentual acumulado de egresos de la lista de espera de ortodoncia respecto de la línea base comprometida.",
@@ -793,7 +793,7 @@ export const COMGES_INDICATORS = [
         "denominator": 611,
         "result": 31.1,
         "resultFormatted": "31.10%",
-        "status": "En Riesgo"
+        "status": "No Cumple"
       },
       {
         "month": "Julio",
@@ -849,8 +849,8 @@ export const COMGES_INDICATORS = [
       "denominator": 611,
       "result": 31.1,
       "resultFormatted": "31.10%",
-      "status": "En Riesgo",
-      "observation": "Acumulado a Junio 2026: 31.10% de avance en egresos de ortodoncia (Meta ≥ 50%)."
+      "status": "No Cumple",
+      "observation": "Acumulado a Junio 2026: 31.10% de avance en resolución P75 (Meta ≥ 95.0%)."
     }
   },
   {
@@ -860,7 +860,7 @@ export const COMGES_INDICATORS = [
     "name": "3.4. Monitoreo del percentil 75 de la lista de espera de intervenciones quirúrgicas mayores y menores",
     "ponderacion": "4.29%",
     "type": "comges",
-    "target": "≥ 50.0% de avance en resolución P75",
+    "target": "≥ 95.0%",
     "frequency": "Mensual (Planilla Resumen)",
     "dataSource": "SIGTE / Sistema de Pabellones Quirúrgicos / Hoja 'resumen gonzalo'",
     "definition": "Monitorea el avance de egresos de la lista de espera quirúrgica No GES mayores y menores sobre la línea base comprometida.",
@@ -910,7 +910,7 @@ export const COMGES_INDICATORS = [
         "denominator": 376,
         "result": 40.69,
         "resultFormatted": "40.69%",
-        "status": "En Riesgo"
+        "status": "No Cumple"
       },
       {
         "month": "Junio",
@@ -918,7 +918,7 @@ export const COMGES_INDICATORS = [
         "denominator": 381,
         "result": 51.44,
         "resultFormatted": "51.44%",
-        "status": "Cumple"
+        "status": "No Cumple"
       },
       {
         "month": "Julio",
@@ -974,8 +974,8 @@ export const COMGES_INDICATORS = [
       "denominator": 381,
       "result": 51.44,
       "resultFormatted": "51.44%",
-      "status": "Cumple",
-      "observation": "Acumulado a Junio 2026: 51.44% de avance de resolución quirúrgica (Meta ≥ 50%)."
+      "status": "No Cumple",
+      "observation": "Acumulado a Junio 2026: 51.44% de avance en resolución P75 (Meta ≥ 95.0%)."
     }
   },
   {
