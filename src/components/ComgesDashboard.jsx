@@ -926,53 +926,53 @@ export default function ComgesDashboard({ onBack }) {
                       </div>
 
                       {selectedIndicator.monthlyData && selectedIndicator.monthlyData.length > 0 ? (
-                        <div style={{ overflowX: 'auto', border: '1px solid #e2e8f0', borderRadius: '12px' }}>
-                          <table className="comges-table">
-                            <thead>
-                              <tr>
-                                <th>Mes</th>
-                                <th style={{ textAlign: 'right' }}>Numerador</th>
-                                <th style={{ textAlign: 'right' }}>Denominador</th>
-                                <th style={{ textAlign: 'right' }}>Resultado %</th>
-                                <th style={{ textAlign: 'center' }}>Meta</th>
-                                <th style={{ textAlign: 'center' }}>Estado</th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {selectedIndicator.monthlyData.map((row, idx) => (
-                                <tr key={idx} style={row.month === 'Junio' ? { background: '#f0fdf4' } : {}}>
-                                  <td style={{ fontWeight: 700, color: '#0f172a' }}>{row.month}</td>
-                                  <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>{row.numerator}</td>
-                                  <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>{row.denominator}</td>
-                                  <td style={{ textAlign: 'right', fontWeight: 800, color: '#0f172a' }}>{row.resultFormatted}</td>
-                                  <td style={{ textAlign: 'center', color: '#475569' }}>{selectedIndicator.target}</td>
-                                  <td style={{ textAlign: 'center' }}>{getStatusBadge(row.status)}</td>
+                        <>
+                          <div style={{ overflowX: 'auto', border: '1px solid #e2e8f0', borderRadius: '12px' }}>
+                            <table className="comges-table">
+                              <thead>
+                                <tr>
+                                  <th>Mes</th>
+                                  <th style={{ textAlign: 'right' }}>Numerador</th>
+                                  <th style={{ textAlign: 'right' }}>Denominador</th>
+                                  <th style={{ textAlign: 'right' }}>Resultado %</th>
+                                  <th style={{ textAlign: 'center' }}>Meta</th>
+                                  <th style={{ textAlign: 'center' }}>Estado</th>
                                 </tr>
-                              ))}
-                            </tbody>
-                          </table>
-                        </div>
+                              </thead>
+                              <tbody>
+                                {selectedIndicator.monthlyData.map((row, idx) => (
+                                  <tr key={idx} style={row.month === 'Junio' ? { background: '#f0fdf4' } : {}}>
+                                    <td style={{ fontWeight: 700, color: '#0f172a' }}>{row.month}</td>
+                                    <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>{row.numerator}</td>
+                                    <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>{row.denominator}</td>
+                                    <td style={{ textAlign: 'right', fontWeight: 800, color: '#0f172a' }}>{row.resultFormatted}</td>
+                                    <td style={{ textAlign: 'center', color: '#475569' }}>{selectedIndicator.target}</td>
+                                    <td style={{ textAlign: 'center' }}>{getStatusBadge(row.status)}</td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+
+                          {/* Notice for Monthly Updates - Only shown when indicator has monthly measurement data */}
+                          <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', padding: '16px', borderRadius: '12px', fontSize: '13px', color: '#166534', display: 'flex', alignItems: 'flex-start', gap: '12px', marginTop: '16px' }}>
+                            <RefreshCw size={20} color="#166534" style={{ marginTop: '2px', shrink: 0 }} />
+                            <div>
+                              <h5 style={{ fontWeight: 800, color: '#14532d', marginBottom: '2px' }}>Actualizaciones Mensuales de Base</h5>
+                              <p style={{ lineHeight: 1.5 }}>
+                                Al momento de cargar un nuevo archivo de base mensual actualizado (ej. Julio, Agosto), este módulo reflejará automáticamente los nuevos numeradores, denominadores y resultados acumulados sin alterar las definiciones técnicas del MINSAL.
+                              </p>
+                            </div>
+                          </div>
+                        </>
                       ) : (
-                        <div style={{ background: '#f8fafc', padding: '24px', borderRadius: '12px', border: '1px solid #e2e8f0', textAlign: 'center' }}>
+                        <div style={{ background: '#f8fafc', padding: '24px', borderRadius: '12px', border: '1px solid #cbd5e1', textAlign: 'center' }}>
                           <AlertCircle size={32} color="#64748b" style={{ margin: '0 auto 8px auto' }} />
-                          <p style={{ fontSize: '13px', color: '#334155', fontWeight: 700 }}>
-                            {selectedIndicator.summaryYTD?.status === 'Sin Medición'
-                              ? 'Actualmente sin medición acumulada. Existen dudas metodológicas por definir desde el Servicio de Salud Araucanía Sur.'
-                              : 'Este indicador se evalúa mediante pauta auditada semestral.'}
+                          <p style={{ fontSize: '13.5px', color: '#1e293b', fontWeight: 700, lineHeight: 1.5 }}>
+                            Actualmente sin medición acumulada por dificultades metodológicas y falta de definición de las líneas de base por aclarar desde el Servicio de Salud Araucanía Sur (SSAS).
                           </p>
                         </div>
                       )}
-                    </div>
-
-                    {/* Notice for Monthly Updates */}
-                    <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', padding: '16px', borderRadius: '12px', fontSize: '13px', color: '#166534', display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
-                      <RefreshCw size={20} color="#166534" style={{ marginTop: '2px', shrink: 0 }} />
-                      <div>
-                        <h5 style={{ fontWeight: 800, color: '#14532d', marginBottom: '2px' }}>Actualizaciones Mensuales de Base</h5>
-                        <p style={{ lineHeight: 1.5 }}>
-                          Al momento de cargar un nuevo archivo de base mensual actualizado (ej. Julio, Agosto), este módulo reflejará automáticamente los nuevos numeradores, denominadores y resultados acumulados sin alterar las definiciones técnicas del MINSAL.
-                        </p>
-                      </div>
                     </div>
 
                     {/* Detailed Ord 1934 Analysis for Ausentismo Laboral M4.6 */}

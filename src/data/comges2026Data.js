@@ -1,5 +1,5 @@
 // Dataset Oficial COMGES 2026 - Hospital de Villarrica
-// Corregido Ausentismo Laboral LMC Villarrica: Acumulado 8.1 días a Mayo 2026 y desglose mensual exacto Ord. N° 1934 SSAS.
+// Limpieza de frases en indicadores Sin Medición y eliminación de Atención Abierta en Ausentismo Villarrica.
 
 export const COMGES_META = {
   hospital: "Hospital de Villarrica",
@@ -342,7 +342,7 @@ export const COMGES_INDICATORS = [
       "denominator": "Población asignada (por millón de habitantes) del Servicio de Salud Araucanía Sur.",
       "expression": "(Donantes Efectivos / Población en Millones)"
     },
-    "evalRules": "Sin medición acumulada actual. Existen dudas metodológicas para su medición que deben ser aclaradas desde el Servicio de Salud Araucanía Sur que aún no se encuentran definidas y que por ahora se encuentran sin medición con criterios metodológicos por definir.",
+    "evalRules": "Sin medición acumulada actual por dudas metodológicas por aclarar por parte del Servicio de Salud Araucanía Sur.",
     "monthlyData": [],
     "summaryYTD": {
       "numerator": "-",
@@ -350,7 +350,7 @@ export const COMGES_INDICATORS = [
       "result": null,
       "resultFormatted": "Sin Medición",
       "status": "Sin Medición",
-      "observation": "Sin medición actual. Existen dudas metodológicas por aclarar por parte del Servicio de Salud Araucanía Sur."
+      "observation": "Sin medición actual por dudas metodológicas de medición por definir desde el Servicio de Salud Araucanía Sur."
     }
   },
   {
@@ -870,7 +870,7 @@ export const COMGES_INDICATORS = [
       "denominator": "Total de actividades comprometidas en la programación anual GDR.",
       "expression": "(Actividades GDR Realizadas / Actividades Programadas) × 100"
     },
-    "evalRules": "Sin medición acumulada actual. Existen dudas metodológicas para su medición que deben ser aclaradas desde el Servicio de Salud Araucanía Sur que aún no se encuentran definidas y que por ahora se encuentran sin medición con criterios metodológicos por definir.",
+    "evalRules": "Sin medición acumulada actual por dudas metodológicas de medición por definir por parte del Servicio de Salud Araucanía Sur.",
     "monthlyData": [],
     "summaryYTD": {
       "numerator": "-",
@@ -878,7 +878,7 @@ export const COMGES_INDICATORS = [
       "result": null,
       "resultFormatted": "Sin Medición",
       "status": "Sin Medición",
-      "observation": "Sin medición actual. Criterios metodológicos por definir por parte del Servicio de Salud Araucanía Sur."
+      "observation": "Sin medición actual por dudas metodológicas de medición por definir por parte del Servicio de Salud Araucanía Sur."
     }
   },
   {
@@ -1148,7 +1148,7 @@ export const COMGES_INDICATORS = [
       "denominator": "Total de casos quirúrgicos oncológicos No GES en la lista.",
       "expression": "(Casos Quirúrgicos Oncológicos < 90 días / Total Casos Oncológicos) × 100"
     },
-    "evalRules": "Sin medición acumulada actual. Existen dificultades de medición por la no definición de las líneas de base y lo operativo de medición para el indicador por aclaración del Servicio de Salud Araucanía Sur.",
+    "evalRules": "Sin medición acumulada actual por dificultades de medición por la no definición de las líneas de base y criterios operativos del SSAS.",
     "monthlyData": [],
     "summaryYTD": {
       "numerator": "-",
@@ -1156,7 +1156,7 @@ export const COMGES_INDICATORS = [
       "result": null,
       "resultFormatted": "Sin Medición",
       "status": "Sin Medición",
-      "observation": "Sin medición actual. Dificultades de medición por la no definición de las líneas de base y lo operativo de medición por aclarar por el SSAS."
+      "observation": "Sin medición actual por dificultades de medición por la no definición de las líneas de base por aclarar por el SSAS."
     }
   },
   {
@@ -1176,7 +1176,7 @@ export const COMGES_INDICATORS = [
       "denominator": "Meta programada de consultas digitales para el territorio.",
       "expression": "(Teleconsultas Resueltas / Meta Telemedicina) × 100"
     },
-    "evalRules": "Sin medición acumulada actual. Existen dudas metodológicas para su medición que deben ser aclaradas desde el Servicio de Salud Araucanía Sur que aún no se encuentran definidas y que por ahora se encuentran sin medición con criterios metodológicos por definir.",
+    "evalRules": "Sin medición acumulada actual por dudas metodológicas para su medición por definir desde el Servicio de Salud Araucanía Sur.",
     "monthlyData": [],
     "summaryYTD": {
       "numerator": "-",
@@ -1184,7 +1184,7 @@ export const COMGES_INDICATORS = [
       "result": null,
       "resultFormatted": "Sin Medición",
       "status": "Sin Medición",
-      "observation": "Sin medición actual. Criterios metodológicos por definir por parte del Servicio de Salud Araucanía Sur."
+      "observation": "Sin medición actual por dudas metodológicas por definir por parte del Servicio de Salud Araucanía Sur."
     }
   },
   {
@@ -1454,12 +1454,6 @@ export const COMGES_INDICATORS = [
           "absentDays": 1195,
           "index": "12.1 días/func",
           "risk": "Moderado"
-        },
-        {
-          "unit": "Atención Abierta (Policlínico)",
-          "absentDays": 397,
-          "index": "9.5 días/func",
-          "risk": "Bajo Control"
         },
         {
           "unit": "Unidad Emergencia Hospitalaria (UEH)",
