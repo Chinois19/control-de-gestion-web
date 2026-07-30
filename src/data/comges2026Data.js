@@ -1441,28 +1441,125 @@ export const COMGES_INDICATORS = [
     "id": "M1.9",
     "code": "MONITOREO 1.9",
     "domainId": "monitoreo",
-    "name": "Personas que abandonan durante el proceso de atención en urgencia (UEH)",
+    "name": "1.9. Personas que abandonan durante el Proceso de Atención de Urgencia en las UEH",
     "ponderacion": "Monitoreo",
     "type": "monitoreo",
     "target": "< 10.0%",
     "frequency": "Mensual",
-    "dataSource": "PLANILLA COMGES 2026.xlsx (Hoja '1,9 ABANDONO URG') / DAU / REM (Numerador y Denominador)",
-    "definition": "Indicador Compuesto y de Monitoreo con Ruta REM. Porcentaje de pacientes que se retiran sin atención médica de la UEH tras ingresar a categorización.",
-    "objective": "Reducir los tiempos de espera en urgencia para evitar la fuga de pacientes y riesgos clínicos.",
+    "dataSource": "PLANILLA COMGES 2026.xlsx (Hoja '1,9 ABANDONO URG') / DAU / REM-A08",
+    "definition": "Mide el porcentaje de pacientes que se retiran sin recibir atención médica de la Unidad de Emergencia Hospitalaria (UEH) tras haber ingresado a categorización (DAU).",
+    "objective": "Disminuir los tiempos de espera en urgencia y evitar el retiro prematuro de pacientes sin atención médica.",
     "formula": {
-      "numerator": "N° de personas que se retiran sin atención médica.",
-      "denominator": "N° total de consultas/DAU ingresadas en el servicio de urgencia.",
-      "expression": "(Abandonos UEH / Total DAU Ingresados) × 100"
+      "numerator": "N° de personas que se retiran sin atención médica en el periodo.",
+      "denominator": "N° total de consultas / atenciones ingresadas a UEH en el periodo.",
+      "expression": "(Abandonos UEH / Total Consultas Ingresadas) × 100"
     },
-    "evalRules": "Indicador Compuesto con Ruta REM oficial.",
-    "monthlyData": [],
+    "evalRules": "Monitoreo mensual acumulado en el Hospital de Villarrica. Meta institucional < 10.0%.",
+    "monthlyData": [
+      {
+        "month": "Enero",
+        "numerator": 1137,
+        "denominator": 4616,
+        "result": 24.63,
+        "resultFormatted": "24.63%",
+        "status": "No Cumple"
+      },
+      {
+        "month": "Febrero",
+        "numerator": 1143,
+        "denominator": 4507,
+        "result": 25.36,
+        "resultFormatted": "25.36%",
+        "status": "No Cumple"
+      },
+      {
+        "month": "Marzo",
+        "numerator": 814,
+        "denominator": 3935,
+        "result": 20.69,
+        "resultFormatted": "20.69%",
+        "status": "No Cumple"
+      },
+      {
+        "month": "Abril",
+        "numerator": 757,
+        "denominator": 3707,
+        "result": 20.42,
+        "resultFormatted": "20.42%",
+        "status": "No Cumple"
+      },
+      {
+        "month": "Mayo",
+        "numerator": 742,
+        "denominator": 3977,
+        "result": 18.66,
+        "resultFormatted": "18.66%",
+        "status": "No Cumple"
+      },
+      {
+        "month": "Junio",
+        "numerator": 991,
+        "denominator": 3903,
+        "result": 25.39,
+        "resultFormatted": "25.39%",
+        "status": "No Cumple"
+      },
+      {
+        "month": "Julio",
+        "numerator": 0,
+        "denominator": 0,
+        "result": null,
+        "resultFormatted": "-",
+        "status": "Pendiente Actualización"
+      },
+      {
+        "month": "Agosto",
+        "numerator": 0,
+        "denominator": 0,
+        "result": null,
+        "resultFormatted": "-",
+        "status": "Pendiente Actualización"
+      },
+      {
+        "month": "Septiembre",
+        "numerator": 0,
+        "denominator": 0,
+        "result": null,
+        "resultFormatted": "-",
+        "status": "Pendiente Actualización"
+      },
+      {
+        "month": "Octubre",
+        "numerator": 0,
+        "denominator": 0,
+        "result": null,
+        "resultFormatted": "-",
+        "status": "Pendiente Actualización"
+      },
+      {
+        "month": "Noviembre",
+        "numerator": 0,
+        "denominator": 0,
+        "result": null,
+        "resultFormatted": "-",
+        "status": "Pendiente Actualización"
+      },
+      {
+        "month": "Diciembre",
+        "numerator": 0,
+        "denominator": 0,
+        "result": null,
+        "resultFormatted": "-",
+        "status": "Pendiente Actualización"
+      }
+    ],
     "summaryYTD": {
-      "numerator": 3810,
-      "denominator": 19400,
-      "result": 19.64,
-      "resultFormatted": "19.64%",
+      "numerator": 5584,
+      "denominator": 24645,
+      "result": 22.66,
+      "resultFormatted": "22.66%",
       "status": "No Cumple",
-      "observation": "Tasa de abandono en urgencia acumulada 19.64%."
+      "observation": "Acumulado a Junio 2026: 22.66% de abandonos (5.584 retirados sin atención sobre 24.645 consultas ingresadas) vs Meta < 10.0%."
     }
   },
   {
