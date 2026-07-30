@@ -4,7 +4,7 @@ import {
   ArrowLeft, Search, Filter, CheckCircle, AlertTriangle, XCircle, Info,
   BookOpen, FileText, ChevronRight, BarChart2, TrendingUp, Calendar,
   Award, Shield, ExternalLink, HelpCircle, Layers, Activity, FileSpreadsheet,
-  Download, RefreshCw, Clock, Building2, AlertCircle, HelpCircle as QuestionIcon
+  Download, RefreshCw, Clock, Building2, AlertCircle
 } from 'lucide-react';
 import {
   ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid,
@@ -378,25 +378,61 @@ export default function ComgesDashboard({ onBack }) {
           <div>
             {/* Filter and Search Toolbar */}
             <div className="comges-toolbar">
-              <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', justifyBetween: 'space-between', flexWrap: 'wrap', gap: '16px' }}>
-                {/* Search Input */}
-                <div className="comges-search-box">
-                  <Search size={18} color="#94a3b8" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)' }} />
-                  <input
-                    type="text"
-                    className="comges-search-input"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Buscar por código, nombre, fórmula o definición técnica..."
-                  />
-                  {searchQuery && (
-                    <button
-                      onClick={() => setSearchQuery('')}
-                      style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer', fontSize: '12px' }}
+              <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px' }}>
+                
+                {/* Left Group: Search Input + Domain / Objective Select Dropdown */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: '1', minWidth: '320px', flexWrap: 'wrap' }}>
+                  {/* Search Input */}
+                  <div className="comges-search-box" style={{ flex: '1', minWidth: '240px', position: 'relative' }}>
+                    <Search size={18} color="#94a3b8" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)' }} />
+                    <input
+                      type="text"
+                      className="comges-search-input"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      placeholder="Buscar por código, nombre, fórmula o definición..."
+                    />
+                    {searchQuery && (
+                      <button
+                        onClick={() => setSearchQuery('')}
+                        style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer', fontSize: '12px' }}
+                      >
+                        Limpiar
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Objective / Domain Dropdown Selector */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <label htmlFor="domain-select" style={{ fontSize: '13px', fontWeight: 700, color: '#334155', whiteSpace: 'nowrap' }}>
+                      Objetivo / Dominio:
+                    </label>
+                    <select
+                      id="domain-select"
+                      value={selectedDomain}
+                      onChange={(e) => setSelectedDomain(e.target.value)}
+                      style={{
+                        padding: '10px 14px',
+                        borderRadius: '10px',
+                        border: '1px solid #cbd5e1',
+                        background: '#ffffff',
+                        color: '#0f172a',
+                        fontSize: '13px',
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                        outline: 'none',
+                        boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
+                        maxHeight: '42px'
+                      }}
                     >
-                      Limpiar
-                    </button>
-                  )}
+                      <option value="all">🎯 Todos los Objetivos (6 Dominios)</option>
+                      {COMGES_DOMAINS.map(d => (
+                        <option key={d.id} value={d.id}>
+                          {d.code}: {d.title} ({d.weight})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
 
                 {/* Status Filter buttons */}
@@ -437,27 +473,6 @@ export default function ComgesDashboard({ onBack }) {
                     Sin Medición ({summaryMetrics.sinMedicion})
                   </button>
                 </div>
-              </div>
-
-              {/* Domain Pills Filter */}
-              <div className="comges-domain-pills">
-                <span style={{ fontSize: '12px', fontWeight: 600, color: '#64748b' }}>Dominio:</span>
-                <button
-                  onClick={() => setSelectedDomain('all')}
-                  className={`comges-pill ${selectedDomain === 'all' ? 'comges-pill-active' : ''}`}
-                >
-                  Todos los Dominios
-                </button>
-                {COMGES_DOMAINS.map(d => (
-                  <button
-                    key={d.id}
-                    onClick={() => setSelectedDomain(d.id)}
-                    className={`comges-pill ${selectedDomain === d.id ? 'comges-pill-active' : ''}`}
-                  >
-                    <span style={{ display: 'inline-block', width: '8px', height: '8px', borderRadius: '50%', backgroundColor: d.color, marginRight: '6px' }}></span>
-                    {d.code} ({d.weight})
-                  </button>
-                ))}
               </div>
             </div>
 
