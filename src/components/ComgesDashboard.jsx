@@ -6,8 +6,102 @@ import {
   Award, Shield, ExternalLink, HelpCircle, Layers, Activity, FileSpreadsheet,
   Download, RefreshCw, Clock, Building2, AlertCircle
 } from 'lucide-react';
+import {
+  ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid,
+  Tooltip as RechartsTooltip, ReferenceLine
+} from 'recharts';
 import { COMGES_META, COMGES_DOMAINS, COMGES_INDICATORS, REM_CALENDAR, REGIONAL_HOSPITALS } from '../data/comges2026Data';
 import './ComgesDashboard.css';
+
+// Mini Monthly Line Chart component rendered below formula in each card
+const MiniMonthlyLineChart = ({ monthlyData = [], target = '' }) => {
+  // Parse target numerical value if available
+  const targetNum = useMemo(() => {
+    if (!target) return null;
+    const match = target.match(/[\d\.]+/);
+    return match ? parseFloat(match[0]) : null;
+  }, [target]);
+
+  // Format chart points
+  const chartData = useMemo(() => {
+    if (!monthlyData || monthlyData.length === 0) return [];
+    return monthlyData.map(d => ({
+      month: d.month ? d.month.slice(0, 3) : '',
+      fullMonth: d.month,
+      val: d.result !== null && d.result !== undefined ? d.result : null,
+      valFormatted: d.resultFormatted,
+      num: d.numerator,
+      den: d.denominator,
+      status: d.status
+    }));
+  }, [monthlyData]);
+
+  const hasData = chartData.some(d => d.val !== null);
+
+  if (!hasData) {
+    return (
+      <div style={{ marginTop: '10px', padding: '10px 12px', background: '#f8fafc', borderRadius: '10px', border: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '11px', color: '#64748b' }}>
+        <span style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600 }}>
+          <TrendingUp size={14} color="#0d9488" /> Evolución Mensual:
+        </span>
+        <span style={{ fontStyle: 'italic', color: '#64748b' }}>Evaluación semestral por informe / pauta auditada</span>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ marginTop: '10px', background: '#ffffff', padding: '10px 12px', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px', fontSize: '11px', fontWeight: 700, color: '#334155' }}>
+        <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+          <TrendingUp size={14} color="#0d9488" /> Evolución Mensual 2026
+        </span>
+        {targetNum !== null && (
+          <span style={{ fontSize: '10px', color: '#0d9488', fontFamily: 'monospace', fontWeight: 800 }}>
+            Meta: {target}
+          </span>
+        )}
+      </div>
+
+      <div style={{ width: '100%', height: '110px' }}>
+        <ResponsiveContainer width="100%" height="100%">
+          <LineChart data={chartData} margin={{ top: 12, right: 12, left: -24, bottom: 0 }}>
+            <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+            <XAxis dataKey="month" tick={{ fontSize: 10, fill: '#64748b' }} axisLine={false} tickLine={false} />
+            <YAxis tick={{ fontSize: 10, fill: '#64748b' }} axisLine={false} tickLine={false} domain={['auto', 'auto']} />
+            <RechartsTooltip
+              content={({ active, payload }) => {
+                if (active && payload && payload.length) {
+                  const data = payload[0].payload;
+                  if (data.val === null) return null;
+                  return (
+                    <div style={{ background: '#0f172a', color: '#ffffff', padding: '6px 10px', borderRadius: '8px', fontSize: '11px', boxShadow: '0 4px 12px rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)' }}>
+                      <p style={{ fontWeight: 800, color: '#5eead4' }}>{data.fullMonth} 2026</p>
+                      <p style={{ fontWeight: 700, marginTop: '2px' }}>Resultado: {data.valFormatted}</p>
+                      {data.num > 0 && <p style={{ fontSize: '10px', color: '#cbd5e1' }}>({data.num} / {data.den})</p>}
+                    </div>
+                  );
+                }
+                return null;
+              }}
+            />
+            {targetNum !== null && (
+              <ReferenceLine y={targetNum} stroke="#ef4444" strokeDasharray="3 3" label={{ value: `Meta ${targetNum}%`, fill: '#ef4444', fontSize: 9, position: 'insideTopRight' }} />
+            )}
+            <Line
+              type="monotone"
+              dataKey="val"
+              stroke="#0d9488"
+              strokeWidth={2.5}
+              dot={{ r: 4, fill: '#0d9488', strokeWidth: 1.5, stroke: '#fff' }}
+              activeDot={{ r: 6, fill: '#0f766e' }}
+              connectNulls
+            />
+          </LineChart>
+        </ResponsiveContainer>
+      </div>
+    </div>
+  );
+};
 
 export default function ComgesDashboard({ onBack }) {
   const [activeTab, setActiveTab] = useState('indicators'); // 'indicators' | 'orientaciones' | 'summary' | 'rem_calendar'
@@ -367,7 +461,7 @@ export default function ComgesDashboard({ onBack }) {
                     >
                       <div>
                         {/* Indicator Top Header */}
-                        <div style={{ display: 'flex', alignItems: 'center', justifyBetween: 'space-between', gap: '8px', marginBottom: '10px' }}>
+                        <div style={{ display: 'flex', itemsCenter: 'center', justifyBetween: 'space-between', gap: '8px', marginBottom: '10px' }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                             <span className="comges-card-code">
                               {ind.code}
@@ -404,6 +498,9 @@ export default function ComgesDashboard({ onBack }) {
                           </span>
                           {ind.formula?.expression || 'Ver fórmula técnica'}
                         </div>
+
+                        {/* Monthly Trend Line Chart right below the formula */}
+                        <MiniMonthlyLineChart monthlyData={ind.monthlyData} target={ind.target} />
                       </div>
 
                       {/* Bottom Performance Metrics & Action Button */}
