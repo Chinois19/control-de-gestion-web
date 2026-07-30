@@ -1,5 +1,5 @@
 // Dataset Oficial COMGES 2026 - Hospital de Villarrica
-// Ingesta completa de datos mensuales desde la hoja 'resumen gonzalo' para 3.2 (P75 Médica), 3.3 (P75 Odontológica), 3.4 (P75 Quirúrgica), 5.1 (GES Oncológico) y 4.3 (Gasto Personas Naturales)
+// Actualizado con COMGES 5.2 en 'Sin Medición' debido a dificultades por falta de definición de líneas de base y criterios operativos del SSAS.
 
 export const COMGES_META = {
   hospital: "Hospital de Villarrica",
@@ -1137,9 +1137,9 @@ export const COMGES_INDICATORS = [
     "name": "5.2. Casos oncológicos No GES en lista de espera quirúrgica con espera menor a 90 días",
     "ponderacion": "4.25%",
     "type": "comges",
-    "target": "≥ 95% de casos quirúrgicos oncológicos No GES operados < 90 días",
-    "frequency": "Mensual",
-    "dataSource": "SIGTE / Registro de Cirugía Oncológica Hospitalaria",
+    "target": "Por definir (SSAS / MINSAL)",
+    "frequency": "Semestral (Pendiente)",
+    "dataSource": "SIGTE / Registro de Cirugía Oncológica Hospitalaria / SSAS",
     "definition": "Evalúa el porcentaje de pacientes diagnósticos con patologías quirúrgicas oncológicas no GES intervenidos oportunamente dentro de un plazo máximo recomendado de 90 días desde su indicación.",
     "objective": "Priorizar la resolución quirúrgica oncológica para evitar la progresión de la enfermedad.",
     "formula": {
@@ -1147,15 +1147,15 @@ export const COMGES_INDICATORS = [
       "denominator": "Total de casos quirúrgicos oncológicos No GES en la lista.",
       "expression": "(Casos Quirúrgicos Oncológicos < 90 días / Total Casos Oncológicos) × 100"
     },
-    "evalRules": "Priorización obligatoria en asignación de horas de tabla de pabellón electivo.",
+    "evalRules": "Sin medición acumulada actual. Existen dificultades de medición por la no definición de las líneas de base y lo operativo de medición para el indicador por aclaración del Servicio de Salud Araucanía Sur.",
     "monthlyData": [],
     "summaryYTD": {
-      "numerator": 88,
-      "denominator": 90,
-      "result": 97.7,
-      "resultFormatted": "97.7%",
-      "status": "Cumple",
-      "observation": "Cumplimiento destacado en priorización de biopsias y cirugías resectivas."
+      "numerator": "-",
+      "denominator": "-",
+      "result": null,
+      "resultFormatted": "Sin Medición",
+      "status": "Sin Medición",
+      "observation": "Sin medición actual. Dificultades de medición por la no definición de las líneas de base y lo operativo de medición por aclarar por el SSAS."
     }
   },
   {
