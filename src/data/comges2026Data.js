@@ -1829,5 +1829,130 @@ export const COMGES_INDICATORS = [
       "status": "Cumple",
       "observation": "Acumulado a Abril 2026: 57.58% de prevalencia de FAV (228 pacientes con FAV sobre 396 totales en hemodiálisis)."
     }
+  },
+  {
+    "id": "M2.8",
+    "code": "MONITOREO 2.8",
+    "domainId": "monitoreo",
+    "name": "Porcentaje de pacientes en Peritoneodiálisis respecto al total de pacientes en tratamiento de diálisis",
+    "ponderacion": "Monitoreo",
+    "type": "monitoreo",
+    "target": "En Monitoreo",
+    "frequency": "Mensual (Planilla COMGES 2026 hoja '2,8 PAC PD')",
+    "dataSource": "PLANILLA COMGES 2026.xlsx (Hoja '2,8 PAC PD') / Registros de Nefrología y Peritoneodiálisis Hospital Villarrica",
+    "definition": "Mide el porcentaje de pacientes con Insuficiencia Renal Crónica (IRC) que ingresan y se mantienen en terapia de Peritoneodiálisis (PD) domiciliaria o automatizada respecto del total de pacientes en programa de diálisis.",
+    "objective": "Fomentar la terapia dialítica domiciliaria (Peritoneodiálisis) como alternativa eficaz y autónoma para el tratamiento sustitutivo renal.",
+    "formula": {
+      "numerator": "N° de pacientes ingresados y en tratamiento activo de Peritoneodiálisis (PD).",
+      "denominator": "N° total de pacientes ingresados a terapias de sustitución renal (Hemodiálisis + Peritoneodiálisis).",
+      "expression": "(Pacientes en Peritoneodiálisis / Total Pacientes en Diálisis) × 100"
+    },
+    "evalRules": "Monitoreo mensual continuo. Seguimiento del programa de Peritoneodiálisis en el Hospital de Villarrica.",
+    "monthlyData": [
+      {
+        "month": "Enero",
+        "numerator": 8,
+        "denominator": 29,
+        "result": 27.59,
+        "resultFormatted": "27.59%",
+        "status": "Cumple"
+      },
+      {
+        "month": "Febrero",
+        "numerator": 9,
+        "denominator": 30,
+        "result": 30.0,
+        "resultFormatted": "30.00%",
+        "status": "Cumple"
+      },
+      {
+        "month": "Marzo",
+        "numerator": 9,
+        "denominator": 34,
+        "result": 26.47,
+        "resultFormatted": "26.47%",
+        "status": "Cumple"
+      },
+      {
+        "month": "Abril",
+        "numerator": 10,
+        "denominator": 36,
+        "result": 27.78,
+        "resultFormatted": "27.78%",
+        "status": "Cumple"
+      },
+      {
+        "month": "Mayo",
+        "numerator": 12,
+        "denominator": 42,
+        "result": 28.57,
+        "resultFormatted": "28.57%",
+        "status": "Cumple"
+      },
+      {
+        "month": "Junio",
+        "numerator": 0,
+        "denominator": 0,
+        "result": null,
+        "resultFormatted": "-",
+        "status": "Pendiente Actualización"
+      },
+      {
+        "month": "Julio",
+        "numerator": 0,
+        "denominator": 0,
+        "result": null,
+        "resultFormatted": "-",
+        "status": "Pendiente Actualización"
+      },
+      {
+        "month": "Agosto",
+        "numerator": 0,
+        "denominator": 0,
+        "result": null,
+        "resultFormatted": "-",
+        "status": "Pendiente Actualización"
+      },
+      {
+        "month": "Septiembre",
+        "numerator": 0,
+        "denominator": 0,
+        "result": null,
+        "resultFormatted": "-",
+        "status": "Pendiente Actualización"
+      },
+      {
+        "month": "Octubre",
+        "numerator": 0,
+        "denominator": 0,
+        "result": null,
+        "resultFormatted": "-",
+        "status": "Pendiente Actualización"
+      },
+      {
+        "month": "Noviembre",
+        "numerator": 0,
+        "denominator": 0,
+        "result": null,
+        "resultFormatted": "-",
+        "status": "Pendiente Actualización"
+      },
+      {
+        "month": "Diciembre",
+        "numerator": 0,
+        "denominator": 0,
+        "result": null,
+        "resultFormatted": "-",
+        "status": "Pendiente Actualización"
+      }
+    ],
+    "summaryYTD": {
+      "numerator": 48,
+      "denominator": 171,
+      "result": 28.07,
+      "resultFormatted": "28.07%",
+      "status": "Cumple",
+      "observation": "Acumulado a Mayo 2026: 28.07% de cobertura en Peritoneodiálisis (48 registros en PD sobre 171 totales en diálisis)."
+    }
   }
 ];
