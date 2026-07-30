@@ -1,5 +1,5 @@
 // Dataset Oficial Metas Sanitarias Ley 20.707 (Formulación MS 20707-2026)
-// Hospital de Villarrica - Año 2026 (Fuente: Sheet 'resumen gonzalo')
+// Hospital de Villarrica - Año 2026 (Excluyendo filas separadoras de unidades 'Todos')
 
 export const LEY20707_META = {
   title: "Metas Sanitarias Ley 20.707 (2026)",
@@ -8,7 +8,7 @@ export const LEY20707_META = {
   service: "Servicio de Salud Araucanía Sur",
   year: 2026,
   sourceFile: "Formulación-MS 20707-2026.xlsx (resumen gonzalo)",
-  totalIndicators: 26
+  totalIndicators: 21
 };
 
 export const LEY20707_UNITS = [
@@ -575,35 +575,6 @@ export const LEY20707_INDICATORS = [
   },
   {
     "id": "ley20707-5",
-    "code": "Meta Todos",
-    "rawCode": "Todos",
-    "name": "",
-    "formula": "",
-    "dept": "UNIDAD DE EMERGENCIA HOSPITALARIA",
-    "deptInfo": {
-      "id": "ueh",
-      "name": "Unidad de Emergencia Hospitalaria (UEH)",
-      "code": "UEH",
-      "color": "#ef4444"
-    },
-    "weight": "100%",
-    "weightVal": 1.0,
-    "target": "Por definir / Pauta",
-    "targetVal": null,
-    "referent": "",
-    "summaryYTD": {
-      "numerator": null,
-      "denominator": null,
-      "result": null,
-      "resultFormatted": "-",
-      "compliance": null,
-      "status": "Sin Dato",
-      "statusLabel": "Evaluación Semestral / En Proceso"
-    },
-    "monthlyData": []
-  },
-  {
-    "id": "ley20707-6",
     "code": "Meta 8",
     "rawCode": "8",
     "name": "Evaluación de riesgo de enfermedad tromboembólica (ETE) en pacientes quirúrgicos",
@@ -741,7 +712,7 @@ export const LEY20707_INDICATORS = [
     ]
   },
   {
-    "id": "ley20707-7",
+    "id": "ley20707-6",
     "code": "Meta 9",
     "rawCode": "9",
     "name": "Capacitación actualizada en Reanimación Cardiopulmonar (RCP)",
@@ -879,7 +850,7 @@ export const LEY20707_INDICATORS = [
     ]
   },
   {
-    "id": "ley20707-8",
+    "id": "ley20707-7",
     "code": "Meta 10",
     "rawCode": "10",
     "name": "Cobertura de profesionales funcionarios/as en prevención y control de Infecciones Asociadas a la Atención de Salud (IAAS).",
@@ -1017,8 +988,8 @@ export const LEY20707_INDICATORS = [
     ]
   },
   {
-    "id": "ley20707-9",
-    "code": "Meta Ind Local 5",
+    "id": "ley20707-8",
+    "code": "Ind Local 5",
     "rawCode": "Ind Local 5",
     "name": "Porcentaje entrega de turno médico con registro según protocolo.",
     "formula": "(Número de entregas de turno médico con registro según protocolo/ Número total de entregas de turno médico del periodo) *100",
@@ -1155,36 +1126,7 @@ export const LEY20707_INDICATORS = [
     ]
   },
   {
-    "id": "ley20707-10",
-    "code": "Meta Todos",
-    "rawCode": "Todos",
-    "name": "",
-    "formula": "",
-    "dept": "UNIDAD DE GINECOLOGIA Y OBSTETRICIA",
-    "deptInfo": {
-      "id": "ginecologia",
-      "name": "Unidad de Ginecología y Obstetricia",
-      "code": "GIN-OBS",
-      "color": "#ec4899"
-    },
-    "weight": "100%",
-    "weightVal": 0.9999999999999999,
-    "target": "Por definir / Pauta",
-    "targetVal": null,
-    "referent": "",
-    "summaryYTD": {
-      "numerator": null,
-      "denominator": null,
-      "result": null,
-      "resultFormatted": "-",
-      "compliance": null,
-      "status": "Sin Dato",
-      "statusLabel": "Evaluación Semestral / En Proceso"
-    },
-    "monthlyData": []
-  },
-  {
-    "id": "ley20707-11",
+    "id": "ley20707-9",
     "code": "Meta 9",
     "rawCode": "9",
     "name": "Capacitación actualizada en Reanimación Cardiopulmonar (RCP)",
@@ -1322,7 +1264,7 @@ export const LEY20707_INDICATORS = [
     ]
   },
   {
-    "id": "ley20707-12",
+    "id": "ley20707-10",
     "code": "Meta 10",
     "rawCode": "10",
     "name": "Cobertura de profesionales funcionarios/as en prevención y control de Infecciones Asociadas a la Atención de Salud (IAAS).",
@@ -1460,8 +1402,8 @@ export const LEY20707_INDICATORS = [
     ]
   },
   {
-    "id": "ley20707-13",
-    "code": "Meta Ind Local 1",
+    "id": "ley20707-11",
+    "code": "Ind Local 1",
     "rawCode": "Ind Local 1",
     "name": "Ambulatorización de cirugías mayores electivas.",
     "formula": "(N° de cirugías mayores electivas ambulatorias / N° total de cirugías mayores electivas realizadas) * 100",
@@ -1598,8 +1540,8 @@ export const LEY20707_INDICATORS = [
     ]
   },
   {
-    "id": "ley20707-14",
-    "code": "Meta Ind Local 2",
+    "id": "ley20707-12",
+    "code": "Ind Local 2",
     "rawCode": "Ind Local 2",
     "name": "Suspensiones quirúrgicas en cirugías Electivas",
     "formula": "(N° de cirugías mayores electivas suspendidas / N° de cirugías mayores electivas programadas) * 100",
@@ -1736,36 +1678,7 @@ export const LEY20707_INDICATORS = [
     ]
   },
   {
-    "id": "ley20707-15",
-    "code": "Meta Todos",
-    "rawCode": "Todos",
-    "name": "",
-    "formula": "",
-    "dept": "UNIDAD DE PABELLON Y RECUPERACION",
-    "deptInfo": {
-      "id": "pabellon",
-      "name": "Unidad de Pabellón y Recuperación",
-      "code": "PABELLÓN",
-      "color": "#3b82f6"
-    },
-    "weight": "100%",
-    "weightVal": 1.0,
-    "target": "Por definir / Pauta",
-    "targetVal": null,
-    "referent": "",
-    "summaryYTD": {
-      "numerator": null,
-      "denominator": null,
-      "result": null,
-      "resultFormatted": "-",
-      "compliance": null,
-      "status": "Sin Dato",
-      "statusLabel": "Evaluación Semestral / En Proceso"
-    },
-    "monthlyData": []
-  },
-  {
-    "id": "ley20707-16",
+    "id": "ley20707-13",
     "code": "Meta 2",
     "rawCode": "2",
     "name": "Potenciales Donantes de Órganos para Trasplantes (Muerte encefálica certificada)",
@@ -1903,7 +1816,7 @@ export const LEY20707_INDICATORS = [
     ]
   },
   {
-    "id": "ley20707-17",
+    "id": "ley20707-14",
     "code": "Meta 7",
     "rawCode": "7",
     "name": "Pacientes con Catéter Urinario Permanente (CUP) que cumplen con los criterios de indicación médica de acuerdo con las directrices institucionales locales",
@@ -2041,7 +1954,7 @@ export const LEY20707_INDICATORS = [
     ]
   },
   {
-    "id": "ley20707-18",
+    "id": "ley20707-15",
     "code": "Meta 9",
     "rawCode": "9",
     "name": "Capacitación actualizada en Reanimación Cardiopulmonar (RCP)",
@@ -2179,7 +2092,7 @@ export const LEY20707_INDICATORS = [
     ]
   },
   {
-    "id": "ley20707-19",
+    "id": "ley20707-16",
     "code": "Meta 10",
     "rawCode": "10",
     "name": "Cobertura de profesionales funcionarios/as en prevención y control de Infecciones Asociadas a la Atención de Salud (IAAS).",
@@ -2317,8 +2230,8 @@ export const LEY20707_INDICATORS = [
     ]
   },
   {
-    "id": "ley20707-20",
-    "code": "Meta Ind Local 4",
+    "id": "ley20707-17",
+    "code": "Ind Local 4",
     "rawCode": "Ind Local 4",
     "name": "Porcentaje de pacientes ingresados a UPC con correcta aplicación de criterios de ingreso.",
     "formula": "(Número de pacientes ingresados a UPC que cumplen con los criterios de ingreso / Número de pacientes ingresados a UPC) × 100",
@@ -2455,36 +2368,7 @@ export const LEY20707_INDICATORS = [
     ]
   },
   {
-    "id": "ley20707-21",
-    "code": "Meta Todos",
-    "rawCode": "Todos",
-    "name": "",
-    "formula": "",
-    "dept": "UNIDAD DE PACIENTE CRITICO",
-    "deptInfo": {
-      "id": "upc",
-      "name": "Unidad de Paciente Crítico (UPC Adulto)",
-      "code": "UPC",
-      "color": "#8b5cf6"
-    },
-    "weight": "100%",
-    "weightVal": 1.0,
-    "target": "Por definir / Pauta",
-    "targetVal": null,
-    "referent": "",
-    "summaryYTD": {
-      "numerator": null,
-      "denominator": null,
-      "result": null,
-      "resultFormatted": "-",
-      "compliance": null,
-      "status": "Sin Dato",
-      "statusLabel": "Evaluación Semestral / En Proceso"
-    },
-    "monthlyData": []
-  },
-  {
-    "id": "ley20707-22",
+    "id": "ley20707-18",
     "code": "Meta 9",
     "rawCode": "9",
     "name": "Capacitación actualizada en Reanimación Cardiopulmonar (RCP)",
@@ -2622,7 +2506,7 @@ export const LEY20707_INDICATORS = [
     ]
   },
   {
-    "id": "ley20707-23",
+    "id": "ley20707-19",
     "code": "Meta 10",
     "rawCode": "10",
     "name": "Cobertura de profesionales funcionarios/as en prevención y control de Infecciones Asociadas a la Atención de Salud (IAAS).",
@@ -2760,8 +2644,8 @@ export const LEY20707_INDICATORS = [
     ]
   },
   {
-    "id": "ley20707-24",
-    "code": "Meta Ind Local 3",
+    "id": "ley20707-20",
+    "code": "Ind Local 3",
     "rawCode": "Ind Local 3",
     "name": "Capacitación en Reanimación Neonatal",
     "formula": "(Número de profesionales funcionario/as con capacitación actualizada en Reanimación Neonatal / Número total de profesionales funcionario/as en dotación) × 100",
@@ -2898,8 +2782,8 @@ export const LEY20707_INDICATORS = [
     ]
   },
   {
-    "id": "ley20707-25",
-    "code": "Meta Ind Local 5",
+    "id": "ley20707-21",
+    "code": "Ind Local 5",
     "rawCode": "Ind Local 5",
     "name": "Porcentaje entrega de turno médico con registro según protocolo.",
     "formula": "(Número de entregas de turno médico con registro según protocolo/ Número total de entregas de turno médico del periodo) *100",
@@ -3034,34 +2918,5 @@ export const LEY20707_INDICATORS = [
         "status": "Sin Dato"
       }
     ]
-  },
-  {
-    "id": "ley20707-26",
-    "code": "Meta Todos",
-    "rawCode": "Todos",
-    "name": "",
-    "formula": "",
-    "dept": "UNIDAD PEDIATRICA",
-    "deptInfo": {
-      "id": "pediatria",
-      "name": "Unidad Pediátrica y Neonatología",
-      "code": "PEDIATRÍA",
-      "color": "#10b981"
-    },
-    "weight": "100%",
-    "weightVal": 0.9999999999999999,
-    "target": "Por definir / Pauta",
-    "targetVal": null,
-    "referent": "",
-    "summaryYTD": {
-      "numerator": null,
-      "denominator": null,
-      "result": null,
-      "resultFormatted": "-",
-      "compliance": null,
-      "status": "Sin Dato",
-      "statusLabel": "Evaluación Semestral / En Proceso"
-    },
-    "monthlyData": []
   }
 ];
