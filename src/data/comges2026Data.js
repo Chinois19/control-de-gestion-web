@@ -1959,75 +1959,75 @@ export const COMGES_INDICATORS = [
     "id": "M1.7",
     "code": "MONITOREO 1.7",
     "domainId": "monitoreo",
-    "name": "Porcentaje de Altas de Consultas Médicas de Especialidad (Líneas Generales)",
+    "name": "Porcentaje de Especialidades Médicas que cumplen el Estándar de Altas Esperadas (Corte a Julio)",
     "ponderacion": "Monitoreo",
     "type": "monitoreo",
-    "target": "En Monitoreo (Graficado a Julio)",
+    "target": "≥ 60.0% de especialidades",
     "frequency": "Mensual (Planilla COMGES 2026 hoja '1,7 ALTAS')",
-    "dataSource": "PLANILLA COMGES 2026.xlsx (Hoja '1,7 ALTAS') / Registro REM-A07 / SIGTE",
-    "definition": "Mide en líneas generales la proporción acumulada de altas de consultas médicas de especialidad respecto del total de atenciones especializadas realizadas en el Hospital de Villarrica, según planteamiento general del MINSAL (Graficado a Julio).",
-    "objective": "Promover la resolutividad diagnóstica y terapéutica y la gestión efectiva del egreso de pacientes en consulta médica de especialidad.",
+    "dataSource": "PLANILLA COMGES 2026.xlsx (Hoja '1,7 ALTAS') / Registro REM-A07 / SIGTE MINSAL",
+    "definition": "Mide el porcentaje del total de especialidades médicas evaluadas que cumplen con su estándar de logro de Altas Esperadas comprometidas (% ALTAS ESPERADO), según metodología oficial MINSAL (Graficado acumulado a Julio).",
+    "objective": "Garantizar la resolutividad médica y el egreso oportuno de pacientes en las consultas de especialidad médica.",
     "formula": {
-      "numerator": "N° total de altas de especialidad médica en el periodo (acumulado a Julio).",
-      "denominator": "N° total de consultas médicas de especialidad realizadas en el periodo (acumulado a Julio).",
-      "expression": "(Altas Médicas de Especialidad / Total Consultas de Especialidad) × 100"
+      "numerator": "N° de especialidades médicas que teniendo altas en el periodo cumplen con su estándar de logro (% Altas Esperado).",
+      "denominator": "N° total de especialidades médicas medidas en el periodo.",
+      "expression": "(Especialidades que Cumplen Estándar / Total Especialidades Medidas) × 100"
     },
-    "evalRules": "Graficado a Julio en líneas generales de acuerdo al planteamiento MINSAL.",
+    "evalRules": "Meta MINSAL: ≥ 60.0% de las especialidades médicas medidas deben cumplir con su respectivo porcentaje de Altas Esperadas (Corte acumulado a Julio).",
     "monthlyData": [
       {
         "month": "Enero",
-        "numerator": 773,
-        "denominator": 5255,
-        "result": 14.71,
-        "resultFormatted": "14.71%",
-        "status": "Cumple"
+        "numerator": 6,
+        "denominator": 22,
+        "result": 27.27,
+        "resultFormatted": "27.27%",
+        "status": "No Cumple"
       },
       {
         "month": "Febrero",
-        "numerator": 751,
-        "denominator": 4297,
-        "result": 17.48,
-        "resultFormatted": "17.48%",
-        "status": "Cumple"
+        "numerator": 8,
+        "denominator": 24,
+        "result": 33.33,
+        "resultFormatted": "33.33%",
+        "status": "No Cumple"
       },
       {
         "month": "Marzo",
-        "numerator": 846,
-        "denominator": 5800,
-        "result": 14.59,
-        "resultFormatted": "14.59%",
-        "status": "Cumple"
+        "numerator": 8,
+        "denominator": 24,
+        "result": 33.33,
+        "resultFormatted": "33.33%",
+        "status": "No Cumple"
       },
       {
         "month": "Abril",
-        "numerator": 726,
-        "denominator": 5910,
-        "result": 12.28,
-        "resultFormatted": "12.28%",
-        "status": "Cumple"
+        "numerator": 9,
+        "denominator": 24,
+        "result": 37.5,
+        "resultFormatted": "37.50%",
+        "status": "No Cumple"
       },
       {
         "month": "Mayo",
-        "numerator": 877,
-        "denominator": 5026,
-        "result": 17.45,
-        "resultFormatted": "17.45%",
-        "status": "Cumple"
+        "numerator": 13,
+        "denominator": 24,
+        "result": 54.17,
+        "resultFormatted": "54.17%",
+        "status": "No Cumple"
       },
       {
         "month": "Junio",
-        "numerator": 966,
-        "denominator": 4580,
-        "result": 21.09,
-        "resultFormatted": "21.09%",
+        "numerator": 15,
+        "denominator": 24,
+        "result": 62.5,
+        "resultFormatted": "62.50%",
         "status": "Cumple"
       },
       {
         "month": "Julio",
-        "numerator": 908,
-        "denominator": 5080,
-        "result": 17.87,
-        "resultFormatted": "17.87%",
+        "numerator": 16,
+        "denominator": 24,
+        "result": 66.67,
+        "resultFormatted": "66.67%",
         "status": "Cumple"
       },
       {
@@ -2072,12 +2072,12 @@ export const COMGES_INDICATORS = [
       }
     ],
     "summaryYTD": {
-      "numerator": 5847,
-      "denominator": 35948,
-      "result": 16.27,
-      "resultFormatted": "16.27%",
+      "numerator": 16,
+      "denominator": 24,
+      "result": 66.67,
+      "resultFormatted": "66.67%",
       "status": "Cumple",
-      "observation": "Acumulado General a Julio 2026: 16.27% de tasa global de altas médicas (5.847 altas otorgadas de 35.948 consultas totales de especialidad)."
+      "observation": "Acumulado a Julio 2026: 66.67% de cumplimiento MINSAL (16 de 24 especialidades médicas medidas cumplen su estándar de altas esperadas vs Meta ≥ 60.0%)."
     }
   }
 ];
