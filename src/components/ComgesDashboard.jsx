@@ -520,7 +520,7 @@ export default function ComgesDashboard({ onBack }) {
                                 backgroundColor: domainInfo?.color || '#64748b'
                               }}
                             >
-                              {domainInfo?.code} ({ind.ponderacion})
+                              {domainInfo?.code}
                             </span>
                           </div>
                           {getStatusBadge(ind.summaryYTD?.status)}
@@ -785,9 +785,6 @@ export default function ComgesDashboard({ onBack }) {
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', marginBottom: '6px' }}>
                     <span style={{ background: 'rgba(45, 212, 191, 0.2)', color: '#5eead4', border: '1px solid rgba(45, 212, 191, 0.4)', fontSize: '12px', fontWeight: 800, padding: '2px 8px', borderRadius: '4px', fontFamily: 'monospace' }}>
                       {selectedIndicator.code}
-                    </span>
-                    <span style={{ background: 'rgba(255, 255, 255, 0.15)', color: '#e2e8f0', fontSize: '12px', fontWeight: 600, padding: '2px 8px', borderRadius: '9999px' }}>
-                      Ponderación: {selectedIndicator.ponderacion}
                     </span>
                     {getStatusBadge(selectedIndicator.summaryYTD?.status)}
                   </div>

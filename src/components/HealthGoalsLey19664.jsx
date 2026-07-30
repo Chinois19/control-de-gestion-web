@@ -165,9 +165,6 @@ const HealthGoalsLey19664 = ({ onBack }) => {
                   <span style={{ background: '#04785715', color: '#047857', padding: '4px 12px', borderRadius: '20px', fontSize: '11.5px', fontWeight: 800 }}>
                     {ind.code}
                   </span>
-                  <span style={{ fontSize: '12px', fontWeight: 800, color: '#64748b' }}>
-                    Ponderación: {ind.weight}
-                  </span>
                 </div>
 
                 {/* Title */}
@@ -229,9 +226,6 @@ const HealthGoalsLey19664 = ({ onBack }) => {
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
                     <span style={{ background: '#34d399', color: '#064e3b', padding: '2px 8px', borderRadius: '12px', fontSize: '11px', fontWeight: 900 }}>
                       LEY 19.664 (FORMATIVO)
-                    </span>
-                    <span style={{ fontSize: '12px', color: '#a7f3d0', fontWeight: 700 }}>
-                      Ponderación: {selectedIndicator.weight}
                     </span>
                   </div>
                   <h2 style={{ fontSize: '20px', fontWeight: 900, margin: 0, lineHeight: 1.3 }}>

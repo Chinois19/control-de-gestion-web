@@ -294,7 +294,7 @@ export default function HealthGoalsLey18834({ onBack }) {
                     {meta.shortName}
                   </h3>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ fontSize: '0.85rem', color: '#64748b', fontWeight: 600 }}>{meta.value}% <span style={{fontSize:'0.7rem', color:'#94a3b8', marginLeft: '4px'}}>(Pond. {meta.ponderador}%)</span></span>
+                    <span style={{ fontSize: '0.85rem', color: '#64748b', fontWeight: 600 }}>{meta.value}%</span>
                     {renderStatusBadge(meta.status)}
                   </div>
                 </div>
