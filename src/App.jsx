@@ -42,6 +42,7 @@ import LaboratoryDashboard from './components/LaboratoryDashboard';
 import AcuerdoMinsalDashboard from './components/AcuerdoMinsalDashboard';
 import ComgesDashboard from './components/ComgesDashboard';
 import HealthGoalsLey18834 from './components/HealthGoalsLey18834';
+import HealthGoalsLey20707 from './components/HealthGoalsLey20707';
 import LoginScreen, { getSession, createSession, destroySession, refreshSession } from './components/LoginScreen';
 import UserManagementPanel from './components/UserManagementPanel';
 import './App.css';
@@ -121,7 +122,7 @@ const menuStructure = [
         nested: [
           { id: 'ley18834', label: 'Ley 18.834' },
           { id: 'ley19664', label: 'Ley 19.664' },
-          { id: 'ley15707', label: 'Ley 15.707' }
+          { id: 'ley20707', label: 'Ley 20.707' }
         ]
       },
       { id: 'comgest', label: 'Compromisos de Gestión 2026' },
@@ -148,6 +149,13 @@ const indicatorCards = [
     image: imgStats, 
     type: 'Estatuto Administrativo',
     desc: 'Monitoreo oficial de metas de gestión y atención para el personal regulado.'
+  },
+  { 
+    id: 'ley20707', 
+    title: 'Metas Sanitarias Ley 20.707', 
+    image: imgConsultation, 
+    type: 'Médicos y Odontólogos',
+    desc: 'Evaluación y seguimiento de metas clínicas por unidades asistenciales (UEH, Pabellón, UPC, Pauta Pediátrica, Gin-Obs).'
   },
   { 
     id: 'estadistica', 
@@ -1000,6 +1008,7 @@ function App() {
               {(activeView === 'estadistica' || activeView === 'quirurgica') && <SurgicalDashboard onBack={() => navigateToView(activeView === 'estadistica' ? 'home' : 'produccion_general')} />}
               {(activeView === 'indicadores' || activeView === 'ley19664' || activeView === 'ley15707') && <HealthGoals onBack={() => navigateToView('home')} />}
               {activeView === 'ley18834' && <HealthGoalsLey18834 onBack={() => navigateToView('home')} />}
+              {activeView === 'ley20707' && <HealthGoalsLey20707 onBack={() => navigateToView('home')} />}
               {activeView === 'repositorio' && <DocumentRepository onBack={() => navigateToView('home')} />}
               {activeView === 'mamografias' && (
                 <MammographyDashboard 
