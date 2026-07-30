@@ -4,13 +4,13 @@ import {
   ArrowLeft, Search, Filter, CheckCircle, AlertTriangle, XCircle, Info,
   BookOpen, FileText, ChevronRight, BarChart2, TrendingUp, Calendar,
   Award, Shield, ExternalLink, HelpCircle, Layers, Activity, FileSpreadsheet,
-  Download, RefreshCw
+  Download, RefreshCw, Clock, Building2, AlertCircle
 } from 'lucide-react';
-import { COMGES_META, COMGES_DOMAINS, COMGES_INDICATORS } from '../data/comges2026Data';
+import { COMGES_META, COMGES_DOMAINS, COMGES_INDICATORS, REM_CALENDAR, REGIONAL_HOSPITALS } from '../data/comges2026Data';
 import './ComgesDashboard.css';
 
 export default function ComgesDashboard({ onBack }) {
-  const [activeTab, setActiveTab] = useState('indicators'); // 'indicators' | 'orientaciones' | 'summary'
+  const [activeTab, setActiveTab] = useState('indicators'); // 'indicators' | 'orientaciones' | 'summary' | 'rem_calendar'
   const [selectedDomain, setSelectedDomain] = useState('all');
   const [selectedStatus, setSelectedStatus] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
@@ -136,7 +136,7 @@ export default function ComgesDashboard({ onBack }) {
                     Año {COMGES_META.year}
                   </span>
                   <span className="comges-badge comges-badge-version">
-                    {COMGES_META.version}
+                    Videoconferencia MINSAL (21-07-2026)
                   </span>
                 </div>
                 <h1 className="comges-title">
@@ -144,7 +144,7 @@ export default function ComgesDashboard({ onBack }) {
                   Compromisos de Gestión (COMGES) 2026
                 </h1>
                 <p className="comges-subtitle">
-                  Evaluación mensual de indicadores evaluados en Excel, definiciones técnicas, fórmulas de cálculo y requisitos normados por el MINSAL.
+                  Evaluación de los 11 indicadores oficiales aplicables al Hospital de Villarrica, fechas de puerto REM y orientaciones técnicas MINSAL.
                 </p>
               </div>
             </div>
@@ -160,7 +160,7 @@ export default function ComgesDashboard({ onBack }) {
                 </span>
               </div>
               <p style={{ color: '#94a3b8', lineHeight: 1.4 }}>
-                Se actualizará automáticamente cada mes al cargar los nuevos archivos de base.
+                11 Indicadores de Evaluación + 15 Indicadores de Monitoreo definidos para la red.
               </p>
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '6px', color: '#2dd4bf', fontWeight: 600, fontSize: '11px' }}>
                 <RefreshCw size={12} className="animate-spin" />
@@ -186,6 +186,13 @@ export default function ComgesDashboard({ onBack }) {
               Orientaciones Técnicas MINSAL
             </button>
             <button
+              onClick={() => setActiveTab('rem_calendar')}
+              className={`comges-tab-btn ${activeTab === 'rem_calendar' ? 'comges-tab-btn-active' : 'comges-tab-btn-inactive'}`}
+            >
+              <Clock size={16} />
+              Calendario Cargas REM 2026
+            </button>
+            <button
               onClick={() => setActiveTab('summary')}
               className={`comges-tab-btn ${activeTab === 'summary' ? 'comges-tab-btn-active' : 'comges-tab-btn-inactive'}`}
             >
@@ -202,11 +209,11 @@ export default function ComgesDashboard({ onBack }) {
         <div className="comges-kpi-grid">
           <div className="comges-kpi-card">
             <span className="comges-kpi-label" style={{ color: '#64748b' }}>
-              Total Indicadores <FileText size={16} />
+              Indicadores Evaluables <FileText size={16} />
             </span>
             <div>
-              <span className="comges-kpi-val" style={{ color: '#0f172a' }}>{summaryMetrics.total}</span>
-              <span style={{ fontSize: '11px', color: '#64748b', display: 'block' }}>23 COMGES + Monitoreo</span>
+              <span className="comges-kpi-val" style={{ color: '#0f172a' }}>11</span>
+              <span style={{ fontSize: '11px', color: '#64748b', display: 'block' }}>Hospital de Villarrica 2026</span>
             </div>
           </div>
 
@@ -242,11 +249,11 @@ export default function ComgesDashboard({ onBack }) {
 
           <div className="comges-kpi-card" style={{ borderLeft: '4px solid #0d9488' }}>
             <span className="comges-kpi-label" style={{ color: '#0d9488' }}>
-              Ponderación MINSAL <Shield size={16} />
+              Monitoreo Adicional <Building2 size={16} />
             </span>
             <div>
-              <span className="comges-kpi-val" style={{ color: '#0f766e' }}>100%</span>
-              <span style={{ fontSize: '11px', color: '#64748b', display: 'block' }}>6 Dominios evaluados</span>
+              <span className="comges-kpi-val" style={{ color: '#0f766e' }}>15</span>
+              <span style={{ fontSize: '11px', color: '#64748b', display: 'block' }}>Indicadores de Red</span>
             </div>
           </div>
         </div>
@@ -451,37 +458,48 @@ export default function ComgesDashboard({ onBack }) {
                 <h2 style={{ fontSize: '20px', fontWeight: 800, color: '#0f172a' }}>Orientaciones Técnicas COMGES 2026 - MINSAL</h2>
               </div>
               <p style={{ fontSize: '14px', color: '#475569', lineHeight: 1.6, maxWidth: '900px' }}>
-                Compendio conceptual y metodológico normado por la Subsecretaría de Redes Asistenciales del Ministerio de Salud para la evaluación de los 6 Compromisos de Gestión institucionales en el Hospital de Villarrica.
+                Compendio conceptual y metodológico normado por la Subsecretaría de Redes Asistenciales del Ministerio de Salud (Videoconferencia MINSAL 21-07-2026).
               </p>
             </div>
 
-            {/* General Evaluation Framework Cards */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px', marginBottom: '32px' }}>
-              <div style={{ padding: '16px', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '12px' }}>
-                <h4 style={{ fontWeight: 800, color: '#166534', fontSize: '14px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <Shield size={16} color="#166534" /> Ponderación Global (100%)
-                </h4>
-                <p style={{ fontSize: '12px', color: '#166534', marginTop: '6px', lineHeight: 1.5 }}>
-                  Los 6 Compromisos de Gestión agrupan los 23 indicadores normados. Cada compromiso posee una ponderación fija dentro de la evaluación semestral y anual del establecimiento.
-                </p>
-              </div>
+            {/* Penalization rules callout from Videoconferencia Slide 10 */}
+            <div style={{ background: '#fff7ed', border: '1px solid #ffedd5', padding: '16px', borderRadius: '12px', marginBottom: '24px', fontSize: '13px', color: '#9a3412' }}>
+              <h4 style={{ fontWeight: 800, display: 'flex', alignItems: 'center', gap: '8px', color: '#c2410c', marginBottom: '4px' }}>
+                <AlertCircle size={18} color="#c2410c" /> Regla de Evaluación y Penalizaciones (-1 Punto)
+              </h4>
+              <p style={{ lineHeight: 1.5 }}>
+                La evaluación del indicador principal se realiza en una escala de 0 a 4 puntos según su tabla de sensibilidad. Cuando el indicador incorpora **Requisito**, el incumplimiento técnico, no entrega o entrega fuera de plazo **descontará 1 punto** del puntaje obtenido (sin reducir el resultado a menos de 0 Puntos).
+              </p>
+            </div>
 
-              <div style={{ padding: '16px', background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: '12px' }}>
-                <h4 style={{ fontWeight: 800, color: '#1e40af', fontSize: '14px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <Calendar size={16} color="#1e40af" /> Cortes de Evaluación
-                </h4>
-                <p style={{ fontSize: '12px', color: '#1e40af', marginTop: '6px', lineHeight: 1.5 }}>
-                  Corte 1 (Primer Semestre - Julio) y Corte 2 (Segundo Semestre - Enero siguiente). Se aplican tablas de sensibilidad y descuentos por requisitos no cumplidos.
-                </p>
-              </div>
-
-              <div style={{ padding: '16px', background: '#faf5ff', border: '1px solid #e9d5ff', borderRadius: '12px' }}>
-                <h4 style={{ fontWeight: 800, color: '#6b21a8', fontSize: '14px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <FileSpreadsheet size={16} color="#6b21a8" /> Registro y Fuentes
-                </h4>
-                <p style={{ fontSize: '12px', color: '#6b21a8', marginTop: '6px', lineHeight: 1.5 }}>
-                  Las fuentes de datos validadas son el Sistema SIGGES, SIGTE, REM-A08/A27, Ficha Clínica Electrónica (RCE) y planillas institucionales de control de gestión.
-                </p>
+            {/* Situación Regional Por Establecimiento (Slide 17) */}
+            <div style={{ marginBottom: '32px' }}>
+              <h3 style={{ fontSize: '16px', fontWeight: 800, color: '#0f172a', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Building2 size={20} color="#0d9488" /> Situación Actual Red Asistencial Araucanía Sur
+              </h3>
+              <div style={{ overflowX: 'auto', border: '1px solid #e2e8f0', borderRadius: '12px' }}>
+                <table className="comges-table">
+                  <thead>
+                    <tr>
+                      <th>Establecimiento</th>
+                      <th style={{ textAlign: 'center' }}>Indicadores Evaluables</th>
+                      <th style={{ textAlign: 'center' }}>Indicadores de Monitoreo</th>
+                      <th style={{ textAlign: 'center' }}>Referentes Definidos</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {REGIONAL_HOSPITALS.map((h, idx) => (
+                      <tr key={idx} style={h.highlight ? { background: '#f0fdf4', fontWeight: 700 } : {}}>
+                        <td style={{ color: h.highlight ? '#166534' : '#0f172a' }}>
+                          {h.name} {h.highlight && '(Nuestro Hospital)'}
+                        </td>
+                        <td style={{ textAlign: 'center', fontWeight: 700 }}>{h.evalCount}</td>
+                        <td style={{ textAlign: 'center' }}>{h.monitoreoCount}</td>
+                        <td style={{ textAlign: 'center', color: '#0d9488', fontWeight: 700 }}>{h.referentes}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             </div>
 
@@ -499,7 +517,7 @@ export default function ComgesDashboard({ onBack }) {
                           <h4 style={{ fontWeight: 800, color: '#0f172a', fontSize: '15px' }}>{domain.code}: {domain.title}</h4>
                         </div>
                         <span style={{ padding: '4px 12px', background: '#ffffff', border: '1px solid #cbd5e1', color: '#0f172a', borderRadius: '9999px', fontWeight: 700, fontSize: '12px' }}>
-                          Ponderación: {domain.weight}
+                          Ponderación: {domain.weight} ({domain.indWeight} / indicador)
                         </span>
                       </div>
                       <div style={{ padding: '16px', background: '#ffffff' }}>
@@ -525,7 +543,45 @@ export default function ComgesDashboard({ onBack }) {
           </div>
         )}
 
-        {/* TAB 3: RESUMEN EJECUTIVO POR DOMINIOS */}
+        {/* TAB 3: CALENDARIO DE CARGAS REM 2026 */}
+        {activeTab === 'rem_calendar' && (
+          <div style={{ background: '#ffffff', borderRadius: '16px', border: '1px solid #e2e8f0', padding: '24px' }}>
+            <div style={{ marginBottom: '20px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
+                <Clock size={28} color="#0d9488" />
+                <h2 style={{ fontSize: '20px', fontWeight: 800, color: '#0f172a' }}>Calendario Oficial Cargas REM MINSAL 2026</h2>
+              </div>
+              <p style={{ fontSize: '14px', color: '#475569', lineHeight: 1.6, maxWidth: '900px' }}>
+                Fechas de apertura, cierre de puerto y disponibilidad oficial de publicación de datos del Sistema de Cargas REM (Videoconferencia MINSAL 21-07-2026).
+              </p>
+            </div>
+
+            <div style={{ overflowX: 'auto', border: '1px solid #e2e8f0', borderRadius: '12px' }}>
+              <table className="comges-table">
+                <thead>
+                  <tr>
+                    <th>Información REM A Cargar</th>
+                    <th style={{ textAlign: 'center' }}>Apertura de Puerto</th>
+                    <th style={{ textAlign: 'center' }}>Cierre de Puerto</th>
+                    <th style={{ textAlign: 'center' }}>Datos Disponibles Publicación</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {REM_CALENDAR.map((row, idx) => (
+                    <tr key={idx} style={row.month.includes('Junio') ? { background: '#f0fdf4', fontWeight: 700 } : {}}>
+                      <td style={{ fontWeight: 700, color: '#0f172a' }}>{row.month}</td>
+                      <td style={{ textAlign: 'center', color: '#2563eb' }}>{row.open}</td>
+                      <td style={{ textAlign: 'center', color: '#e11d48' }}>{row.close}</td>
+                      <td style={{ textAlign: 'center', color: '#059669', fontWeight: 700 }}>{row.publish}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* TAB 4: RESUMEN EJECUTIVO POR DOMINIOS */}
         {activeTab === 'summary' && (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '20px' }}>
             {COMGES_DOMAINS.map((d) => {

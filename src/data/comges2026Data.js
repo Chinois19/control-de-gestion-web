@@ -1,5 +1,5 @@
 // Dataset Oficial COMGES 2026 - Hospital de Villarrica
-// Filtrado exclusivo para los 11 indicadores oficiales aplicables al Hospital de Villarrica + Monitoreo Hospitalario
+// Actualizado con Orientaciones Técnicas, Videoconferencia MINSAL 21-07-2026 (Servicio Salud Araucanía Sur) y Planilla Excel
 
 export const COMGES_META = {
   hospital: "Hospital de Villarrica",
@@ -12,16 +12,133 @@ export const COMGES_META = {
   sourceFiles: [
     "Minuta COMGES 2026 FINAL.pdf",
     "Orientaciones Técnicas COMGES 2026_Versión FINAL JULIO.pdf",
-    "PLANILLA COMGES 2026.xlsx"
+    "PLANILLA COMGES 2026.xlsx",
+    "Videoconferencia COMGES MINSAL 21-07-2026.pdf"
   ]
 };
+
+export const REM_CALENDAR = [
+  {
+    "month": "Enero 2026",
+    "open": "Viernes 13 Feb",
+    "close": "Viernes 20 Feb",
+    "publish": "Martes 24 Feb"
+  },
+  {
+    "month": "Febrero 2026",
+    "open": "Viernes 13 Mar",
+    "close": "Viernes 20 Mar",
+    "publish": "Martes 24 Mar"
+  },
+  {
+    "month": "Marzo 2026",
+    "open": "Miércoles 15 Abr",
+    "close": "Miércoles 22 Abr",
+    "publish": "Viernes 24 Abr"
+  },
+  {
+    "month": "Abril 2026",
+    "open": "Viernes 15 May",
+    "close": "Lunes 25 May",
+    "publish": "Miércoles 27 May"
+  },
+  {
+    "month": "Mayo 2026",
+    "open": "Viernes 12 Jun",
+    "close": "Viernes 19 Jun",
+    "publish": "Martes 23 Jun"
+  },
+  {
+    "month": "Junio 2026",
+    "open": "Martes 14 Jul",
+    "close": "Miércoles 22 Jul",
+    "publish": "Viernes 24 Jul"
+  },
+  {
+    "month": "Julio 2026",
+    "open": "Viernes 14 Ago",
+    "close": "Viernes 21 Ago",
+    "publish": "Martes 25 Ago"
+  },
+  {
+    "month": "Agosto 2026",
+    "open": "Lunes 14 Sep",
+    "close": "Martes 22 Sep",
+    "publish": "Viernes 25 Sep"
+  },
+  {
+    "month": "Septiembre 2026",
+    "open": "Jueves 15 Oct",
+    "close": "Jueves 22 Oct",
+    "publish": "Lunes 26 Oct"
+  },
+  {
+    "month": "Octubre 2026",
+    "open": "Viernes 13 Nov",
+    "close": "Viernes 20 Nov",
+    "publish": "Martes 24 Nov"
+  },
+  {
+    "month": "Noviembre 2026",
+    "open": "Martes 15 Dic",
+    "close": "Martes 22 Dic",
+    "publish": "Jueves 24 Dic"
+  },
+  {
+    "month": "Diciembre 2026",
+    "open": "Viernes 15 Ene 2027",
+    "close": "Viernes 22 Ene 2027",
+    "publish": "Martes 26 Ene 2027"
+  }
+];
+
+export const REGIONAL_HOSPITALS = [
+  {
+    "name": "Hospital Dr. Hernán Henríquez Aravena",
+    "evalCount": 13,
+    "monitoreoCount": 16,
+    "referentes": "28 de 29"
+  },
+  {
+    "name": "Hospital Villarrica",
+    "evalCount": 11,
+    "monitoreoCount": 15,
+    "referentes": "26 de 26",
+    "highlight": true
+  },
+  {
+    "name": "Hospital Lautaro",
+    "evalCount": 11,
+    "monitoreoCount": 14,
+    "referentes": "24 de 25"
+  },
+  {
+    "name": "Hospital Nueva Imperial",
+    "evalCount": 11,
+    "monitoreoCount": 15,
+    "referentes": "26 de 26"
+  },
+  {
+    "name": "Hospital Pitrufquén",
+    "evalCount": 11,
+    "monitoreoCount": 14,
+    "referentes": "19 de 25"
+  },
+  {
+    "name": "Complejo Asistencial Padre las Casas",
+    "evalCount": 12,
+    "monitoreoCount": 14,
+    "referentes": "23 de 26"
+  }
+];
 
 export const COMGES_DOMAINS = [
   {
     "id": "comges-1",
     "code": "COMGES 1",
     "title": "Eficiencia en la gestión de procesos asistenciales, calidad y seguridad del paciente",
-    "weight": "Dominio 1",
+    "weight": "18%",
+    "indWeight": "4.50%",
     "color": "#3B82F6",
     "description": "Optimización del uso de pabellones quirúrgicos electivos y prevención de suspensiones."
   },
@@ -29,7 +146,8 @@ export const COMGES_DOMAINS = [
     "id": "comges-2",
     "code": "COMGES 2",
     "title": "Estrategias de prevención, diagnóstico y tratamiento en la Red Asistencial",
-    "weight": "Dominio 2",
+    "weight": "9%",
+    "indWeight": "4.50%",
     "color": "#10B981",
     "description": "Procuramiento y tasa de donantes efectivos en muerte encefálica en la Red Asistencial."
   },
@@ -37,7 +155,8 @@ export const COMGES_DOMAINS = [
     "id": "comges-3",
     "code": "COMGES 3",
     "title": "Gestión de los tiempos de espera",
-    "weight": "Dominio 3",
+    "weight": "30%",
+    "indWeight": "4.29%",
     "color": "#F59E0B",
     "description": "Garantías explícitas en salud (GES) y monitoreo del percentil 75 de listas de espera (Médica, Odontológica y Quirúrgica)."
   },
@@ -45,7 +164,8 @@ export const COMGES_DOMAINS = [
     "id": "comges-4",
     "code": "COMGES 4",
     "title": "Gestión de Riesgos, Recursos Humanos y Financieros",
-    "weight": "Dominio 4",
+    "weight": "13%",
+    "indWeight": "4.33%",
     "color": "#8B5CF6",
     "description": "Gestión del riesgo de desastres e índice de gasto en personas naturales según glosa autorizada."
   },
@@ -53,7 +173,8 @@ export const COMGES_DOMAINS = [
     "id": "comges-5",
     "code": "COMGES 5",
     "title": "Prevención, detección temprana y tratamiento oportuno del cáncer",
-    "weight": "Dominio 5",
+    "weight": "17%",
+    "indWeight": "4.25%",
     "color": "#EC4899",
     "description": "Cumplimiento de garantías GES oncológicas y resolución quirúrgica oncológica No GES < 90 días."
   },
@@ -61,7 +182,8 @@ export const COMGES_DOMAINS = [
     "id": "comges-6",
     "code": "COMGES 6",
     "title": "Sistemas de información y Salud Digital",
-    "weight": "Dominio 6",
+    "weight": "13%",
+    "indWeight": "4.33%",
     "color": "#06B6D4",
     "description": "Implementación de estrategias y células de Hospital Digital en establecimientos de la Red."
   },
@@ -70,6 +192,7 @@ export const COMGES_DOMAINS = [
     "code": "MONITOREO",
     "title": "Indicadores de Monitoreo Obligatorio Hospitalario",
     "weight": "Monitoreo",
+    "indWeight": "Monitoreo",
     "color": "#64748B",
     "description": "Indicadores de seguimiento continuo en el Hospital de Villarrica (CMA, Abandono Urgencia, Ausentismo)."
   }
@@ -81,19 +204,19 @@ export const COMGES_INDICATORS = [
     "code": "COMGES 1.1",
     "domainId": "comges-1",
     "name": "1.1. Suspensiones quirúrgicas en cirugía mayores electivas",
-    "ponderacion": "Aplicable Hospital Villarrica",
+    "ponderacion": "4.50%",
     "type": "comges",
     "target": "≤ 6.5%",
     "frequency": "Mensual (Corte semestral MINSAL)",
-    "dataSource": "Planilla de Registro Quirúrgico Hospitalario / SIGTE / REM-A08",
-    "definition": "Mide el porcentaje de cirugías mayores electivas suspendidas respecto del total de cirugías mayores electivas programadas en tabla quirúrgica del Hospital de Villarrica.",
+    "dataSource": "Planilla de Registro Quirúrgico Hospitalario / SIGTE / REM-A08 (Numerador y Denominador)",
+    "definition": "Mide el porcentaje de cirugías mayores electivas suspendidas respecto del total de cirugías mayores electivas programadas en tabla quirúrgica del Hospital de Villarrica. Fuente oficial con Ruta REM.",
     "objective": "Aumentar la eficiencia en el uso de los pabellones quirúrgicos electivos y reducir las suspensiones por causas prevenibles.",
     "formula": {
       "numerator": "N° de cirugías mayores electivas suspendidas en el periodo.",
       "denominator": "N° total de cirugías mayores electivas programadas en el periodo.",
       "expression": "(Cirugías Suspendidas / Cirugías Programadas) × 100"
     },
-    "evalRules": "Evaluación semestral según tabla de sensibilidad MINSAL. Se evalúa el porcentaje acumulado.",
+    "evalRules": "Evaluación semestral según tabla de sensibilidad MINSAL (Escala 0 a 4 puntos). Indicador con Ruta REM.",
     "monthlyData": [
       {
         "month": "Enero",
@@ -206,7 +329,7 @@ export const COMGES_INDICATORS = [
     "code": "COMGES 2.2",
     "domainId": "comges-2",
     "name": "2.2. Tasa de donantes efectivos en muerte encefálica por millón de población (PMP) generados por Servicio de Salud",
-    "ponderacion": "Aplicable Hospital Villarrica",
+    "ponderacion": "4.50%",
     "type": "comges",
     "target": "≥ Meta PMP asignada por Coordinación Nacional de Procuramiento",
     "frequency": "Mensual / Semestral",
@@ -215,7 +338,7 @@ export const COMGES_INDICATORS = [
     "objective": "Aumentar la tasa de procuramiento de órganos y tejidos para trasplante en la red asistencial.",
     "formula": {
       "numerator": "N° de donantes efectivos de órganos procurados en el establecimiento.",
-      "denominator": "Población asignada (por millón de habitantes) del Servicio de Salud.",
+      "denominator": "Población asignada (por millón de habitantes) del Servicio de Salud Araucanía Sur.",
       "expression": "(Donantes Efectivos / Población en Millones)"
     },
     "evalRules": "Evaluación semestral combinada con el reporte de pesquisa de potenciales donantes.",
@@ -234,19 +357,19 @@ export const COMGES_INDICATORS = [
     "code": "COMGES 3.1",
     "domainId": "comges-3",
     "name": "3.1. Cumplimiento de Garantías explícitas en Salud (GES) en la red",
-    "ponderacion": "Aplicable Hospital Villarrica",
+    "ponderacion": "4.29%",
     "type": "comges",
     "target": "≥ 99.5%",
     "frequency": "Mensual",
     "dataSource": "Sistema de Información GES (SIGGES) MINSAL",
-    "definition": "Mide el grado de cumplimiento de las garantías de oportunidad GES de todas las patologías GES atendidas en el Hospital de Villarrica. Las garantías no cumplidas representan retrasos legales sancionados por la Ley 19.966.",
+    "definition": "Indicador Compuesto y con Requisitos. Mide el cumplimiento de las garantías de oportunidad GES en el Hospital de Villarrica. El incumplimiento técnico del requisito descuenta 1 punto del puntaje obtenido.",
     "objective": "Garantizar la atención dentro de los plazos legales normados para el 100% de las garantías de oportunidad GES vigentes.",
     "formula": {
       "numerator": "N° de garantías GES cumplidas dentro del plazo legal legalmente resueltas.",
       "denominator": "N° total de garantías GES exceptuadas + garantizadas con fecha de vencimiento en el periodo.",
       "expression": "(Garantías Cumplidas / Garantías Totales Vencidas) × 100"
     },
-    "evalRules": "Evaluación mensual estricta. Meta: 99.5%. Se descuentan excepciones normadas.",
+    "evalRules": "Indicador Compuesto con Requisito. Escala de 0 a 4 puntos. Si no cumple requisito, se descuenta 1 punto al resultado principal (mínimo 0 Puntos).",
     "monthlyData": [
       {
         "month": "Enero",
@@ -359,7 +482,7 @@ export const COMGES_INDICATORS = [
     "code": "COMGES 3.2",
     "domainId": "comges-3",
     "name": "3.2. Monitoreo del percentil 75 de la lista de espera de consulta nueva de especialidad médica",
-    "ponderacion": "Aplicable Hospital Villarrica",
+    "ponderacion": "4.29%",
     "type": "comges",
     "target": "Reducción o mantención del Percentil 75 respecto al año base",
     "frequency": "Mensual / Semestral",
@@ -387,19 +510,19 @@ export const COMGES_INDICATORS = [
     "code": "COMGES 3.3",
     "domainId": "comges-3",
     "name": "3.3. Monitoreo del percentil 75 de la lista de espera de consulta nueva de especialidad odontológica",
-    "ponderacion": "Aplicable Hospital Villarrica",
+    "ponderacion": "4.29%",
     "type": "comges",
     "target": "Reducción del Percentil 75 de espera odontológica",
     "frequency": "Semestral",
     "dataSource": "SIGTE / Registro de Especialidades Odontológicas",
-    "definition": "Mide los días de espera del percentil 75 de solicitudes activas para atención con especialidades odontológicas (Ortodoncia, Endodoncia, Cirugía Maxilofacial) en el hospital.",
+    "definition": "Indicador Compuesto. Mide los días de espera del percentil 75 de solicitudes activas para atención con especialidades odontológicas en el hospital.",
     "objective": "Acelerar la resolución diagnóstica y terapéutica odontológica en el nivel secundario.",
     "formula": {
       "numerator": "Percentil 75 de días acumulados en lista de espera odontológica.",
       "denominator": "Línea base institucional de esperas odontológicas.",
       "expression": "Percentil 75 Odontológico (Días)"
     },
-    "evalRules": "Evaluación semestral de disminución porcentual del P75 odontológico.",
+    "evalRules": "Indicador Compuesto evaluado en la red del Servicio de Salud Araucanía Sur.",
     "monthlyData": [],
     "summaryYTD": {
       "numerator": "-",
@@ -415,7 +538,7 @@ export const COMGES_INDICATORS = [
     "code": "COMGES 3.4",
     "domainId": "comges-3",
     "name": "3.4. Monitoreo del percentil 75 de la lista de espera de intervenciones quirúrgicas mayores y menores",
-    "ponderacion": "Aplicable Hospital Villarrica",
+    "ponderacion": "4.29%",
     "type": "comges",
     "target": "Reducción del Percentil 75 quirúrgico No GES",
     "frequency": "Mensual / Semestral",
@@ -443,19 +566,19 @@ export const COMGES_INDICATORS = [
     "code": "COMGES 4.2",
     "domainId": "comges-4",
     "name": "4.2. Implementación del plan gestión del riesgo de desastres",
-    "ponderacion": "Aplicable Hospital Villarrica",
+    "ponderacion": "4.33%",
     "type": "comges",
     "target": "≥ 90% de ejecución de las fases del Plan de Emergencias y Desastres",
     "frequency": "Semestral",
     "dataSource": "Unidad de Gestión del Riesgo de Desastres Hospitalario / Depto. Salud Ocupacional",
-    "definition": "Evalúa el cumplimiento de las actividades, simulacros, mantenimientos críticos de continuidad operativa y capacitaciones del Plan Hospitalario para Emergencias y Desastres.",
+    "definition": "Indicador con Requisitos. Evalúa el cumplimiento de las actividades, simulacros, mantenimientos críticos de continuidad operativa y capacitaciones del Plan Hospitalario para Emergencias y Desastres.",
     "objective": "Asegurar la resiliencia y la continuidad operacional de la infraestructura hospitalaria ante eventos adversos y catástrofes.",
     "formula": {
       "numerator": "N° de actividades GDR (simulacros, planes de contingencia, comités) ejecutadas.",
       "denominator": "Total de actividades comprometidas en la programación anual GDR.",
       "expression": "(Actividades GDR Realizadas / Actividades Programadas) × 100"
     },
-    "evalRules": "Pauta de cotejo semestral MINSAL/SENAPRED.",
+    "evalRules": "Indicador con Requisito. Descuento de 1 punto por incumplimiento técnico o atraso en informe.",
     "monthlyData": [],
     "summaryYTD": {
       "numerator": 14,
@@ -471,19 +594,19 @@ export const COMGES_INDICATORS = [
     "code": "COMGES 4.3",
     "domainId": "comges-4",
     "name": "4.3. Índice del gasto en convenio con personas naturales respecto a la glosa autorizada vigente",
-    "ponderacion": "Aplicable Hospital Villarrica",
+    "ponderacion": "4.33%",
     "type": "comges",
     "target": "≤ 100% del marco presupuestario autorizado",
     "frequency": "Mensual / Trimestral",
     "dataSource": "SIGFE / Subdepartamento de Finanzas y Presupuesto",
-    "definition": "Cuantifica el ajuste del gasto ejecutado por contrataciones en honorarios médicos y no médicos (personas naturales) respecto al marco presupuestario vigente asignado.",
+    "definition": "Indicador Compuesto y con Requisitos. Cuantifica el ajuste del gasto ejecutado por contrataciones en honorarios médicos y no médicos (personas naturales) respecto al marco presupuestario vigente.",
     "objective": "Mantener la sostenibilidad financiera y la disciplina presupuestaria en la contratación de personal honorario.",
     "formula": {
       "numerator": "Gasto devengado acumulado en Subtítulo 21 (Honorarios Personas Naturales).",
       "denominator": "Presupuesto o marco vigente autorizador en el periodo.",
       "expression": "(Gasto Honorarios Devengado / Marco Presupuestario Vigente) × 100"
     },
-    "evalRules": "Evaluación mensual y trimestral del devengamiento financiero en SIGFE.",
+    "evalRules": "Indicador Compuesto con Requisito. Monitoreo estricto del devengamiento presupuestario en SIGFE.",
     "monthlyData": [],
     "summaryYTD": {
       "numerator": "$ 480.000.000",
@@ -499,19 +622,19 @@ export const COMGES_INDICATORS = [
     "code": "COMGES 5.1",
     "domainId": "comges-5",
     "name": "5.1. Nivel de cumplimiento efectivo de garantías GES en problemas de salud oncológicos",
-    "ponderacion": "Aplicable Hospital Villarrica",
+    "ponderacion": "4.25%",
     "type": "comges",
     "target": "100% de cumplimiento en oportunidad de garantías oncológicas GES",
     "frequency": "Mensual",
     "dataSource": "SIGGES MINSAL / Registro Oncológico Hospitalario",
-    "definition": "Mide en forma específica el cumplimiento de la garantía de oportunidad en los problemas de salud GES del área oncológica en el Hospital de Villarrica.",
+    "definition": "Indicador Compuesto. Mide en forma específica el cumplimiento de la garantía de oportunidad en los problemas de salud GES del área oncológica en el Hospital de Villarrica.",
     "objective": "Asegurar que ningún paciente con sospecha o confirmación diagnóstica de cáncer sufra retrasos en su tratamiento u oportunidad legal.",
     "formula": {
       "numerator": "N° de garantías GES oncológicas cumplidas en plazo legal.",
       "denominator": "Total de garantías GES oncológicas vencidas en el periodo.",
       "expression": "(Garantías Oncológicas Cumplidas / Garantías Oncológicas Vencidas) × 100"
     },
-    "evalRules": "Cero tolerancia a retrasos no justificados en confirmación o inicio de tratamiento oncológico.",
+    "evalRules": "Indicador Compuesto. Cero tolerancia a retrasos no justificados en oportunidad oncológica.",
     "monthlyData": [],
     "summaryYTD": {
       "numerator": 412,
@@ -527,7 +650,7 @@ export const COMGES_INDICATORS = [
     "code": "COMGES 5.2",
     "domainId": "comges-5",
     "name": "5.2. Casos oncológicos No GES en lista de espera quirúrgica con espera menor a 90 días",
-    "ponderacion": "Aplicable Hospital Villarrica",
+    "ponderacion": "4.25%",
     "type": "comges",
     "target": "≥ 95% de casos quirúrgicos oncológicos No GES operados < 90 días",
     "frequency": "Mensual",
@@ -555,7 +678,7 @@ export const COMGES_INDICATORS = [
     "code": "COMGES 6.1",
     "domainId": "comges-6",
     "name": "6.1. Nivel de implementación de estrategias y/o células de Hospital Digital en establecimientos del Servicio de Salud",
-    "ponderacion": "Aplicable Hospital Villarrica",
+    "ponderacion": "4.33%",
     "type": "comges",
     "target": "≥ 90% de avance en implementación de células de telemedicina",
     "frequency": "Semestral",
@@ -587,15 +710,15 @@ export const COMGES_INDICATORS = [
     "type": "monitoreo",
     "target": "≥ 50.0%",
     "frequency": "Mensual",
-    "dataSource": "PLANILLA COMGES 2026.xlsx (Hoja '1,1 AMB CMA') / REM-A08",
-    "definition": "Mide la proporción de cirugías mayores electivas ambulatorizadas (CMA, donde el paciente ingresa y egresa el mismo día) sobre el total de cirugías mayores electivas realizadas en el Hospital de Villarrica.",
+    "dataSource": "PLANILLA COMGES 2026.xlsx (Hoja '1,1 AMB CMA') / REM-A08 (Numerador y Denominador)",
+    "definition": "Indicador de Monitoreo con Ruta REM. Mide la proporción de cirugías mayores electivas ambulatorizadas (CMA) sobre el total de cirugías mayores electivas realizadas en el Hospital de Villarrica.",
     "objective": "Optimizar el recurso cama hospitalario y favorecer la recuperación precoz del paciente en su entorno familiar.",
     "formula": {
       "numerator": "N° total de Cirugías Mayores Ambulatorias (CMA) realizadas.",
       "denominator": "N° total de Cirugías Mayores Electivas realizadas (CMA + Con Hospitalización).",
       "expression": "(CMA / Total Cirugías Mayores Electivas) × 100"
     },
-    "evalRules": "Seguimiento mensual. Meta institucional: lograr o superar el 50% de ambulatorización en procedimientos candidatos.",
+    "evalRules": "Seguimiento mensual con Ruta REM oficial. Meta institucional ≥ 50%.",
     "monthlyData": [
       {
         "month": "Enero",
@@ -712,15 +835,15 @@ export const COMGES_INDICATORS = [
     "type": "monitoreo",
     "target": "< 10.0%",
     "frequency": "Mensual",
-    "dataSource": "PLANILLA COMGES 2026.xlsx (Hoja '1,9 ABANDONO URG') / DAU Urgencias",
-    "definition": "Porcentaje de pacientes que, habiendo ingresado y categorizado en la Unidad de Emergencia Hospitalaria (UEH), se retiran antes de recibir la atención médica completa.",
+    "dataSource": "PLANILLA COMGES 2026.xlsx (Hoja '1,9 ABANDONO URG') / DAU / REM (Numerador y Denominador)",
+    "definition": "Indicador Compuesto y de Monitoreo con Ruta REM. Porcentaje de pacientes que se retiran sin atención médica de la UEH tras ingresar a categorización.",
     "objective": "Reducir los tiempos de espera en urgencia para evitar la fuga de pacientes y riesgos clínicos.",
     "formula": {
       "numerator": "N° de personas que se retiran sin atención médica.",
       "denominator": "N° total de consultas/DAU ingresadas en el servicio de urgencia.",
       "expression": "(Abandonos UEH / Total DAU Ingresados) × 100"
     },
-    "evalRules": "Evaluación mensual. Nivel crítico cuando supera el 10%.",
+    "evalRules": "Indicador Compuesto con Ruta REM oficial.",
     "monthlyData": [],
     "summaryYTD": {
       "numerator": 3810,
