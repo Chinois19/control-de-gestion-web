@@ -4,7 +4,7 @@ import {
   ArrowLeft, Search, Filter, CheckCircle, AlertTriangle, XCircle, Info,
   BookOpen, FileText, ChevronRight, BarChart2, TrendingUp, Calendar,
   Award, Shield, ExternalLink, HelpCircle, Layers, Activity, FileSpreadsheet,
-  Download, RefreshCw, Clock, Building2, AlertCircle
+  Download, RefreshCw, Clock, Building2, AlertCircle, HelpCircle as QuestionIcon
 } from 'lucide-react';
 import {
   ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid,
@@ -14,7 +14,7 @@ import { COMGES_META, COMGES_DOMAINS, COMGES_INDICATORS, REM_CALENDAR, REGIONAL_
 import './ComgesDashboard.css';
 
 // Mini Monthly Line Chart component rendered below formula in each card
-const MiniMonthlyLineChart = ({ monthlyData = [], target = '' }) => {
+const MiniMonthlyLineChart = ({ monthlyData = [], target = '', status = '' }) => {
   // Parse target numerical value if available
   const targetNum = useMemo(() => {
     if (!target) return null;
@@ -37,6 +37,17 @@ const MiniMonthlyLineChart = ({ monthlyData = [], target = '' }) => {
   }, [monthlyData]);
 
   const hasData = chartData.some(d => d.val !== null);
+
+  if (status === 'Sin Medición') {
+    return (
+      <div style={{ marginTop: '10px', padding: '10px 12px', background: '#f8fafc', borderRadius: '10px', border: '1px dashed #cbd5e1', display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '11px', color: '#475569' }}>
+        <span style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600 }}>
+          <AlertCircle size={14} color="#64748b" /> Sin Medición Acumulada:
+        </span>
+        <span style={{ fontStyle: 'italic', color: '#64748b' }}>Dudas metodológicas para su medición por aclarar por el SSAS</span>
+      </div>
+    );
+  }
 
   if (!hasData) {
     return (
@@ -116,6 +127,7 @@ export default function ComgesDashboard({ onBack }) {
     let cumple = 0;
     let riesgo = 0;
     let noCumple = 0;
+    let sinMedicion = 0;
     let sinDato = 0;
 
     COMGES_INDICATORS.forEach(ind => {
@@ -123,6 +135,7 @@ export default function ComgesDashboard({ onBack }) {
       if (status === 'Cumple') cumple++;
       else if (status === 'En Riesgo') riesgo++;
       else if (status === 'No Cumple') noCumple++;
+      else if (status === 'Sin Medición') sinMedicion++;
       else sinDato++;
     });
 
@@ -131,6 +144,7 @@ export default function ComgesDashboard({ onBack }) {
       cumple,
       riesgo,
       noCumple,
+      sinMedicion,
       sinDato,
       cumplePerc: ((cumple / COMGES_INDICATORS.length) * 100).toFixed(1)
     };
@@ -149,6 +163,7 @@ export default function ComgesDashboard({ onBack }) {
         if (selectedStatus === 'cumple' && st !== 'Cumple') return false;
         if (selectedStatus === 'riesgo' && st !== 'En Riesgo') return false;
         if (selectedStatus === 'nocumple' && st !== 'No Cumple') return false;
+        if (selectedStatus === 'sinmedicion' && st !== 'Sin Medición') return false;
       }
       // Search query
       if (searchQuery.trim() !== '') {
@@ -182,6 +197,12 @@ export default function ComgesDashboard({ onBack }) {
         return (
           <span className="status-badge status-nocumple">
             <XCircle size={14} /> No Cumple
+          </span>
+        );
+      case 'Sin Medición':
+        return (
+          <span className="status-badge" style={{ background: '#f1f5f9', color: '#475569', border: '1px solid #cbd5e1', padding: '4px 10px', borderRadius: '9999px', fontSize: '12px', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+            <AlertCircle size={14} color="#64748b" /> Sin Medición (Por definir SSAS)
           </span>
         );
       default:
@@ -341,13 +362,13 @@ export default function ComgesDashboard({ onBack }) {
             </div>
           </div>
 
-          <div className="comges-kpi-card" style={{ borderLeft: '4px solid #0d9488' }}>
-            <span className="comges-kpi-label" style={{ color: '#0d9488' }}>
-              Monitoreo Adicional <Building2 size={16} />
+          <div className="comges-kpi-card" style={{ borderLeft: '4px solid #64748b' }}>
+            <span className="comges-kpi-label" style={{ color: '#475569' }}>
+              Sin Medición <AlertCircle size={16} />
             </span>
             <div>
-              <span className="comges-kpi-val" style={{ color: '#0f766e' }}>15</span>
-              <span style={{ fontSize: '11px', color: '#64748b', display: 'block' }}>Indicadores de Red</span>
+              <span className="comges-kpi-val" style={{ color: '#334155' }}>{summaryMetrics.sinMedicion}</span>
+              <span style={{ fontSize: '11px', color: '#64748b', display: 'block' }}>Criterios SSAS por definir</span>
             </div>
           </div>
         </div>
@@ -408,6 +429,13 @@ export default function ComgesDashboard({ onBack }) {
                   >
                     No Cumple ({summaryMetrics.noCumple})
                   </button>
+                  <button
+                    onClick={() => setSelectedStatus('sinmedicion')}
+                    className={`comges-pill ${selectedStatus === 'sinmedicion' ? 'comges-pill-active' : ''}`}
+                    style={selectedStatus === 'sinmedicion' ? { background: '#64748b', borderColor: '#64748b' } : { color: '#475569' }}
+                  >
+                    Sin Medición ({summaryMetrics.sinMedicion})
+                  </button>
                 </div>
               </div>
 
@@ -450,6 +478,7 @@ export default function ComgesDashboard({ onBack }) {
               <div className="comges-indicators-grid">
                 {filteredIndicators.map((ind) => {
                   const domainInfo = COMGES_DOMAINS.find(d => d.id === ind.domainId);
+                  const isSinMedicion = ind.summaryYTD?.status === 'Sin Medición';
                   return (
                     <motion.div
                       key={ind.id}
@@ -461,7 +490,7 @@ export default function ComgesDashboard({ onBack }) {
                     >
                       <div>
                         {/* Indicator Top Header */}
-                        <div style={{ display: 'flex', itemsCenter: 'center', justifyBetween: 'space-between', gap: '8px', marginBottom: '10px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyBetween: 'space-between', gap: '8px', marginBottom: '10px' }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                             <span className="comges-card-code">
                               {ind.code}
@@ -500,7 +529,7 @@ export default function ComgesDashboard({ onBack }) {
                         </div>
 
                         {/* Monthly Trend Line Chart right below the formula */}
-                        <MiniMonthlyLineChart monthlyData={ind.monthlyData} target={ind.target} />
+                        <MiniMonthlyLineChart monthlyData={ind.monthlyData} target={ind.target} status={ind.summaryYTD?.status} />
                       </div>
 
                       {/* Bottom Performance Metrics & Action Button */}
@@ -512,7 +541,7 @@ export default function ComgesDashboard({ onBack }) {
                           </div>
                           <div style={{ borderLeft: '1px solid #e2e8f0', paddingLeft: '16px' }}>
                             <span style={{ color: '#94a3b8', fontSize: '10px', textTransform: 'uppercase', display: 'block', fontWeight: 600 }}>Resultado YTD</span>
-                            <span style={{ fontWeight: 800, color: '#0f172a', fontSize: '14px' }}>
+                            <span style={{ fontWeight: 800, color: isSinMedicion ? '#64748b' : '#0f172a', fontSize: isSinMedicion ? '12px' : '14px', fontStyle: isSinMedicion ? 'italic' : 'normal' }}>
                               {ind.summaryYTD?.resultFormatted || '-'}
                             </span>
                           </div>
@@ -685,6 +714,7 @@ export default function ComgesDashboard({ onBack }) {
               const inds = COMGES_INDICATORS.filter(i => i.domainId === d.id);
               const cumpleCount = inds.filter(i => i.summaryYTD?.status === 'Cumple').length;
               const noCumpleCount = inds.filter(i => i.summaryYTD?.status === 'No Cumple').length;
+              const sinMedicionCount = inds.filter(i => i.summaryYTD?.status === 'Sin Medición').length;
               return (
                 <div key={d.id} style={{ background: '#ffffff', borderRadius: '16px', border: '1px solid #e2e8f0', padding: '20px', display: 'flex', flexDirection: 'column', justifyBetween: 'space-between' }}>
                   <div>
@@ -703,7 +733,7 @@ export default function ComgesDashboard({ onBack }) {
                   <div style={{ marginTop: '20px', paddingTop: '16px', borderTop: '1px solid #f1f5f9' }}>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '12px', marginBottom: '8px' }}>
                       <span style={{ color: '#64748b', fontWeight: 600 }}>Indicadores ({inds.length})</span>
-                      <span style={{ color: '#059669', fontWeight: 700 }}>{cumpleCount} Cumplen</span>
+                      <span style={{ color: '#059669', fontWeight: 700 }}>{cumpleCount} Cumplen {sinMedicionCount > 0 && `| ${sinMedicionCount} Sin Medición`}</span>
                     </div>
                     <div style={{ width: '100%', background: '#e2e8f0', borderRadius: '9999px', height: '8px', overflow: 'hidden', display: 'flex' }}>
                       <div
@@ -711,6 +741,9 @@ export default function ComgesDashboard({ onBack }) {
                       ></div>
                       <div
                         style={{ width: `${inds.length > 0 ? (noCumpleCount / inds.length) * 100 : 0}%`, background: '#f43f5e', height: '100%' }}
+                      ></div>
+                      <div
+                        style={{ width: `${inds.length > 0 ? (sinMedicionCount / inds.length) * 100 : 0}%`, background: '#64748b', height: '100%' }}
                       ></div>
                     </div>
                   </div>
@@ -906,9 +939,11 @@ export default function ComgesDashboard({ onBack }) {
                         </div>
                       ) : (
                         <div style={{ background: '#f8fafc', padding: '24px', borderRadius: '12px', border: '1px solid #e2e8f0', textAlign: 'center' }}>
-                          <Info size={32} color="#94a3b8" style={{ margin: '0 auto 8px auto' }} />
-                          <p style={{ fontSize: '13px', color: '#475569' }}>
-                            Este indicador se evalúa mediante entrega semestral de respaldos / pauta de cotejo. No presenta desglose numérico mensual en la planilla de cálculo.
+                          <AlertCircle size={32} color="#64748b" style={{ margin: '0 auto 8px auto' }} />
+                          <p style={{ fontSize: '13px', color: '#334155', fontWeight: 700 }}>
+                            {selectedIndicator.summaryYTD?.status === 'Sin Medición'
+                              ? 'Actualmente sin medición acumulada. Existen dudas metodológicas por definir desde el Servicio de Salud Araucanía Sur.'
+                              : 'Este indicador se evalúa mediante pauta auditada semestral.'}
                           </p>
                         </div>
                       )}

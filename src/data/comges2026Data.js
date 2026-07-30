@@ -1,5 +1,5 @@
 // Dataset Oficial COMGES 2026 - Hospital de Villarrica
-// Actualizado con Orientaciones Técnicas, Videoconferencia MINSAL 21-07-2026 (Servicio Salud Araucanía Sur) y Planilla Excel
+// Actualizado con definición del SSAS: Indicadores 2.2, 4.2 y 6.1 marcados sin medición actual por dudas metodológicas a definir por SSAS.
 
 export const COMGES_META = {
   hospital: "Hospital de Villarrica",
@@ -331,25 +331,25 @@ export const COMGES_INDICATORS = [
     "name": "2.2. Tasa de donantes efectivos en muerte encefálica por millón de población (PMP) generados por Servicio de Salud",
     "ponderacion": "4.50%",
     "type": "comges",
-    "target": "≥ Meta PMP asignada por Coordinación Nacional de Procuramiento",
-    "frequency": "Mensual / Semestral",
-    "dataSource": "Coordinación Nacional de Procuramiento / Registros UPC Hospital Villarrica",
-    "definition": "Evalúa la detección temprana y notificación oportuna de potenciales donantes en muerte encefálica en Unidades de Paciente Crítico y Urgencia del Hospital de Villarrica.",
+    "target": "Por definir (SSAS / MINSAL)",
+    "frequency": "Semestral (Pendiente)",
+    "dataSource": "Coordinación Nacional de Procuramiento / Registros SSAS",
+    "definition": "Evalúa la detección temprana y notificación oportuna de potenciales donantes en muerte encefálica en Unidades de Paciente Crítico y Urgencia.",
     "objective": "Aumentar la tasa de procuramiento de órganos y tejidos para trasplante en la red asistencial.",
     "formula": {
       "numerator": "N° de donantes efectivos de órganos procurados en el establecimiento.",
       "denominator": "Población asignada (por millón de habitantes) del Servicio de Salud Araucanía Sur.",
       "expression": "(Donantes Efectivos / Población en Millones)"
     },
-    "evalRules": "Evaluación semestral combinada con el reporte de pesquisa de potenciales donantes.",
+    "evalRules": "Sin medición acumulada actual. Existen dudas metodológicas para su medición que deben ser aclaradas desde el Servicio de Salud Araucanía Sur que aún no se encuentran definidas y que por ahora se encuentran sin medición con criterios metodológicos por definir.",
     "monthlyData": [],
     "summaryYTD": {
-      "numerator": 2,
-      "denominator": 2,
-      "result": 100,
-      "resultFormatted": "100%",
-      "status": "Cumple",
-      "observation": "Protocolo de procuramiento activo en UPC con pesquisa oportuna."
+      "numerator": "-",
+      "denominator": "-",
+      "result": null,
+      "resultFormatted": "Sin Medición",
+      "status": "Sin Medición",
+      "observation": "Sin medición actual. Existen dudas metodológicas por aclarar por parte del Servicio de Salud Araucanía Sur."
     }
   },
   {
@@ -568,9 +568,9 @@ export const COMGES_INDICATORS = [
     "name": "4.2. Implementación del plan gestión del riesgo de desastres",
     "ponderacion": "4.33%",
     "type": "comges",
-    "target": "≥ 90% de ejecución de las fases del Plan de Emergencias y Desastres",
-    "frequency": "Semestral",
-    "dataSource": "Unidad de Gestión del Riesgo de Desastres Hospitalario / Depto. Salud Ocupacional",
+    "target": "Por definir (SSAS / MINSAL)",
+    "frequency": "Semestral (Pendiente)",
+    "dataSource": "Unidad de Gestión del Riesgo de Desastres / SSAS",
     "definition": "Indicador con Requisitos. Evalúa el cumplimiento de las actividades, simulacros, mantenimientos críticos de continuidad operativa y capacitaciones del Plan Hospitalario para Emergencias y Desastres.",
     "objective": "Asegurar la resiliencia y la continuidad operacional de la infraestructura hospitalaria ante eventos adversos y catástrofes.",
     "formula": {
@@ -578,15 +578,15 @@ export const COMGES_INDICATORS = [
       "denominator": "Total de actividades comprometidas en la programación anual GDR.",
       "expression": "(Actividades GDR Realizadas / Actividades Programadas) × 100"
     },
-    "evalRules": "Indicador con Requisito. Descuento de 1 punto por incumplimiento técnico o atraso en informe.",
+    "evalRules": "Sin medición acumulada actual. Existen dudas metodológicas para su medición que deben ser aclaradas desde el Servicio de Salud Araucanía Sur que aún no se encuentran definidas y que por ahora se encuentran sin medición con criterios metodológicos por definir.",
     "monthlyData": [],
     "summaryYTD": {
-      "numerator": 14,
-      "denominator": 15,
-      "result": 93.3,
-      "resultFormatted": "93.3%",
-      "status": "Cumple",
-      "observation": "Simulacros de evacuación y plan de contingencia validados."
+      "numerator": "-",
+      "denominator": "-",
+      "result": null,
+      "resultFormatted": "Sin Medición",
+      "status": "Sin Medición",
+      "observation": "Sin medición actual. Criterios metodológicos por definir por parte del Servicio de Salud Araucanía Sur."
     }
   },
   {
@@ -680,9 +680,9 @@ export const COMGES_INDICATORS = [
     "name": "6.1. Nivel de implementación de estrategias y/o células de Hospital Digital en establecimientos del Servicio de Salud",
     "ponderacion": "4.33%",
     "type": "comges",
-    "target": "≥ 90% de avance en implementación de células de telemedicina",
-    "frequency": "Semestral",
-    "dataSource": "Plataforma Hospital Digital MINSAL / Registro Telemedicina Hospitalario",
+    "target": "Por definir (SSAS / MINSAL)",
+    "frequency": "Semestral (Pendiente)",
+    "dataSource": "Plataforma Hospital Digital MINSAL / Registro Telemedicina SSAS",
     "definition": "Evalúa la adopción e integración efectiva de las células del Hospital Digital (Dermatología, Nefrología, Diabetes, Oftalmología) para resolución a distancia en el hospital.",
     "objective": "Expandir la capacidad resolutiva especializada mediante herramientas de salud digital y telemedicina.",
     "formula": {
@@ -690,15 +690,15 @@ export const COMGES_INDICATORS = [
       "denominator": "Meta programada de consultas digitales para el territorio.",
       "expression": "(Teleconsultas Resueltas / Meta Telemedicina) × 100"
     },
-    "evalRules": "Verificación de operatividad tecnológica y respuesta asistencial en plataforma HD.",
+    "evalRules": "Sin medición acumulada actual. Existen dudas metodológicas para su medición que deben ser aclaradas desde el Servicio de Salud Araucanía Sur que aún no se encuentran definidas y que por ahora se encuentran sin medición con criterios metodológicos por definir.",
     "monthlyData": [],
     "summaryYTD": {
-      "numerator": 720,
-      "denominator": 750,
-      "result": 96.0,
-      "resultFormatted": "96.0%",
-      "status": "Cumple",
-      "observation": "Alta oportunidad de respuesta en célula de teledermatología y diabetología."
+      "numerator": "-",
+      "denominator": "-",
+      "result": null,
+      "resultFormatted": "Sin Medición",
+      "status": "Sin Medición",
+      "observation": "Sin medición actual. Criterios metodológicos por definir por parte del Servicio de Salud Araucanía Sur."
     }
   },
   {
