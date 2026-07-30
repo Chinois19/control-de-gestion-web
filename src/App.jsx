@@ -434,7 +434,15 @@ function App() {
 
 
   // ─── APP STATE ─────────────────────────────────────────────────────────────
-  const [activeView, setActiveView] = useState('home');
+  const getInitialView = () => {
+    const hash = window.location.hash.replace('#', '');
+    if (hash) return hash;
+    const saved = localStorage.getItem('cg_villarrica_active_view');
+    if (saved) return saved;
+    return 'home';
+  };
+
+  const [activeView, setActiveView] = useState(getInitialView);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [expandedMenu, setExpandedMenu] = useState(null);
   const [expandedSubMenu, setExpandedSubMenu] = useState(null);
@@ -449,12 +457,26 @@ function App() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, [activeView]);
 
+  useEffect(() => {
+    const handleHashChange = () => {
+      const hash = window.location.hash.replace('#', '');
+      if (hash && hash !== activeView) {
+        setActiveView(hash);
+        localStorage.setItem('cg_villarrica_active_view', hash);
+      }
+    };
+    window.addEventListener('hashchange', handleHashChange);
+    return () => window.removeEventListener('hashchange', handleHashChange);
+  }, [activeView]);
+
   const navigateToView = (view) => {
     setMammographyInitialTab('summary');
     setMammographyFilterNsp(false);
     setClosedAttentionInitialTab(null);
     setClosedAttentionInitialSubTab(null);
     setActiveView(view);
+    localStorage.setItem('cg_villarrica_active_view', view);
+    window.location.hash = view;
   };
 
   const handleMenuClick = (id) => {
