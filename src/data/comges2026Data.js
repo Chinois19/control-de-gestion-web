@@ -1,12 +1,12 @@
 // Dataset Oficial COMGES 2026 - Hospital de Villarrica
-// Enriquecido con análisis completo de Ausentismo Laboral LMC desde el Ord. N° 1934-2026 (Servicio de Salud Araucanía Sur, Mayo 2026)
+// Corregido Ausentismo Laboral LMC Villarrica: Acumulado 8.1 días a Mayo 2026 y desglose mensual exacto Ord. N° 1934 SSAS.
 
 export const COMGES_META = {
   hospital: "Hospital de Villarrica",
   service: "Servicio de Salud Araucanía Sur",
   year: 2026,
   version: "Versión Final Julio 2026 (MINSAL)",
-  lastUpdatedMonth: "Junio 2026",
+  lastUpdatedMonth: "Mayo 2026 (Ausentismo Ord 1934)",
   totalIndicators: 11,
   totalDomains: 6,
   sourceFiles: [
@@ -1361,49 +1361,54 @@ export const COMGES_INDICATORS = [
     "monthlyData": [
       {
         "month": "Enero",
-        "result": 2.4,
-        "resultFormatted": "2.4 días/func",
+        "result": 1.6,
+        "resultFormatted": "1.6 días/func",
         "status": "Cumple"
       },
       {
         "month": "Febrero",
-        "result": 2.4,
-        "resultFormatted": "2.4 días/func",
+        "result": 1.4,
+        "resultFormatted": "1.4 días/func",
         "status": "Cumple"
       },
       {
         "month": "Marzo",
-        "result": 2.1,
-        "resultFormatted": "2.1 días/func",
+        "result": 1.8,
+        "resultFormatted": "1.8 días/func",
         "status": "Cumple"
       },
       {
         "month": "Abril",
-        "result": 1.9,
-        "resultFormatted": "1.9 días/func",
+        "result": 1.6,
+        "resultFormatted": "1.6 días/func",
         "status": "Cumple"
       },
       {
         "month": "Mayo",
-        "result": 2.1,
-        "resultFormatted": "2.1 días/func",
+        "result": 1.7,
+        "resultFormatted": "1.7 días/func",
         "status": "Cumple"
       }
     ],
     "summaryYTD": {
-      "numerator": "1.135 LMC",
+      "numerator": "10.289 días",
       "denominator": "Dotación Villarrica",
-      "result": 10.9,
-      "resultFormatted": "10.9 días acumulados",
+      "result": 8.1,
+      "resultFormatted": "8.1 días",
       "status": "Cumple",
-      "observation": "Acumulado a Mayo 2026 (Ord 1934-2026): 10.9 días por funcionario (Meta ≤ 14.0 días). Promedio mensual de 2.18 días/func."
+      "observation": "Acumulado a Mayo 2026 (Ord 1934-2026): 8.1 días por funcionario (Meta ≤ 14.0 días). Destaca disminución interanual de -2.2 días respecto a 2025 (10.2 días)."
     },
     "ord1934Details": {
       "documentRef": "Ord. N° 1934 (07 de Julio 2026) - Servicio de Salud Araucanía Sur",
       "period": "Enero - Mayo 2026",
       "totalLicenciasVillarrica": 1135,
-      "avgMonthlyRate": "2.18 días/mes por funcionario",
-      "ytdCumulativeRate": "10.9 días acumulados a Mayo 2026 (Meta ≤ 14.0 días)",
+      "totalDias2026": 10289,
+      "totalDias2025": 11703,
+      "index2025": "10.2 días/func",
+      "index2026": "8.1 días/func",
+      "variacionInteranual": "-2.2 días por funcionario (-21.5% reducción)",
+      "avgMonthlyRate": "1.62 días/mes por funcionario",
+      "ytdCumulativeRate": "8.1 días acumulados a Mayo 2026 (Meta ≤ 14.0 días)",
       "distributionByDays": [
         {
           "range": "1 a 3 días",
