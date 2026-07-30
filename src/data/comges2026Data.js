@@ -648,11 +648,11 @@ export const COMGES_INDICATORS = [
       },
       {
         "month": "Abril",
-        "numerator": 878,
+        "numerator": 562,
         "denominator": 1353,
-        "result": 64.89,
-        "resultFormatted": "64.89%",
-        "status": "Cumple"
+        "result": 41.54,
+        "resultFormatted": "41.54%",
+        "status": "No Cumple"
       },
       {
         "month": "Mayo",
