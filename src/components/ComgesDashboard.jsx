@@ -974,6 +974,102 @@ export default function ComgesDashboard({ onBack }) {
                         </p>
                       </div>
                     </div>
+
+                    {/* Detailed Ord 1934 Analysis for Ausentismo Laboral M4.6 */}
+                    {selectedIndicator.ord1934Details && (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', borderTop: '2px dashed #cbd5e1', paddingTop: '20px', marginTop: '10px' }}>
+                        <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe', padding: '16px', borderRadius: '12px' }}>
+                          <h4 style={{ fontSize: '14px', fontWeight: 800, color: '#1e40af', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <FileText size={18} color="#2563eb" /> Análisis Oficial Ord. N° 1934 - Ausentismo Laboral por LMC (Mayo 2026)
+                          </h4>
+                          <p style={{ fontSize: '12px', color: '#1e3a8a', lineHeight: 1.5 }}>
+                            <strong>Documento Oficial:</strong> {selectedIndicator.ord1934Details.documentRef} | <strong>Periodo Evaluado:</strong> {selectedIndicator.ord1934Details.period} | <strong>Tasa Acumulada:</strong> {selectedIndicator.ord1934Details.ytdCumulativeRate}
+                          </p>
+                        </div>
+
+                        {/* Breakdown 1: Distribution by Days */}
+                        <div>
+                          <h5 style={{ fontSize: '13px', fontWeight: 800, color: '#0f172a', marginBottom: '8px' }}>
+                            1. Distribución de Licencias Médicas Curativas por Tramo de Días (Hospital Villarrica)
+                          </h5>
+                          <div style={{ overflowX: 'auto', border: '1px solid #e2e8f0', borderRadius: '10px' }}>
+                            <table className="comges-table" style={{ fontSize: '12px' }}>
+                              <thead>
+                                <tr>
+                                  <th>Tramo de Días</th>
+                                  <th style={{ textAlign: 'right' }}>N° de Licencias</th>
+                                  <th style={{ textAlign: 'right' }}>Porcentaje %</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {selectedIndicator.ord1934Details.distributionByDays.map((item, i) => (
+                                  <tr key={i}>
+                                    <td style={{ fontWeight: 700 }}>{item.range}</td>
+                                    <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>{item.count}</td>
+                                    <td style={{ textAlign: 'right', fontWeight: 800, color: '#0f766e' }}>{item.percentage}</td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        </div>
+
+                        {/* Breakdown 2: Critical Units */}
+                        <div>
+                          <h5 style={{ fontSize: '13px', fontWeight: 800, color: '#0f172a', marginBottom: '8px' }}>
+                            2. Servicios y Unidades con Mayor Ausentismo en Hospital Villarrica (Mayo 2026)
+                          </h5>
+                          <div style={{ overflowX: 'auto', border: '1px solid #e2e8f0', borderRadius: '10px' }}>
+                            <table className="comges-table" style={{ fontSize: '12px' }}>
+                              <thead>
+                                <tr>
+                                  <th>Unidad / Servicio</th>
+                                  <th style={{ textAlign: 'right' }}>Días de Ausencia</th>
+                                  <th style={{ textAlign: 'right' }}>Índice (Días/Func)</th>
+                                  <th style={{ textAlign: 'center' }}>Nivel de Riesgo</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {selectedIndicator.ord1934Details.criticalUnits.map((u, i) => (
+                                  <tr key={i} style={u.unit.includes('Pabellón') ? { background: '#fff1f2' } : {}}>
+                                    <td style={{ fontWeight: 700, color: '#0f172a' }}>{u.unit}</td>
+                                    <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>{u.absentDays}</td>
+                                    <td style={{ textAlign: 'right', fontWeight: 800, color: u.unit.includes('Pabellón') ? '#e11d48' : '#0f172a' }}>{u.index}</td>
+                                    <td style={{ textAlign: 'center', fontWeight: 700, color: u.unit.includes('Pabellón') ? '#e11d48' : '#475569' }}>{u.risk}</td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        </div>
+
+                        {/* Breakdown 3: Top Doctors */}
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '12px' }}>
+                          <div style={{ background: '#f8fafc', padding: '14px', borderRadius: '10px', border: '1px solid #e2e8f0' }}>
+                            <h5 style={{ fontSize: '12px', fontWeight: 800, color: '#334155', marginBottom: '8px' }}>
+                              Médicos con Mayor Emisión de LMC en Villarrica
+                            </h5>
+                            <ul style={{ listStyle: 'none', padding: 0, margin: 0, fontSize: '12px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                              {selectedIndicator.ord1934Details.topDoctorsEmittingLMC.map((doc, i) => (
+                                <li key={i} style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #f1f5f9', paddingBottom: '4px' }}>
+                                  <span style={{ fontWeight: 600, color: '#1e293b' }}>{doc.name}</span>
+                                  <span style={{ fontWeight: 800, color: '#0d9488' }}>{doc.lmcCount} LMC</span>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+
+                          <div style={{ background: '#faf5ff', padding: '14px', borderRadius: '10px', border: '1px solid #f3e8ff' }}>
+                            <h5 style={{ fontSize: '12px', fontWeight: 800, color: '#6b21a8', marginBottom: '8px' }}>
+                              Comportamiento por Rango Etario en la Red SSAS
+                            </h5>
+                            <p style={{ fontSize: '12px', color: '#581c87', lineHeight: 1.5 }}>
+                              {selectedIndicator.ord1934Details.ageDistributionNote}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>

@@ -1,5 +1,5 @@
 // Dataset Oficial COMGES 2026 - Hospital de Villarrica
-// Actualizado con COMGES 5.2 en 'Sin Medición' debido a dificultades por falta de definición de líneas de base y criterios operativos del SSAS.
+// Enriquecido con análisis completo de Ausentismo Laboral LMC desde el Ord. N° 1934-2026 (Servicio de Salud Araucanía Sur, Mayo 2026)
 
 export const COMGES_META = {
   hospital: "Hospital de Villarrica",
@@ -13,7 +13,8 @@ export const COMGES_META = {
     "Minuta COMGES 2026 FINAL.pdf",
     "Orientaciones Técnicas COMGES 2026_Versión FINAL JULIO.pdf",
     "PLANILLA COMGES 2026.xlsx",
-    "Videoconferencia COMGES MINSAL 21-07-2026.pdf"
+    "Videoconferencia COMGES MINSAL 21-07-2026.pdf",
+    "Ord 1934-2026 Monitoreo Ausentismo Laboral por LMC periodo mayo 2026.pdf"
   ]
 };
 
@@ -1347,24 +1348,140 @@ export const COMGES_INDICATORS = [
     "ponderacion": "Monitoreo",
     "type": "monitoreo",
     "target": "≤ 14.0 días por funcionario",
-    "frequency": "Mensual",
-    "dataSource": "PLANILLA COMGES 2026.xlsx (Hoja '4,6 IND AUSENTISMO') / SIRH",
-    "definition": "Mide el promedio de días de ausentismo por licencia médica por funcionario contratado u honorario en la dotación del hospital.",
+    "frequency": "Mensual (Reporte Oficial SSAS Ord N° 1934)",
+    "dataSource": "Ord. N° 1934 (07-07-2026) SSAS / Plataforma QlikView / SIRH / PLANILLA COMGES 2026.xlsx",
+    "definition": "Mide el promedio de días de ausentismo por Licencias Médicas Curativas (LMC) por funcionario contratado u honorario en la dotación del Hospital de Villarrica.",
     "objective": "Promover la salud laboral, ambientes de trabajo seguros y disminuir el reemplazo de personal.",
     "formula": {
-      "numerator": "Días totales de licencias médicas del periodo.",
+      "numerator": "Días totales de licencias médicas curativas del periodo.",
       "denominator": "Dotación total de funcionarios del establecimiento.",
-      "expression": "(Días Licencias / Dotación Funcional)"
+      "expression": "(Días Licencias Curativas / Dotación Funcional)"
     },
-    "evalRules": "Seguimiento mensual por Subdirección de Gestión de Personas.",
-    "monthlyData": [],
+    "evalRules": "Monitoreo mensual acumulado según reporte Ord. N° 1934 SSAS. Meta institucional: ≤ 14.0 días por funcionario al año.",
+    "monthlyData": [
+      {
+        "month": "Enero",
+        "result": 2.4,
+        "resultFormatted": "2.4 días/func",
+        "status": "Cumple"
+      },
+      {
+        "month": "Febrero",
+        "result": 2.4,
+        "resultFormatted": "2.4 días/func",
+        "status": "Cumple"
+      },
+      {
+        "month": "Marzo",
+        "result": 2.1,
+        "resultFormatted": "2.1 días/func",
+        "status": "Cumple"
+      },
+      {
+        "month": "Abril",
+        "result": 1.9,
+        "resultFormatted": "1.9 días/func",
+        "status": "Cumple"
+      },
+      {
+        "month": "Mayo",
+        "result": 2.1,
+        "resultFormatted": "2.1 días/func",
+        "status": "Cumple"
+      }
+    ],
     "summaryYTD": {
-      "numerator": "-",
-      "denominator": "-",
-      "result": 12.8,
-      "resultFormatted": "12.8 días",
+      "numerator": "1.135 LMC",
+      "denominator": "Dotación Villarrica",
+      "result": 10.9,
+      "resultFormatted": "10.9 días acumulados",
       "status": "Cumple",
-      "observation": "Ausentismo laboral bajo control dentro de los márgenes institucionales."
+      "observation": "Acumulado a Mayo 2026 (Ord 1934-2026): 10.9 días por funcionario (Meta ≤ 14.0 días). Promedio mensual de 2.18 días/func."
+    },
+    "ord1934Details": {
+      "documentRef": "Ord. N° 1934 (07 de Julio 2026) - Servicio de Salud Araucanía Sur",
+      "period": "Enero - Mayo 2026",
+      "totalLicenciasVillarrica": 1135,
+      "avgMonthlyRate": "2.18 días/mes por funcionario",
+      "ytdCumulativeRate": "10.9 días acumulados a Mayo 2026 (Meta ≤ 14.0 días)",
+      "distributionByDays": [
+        {
+          "range": "1 a 3 días",
+          "count": 424,
+          "percentage": "37.4%"
+        },
+        {
+          "range": "4 a 7 días",
+          "count": 267,
+          "percentage": "23.5%"
+        },
+        {
+          "range": "8 a 14 días",
+          "count": 157,
+          "percentage": "13.8%"
+        },
+        {
+          "range": "15 a 30 días",
+          "count": 283,
+          "percentage": "24.9%"
+        },
+        {
+          "range": "31 a 60 días",
+          "count": 59,
+          "percentage": "5.2%"
+        }
+      ],
+      "criticalUnits": [
+        {
+          "unit": "Pabellón Central",
+          "absentDays": 875,
+          "index": "22.4 días/func",
+          "risk": "Alto (Unidad Crítica)"
+        },
+        {
+          "unit": "Alimentación y Nutrición",
+          "absentDays": 629,
+          "index": "15.3 días/func",
+          "risk": "Moderado Alto"
+        },
+        {
+          "unit": "Servicio Médico Quirúrgico Indiferenciado",
+          "absentDays": 1195,
+          "index": "12.1 días/func",
+          "risk": "Moderado"
+        },
+        {
+          "unit": "Atención Abierta (Policlínico)",
+          "absentDays": 397,
+          "index": "9.5 días/func",
+          "risk": "Bajo Control"
+        },
+        {
+          "unit": "Unidad Emergencia Hospitalaria (UEH)",
+          "absentDays": 880,
+          "index": "7.5 días/func",
+          "risk": "Bajo Control"
+        }
+      ],
+      "topDoctorsEmittingLMC": [
+        {
+          "name": "Dr. Patricio Loncomilla Moya",
+          "lmcCount": 77
+        },
+        {
+          "name": "Dr. Gregory Maldonado López",
+          "lmcCount": 37
+        },
+        {
+          "name": "Dra. Lilian Constanza Astete Cifuentes",
+          "lmcCount": 28
+        },
+        {
+          "name": "Dra. Angélica Ester Suazo Durán",
+          "lmcCount": 27
+        }
+      ],
+      "ageDistributionNote": "En la red SSAS, la mayor carga de días por LMC se concentra entre los 35 a 44 años (39.330 días) y 25 a 34 años (32.469 días), respondiendo a una dotación predominantemente joven."
     }
   }
 ];
