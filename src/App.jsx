@@ -22,7 +22,8 @@ import {
   LayoutDashboard,
   ClipboardList,
   Stethoscope,
-  Scissors
+  Scissors,
+  Building2
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import SurgicalDashboard from './components/SurgicalDashboard';
@@ -46,6 +47,9 @@ import HealthGoalsLey19664 from './components/HealthGoalsLey19664';
 import HealthGoalsLey20707 from './components/HealthGoalsLey20707';
 import LoginScreen, { getSession, createSession, destroySession, refreshSession } from './components/LoginScreen';
 import UserManagementPanel from './components/UserManagementPanel';
+import ProgramacionMedicaDashboard from './components/ProgramacionMedicaDashboard';
+import ProgramacionProfesionalesDashboard from './components/ProgramacionProfesionalesDashboard';
+import ProgramacionOdontologiaDashboard from './components/ProgramacionOdontologiaDashboard';
 import './App.css';
 
 const SESSION_TIMEOUT_MS = 30 * 60 * 1000; // 30 minutes
@@ -58,7 +62,6 @@ const imgStats = "/stats_abstract.png";
 const imgProduction = "/production_stats_hd.png";
 
 const menuStructure = [
-  { id: 'solicitudes_ciudadanas', icon: <User size={22} />, label: 'Solicitudes Ciudadanas' },
   { 
     id: 'produccion_general', 
     icon: <LayoutDashboard size={22} />, 
@@ -131,9 +134,20 @@ const menuStructure = [
       { id: 'acuerdo_minsal', label: 'Acuerdo Programación MINSAL' }
     ]
   },
+  { id: 'solicitudes_ciudadanas', icon: <User size={22} />, label: 'Solicitudes Ciudadanas' },
   { id: 'repositorio', icon: <FileText size={22} />, label: 'Repositorio Anual' },
   { id: 'costeo', icon: <Activity size={22} />, label: 'Costeo GRD' },
-  { id: 'agenda', icon: <Calendar size={22} />, label: 'Agenda Gestión' }
+  { id: 'agenda', icon: <Calendar size={22} />, label: 'Agenda Gestión' },
+  {
+    id: 'programacion_villarrica',
+    icon: <Building2 size={22} />,
+    label: 'Programación Hospital de Villarrica',
+    subItems: [
+      { id: 'programacion_medica', label: 'Programación Médica' },
+      { id: 'programacion_profesionales', label: 'Programación Profesionales' },
+      { id: 'programacion_odontologia', label: 'Programación Odontología' }
+    ]
+  }
 ];
 
 const indicatorCards = [
@@ -751,7 +765,7 @@ function App() {
             <motion.div className="search-modal-overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setIsSidebarOpen(false)} style={{ zIndex: 1900 }} />
             <motion.div className="collapsible-sidebar open" initial={{ x: -450 }} animate={{ x: 24 }} exit={{ x: -450 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '40px' }}>
-                <h3 style={{ fontSize: '1.2rem', fontWeight: 700 }}>Menú Estratégico</h3>
+                <h3 style={{ fontSize: '1.2rem', fontWeight: 700 }}>Menú</h3>
                 <X size={24} cursor="pointer" onClick={() => setIsSidebarOpen(false)} style={{ opacity: 0.5 }} />
               </div>
 
@@ -1086,6 +1100,15 @@ function App() {
               )}
               {activeView === 'comgest' && (
                 <ComgesDashboard onBack={() => navigateToView('home')} />
+              )}
+              {activeView === 'programacion_medica' && (
+                <ProgramacionMedicaDashboard onBack={() => navigateToView('home')} />
+              )}
+              {activeView === 'programacion_profesionales' && (
+                <ProgramacionProfesionalesDashboard onBack={() => navigateToView('home')} />
+              )}
+              {activeView === 'programacion_odontologia' && (
+                <ProgramacionOdontologiaDashboard onBack={() => navigateToView('home')} />
               )}
             </div>
           )}
