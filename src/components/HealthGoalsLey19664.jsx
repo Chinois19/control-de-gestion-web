@@ -6,7 +6,7 @@ import {
   ChevronRight, X, BarChart2, Filter, Stethoscope
 } from 'lucide-react';
 import {
-  ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip as RechartsTooltip, CartesianGrid
+  ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip as RechartsTooltip, CartesianGrid, ReferenceLine
 } from 'recharts';
 import { LEY19664_META, LEY19664_INDICATORS } from '../data/ley19664Data';
 
@@ -185,17 +185,36 @@ const HealthGoalsLey19664 = ({ onBack }) => {
                 </div>
 
                 {/* Monthly Line Chart Preview */}
-                {validMonthly.length > 0 && (
-                  <div style={{ height: '70px', marginTop: '12px', marginBottom: '8px' }}>
-                    <ResponsiveContainer width="100%" height="100%">
-                      <LineChart data={validMonthly}>
-                        <Line type="monotone" dataKey="result" stroke="#047857" strokeWidth={2.5} dot={{ r: 3, fill: '#047857' }} />
-                        <XAxis dataKey="month" hide />
-                        <YAxis hide domain={['auto', 'auto']} />
-                      </LineChart>
-                    </ResponsiveContainer>
-                  </div>
-                )}
+                {(() => {
+                  const targetMatch = (ind.target || '').match(/[\d\.]+/);
+                  const targetNum = targetMatch ? parseFloat(targetMatch[0]) : null;
+                  const vals = validMonthly.map(d => d.result);
+                  let yDomain = ['auto', 'auto'];
+                  if (vals.length > 0) {
+                    let min = Math.min(...vals);
+                    let max = Math.max(...vals);
+                    if (targetNum !== null && !isNaN(targetNum)) {
+                      min = Math.min(min, targetNum);
+                      max = Math.max(max, targetNum);
+                    }
+                    const pad = Math.max((max - min) * 0.2, 2);
+                    yDomain = [Math.max(0, Math.floor(min - pad)), Math.ceil(max + pad)];
+                  }
+                  return validMonthly.length > 0 ? (
+                    <div style={{ height: '70px', marginTop: '12px', marginBottom: '8px' }}>
+                      <ResponsiveContainer width="100%" height="100%">
+                        <LineChart data={validMonthly} margin={{ top: 8, right: 8, left: -24, bottom: 0 }}>
+                          <XAxis dataKey="month" hide />
+                          <YAxis hide domain={yDomain} />
+                          {targetNum !== null && (
+                            <ReferenceLine y={targetNum} stroke="#ef4444" strokeDasharray="3 3" strokeWidth={1.5} />
+                          )}
+                          <Line type="monotone" dataKey="result" stroke="#047857" strokeWidth={2.5} dot={{ r: 3, fill: '#047857' }} />
+                        </LineChart>
+                      </ResponsiveContainer>
+                    </div>
+                  ) : null;
+                })()}
               </div>
 
               {/* Card Footer */}

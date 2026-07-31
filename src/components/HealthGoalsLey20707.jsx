@@ -224,21 +224,40 @@ const HealthGoalsLey20707 = ({ onBack }) => {
                 </div>
 
                 {/* Monthly Line Chart Preview */}
-                {validMonthly.length > 0 ? (
-                  <div style={{ height: '70px', marginTop: '12px', marginBottom: '8px' }}>
-                    <ResponsiveContainer width="100%" height="100%">
-                      <LineChart data={validMonthly}>
-                        <Line type="monotone" dataKey="result" stroke="#3b82f6" strokeWidth={2.5} dot={{ r: 3, fill: '#3b82f6' }} />
-                        <XAxis dataKey="month" hide />
-                        <YAxis hide domain={['auto', 'auto']} />
-                      </LineChart>
-                    </ResponsiveContainer>
-                  </div>
-                ) : (
-                  <div style={{ padding: '14px', background: '#f8fafc', borderRadius: '10px', textAlign: 'center', fontSize: '11.5px', color: '#64748b', fontWeight: 600, margin: '12px 0 8px 0' }}>
-                    Evaluación por Pauta / Auditoría Semestral
-                  </div>
-                )}
+                {(() => {
+                  const targetMatch = (ind.target || '').match(/[\d\.]+/);
+                  const targetNum = targetMatch ? parseFloat(targetMatch[0]) : null;
+                  const vals = validMonthly.map(d => d.result);
+                  let yDomain = ['auto', 'auto'];
+                  if (vals.length > 0) {
+                    let min = Math.min(...vals);
+                    let max = Math.max(...vals);
+                    if (targetNum !== null && !isNaN(targetNum)) {
+                      min = Math.min(min, targetNum);
+                      max = Math.max(max, targetNum);
+                    }
+                    const pad = Math.max((max - min) * 0.2, 2);
+                    yDomain = [Math.max(0, Math.floor(min - pad)), Math.ceil(max + pad)];
+                  }
+                  return validMonthly.length > 0 ? (
+                    <div style={{ height: '70px', marginTop: '12px', marginBottom: '8px' }}>
+                      <ResponsiveContainer width="100%" height="100%">
+                        <LineChart data={validMonthly} margin={{ top: 8, right: 8, left: -24, bottom: 0 }}>
+                          <XAxis dataKey="month" hide />
+                          <YAxis hide domain={yDomain} />
+                          {targetNum !== null && (
+                            <ReferenceLine y={targetNum} stroke="#ef4444" strokeDasharray="3 3" strokeWidth={1.5} />
+                          )}
+                          <Line type="monotone" dataKey="result" stroke="#3b82f6" strokeWidth={2.5} dot={{ r: 3, fill: '#3b82f6' }} />
+                        </LineChart>
+                      </ResponsiveContainer>
+                    </div>
+                  ) : (
+                    <div style={{ padding: '14px', background: '#f8fafc', borderRadius: '10px', textAlign: 'center', fontSize: '11.5px', color: '#64748b', fontWeight: 600, margin: '12px 0 8px 0' }}>
+                      Evaluación por Pauta / Auditoría Semestral
+                    </div>
+                  );
+                })()}
               </div>
 
               {/* Card Footer */}

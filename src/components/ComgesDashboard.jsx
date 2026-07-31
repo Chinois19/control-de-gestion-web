@@ -15,7 +15,7 @@ import './ComgesDashboard.css';
 
 // Mini Monthly Line Chart component rendered below formula in each card
 const MiniMonthlyLineChart = ({ monthlyData = [], target = '', status = '' }) => {
-  // Parse target numerical value if available
+  // Parse target numerical value if available (e.g. "≥ 70.0%" -> 70, "≤ 5.0%" -> 5, "> 10%" -> 10, "≥ 95%" -> 95)
   const targetNum = useMemo(() => {
     if (!target) return null;
     const match = target.match(/[\d\.]+/);
@@ -35,6 +35,29 @@ const MiniMonthlyLineChart = ({ monthlyData = [], target = '', status = '' }) =>
       status: d.status
     }));
   }, [monthlyData]);
+
+  // Compute dynamic Y-Domain including both data values and target line so ReferenceLine is NEVER clipped!
+  const yDomain = useMemo(() => {
+    if (!chartData || chartData.length === 0) return ['auto', 'auto'];
+    const validVals = chartData.map(d => d.val).filter(v => v !== null && v !== undefined && !isNaN(v));
+    if (validVals.length === 0) return ['auto', 'auto'];
+
+    let min = Math.min(...validVals);
+    let max = Math.max(...validVals);
+
+    if (targetNum !== null && !isNaN(targetNum)) {
+      min = Math.min(min, targetNum);
+      max = Math.max(max, targetNum);
+    }
+
+    const range = max - min;
+    const padding = range === 0 ? 5 : Math.max(range * 0.2, 2);
+
+    const domainMin = Math.max(0, Math.floor(min - padding));
+    const domainMax = Math.ceil(max + padding);
+
+    return [domainMin, domainMax];
+  }, [chartData, targetNum]);
 
   const hasData = chartData.some(d => d.val !== null);
 
@@ -67,18 +90,18 @@ const MiniMonthlyLineChart = ({ monthlyData = [], target = '', status = '' }) =>
           <TrendingUp size={14} color="#0d9488" /> Evolución Mensual 2026
         </span>
         {targetNum !== null && (
-          <span style={{ fontSize: '10px', color: '#0d9488', fontFamily: 'monospace', fontWeight: 800 }}>
+          <span style={{ fontSize: '10px', color: '#ef4444', fontFamily: 'monospace', fontWeight: 800, background: '#fef2f2', padding: '2px 6px', borderRadius: '4px', border: '1px solid #fecaca' }}>
             Meta: {target}
           </span>
         )}
       </div>
 
-      <div style={{ width: '100%', height: '110px' }}>
+      <div style={{ width: '100%', height: '115px' }}>
         <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={chartData} margin={{ top: 12, right: 12, left: -24, bottom: 0 }}>
+          <LineChart data={chartData} margin={{ top: 14, right: 14, left: -24, bottom: 0 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
             <XAxis dataKey="month" tick={{ fontSize: 10, fill: '#64748b' }} axisLine={false} tickLine={false} />
-            <YAxis tick={{ fontSize: 10, fill: '#64748b' }} axisLine={false} tickLine={false} domain={['auto', 'auto']} />
+            <YAxis tick={{ fontSize: 10, fill: '#64748b' }} axisLine={false} tickLine={false} domain={yDomain} />
             <RechartsTooltip
               content={({ active, payload }) => {
                 if (active && payload && payload.length) {
@@ -96,7 +119,13 @@ const MiniMonthlyLineChart = ({ monthlyData = [], target = '', status = '' }) =>
               }}
             />
             {targetNum !== null && (
-              <ReferenceLine y={targetNum} stroke="#ef4444" strokeDasharray="3 3" label={{ value: `Meta ${targetNum}%`, fill: '#ef4444', fontSize: 9, position: 'insideTopRight' }} />
+              <ReferenceLine
+                y={targetNum}
+                stroke="#ef4444"
+                strokeDasharray="4 4"
+                strokeWidth={1.5}
+                label={{ value: `Meta ${target}`, fill: '#ef4444', fontSize: 10, fontWeight: 800, position: 'insideTopRight' }}
+              />
             )}
             <Line
               type="monotone"

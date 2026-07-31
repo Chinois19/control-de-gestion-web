@@ -1712,7 +1712,7 @@ export const COMGES_INDICATORS = [
     "name": "Porcentaje de accesos vasculares mediante Fístula Arteriovenosa (FAV) en pacientes con IRC en Hemodiálisis",
     "ponderacion": "Monitoreo",
     "type": "monitoreo",
-    "target": "En Monitoreo",
+    "target": "≥ 70.0%",
     "frequency": "Mensual (Planilla COMGES 2026 hoja '2,7 FAV EN IRC')",
     "dataSource": "PLANILLA COMGES 2026.xlsx (Hoja '2,7 FAV EN IRC') / Registros de Nefrología y Dialisis Hospital Villarrica",
     "definition": "Mide el porcentaje de pacientes con Insuficiencia Renal Crónica (IRC) en programa de hemodiálisis que cuentan con un acceso vascular definitivo mediante Fístula Arteriovenosa (FAV) autóloga o protésica normofuncionante.",
@@ -1722,7 +1722,7 @@ export const COMGES_INDICATORS = [
       "denominator": "N° total de pacientes prevalentes en programa de hemodiálisis en el establecimiento.",
       "expression": "(Pacientes con FAV Normofuncionante / Total Pacientes en Hemodiálisis) × 100"
     },
-    "evalRules": "Monitoreo mensual continuo. Seguimiento del uso de FAV en la Unidad de Nefrología/Diálisis.",
+    "evalRules": "Meta MINSAL: ≥ 70.0% de pacientes en Hemodiálisis deben contar con acceso vascular mediante Fístula Arteriovenosa (FAV) normofuncionante.",
     "monthlyData": [
       {
         "month": "Enero",
