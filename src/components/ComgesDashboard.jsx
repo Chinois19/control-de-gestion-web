@@ -377,13 +377,6 @@ export default function ComgesDashboard({ onBack }) {
                 <Clock size={16} />
                 Calendario Cargas REM 2026
               </button>
-              <button
-                onClick={() => setActiveTab('summary')}
-                className={`comges-tab-btn ${activeTab === 'summary' ? 'comges-tab-btn-active' : 'comges-tab-btn-inactive'}`}
-              >
-                <Layers size={16} />
-                Resumen por Dominios (6 COMGES)
-              </button>
             </div>
           </div>
         </div>
@@ -936,52 +929,6 @@ export default function ComgesDashboard({ onBack }) {
                 </tbody>
               </table>
             </div>
-          </div>
-        )}
-
-        {/* TAB 4: RESUMEN EJECUTIVO POR DOMINIOS */}
-        {activeTab === 'summary' && (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '20px' }}>
-            {COMGES_DOMAINS.map((d) => {
-              const inds = COMGES_INDICATORS.filter(i => i.domainId === d.id);
-              const cumpleCount = inds.filter(i => i.summaryYTD?.status === 'Cumple').length;
-              const noCumpleCount = inds.filter(i => i.summaryYTD?.status === 'No Cumple').length;
-              const sinMedicionCount = inds.filter(i => i.summaryYTD?.status === 'Sin Medición').length;
-              return (
-                <div key={d.id} style={{ background: '#ffffff', borderRadius: '16px', border: '1px solid #e2e8f0', padding: '20px', display: 'flex', flexDirection: 'column', justifyBetween: 'space-between' }}>
-                  <div>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
-                      <span style={{ padding: '4px 10px', borderRadius: '6px', fontSize: '12px', fontWeight: 800, color: '#fff', backgroundColor: d.color, fontFamily: 'monospace' }}>
-                        {d.code}
-                      </span>
-                      <span style={{ fontSize: '12px', fontWeight: 700, color: '#334155', background: '#f1f5f9', padding: '4px 10px', borderRadius: '9999px' }}>
-                        Ponderación: {d.weight}
-                      </span>
-                    </div>
-                    <h3 style={{ fontWeight: 800, color: '#0f172a', fontSize: '16px', lineHeight: 1.3 }}>{d.title}</h3>
-                    <p style={{ fontSize: '12px', color: '#64748b', marginTop: '8px', lineHeight: 1.5 }}>{d.description}</p>
-                  </div>
-
-                  <div style={{ marginTop: '20px', paddingTop: '16px', borderTop: '1px solid #f1f5f9' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '12px', marginBottom: '8px' }}>
-                      <span style={{ color: '#64748b', fontWeight: 600 }}>Indicadores ({inds.length})</span>
-                      <span style={{ color: '#059669', fontWeight: 700 }}>{cumpleCount} Cumplen {sinMedicionCount > 0 && `| ${sinMedicionCount} Sin Medición`}</span>
-                    </div>
-                    <div style={{ width: '100%', background: '#e2e8f0', borderRadius: '9999px', height: '8px', overflow: 'hidden', display: 'flex' }}>
-                      <div
-                        style={{ width: `${inds.length > 0 ? (cumpleCount / inds.length) * 100 : 0}%`, background: '#10b981', height: '100%' }}
-                      ></div>
-                      <div
-                        style={{ width: `${inds.length > 0 ? (noCumpleCount / inds.length) * 100 : 0}%`, background: '#f43f5e', height: '100%' }}
-                      ></div>
-                      <div
-                        style={{ width: `${inds.length > 0 ? (sinMedicionCount / inds.length) * 100 : 0}%`, background: '#64748b', height: '100%' }}
-                      ></div>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
           </div>
         )}
       </main>
