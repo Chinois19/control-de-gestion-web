@@ -579,7 +579,7 @@ export default function ComgesDashboard({ onBack }) {
                             <span style={{ fontWeight: 700, color: '#1e293b' }}>{ind.target}</span>
                           </div>
                           <div style={{ borderLeft: '1px solid #e2e8f0', paddingLeft: '16px' }}>
-                            <span style={{ color: '#94a3b8', fontSize: '10px', textTransform: 'uppercase', display: 'block', fontWeight: 600 }}>Resultado YTD</span>
+                            <span style={{ color: '#94a3b8', fontSize: '10px', textTransform: 'uppercase', display: 'block', fontWeight: 600 }}>Resultado Acumulado</span>
                             <span style={{ fontWeight: 800, color: isSinMedicion ? '#64748b' : '#0f172a', fontSize: isSinMedicion ? '12px' : '14px', fontStyle: isSinMedicion ? 'italic' : 'normal' }}>
                               {ind.summaryYTD?.resultFormatted || '-'}
                             </span>
@@ -739,7 +739,7 @@ export default function ComgesDashboard({ onBack }) {
                             <span style={{ fontWeight: 700, color: '#1e293b' }}>{ind.target}</span>
                           </div>
                           <div style={{ borderLeft: '1px solid #e2e8f0', paddingLeft: '16px' }}>
-                            <span style={{ color: '#94a3b8', fontSize: '10px', textTransform: 'uppercase', display: 'block', fontWeight: 600 }}>Resultado YTD</span>
+                            <span style={{ color: '#94a3b8', fontSize: '10px', textTransform: 'uppercase', display: 'block', fontWeight: 600 }}>Resultado Acumulado</span>
                             <span style={{ fontWeight: 800, color: isSinMedicion ? '#64748b' : '#0f172a', fontSize: isSinMedicion ? '12px' : '14px', fontStyle: isSinMedicion ? 'italic' : 'normal' }}>
                               {ind.summaryYTD?.resultFormatted || '-'}
                             </span>

@@ -250,7 +250,7 @@ const HealthGoalsLey19664 = ({ onBack }) => {
                     <span style={{ fontSize: '18px', fontWeight: 900, color: '#0f172a' }}>{selectedIndicator.target}</span>
                   </div>
                   <div style={{ background: '#f8fafc', padding: '16px', borderRadius: '14px', border: '1px solid #e2e8f0' }}>
-                    <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 700, display: 'block' }}>Resultado Acumulado YTD</span>
+                    <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 700, display: 'block' }}>Resultado Acumulado</span>
                     <span style={{ fontSize: '18px', fontWeight: 900, color: '#0f172a' }}>{selectedIndicator.summaryYTD.resultFormatted}</span>
                   </div>
                   <div style={{ background: '#f8fafc', padding: '16px', borderRadius: '14px', border: '1px solid #e2e8f0' }}>
