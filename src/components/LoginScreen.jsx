@@ -21,6 +21,14 @@ const DEFAULT_USERS = [
     role: 'user',
     name: 'Usuario Gestión',
     department: 'Control de Gestión'
+  },
+  {
+    username: 'hvillarrica',
+    // Password: hvillarrica
+    passwordHash: 'bda7b90098a6ce17b324b9214bac46d644ae7c070e67743416fff52679576601',
+    role: 'user',
+    name: 'H. Villarrica',
+    department: 'Hospital de Villarrica'
   }
 ];
 

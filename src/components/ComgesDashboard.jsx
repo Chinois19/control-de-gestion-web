@@ -115,14 +115,23 @@ const MiniMonthlyLineChart = ({ monthlyData = [], target = '', status = '' }) =>
 };
 
 export default function ComgesDashboard({ onBack }) {
-  const [activeTab, setActiveTab] = useState('indicators'); // 'indicators' | 'orientaciones' | 'summary' | 'rem_calendar'
+  const [activeTab, setActiveTab] = useState('indicators'); // 'indicators' | 'monitoreo' | 'orientaciones' | 'summary' | 'rem_calendar'
+  // Filters for Evaluated Indicators tab
   const [selectedDomain, setSelectedDomain] = useState('all');
   const [selectedStatus, setSelectedStatus] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
+  // Filters for Monitoreo tab
+  const [monitoreoStatus, setMonitoreoStatus] = useState('all');
+  const [monitoreoSearch, setMonitoreoSearch] = useState('');
   const [selectedIndicator, setSelectedIndicator] = useState(null);
   const [modalSubTab, setModalSubTab] = useState('minsal'); // 'minsal' | 'excel'
 
-  // Summary Metrics
+  // All evaluated COMGES indicators (type !== 'monitoreo')
+  const evaluatedIndicators = useMemo(() => COMGES_INDICATORS.filter(ind => ind.type !== 'monitoreo'), []);
+  // All monitoring indicators
+  const monitoreoIndicators = useMemo(() => COMGES_INDICATORS.filter(ind => ind.type === 'monitoreo'), []);
+
+  // Summary Metrics (only evaluated indicators)
   const summaryMetrics = useMemo(() => {
     let cumple = 0;
     let riesgo = 0;
@@ -130,7 +139,7 @@ export default function ComgesDashboard({ onBack }) {
     let sinMedicion = 0;
     let sinDato = 0;
 
-    COMGES_INDICATORS.forEach(ind => {
+    evaluatedIndicators.forEach(ind => {
       const status = ind.summaryYTD?.status;
       if (status === 'Cumple') cumple++;
       else if (status === 'En Riesgo') riesgo++;
@@ -140,24 +149,33 @@ export default function ComgesDashboard({ onBack }) {
     });
 
     return {
-      total: COMGES_INDICATORS.length,
+      total: evaluatedIndicators.length,
       cumple,
       riesgo,
       noCumple,
       sinMedicion,
       sinDato,
-      cumplePerc: ((cumple / COMGES_INDICATORS.length) * 100).toFixed(1)
+      cumplePerc: evaluatedIndicators.length > 0 ? ((cumple / evaluatedIndicators.length) * 100).toFixed(1) : '0.0'
     };
-  }, []);
+  }, [evaluatedIndicators]);
 
-  // Filtered Indicators List
+  // Summary Metrics for Monitoreo tab
+  const monitoreoMetrics = useMemo(() => {
+    let cumple = 0, riesgo = 0, noCumple = 0, sinMedicion = 0;
+    monitoreoIndicators.forEach(ind => {
+      const status = ind.summaryYTD?.status;
+      if (status === 'Cumple') cumple++;
+      else if (status === 'En Riesgo') riesgo++;
+      else if (status === 'No Cumple') noCumple++;
+      else if (status === 'Sin Medición') sinMedicion++;
+    });
+    return { total: monitoreoIndicators.length, cumple, riesgo, noCumple, sinMedicion };
+  }, [monitoreoIndicators]);
+
+  // Filtered Evaluated Indicators List
   const filteredIndicators = useMemo(() => {
-    return COMGES_INDICATORS.filter(ind => {
-      // Domain filter
-      if (selectedDomain !== 'all' && ind.domainId !== selectedDomain) {
-        return false;
-      }
-      // Status filter
+    return evaluatedIndicators.filter(ind => {
+      if (selectedDomain !== 'all' && ind.domainId !== selectedDomain) return false;
       if (selectedStatus !== 'all') {
         const st = ind.summaryYTD?.status;
         if (selectedStatus === 'cumple' && st !== 'Cumple') return false;
@@ -165,19 +183,36 @@ export default function ComgesDashboard({ onBack }) {
         if (selectedStatus === 'nocumple' && st !== 'No Cumple') return false;
         if (selectedStatus === 'sinmedicion' && st !== 'Sin Medición') return false;
       }
-      // Search query
       if (searchQuery.trim() !== '') {
         const q = searchQuery.toLowerCase();
-        const matchCode = ind.code.toLowerCase().includes(q);
-        const matchName = ind.name.toLowerCase().includes(q);
-        const matchDef = (ind.definition || '').toLowerCase().includes(q);
-        const matchObj = (ind.objective || '').toLowerCase().includes(q);
-        const matchDomain = (ind.domainId || '').toLowerCase().includes(q);
-        if (!matchCode && !matchName && !matchDef && !matchObj && !matchDomain) return false;
+        if (!ind.code.toLowerCase().includes(q) &&
+            !ind.name.toLowerCase().includes(q) &&
+            !(ind.definition || '').toLowerCase().includes(q) &&
+            !(ind.objective || '').toLowerCase().includes(q)) return false;
       }
       return true;
     });
-  }, [selectedDomain, selectedStatus, searchQuery]);
+  }, [evaluatedIndicators, selectedDomain, selectedStatus, searchQuery]);
+
+  // Filtered Monitoreo Indicators List
+  const filteredMonitoreo = useMemo(() => {
+    return monitoreoIndicators.filter(ind => {
+      if (monitoreoStatus !== 'all') {
+        const st = ind.summaryYTD?.status;
+        if (monitoreoStatus === 'cumple' && st !== 'Cumple') return false;
+        if (monitoreoStatus === 'riesgo' && st !== 'En Riesgo') return false;
+        if (monitoreoStatus === 'nocumple' && st !== 'No Cumple') return false;
+        if (monitoreoStatus === 'sinmedicion' && st !== 'Sin Medición') return false;
+      }
+      if (monitoreoSearch.trim() !== '') {
+        const q = monitoreoSearch.toLowerCase();
+        if (!ind.code.toLowerCase().includes(q) &&
+            !ind.name.toLowerCase().includes(q) &&
+            !(ind.definition || '').toLowerCase().includes(q)) return false;
+      }
+      return true;
+    });
+  }, [monitoreoIndicators, monitoreoStatus, monitoreoSearch]);
 
   const getStatusBadge = (status) => {
     switch (status) {
@@ -285,35 +320,45 @@ export default function ComgesDashboard({ onBack }) {
           </div>
 
           {/* Navigation Sub-Tabs */}
-          <div className="comges-nav-tabs">
-            <button
-              onClick={() => setActiveTab('indicators')}
-              className={`comges-tab-btn ${activeTab === 'indicators' ? 'comges-tab-btn-active' : 'comges-tab-btn-inactive'}`}
-            >
-              <Activity size={16} />
-              Indicadores Evaluados ({filteredIndicators.length})
-            </button>
-            <button
-              onClick={() => setActiveTab('orientaciones')}
-              className={`comges-tab-btn ${activeTab === 'orientaciones' ? 'comges-tab-btn-active' : 'comges-tab-btn-inactive'}`}
-            >
-              <BookOpen size={16} />
-              Orientaciones Técnicas MINSAL
-            </button>
-            <button
-              onClick={() => setActiveTab('rem_calendar')}
-              className={`comges-tab-btn ${activeTab === 'rem_calendar' ? 'comges-tab-btn-active' : 'comges-tab-btn-inactive'}`}
-            >
-              <Clock size={16} />
-              Calendario Cargas REM 2026
-            </button>
-            <button
-              onClick={() => setActiveTab('summary')}
-              className={`comges-tab-btn ${activeTab === 'summary' ? 'comges-tab-btn-active' : 'comges-tab-btn-inactive'}`}
-            >
-              <Layers size={16} />
-              Resumen por Dominios (6 COMGES)
-            </button>
+          <div className="comges-nav-tabs-wrapper">
+            <div className="comges-nav-tabs">
+              <button
+                onClick={() => setActiveTab('indicators')}
+                className={`comges-tab-btn ${activeTab === 'indicators' ? 'comges-tab-btn-active' : 'comges-tab-btn-inactive'}`}
+              >
+                <Award size={16} />
+                Indicadores Evaluados ({evaluatedIndicators.length})
+              </button>
+              <button
+                onClick={() => setActiveTab('monitoreo')}
+                className={`comges-tab-btn ${activeTab === 'monitoreo' ? 'comges-tab-btn-active' : 'comges-tab-btn-inactive'}`}
+                style={activeTab === 'monitoreo' ? { borderBottomColor: '#64748b', color: '#475569' } : {}}
+              >
+                <Activity size={16} />
+                Indicadores de Monitoreo ({monitoreoIndicators.length})
+              </button>
+              <button
+                onClick={() => setActiveTab('orientaciones')}
+                className={`comges-tab-btn ${activeTab === 'orientaciones' ? 'comges-tab-btn-active' : 'comges-tab-btn-inactive'}`}
+              >
+                <BookOpen size={16} />
+                Orientaciones Técnicas MINSAL
+              </button>
+              <button
+                onClick={() => setActiveTab('rem_calendar')}
+                className={`comges-tab-btn ${activeTab === 'rem_calendar' ? 'comges-tab-btn-active' : 'comges-tab-btn-inactive'}`}
+              >
+                <Clock size={16} />
+                Calendario Cargas REM 2026
+              </button>
+              <button
+                onClick={() => setActiveTab('summary')}
+                className={`comges-tab-btn ${activeTab === 'summary' ? 'comges-tab-btn-active' : 'comges-tab-btn-inactive'}`}
+              >
+                <Layers size={16} />
+                Resumen por Dominios (6 COMGES)
+              </button>
+            </div>
           </div>
         </div>
       </header>
@@ -373,7 +418,7 @@ export default function ComgesDashboard({ onBack }) {
           </div>
         </div>
 
-        {/* TAB 1: INDICATORS EVALUATED */}
+        {/* TAB 1: INDICATORS EVALUATED (11 COMGES) */}
         {activeTab === 'indicators' && (
           <div>
             {/* Filter and Search Toolbar */}
@@ -590,7 +635,153 @@ export default function ComgesDashboard({ onBack }) {
           </div>
         )}
 
-        {/* TAB 2: ORIENTACIONES TÉCNICAS MINSAL COMPENDIO */}
+        {/* TAB 2: INDICADORES DE MONITOREO */}
+        {activeTab === 'monitoreo' && (
+          <div>
+            {/* Monitoreo header info */}
+            <div style={{ background: 'linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%)', borderRadius: '14px', padding: '16px 20px', marginBottom: '20px', border: '1px solid #cbd5e1', display: 'flex', alignItems: 'center', gap: '14px' }}>
+              <div style={{ padding: '10px', background: '#64748b', borderRadius: '10px', flexShrink: 0 }}>
+                <Activity size={20} color="white" />
+              </div>
+              <div>
+                <h3 style={{ margin: 0, fontSize: '15px', fontWeight: 800, color: '#1e293b' }}>Indicadores de Monitoreo Obligatorio — Hospital de Villarrica</h3>
+                <p style={{ margin: '3px 0 0', fontSize: '12.5px', color: '#64748b', lineHeight: 1.5 }}>
+                  {monitoreoIndicators.length} indicadores de seguimiento continuo. <strong>No cuentan con ponderación en la evaluación COMGES</strong> pero son de reporte obligatorio ante el SSAS.
+                </p>
+              </div>
+              {/* Monitoreo KPIs mini */}
+              <div style={{ marginLeft: 'auto', display: 'flex', gap: '8px', flexShrink: 0, flexWrap: 'wrap' }}>
+                {[
+                  { label: 'Cumple', val: monitoreoMetrics.cumple, color: '#10b981', bg: '#d1fae5' },
+                  { label: 'En Riesgo', val: monitoreoMetrics.riesgo, color: '#f59e0b', bg: '#fef3c7' },
+                  { label: 'No Cumple', val: monitoreoMetrics.noCumple, color: '#e11d48', bg: '#ffe4e6' },
+                  { label: 'Sin Med.', val: monitoreoMetrics.sinMedicion, color: '#64748b', bg: '#f1f5f9' },
+                ].map(m => (
+                  <div key={m.label} style={{ background: m.bg, border: `1px solid ${m.color}33`, borderRadius: '8px', padding: '6px 12px', textAlign: 'center' }}>
+                    <div style={{ fontSize: '18px', fontWeight: 800, color: m.color, lineHeight: 1 }}>{m.val}</div>
+                    <div style={{ fontSize: '10px', fontWeight: 700, color: m.color, marginTop: '2px' }}>{m.label}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Monitoreo Toolbar */}
+            <div className="comges-toolbar">
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
+                {/* Search */}
+                <div className="comges-search-box" style={{ flex: '1', minWidth: '260px', position: 'relative' }}>
+                  <Search size={18} color="#94a3b8" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)' }} />
+                  <input
+                    type="text"
+                    className="comges-search-input"
+                    value={monitoreoSearch}
+                    onChange={(e) => setMonitoreoSearch(e.target.value)}
+                    placeholder="Buscar indicador de monitoreo..."
+                  />
+                  {monitoreoSearch && (
+                    <button onClick={() => setMonitoreoSearch('')}
+                      style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer', fontSize: '12px' }}
+                    >Limpiar</button>
+                  )}
+                </div>
+                {/* Status filter pills */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                  <span style={{ fontSize: '12px', fontWeight: 600, color: '#64748b', marginRight: '4px' }}>Estado:</span>
+                  {[
+                    { key: 'all', label: 'Todos', activeStyle: {} },
+                    { key: 'cumple', label: `Cumple (${monitoreoMetrics.cumple})`, activeStyle: { background: '#10b981', borderColor: '#10b981' }, inactiveStyle: { color: '#059669' } },
+                    { key: 'riesgo', label: `En Riesgo (${monitoreoMetrics.riesgo})`, activeStyle: { background: '#f59e0b', borderColor: '#f59e0b' }, inactiveStyle: { color: '#d97706' } },
+                    { key: 'nocumple', label: `No Cumple (${monitoreoMetrics.noCumple})`, activeStyle: { background: '#f43f5e', borderColor: '#f43f5e' }, inactiveStyle: { color: '#e11d48' } },
+                    { key: 'sinmedicion', label: `Sin Med. (${monitoreoMetrics.sinMedicion})`, activeStyle: { background: '#64748b', borderColor: '#64748b' }, inactiveStyle: { color: '#475569' } },
+                  ].map(p => (
+                    <button key={p.key}
+                      onClick={() => setMonitoreoStatus(p.key)}
+                      className={`comges-pill ${monitoreoStatus === p.key ? 'comges-pill-active' : ''}`}
+                      style={monitoreoStatus === p.key ? p.activeStyle : (p.inactiveStyle || {})}
+                    >{p.label}</button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Monitoreo Cards Grid */}
+            {filteredMonitoreo.length === 0 ? (
+              <div style={{ background: '#ffffff', borderRadius: '16px', padding: '48px', textAlign: 'center', border: '1px solid #e2e8f0' }}>
+                <Info size={48} color="#94a3b8" style={{ margin: '0 auto 12px auto' }} />
+                <h3 style={{ fontSize: '18px', fontWeight: 700, color: '#1e293b' }}>No se encontraron indicadores de monitoreo</h3>
+                <button onClick={() => { setMonitoreoStatus('all'); setMonitoreoSearch(''); }}
+                  style={{ marginTop: '16px', padding: '10px 20px', background: '#64748b', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 600 }}
+                >Restablecer filtros</button>
+              </div>
+            ) : (
+              <div className="comges-indicators-grid">
+                {filteredMonitoreo.map((ind) => {
+                  const isSinMedicion = ind.summaryYTD?.status === 'Sin Medición';
+                  return (
+                    <motion.div
+                      key={ind.id}
+                      layout
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.2 }}
+                      className="comges-card"
+                      style={{ borderLeft: '4px solid #64748b' }}
+                    >
+                      <div>
+                        {/* Card header */}
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', marginBottom: '10px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                            <span className="comges-card-code" style={{ background: '#f1f5f9', color: '#475569', border: '1px solid #cbd5e1' }}>
+                              {ind.code}
+                            </span>
+                            <span style={{ padding: '2px 8px', borderRadius: '12px', fontSize: '11px', fontWeight: 700, color: '#fff', backgroundColor: '#64748b' }}>
+                              MONITOREO
+                            </span>
+                          </div>
+                          {getStatusBadge(ind.summaryYTD?.status)}
+                        </div>
+
+                        <h3 className="comges-card-title">{ind.name}</h3>
+                        <p className="comges-card-def">{ind.definition}</p>
+
+                        <div className="comges-formula-box">
+                          <span style={{ fontSize: '10px', color: '#94a3b8', fontWeight: 800, textTransform: 'uppercase', display: 'block', marginBottom: '2px' }}>Fórmula</span>
+                          {ind.formula?.expression || 'Ver fórmula técnica'}
+                        </div>
+
+                        <MiniMonthlyLineChart monthlyData={ind.monthlyData} target={ind.target} status={ind.summaryYTD?.status} />
+                      </div>
+
+                      {/* Bottom metrics */}
+                      <div style={{ marginTop: '16px', paddingTop: '12px', borderTop: '1px solid #f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '16px', fontSize: '12px' }}>
+                          <div>
+                            <span style={{ color: '#94a3b8', fontSize: '10px', textTransform: 'uppercase', display: 'block', fontWeight: 600 }}>Meta</span>
+                            <span style={{ fontWeight: 700, color: '#1e293b' }}>{ind.target}</span>
+                          </div>
+                          <div style={{ borderLeft: '1px solid #e2e8f0', paddingLeft: '16px' }}>
+                            <span style={{ color: '#94a3b8', fontSize: '10px', textTransform: 'uppercase', display: 'block', fontWeight: 600 }}>Resultado YTD</span>
+                            <span style={{ fontWeight: 800, color: isSinMedicion ? '#64748b' : '#0f172a', fontSize: isSinMedicion ? '12px' : '14px', fontStyle: isSinMedicion ? 'italic' : 'normal' }}>
+                              {ind.summaryYTD?.resultFormatted || '-'}
+                            </span>
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => { setSelectedIndicator(ind); setModalSubTab('minsal'); }}
+                          style={{ padding: '8px 14px', background: '#f8fafc', color: '#475569', border: '1px solid #cbd5e1', borderRadius: '8px', fontSize: '12px', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', transition: 'all 0.2s' }}
+                        >
+                          <BookOpen size={14} /> Ver Ficha
+                        </button>
+                      </div>
+                    </motion.div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* TAB 3: ORIENTACIONES TÉCNICAS MINSAL COMPENDIO */}
         {activeTab === 'orientaciones' && (
           <div style={{ background: '#ffffff', borderRadius: '16px', border: '1px solid #e2e8f0', padding: '24px' }}>
             <div style={{ marginBottom: '24px' }}>
