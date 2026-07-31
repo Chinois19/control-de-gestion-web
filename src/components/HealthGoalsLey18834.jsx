@@ -1,447 +1,538 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
-  ArrowLeft, Target, Users, Clock, FileText, CheckCircle2, AlertTriangle, 
-  Activity, BarChart2, PieChart as PieChartIcon, ShieldCheck, TrendingUp
+  ArrowLeft, Search, Target, Users, Clock, FileText, CheckCircle2, 
+  AlertCircle, AlertTriangle, ShieldCheck, Activity, TrendingUp, 
+  ChevronRight, X, BarChart2, Filter, Building2, Stethoscope, RefreshCw, Award
 } from 'lucide-react';
 import {
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, 
-  ResponsiveContainer, LineChart, Line, ReferenceLine, AreaChart, Area, 
-  Cell, PieChart, Pie, LabelList
+  ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip as RechartsTooltip, CartesianGrid, ReferenceLine, ReferenceArea
 } from 'recharts';
-
-// Datos Oficiales Ley 18.834 - Hospital Villarrica 2026
-const initialLey18834Data = [
-  {
-    id: 'meta1',
-    name: '1. Cumplimiento GES',
-    shortName: 'GES',
-    desc: 'Porcentaje de cumplimiento de Garantías Explícitas de Salud (GES) en la Red.',
-    meta: 100,
-    metaLabel: '≥ 99.5%',
-    value: 90.1,
-    status: 'danger',
-    ponderador: 10,
-    puntaje: 0,
-    icon: <Activity size={20} />,
-    color: '#ef4444', // Red
-    chartType: 'bar',
-    history: [
-      { mes: 'Ene', valor: 95 }, { mes: 'Feb', valor: 94 }, { mes: 'Mar', valor: 92 },
-      { mes: 'Abr', valor: 91 }, { mes: 'May', valor: 90.1 }
-    ],
-    insights: 'El indicador se encuentra en riesgo crítico con un 90.1% de cumplimiento (3.387 garantías cumplidas de 3.758). Se requiere priorizar atenciones retrasadas para evitar penalizaciones en el puntaje.'
-  },
-  {
-    id: 'meta2',
-    name: '2. Mantenimiento Preventivo',
-    shortName: 'Mantención',
-    desc: 'Ejecución del Plan Anual de mantenimiento preventivo de equipos médicos, ambulancias, industriales e infraestructura.',
-    meta: 90,
-    metaLabel: '≥ 90.0%',
-    value: 100.0,
-    status: 'success',
-    ponderador: 10,
-    puntaje: 10,
-    icon: <ShieldCheck size={20} />,
-    color: '#10b981', // Green
-    chartType: 'line',
-    history: [
-      { mes: 'Ene', valor: 100 }, { mes: 'Feb', valor: 100 }, { mes: 'Mar', valor: 100 },
-      { mes: 'Abr', valor: 100 }, { mes: 'May', valor: 100 }
-    ],
-    insights: 'Excelente desempeño. El cumplimiento global de las trazadoras de mantenimiento (equipos, ambulancias e infraestructura) y gasto ejecutado es del 100%.'
-  },
-  {
-    id: 'meta3',
-    name: '3. Capacitación Transversal',
-    shortName: 'Cap. Transv.',
-    desc: 'Funcionarios/as capacitados/as en temáticas transversales relevantes.',
-    meta: 5,
-    metaLabel: '≥ 5.0%',
-    value: 0.0,
-    status: 'danger',
-    ponderador: 20,
-    puntaje: 0,
-    icon: <Users size={20} />,
-    color: '#f59e0b', // Amber
-    chartType: 'area',
-    history: [
-      { mes: 'Ene', valor: 0 }, { mes: 'Feb', valor: 0 }, { mes: 'Mar', valor: 0 },
-      { mes: 'Abr', valor: 0 }, { mes: 'May', valor: 0 }
-    ],
-    insights: 'Nivel crítico. Actualmente 0 de los 896 funcionarios objetivo han completado capacitaciones transversales. Es urgente iniciar la ejecución del plan de capacitación.'
-  },
-  {
-    id: 'meta4',
-    name: '4. Capacitación RCP',
-    shortName: 'Cap. RCP',
-    desc: 'Funcionarios/as con capacitación actualizada en reanimación cardiopulmonar.',
-    meta: 60,
-    metaLabel: '≥ 60.0%',
-    value: 62.9,
-    status: 'success',
-    ponderador: 30,
-    puntaje: 30,
-    icon: <Activity size={20} />,
-    color: '#0ea5e9', // Blue
-    chartType: 'pie',
-    history: [
-      { name: 'Capacitados', value: 62.9 },
-      { name: 'Pendientes', value: 37.1 }
-    ],
-    insights: 'El indicador cumple con la meta, alcanzando un 62.9% (564 de 896 funcionarios). Se recomienda mantener la programación para sostener el indicador sobre el 60%.'
-  },
-  {
-    id: 'meta5',
-    name: '5. Prevención IAAS',
-    shortName: 'Cap. IAAS',
-    desc: 'Cobertura de personal de salud con atención clínica directa capacitados en prevención y control de IAAS.',
-    meta: 70,
-    metaLabel: '≥ 70.0%',
-    value: 78.0,
-    status: 'success',
-    ponderador: 30,
-    puntaje: 30,
-    icon: <Target size={20} />,
-    color: '#8b5cf6', // Purple
-    chartType: 'bar',
-    history: [
-      { mes: 'Ene', valor: 70 }, { mes: 'Feb', valor: 72 }, { mes: 'Mar', valor: 75 },
-      { mes: 'Abr', valor: 76 }, { mes: 'May', valor: 78.0 }
-    ],
-    insights: 'Destacado nivel de cobertura. 551 funcionarios de un universo de 706 cuentan con el curso IAAS aprobado con antigüedad menor a 5 años.'
-  }
-];
+import { LEY18834_META, LEY18834_INDICATORS } from '../data/ley18834Data';
 
 export default function HealthGoalsLey18834({ onBack }) {
-  const [activeTab, setActiveTab] = useState(initialLey18834Data[0].id);
-  const [ley18834Data, setLey18834Data] = useState(initialLey18834Data);
-  const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedStatus, setSelectedStatus] = useState('todos');
+  const [selectedIndicator, setSelectedIndicator] = useState(null);
+  const [activeModalTab, setActiveModalTab] = useState('monthly');
 
-  useEffect(() => {
-    fetch('/data/ley18834_villarrica_raw.json')
-      .then(res => res.json())
-      .then(data => {
-        if (!data || data.length === 0) {
-          setLoading(false);
-          return;
-        }
+  // Filter indicators
+  const filteredIndicators = useMemo(() => {
+    return LEY18834_INDICATORS.filter(ind => {
+      // Search query
+      const query = searchQuery.toLowerCase().trim();
+      const searchMatch = !query || 
+        ind.name.toLowerCase().includes(query) ||
+        ind.code.toLowerCase().includes(query) ||
+        ind.deptCode.toLowerCase().includes(query) ||
+        (ind.definition && ind.definition.toLowerCase().includes(query));
 
-        const getRow = (indicadorText) => data.find(row => row[2] && row[2].includes(indicadorText));
+      // Status filter
+      let statusMatch = true;
+      if (selectedStatus === 'cumple') statusMatch = ind.summaryYTD.status === 'Cumple';
+      else if (selectedStatus === 'riesgo') statusMatch = ind.summaryYTD.status === 'En Riesgo';
+      else if (selectedStatus === 'nocumple') statusMatch = ind.summaryYTD.status === 'No Cumple';
 
-        const gesRow = getRow("Garantías Explicitas de Salud");
-        const mantRow = getRow("Total Trazadoras");
-        const transRow = getRow("temáticas transversales relevantes");
-        const rcpRow = getRow("reanimación cardiopulmonar");
-        const iaasRow = getRow("prevención y control de infecciones");
-        
-        const parseValue = (val) => val ? parseFloat(val) * 100 : 0;
-        const parsePuntaje = (val) => val ? parseFloat(val) * 100 : 0;
+      return searchMatch && statusMatch;
+    });
+  }, [searchQuery, selectedStatus]);
 
-        setLey18834Data(prev => prev.map(meta => {
-          let newValue = meta.value;
-          let newPuntaje = meta.puntaje;
+  // Statistics
+  const stats = useMemo(() => {
+    const total = LEY18834_INDICATORS.length;
+    const cumple = LEY18834_INDICATORS.filter(i => i.summaryYTD.status === 'Cumple').length;
+    const enRiesgo = LEY18834_INDICATORS.filter(i => i.summaryYTD.status === 'En Riesgo').length;
+    const noCumple = LEY18834_INDICATORS.filter(i => i.summaryYTD.status === 'No Cumple').length;
+    const totalScoreObtained = LEY18834_INDICATORS.reduce((acc, curr) => acc + (curr.summaryYTD.scoreObtained || 0), 0);
 
-          if (meta.id === 'meta1' && gesRow) {
-            newValue = parseValue(gesRow[9]);
-            newPuntaje = parsePuntaje(gesRow[12]);
-          }
-          if (meta.id === 'meta2' && mantRow) {
-            newValue = parseValue(mantRow[9]);
-            newPuntaje = parsePuntaje(mantRow[12]);
-          }
-          if (meta.id === 'meta3' && transRow) {
-            newValue = parseValue(transRow[9]);
-            newPuntaje = parsePuntaje(transRow[12]);
-          }
-          if (meta.id === 'meta4' && rcpRow) {
-            newValue = parseValue(rcpRow[9]);
-            newPuntaje = parsePuntaje(rcpRow[12]);
-          }
-          if (meta.id === 'meta5' && iaasRow) {
-            newValue = parseValue(iaasRow[9]);
-            newPuntaje = parsePuntaje(iaasRow[12]);
-          }
-          
-          let newStatus;
-          if (meta.id === 'meta1') {
-            newStatus = newValue >= 99.5 ? 'success' : 'danger';
-          } else {
-            newStatus = newValue >= meta.meta ? 'success' : newValue >= (meta.meta * 0.8) ? 'warning' : 'danger';
-          }
-          
-          return { ...meta, value: Number(newValue.toFixed(1)), puntaje: newPuntaje, status: newStatus };
-        }));
-        setLoading(false);
-      })
-      .catch(e => {
-        console.error("Error loading Ley 18834 data:", e);
-        setLoading(false);
-      });
+    return { total, cumple, enRiesgo, noCumple, totalScoreObtained };
   }, []);
 
-  const activeMeta = useMemo(() => ley18834Data.find(m => m.id === activeTab), [activeTab, ley18834Data]);
-  const cumplimientoGlobal = useMemo(() => ley18834Data.reduce((acc, curr) => acc + curr.puntaje, 0), [ley18834Data]);
-
-  const renderStatusBadge = (status) => {
+  const getStatusBadge = (status) => {
     switch (status) {
-      case 'success':
-        return <span style={{ background: '#dcfce7', color: '#166534', padding: '4px 10px', borderRadius: '12px', fontSize: '0.75rem', fontWeight: 800 }}>CUMPLE</span>;
-      case 'warning':
-        return <span style={{ background: '#fef9c3', color: '#854d0e', padding: '4px 10px', borderRadius: '12px', fontSize: '0.75rem', fontWeight: 800 }}>RIESGO</span>;
-      case 'danger':
-        return <span style={{ background: '#fee2e2', color: '#991b1b', padding: '4px 10px', borderRadius: '12px', fontSize: '0.75rem', fontWeight: 800 }}>NO CUMPLE</span>;
+      case 'Cumple':
+        return <span style={{ background: '#dcfce7', color: '#166534', padding: '4px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: 800, display: 'inline-flex', alignItems: 'center', gap: '4px' }}><CheckCircle2 size={12} /> Cumple</span>;
+      case 'En Riesgo':
+        return <span style={{ background: '#fef3c7', color: '#92400e', padding: '4px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: 800, display: 'inline-flex', alignItems: 'center', gap: '4px' }}><AlertTriangle size={12} /> En Riesgo</span>;
+      case 'No Cumple':
+        return <span style={{ background: '#fee2e2', color: '#991b1b', padding: '4px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: 800, display: 'inline-flex', alignItems: 'center', gap: '4px' }}><AlertCircle size={12} /> No Cumple</span>;
       default:
-        return null;
+        return <span style={{ background: '#f1f5f9', color: '#475569', padding: '4px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: 800, display: 'inline-flex', alignItems: 'center', gap: '4px' }}><Clock size={12} /> Pendiente</span>;
     }
-  };
-
-  const CustomTooltip = ({ active, payload, label }) => {
-    if (active && payload && payload.length) {
-      const val = payload[0].value;
-      const displayVal = Number.isInteger(val) ? val : Number(val).toFixed(2);
-      return (
-        <div style={{ background: 'white', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '12px', boxShadow: '0 10px 25px rgba(0,0,0,0.1)' }}>
-          <p style={{ margin: '0 0 4px 0', fontWeight: 800, color: '#1e293b' }}>{label}</p>
-          <p style={{ margin: 0, color: activeMeta.color, fontWeight: 700 }}>
-            {displayVal}%
-          </p>
-        </div>
-      );
-    }
-    return null;
   };
 
   return (
-    <div style={{ padding: '0 40px 60px 40px', maxWidth: '1400px', margin: '0 auto', fontFamily: 'Inter, sans-serif' }}>
+    <div style={{ minHeight: '100vh', background: '#f8fafc', padding: '24px 32px 60px 32px', color: '#0f172a', fontFamily: 'Inter, system-ui, sans-serif' }}>
       
-      {/* HEADER */}
-      <header style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '32px' }}>
-        <div>
-          <button 
-            onClick={onBack}
-            style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'transparent', border: 'none', color: '#64748b', fontWeight: 700, fontSize: '0.9rem', cursor: 'pointer', padding: '0 0 16px 0' }}
-          >
-            <ArrowLeft size={18} />
-            Volver al Inicio
-          </button>
-          <h1 style={{ fontSize: '2rem', fontWeight: 900, color: '#0f172a', margin: '0 0 8px 0', letterSpacing: '-0.5px' }}>
-            Metas Sanitarias <span style={{ color: '#0ea5e9' }}>Ley 18.834</span>
+      {/* Header Bar */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '28px' }}>
+        <button 
+          onClick={onBack} 
+          style={{ 
+            display: 'inline-flex', 
+            alignItems: 'center', 
+            gap: '8px', 
+            background: '#ffffff', 
+            border: '1px solid #cbd5e1', 
+            padding: '10px 18px', 
+            borderRadius: '12px', 
+            fontSize: '13px', 
+            fontWeight: 700, 
+            color: '#334155', 
+            cursor: 'pointer',
+            boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
+          }}
+        >
+          <ArrowLeft size={16} /> Volver al Menú Principal
+        </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <span style={{ background: '#dbeafe', color: '#1e40af', padding: '6px 14px', borderRadius: '20px', fontSize: '12px', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <Building2 size={14} /> Hospital de Villarrica 2026
+          </span>
+          <span style={{ background: '#f0fdf4', color: '#166534', padding: '6px 14px', borderRadius: '20px', fontSize: '12px', fontWeight: 800, border: '1px solid #bbf7d0' }}>
+            Res. Exenta N° 649 MINSAL
+          </span>
+        </div>
+      </div>
+
+      {/* Main Title Card */}
+      <div style={{ background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)', borderRadius: '20px', padding: '28px 32px', color: '#ffffff', marginBottom: '28px', boxShadow: '0 10px 25px -5px rgba(15,23,42,0.25)', position: 'relative', overflow: 'hidden' }}>
+        <div style={{ position: 'absolute', right: '-20px', bottom: '-30px', opacity: 0.08 }}>
+          <Award size={240} color="#ffffff" />
+        </div>
+        <div style={{ maxWidth: '850px', position: 'relative', zIndex: 1 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
+            <span style={{ background: 'rgba(59,130,246,0.2)', color: '#93c5fd', border: '1px solid rgba(147,197,253,0.3)', padding: '4px 12px', borderRadius: '20px', fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+              Ley N° 18.834 (Estatuto Administrativo)
+            </span>
+            <span style={{ color: '#94a3b8', fontSize: '12px', fontWeight: 600 }}>•</span>
+            <span style={{ color: '#94a3b8', fontSize: '12px', fontWeight: 600 }}>Evaluación Acumulada a Mayo 2026</span>
+          </div>
+          <h1 style={{ fontSize: '28px', fontWeight: 800, color: '#ffffff', margin: 0, tracking: '-0.5px', lineHeight: 1.2 }}>
+            Metas Sanitarias Ley N° 18.834 — Año 2026
           </h1>
-          <p style={{ margin: 0, color: '#64748b', fontSize: '1rem', maxWidth: '600px', lineHeight: '1.5' }}>
-            Monitoreo oficial de las metas de gestión y atención para el personal regulado bajo el Estatuto Administrativo.
+          <p style={{ fontSize: '14px', color: '#cbd5e1', marginTop: '10px', lineHeight: 1.6 }}>
+            Monitoreo y evaluación del cumplimiento de las 5 metas institucionales reguladas por la <strong>Res. Exenta N° 649 (MINSAL 2026)</strong> para los funcionarios/as del Hospital de Villarrica.
           </p>
         </div>
-        <div style={{ display: 'flex', gap: '16px' }}>
-          <div style={{ background: 'white', padding: '12px 20px', borderRadius: '16px', border: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', boxShadow: '0 4px 10px rgba(0,0,0,0.03)' }}>
-            <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '1px' }}>Período Vigente</span>
-            <span style={{ fontSize: '1.2rem', fontWeight: 900, color: '#0f172a' }}>2026</span>
-          </div>
-          <div style={{ background: cumplimientoGlobal >= 90 ? '#dcfce7' : cumplimientoGlobal >= 70 ? '#fef9c3' : '#fee2e2', padding: '12px 20px', borderRadius: '16px', border: `1px solid ${cumplimientoGlobal >= 90 ? '#86efac' : cumplimientoGlobal >= 70 ? '#fde047' : '#fca5a5'}`, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', boxShadow: '0 4px 10px rgba(0,0,0,0.03)' }}>
-            <span style={{ fontSize: '0.75rem', fontWeight: 800, color: cumplimientoGlobal >= 90 ? '#166534' : cumplimientoGlobal >= 70 ? '#854d0e' : '#991b1b', textTransform: 'uppercase', letterSpacing: '1px' }}>Cumplimiento Global</span>
-            <span style={{ fontSize: '1.4rem', fontWeight: 900, color: cumplimientoGlobal >= 90 ? '#14532d' : cumplimientoGlobal >= 70 ? '#713f12' : '#7f1d1d' }}>{cumplimientoGlobal}%</span>
+      </div>
+
+      {/* KPI Stats Grid */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px', marginBottom: '28px' }}>
+        <div style={{ background: '#ffffff', padding: '20px', borderRadius: '16px', border: '1px solid #e2e8f0', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+          <span style={{ fontSize: '12px', fontWeight: 700, color: '#64748b', display: 'block', marginBottom: '6px' }}>Total Metas Reguladas</span>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
+            <span style={{ fontSize: '28px', fontWeight: 800, color: '#0f172a' }}>{stats.total}</span>
+            <span style={{ fontSize: '12px', color: '#64748b', fontWeight: 600 }}>Metas Res. 649</span>
           </div>
         </div>
-      </header>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '320px 1fr', gap: '32px' }}>
+        <div style={{ background: '#ffffff', padding: '20px', borderRadius: '16px', border: '1px solid #bbf7d0', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+          <span style={{ fontSize: '12px', fontWeight: 700, color: '#166534', display: 'block', marginBottom: '6px' }}>Metas Cumplidas</span>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
+            <span style={{ fontSize: '28px', fontWeight: 800, color: '#15803d' }}>{stats.cumple}</span>
+            <span style={{ fontSize: '12px', color: '#166534', fontWeight: 700 }}>({((stats.cumple / stats.total) * 100).toFixed(0)}%)</span>
+          </div>
+        </div>
+
+        <div style={{ background: '#ffffff', padding: '20px', borderRadius: '16px', border: '1px solid #fecaca', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+          <span style={{ fontSize: '12px', fontWeight: 700, color: '#991b1b', display: 'block', marginBottom: '6px' }}>Metas En Riesgo / No Cumplidas</span>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
+            <span style={{ fontSize: '28px', fontWeight: 800, color: '#dc2626' }}>{stats.noCumple + stats.enRiesgo}</span>
+            <span style={{ fontSize: '12px', color: '#991b1b', fontWeight: 700 }}>({stats.noCumple} No Cumple)</span>
+          </div>
+        </div>
+
+        <div style={{ background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)', padding: '20px', borderRadius: '16px', color: '#ffffff', boxShadow: '0 4px 12px rgba(16,185,129,0.25)' }}>
+          <span style={{ fontSize: '12px', fontWeight: 700, color: '#a7f3d0', display: 'block', marginBottom: '6px' }}>Puntaje Acumulado Ley 18.834</span>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
+            <span style={{ fontSize: '28px', fontWeight: 900, color: '#ffffff' }}>{stats.totalScoreObtained.toFixed(1)}%</span>
+            <span style={{ fontSize: '13px', color: '#ecfdf5', fontWeight: 700 }}>/ 100.0% Puntos</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Search and Filters Toolbar */}
+      <div style={{ background: '#ffffff', padding: '16px 20px', borderRadius: '16px', border: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px', marginBottom: '24px', boxShadow: '0 1px 2px rgba(0,0,0,0.03)' }}>
         
-        {/* SIDEBAR: Lista de Metas */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-          {ley18834Data.map(meta => {
-            const isActive = activeTab === meta.id;
-            return (
-              <motion.button
-                key={meta.id}
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                onClick={() => setActiveTab(meta.id)}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  padding: '16px',
-                  background: isActive ? 'linear-gradient(135deg, #f0f9ff, #e0f2fe)' : 'white',
-                  border: isActive ? `2px solid ${meta.color}` : '1px solid #e2e8f0',
-                  borderRadius: '16px',
-                  cursor: 'pointer',
-                  textAlign: 'left',
-                  boxShadow: isActive ? '0 10px 25px rgba(14, 165, 233, 0.1)' : '0 4px 6px rgba(0,0,0,0.02)',
-                  transition: 'all 0.2s ease',
-                  position: 'relative',
-                  overflow: 'hidden'
-                }}
-              >
-                {isActive && (
-                  <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: '6px', background: meta.color }} />
-                )}
-                <div style={{ 
-                  background: isActive ? 'white' : '#f1f5f9', 
-                  color: isActive ? meta.color : '#64748b', 
-                  width: '40px', 
-                  height: '40px', 
-                  borderRadius: '10px', 
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  justifyContent: 'center', 
-                  marginRight: '16px',
-                  boxShadow: isActive ? '0 4px 10px rgba(0,0,0,0.05)' : 'none'
-                }}>
-                  {meta.icon}
-                </div>
-                <div style={{ flex: 1 }}>
-                  <h3 style={{ margin: '0 0 4px 0', fontSize: '0.95rem', fontWeight: 800, color: '#0f172a' }}>
-                    {meta.shortName}
-                  </h3>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ fontSize: '0.85rem', color: '#64748b', fontWeight: 600 }}>{meta.value}%</span>
-                    {renderStatusBadge(meta.status)}
-                  </div>
-                </div>
-              </motion.button>
-            )
-          })}
+        {/* Search box */}
+        <div style={{ position: 'relative', flex: '1', minWidth: '260px' }}>
+          <Search size={18} color="#94a3b8" style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)' }} />
+          <input 
+            type="text" 
+            placeholder="Buscar por código, nombre o definición de la meta..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            style={{ width: '100%', padding: '10px 14px 10px 42px', borderRadius: '10px', border: '1px solid #cbd5e1', fontSize: '13px', color: '#0f172a', outline: 'none', background: '#f8fafc' }}
+          />
         </div>
 
-        {/* CONTENIDO PRINCIPAL */}
-        <AnimatePresence mode="wait">
-          <motion.div 
-            key={activeTab}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            transition={{ duration: 0.3 }}
-            style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}
-          >
-            {/* Tarjeta de Resumen */}
-            <div style={{ background: 'white', borderRadius: '24px', padding: '32px', border: '1px solid #e2e8f0', boxShadow: '0 10px 30px rgba(0,0,0,0.03)', position: 'relative', overflow: 'hidden' }}>
-              <div style={{ position: 'absolute', top: '-20px', right: '-20px', opacity: 0.03, transform: 'scale(3)' }}>
-                {activeMeta.icon}
-              </div>
-              
-              <div style={{ position: 'relative', zIndex: 1 }}>
-                <div style={{ display: 'flex', gap: '12px', alignItems: 'center', marginBottom: '16px' }}>
-                  <div style={{ padding: '8px', background: `${activeMeta.color}15`, color: activeMeta.color, borderRadius: '10px' }}>
-                    {activeMeta.icon}
+        {/* Status Filters */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+          <span style={{ fontSize: '12px', fontWeight: 700, color: '#64748b', marginRight: '4px' }}>Estado:</span>
+          {[
+            { id: 'todos', label: 'Todas' },
+            { id: 'cumple', label: 'Cumple' },
+            { id: 'riesgo', label: 'En Riesgo' },
+            { id: 'nocumple', label: 'No Cumple' }
+          ].map(f => (
+            <button
+              key={f.id}
+              onClick={() => setSelectedStatus(f.id)}
+              style={{
+                padding: '7px 14px',
+                borderRadius: '8px',
+                fontSize: '12px',
+                fontWeight: 700,
+                border: selectedStatus === f.id ? '1px solid #2563eb' : '1px solid #e2e8f0',
+                background: selectedStatus === f.id ? '#eff6ff' : '#ffffff',
+                color: selectedStatus === f.id ? '#1d4ed8' : '#64748b',
+                cursor: 'pointer',
+                transition: 'all 0.15s ease'
+              }}
+            >
+              {f.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Indicators Cards Grid */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', gap: '20px' }}>
+        {filteredIndicators.map((ind) => {
+          const validMonthly = (ind.monthlyData || []).filter(d => d.result !== null && d.result !== undefined);
+          return (
+            <motion.div
+              key={ind.id}
+              layout
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              style={{
+                background: '#ffffff',
+                borderRadius: '16px',
+                border: '1px solid #e2e8f0',
+                padding: '20px',
+                boxShadow: '0 2px 4px rgba(0,0,0,0.03)',
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'space-between',
+                transition: 'transform 0.2s ease, box-shadow 0.2s ease'
+              }}
+            >
+              <div>
+                {/* Header card */}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{ background: '#0f172a', color: '#ffffff', padding: '4px 10px', borderRadius: '6px', fontSize: '11px', fontWeight: 800, fontFamily: 'monospace' }}>
+                      {ind.code}
+                    </span>
+                    <span style={{ background: '#f1f5f9', color: '#475569', padding: '4px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 700 }}>
+                      {ind.deptCode}
+                    </span>
                   </div>
-                  <h2 style={{ fontSize: '1.4rem', fontWeight: 900, color: '#0f172a', margin: 0 }}>
-                    {activeMeta.name}
-                  </h2>
+                  <span style={{ background: '#f8fafc', color: '#0f172a', border: '1px solid #e2e8f0', padding: '3px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 800 }}>
+                    Ponderación: {ind.weight}
+                  </span>
                 </div>
-                
-                <p style={{ color: '#475569', fontSize: '1rem', lineHeight: '1.6', margin: '0 0 32px 0', maxWidth: '800px' }}>
-                  {activeMeta.desc}
+
+                {/* Title & Definition */}
+                <h3 style={{ fontSize: '15px', fontWeight: 800, color: '#0f172a', lineHeight: 1.4, marginBottom: '8px' }}>
+                  {ind.name}
+                </h3>
+                <p style={{ fontSize: '12px', color: '#64748b', lineHeight: 1.5, marginBottom: '16px', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                  {ind.definition}
                 </p>
 
-                <div style={{ display: 'flex', gap: '40px' }}>
+                {/* Main Result & Target */}
+                <div style={{ background: '#f8fafc', padding: '14px', borderRadius: '12px', border: '1px solid #f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
                   <div>
-                    <span style={{ fontSize: '0.8rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '1px', display: 'block', marginBottom: '8px' }}>Valor Actual</span>
-                    <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
-                      <span style={{ fontSize: '3rem', fontWeight: 900, color: activeMeta.color, letterSpacing: '-1px' }}>{activeMeta.value}%</span>
+                    <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 700, display: 'block', marginBottom: '2px' }}>Resultado Acumulado</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span style={{ fontSize: '22px', fontWeight: 900, color: '#0f172a' }}>{ind.summaryYTD.resultFormatted}</span>
+                      {getStatusBadge(ind.summaryYTD.status)}
                     </div>
                   </div>
-                  <div style={{ width: '2px', background: '#f1f5f9' }} />
-                  <div>
-                    <span style={{ fontSize: '0.8rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '1px', display: 'block', marginBottom: '8px' }}>Meta Exigida</span>
-                    <span style={{ fontSize: '2rem', fontWeight: 800, color: '#64748b' }}>{activeMeta.metaLabel}</span>
+                  <div style={{ textAlign: 'right' }}>
+                    <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 700, display: 'block' }}>Meta MINSAL</span>
+                    <span style={{ fontSize: '13px', fontWeight: 800, color: '#ef4444', fontFamily: 'monospace' }}>{ind.target}</span>
                   </div>
-                  <div style={{ width: '2px', background: '#f1f5f9' }} />
-                  <div>
-                    <span style={{ fontSize: '0.8rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '1px', display: 'block', marginBottom: '8px' }}>Estado</span>
-                    <div style={{ marginTop: '12px' }}>
-                      {renderStatusBadge(activeMeta.status)}
+                </div>
+
+                {/* Monthly Line Chart Preview */}
+                {(() => {
+                  const targetMatch = (ind.target || '').match(/[\d\.]+/);
+                  const targetNum = targetMatch ? parseFloat(targetMatch[0]) : null;
+                  const isLessTarget = (ind.target || '').includes('<') || (ind.target || '').includes('≤');
+                  const vals = validMonthly.map(d => d.result);
+                  let yDomain = ['auto', 'auto'];
+                  if (vals.length > 0) {
+                    let min = Math.min(...vals);
+                    let max = Math.max(...vals);
+                    if (targetNum !== null && !isNaN(targetNum)) {
+                      min = Math.min(min, targetNum);
+                      max = Math.max(max, targetNum);
+                    }
+                    const pad = Math.max((max - min) * 0.2, 2);
+                    yDomain = [Math.max(0, Math.floor(min - pad)), Math.ceil(max + pad)];
+                  }
+                  return validMonthly.length > 0 ? (
+                    <div style={{ height: '70px', marginTop: '12px', marginBottom: '8px' }}>
+                      <ResponsiveContainer width="100%" height="100%">
+                        <LineChart data={validMonthly} margin={{ top: 8, right: 8, left: -24, bottom: 0 }}>
+                          <XAxis dataKey="month" hide />
+                          <YAxis hide domain={yDomain} />
+                          {targetNum !== null && Array.isArray(yDomain) && typeof yDomain[0] === 'number' && (
+                            <ReferenceArea
+                              y1={isLessTarget ? yDomain[0] : targetNum}
+                              y2={isLessTarget ? targetNum : yDomain[1]}
+                              fill="#10b981"
+                              fillOpacity={0.08}
+                              stroke="none"
+                            />
+                          )}
+                          {targetNum !== null && (
+                            <ReferenceLine y={targetNum} stroke="#ef4444" strokeDasharray="3 3" strokeWidth={1.5} />
+                          )}
+                          <Line type="monotone" dataKey="result" stroke="#2563eb" strokeWidth={2.5} dot={{ r: 3, fill: '#2563eb' }} />
+                        </LineChart>
+                      </ResponsiveContainer>
                     </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Fila de Gráficos e Insights */}
-            <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '24px' }}>
-              
-              {/* Gráfico */}
-              <div style={{ background: 'white', borderRadius: '24px', padding: '24px', border: '1px solid #e2e8f0', boxShadow: '0 4px 10px rgba(0,0,0,0.02)' }}>
-                <h3 style={{ fontSize: '1rem', fontWeight: 800, color: '#0f172a', margin: '0 0 24px 0', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <BarChart2 size={18} color={activeMeta.color} />
-                  Evolución del Indicador
-                </h3>
-                <div style={{ height: '280px', width: '100%' }}>
-                  <ResponsiveContainer width="100%" height="100%">
-                    {activeMeta.chartType === 'bar' ? (
-                      <BarChart data={activeMeta.history} margin={{ top: 20, right: 10, left: -20, bottom: 0 }}>
-                        <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.2} />
-                        <XAxis dataKey="mes" tick={{ fontSize: 12, fontWeight: 600, fill: '#64748b' }} axisLine={false} tickLine={false} />
-                        <YAxis tick={{ fontSize: 12, fill: '#64748b' }} axisLine={false} tickLine={false} />
-                        <RechartsTooltip content={<CustomTooltip />} />
-                        <ReferenceLine y={activeMeta.meta} stroke="#ef4444" strokeDasharray="4 4" label={{ value: 'Meta', position: 'insideTopLeft', fill: '#ef4444', fontSize: 11, fontWeight: 'bold' }} />
-                        <Bar dataKey="valor" fill={activeMeta.color} radius={[6, 6, 0, 0]}>
-                          <LabelList dataKey="valor" position="top" formatter={(val) => Number.isInteger(val) ? val : Number(val).toFixed(2)} style={{ fontSize: 11, fontWeight: 700, fill: '#475569' }} />
-                        </Bar>
-                      </BarChart>
-                    ) : activeMeta.chartType === 'line' ? (
-                      <LineChart data={activeMeta.history} margin={{ top: 20, right: 10, left: -20, bottom: 0 }}>
-                        <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.2} />
-                        <XAxis dataKey="mes" tick={{ fontSize: 12, fontWeight: 600, fill: '#64748b' }} axisLine={false} tickLine={false} />
-                        <YAxis tick={{ fontSize: 12, fill: '#64748b' }} axisLine={false} tickLine={false} />
-                        <RechartsTooltip content={<CustomTooltip />} />
-                        <ReferenceLine y={activeMeta.meta} stroke="#ef4444" strokeDasharray="4 4" label={{ value: 'Meta Máx', position: 'insideTopLeft', fill: '#ef4444', fontSize: 11, fontWeight: 'bold' }} />
-                        <Line type="monotone" dataKey="valor" stroke={activeMeta.color} strokeWidth={4} dot={{ r: 6, fill: activeMeta.color, strokeWidth: 2, stroke: 'white' }} activeDot={{ r: 8 }}>
-                          <LabelList dataKey="valor" position="top" formatter={(val) => Number.isInteger(val) ? val : Number(val).toFixed(2)} style={{ fontSize: 11, fontWeight: 700, fill: '#475569' }} offset={10} />
-                        </Line>
-                      </LineChart>
-                    ) : activeMeta.chartType === 'area' ? (
-                      <AreaChart data={activeMeta.history} margin={{ top: 20, right: 10, left: -20, bottom: 0 }}>
-                        <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.2} />
-                        <XAxis dataKey="mes" tick={{ fontSize: 12, fontWeight: 600, fill: '#64748b' }} axisLine={false} tickLine={false} />
-                        <YAxis tick={{ fontSize: 12, fill: '#64748b' }} domain={[70, 100]} axisLine={false} tickLine={false} />
-                        <RechartsTooltip content={<CustomTooltip />} />
-                        <ReferenceLine y={activeMeta.meta} stroke="#ef4444" strokeDasharray="4 4" label={{ value: 'Meta', position: 'insideTopLeft', fill: '#ef4444', fontSize: 11, fontWeight: 'bold' }} />
-                        <Area type="monotone" dataKey="valor" stroke={activeMeta.color} strokeWidth={3} fill={`${activeMeta.color}20`} />
-                      </AreaChart>
-                    ) : (
-                      <PieChart>
-                        <Pie
-                          data={activeMeta.history}
-                          cx="50%"
-                          cy="50%"
-                          innerRadius={70}
-                          outerRadius={100}
-                          paddingAngle={5}
-                          dataKey="value"
-                        >
-                          <Cell key="cell-0" fill={activeMeta.color} />
-                          <Cell key="cell-1" fill="#e2e8f0" />
-                        </Pie>
-                        <RechartsTooltip />
-                        <text x="50%" y="50%" textAnchor="middle" dominantBaseline="middle" style={{ fontSize: '1.5rem', fontWeight: 900, fill: '#0f172a' }}>
-                          {Number.isInteger(activeMeta.history[0].value) ? activeMeta.history[0].value : Number(activeMeta.history[0].value).toFixed(2)}%
-                        </text>
-                      </PieChart>
-                    )}
-                  </ResponsiveContainer>
-                </div>
+                  ) : (
+                    <div style={{ padding: '14px', background: '#f8fafc', borderRadius: '10px', textAlign: 'center', fontSize: '11.5px', color: '#64748b', fontWeight: 600, margin: '12px 0 8px 0' }}>
+                      Evaluación por Pauta / Auditado Semestral
+                    </div>
+                  );
+                })()}
               </div>
 
-              {/* Insights */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-                <div style={{ background: 'white', borderRadius: '24px', padding: '24px', border: '1px solid #e2e8f0', boxShadow: '0 4px 10px rgba(0,0,0,0.02)', flex: 1 }}>
-                  <h3 style={{ fontSize: '1rem', fontWeight: 800, color: '#0f172a', margin: '0 0 16px 0', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <TrendingUp size={18} color="#f59e0b" />
-                    Análisis & Proyección
-                  </h3>
-                  <div style={{ background: '#f8fafc', padding: '16px', borderRadius: '12px', border: '1px solid #f1f5f9' }}>
-                    <p style={{ margin: 0, color: '#334155', fontSize: '0.9rem', lineHeight: '1.6' }}>
-                      {activeMeta.insights}
-                    </p>
-                  </div>
-                </div>
-              </div>
-              
-            </div>
-          </motion.div>
-        </AnimatePresence>
-
+              {/* Card Footer Button */}
+              <button
+                onClick={() => {
+                  setSelectedIndicator(ind);
+                  setActiveModalTab('formula');
+                }}
+                style={{
+                  width: '100%',
+                  marginTop: '16px',
+                  padding: '10px',
+                  borderRadius: '10px',
+                  border: '1px solid #cbd5e1',
+                  background: '#ffffff',
+                  color: '#0f172a',
+                  fontWeight: 700,
+                  fontSize: '12.5px',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '6px',
+                  transition: 'background 0.15s ease'
+                }}
+              >
+                <FileText size={15} color="#2563eb" />
+                Ver Ficha Técnica y Evolución (Res. 649)
+              </button>
+            </motion.div>
+          );
+        })}
       </div>
+
+      {/* DETAILED FICHA TÉCNICA & MONTHLY DATA MODAL */}
+      <AnimatePresence>
+        {selectedIndicator && (
+          <div style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.6)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '20px' }}>
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              style={{ background: '#ffffff', borderRadius: '20px', width: '100%', maxWidth: '850px', maxHeight: '90vh', overflow: 'hidden', display: 'flex', flexDirection: 'column', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)' }}
+            >
+              {/* Modal Header */}
+              <div style={{ padding: '20px 24px', background: '#0f172a', color: '#ffffff', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
+                    <span style={{ background: '#2563eb', color: '#ffffff', padding: '2px 8px', borderRadius: '4px', fontSize: '11px', fontWeight: 800, fontFamily: 'monospace' }}>
+                      {selectedIndicator.code}
+                    </span>
+                    <span style={{ color: '#94a3b8', fontSize: '12px', fontWeight: 700 }}>
+                      Ley N° 18.834 • Ponderación: {selectedIndicator.weight}
+                    </span>
+                  </div>
+                  <h2 style={{ fontSize: '18px', fontWeight: 800, color: '#ffffff', margin: 0 }}>
+                    {selectedIndicator.name}
+                  </h2>
+                </div>
+                <button
+                  onClick={() => setSelectedIndicator(null)}
+                  style={{ background: 'rgba(255,255,255,0.1)', border: 'none', color: '#ffffff', width: '36px', height: '36px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+                >
+                  <X size={20} />
+                </button>
+              </div>
+
+              {/* Modal Sub-Tabs */}
+              <div style={{ display: 'flex', borderBottom: '1px solid #e2e8f0', background: '#f8fafc', padding: '0 24px' }}>
+                <button
+                  onClick={() => setActiveModalTab('formula')}
+                  style={{ padding: '14px 20px', fontSize: '13px', fontWeight: 700, color: activeModalTab === 'formula' ? '#2563eb' : '#64748b', borderBottom: activeModalTab === 'formula' ? '2px solid #2563eb' : 'none', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
+                >
+                  <FileText size={16} /> Ficha Técnica (Res. Exenta N° 649)
+                </button>
+                <button
+                  onClick={() => setActiveModalTab('monthly')}
+                  style={{ padding: '14px 20px', fontSize: '13px', fontWeight: 700, color: activeModalTab === 'monthly' ? '#2563eb' : '#64748b', borderBottom: activeModalTab === 'monthly' ? '2px solid #2563eb' : 'none', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
+                >
+                  <TrendingUp size={16} /> Desglose Mensual 2026
+                </button>
+              </div>
+
+              {/* Modal Content */}
+              <div style={{ padding: '24px', overflowY: 'auto', flex: 1 }}>
+                {activeModalTab === 'formula' ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                    {/* Definition */}
+                    <div style={{ background: '#f8fafc', padding: '16px', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
+                      <h4 style={{ fontSize: '13px', fontWeight: 800, color: '#0f172a', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Definición del Indicador</h4>
+                      <p style={{ fontSize: '13px', color: '#334155', lineHeight: 1.6, margin: 0 }}>{selectedIndicator.definition}</p>
+                    </div>
+
+                    {/* Objective */}
+                    <div style={{ background: '#f8fafc', padding: '16px', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
+                      <h4 style={{ fontSize: '13px', fontWeight: 800, color: '#0f172a', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Objetivo Institucional</h4>
+                      <p style={{ fontSize: '13px', color: '#334155', lineHeight: 1.6, margin: 0 }}>{selectedIndicator.objective}</p>
+                    </div>
+
+                    {/* Formula MINSAL */}
+                    <div style={{ background: '#eff6ff', padding: '18px', borderRadius: '12px', border: '1px solid #bfdbfe' }}>
+                      <h4 style={{ fontSize: '13px', fontWeight: 800, color: '#1e40af', marginBottom: '10px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Fórmula de Cálculo Oficial MINSAL</h4>
+                      <div style={{ fontSize: '13px', color: '#1e3a8a', lineHeight: 1.6 }}>
+                        <p style={{ margin: '0 0 6px 0' }}><strong>Numerador:</strong> {selectedIndicator.formula.numerator}</p>
+                        <p style={{ margin: '0 0 6px 0' }}><strong>Denominador:</strong> {selectedIndicator.formula.denominator}</p>
+                        <p style={{ margin: '8px 0 0 0', padding: '8px 12px', background: '#ffffff', borderRadius: '8px', fontFamily: 'monospace', fontWeight: 700, color: '#2563eb', border: '1px solid #93c5fd', display: 'inline-block' }}>
+                          Fórmula: {selectedIndicator.formula.expression}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Rules & Meta */}
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                      <div style={{ background: '#f8fafc', padding: '16px', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
+                        <h4 style={{ fontSize: '12px', fontWeight: 800, color: '#64748b', marginBottom: '4px', textTransform: 'uppercase' }}>Meta Exigida MINSAL</h4>
+                        <span style={{ fontSize: '18px', fontWeight: 900, color: '#ef4444', fontFamily: 'monospace' }}>{selectedIndicator.target}</span>
+                      </div>
+                      <div style={{ background: '#f8fafc', padding: '16px', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
+                        <h4 style={{ fontSize: '12px', fontWeight: 800, color: '#64748b', marginBottom: '4px', textTransform: 'uppercase' }}>Fuente de Información</h4>
+                        <span style={{ fontSize: '13px', fontWeight: 700, color: '#0f172a' }}>{selectedIndicator.dataSource}</span>
+                      </div>
+                    </div>
+
+                    {/* Evaluation Rules */}
+                    <div style={{ background: '#f8fafc', padding: '16px', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
+                      <h4 style={{ fontSize: '13px', fontWeight: 800, color: '#0f172a', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Reglas de Evaluación (Res. Exenta N° 649)</h4>
+                      <p style={{ fontSize: '13px', color: '#334155', lineHeight: 1.6, margin: 0 }}>{selectedIndicator.evalRules}</p>
+                    </div>
+                  </div>
+                ) : (
+                  <div>
+                    {/* Recharts Line Chart */}
+                    <div style={{ marginBottom: '24px', background: '#ffffff', padding: '16px', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+                        <h4 style={{ fontSize: '13px', fontWeight: 800, color: '#0f172a' }}>Evolución Mensual 2026</h4>
+                        <span style={{ fontSize: '11px', color: '#ef4444', fontWeight: 800, background: '#fef2f2', padding: '3px 8px', borderRadius: '4px', border: '1px solid #fecaca', fontFamily: 'monospace' }}>
+                          Meta MINSAL: {selectedIndicator.target}
+                        </span>
+                      </div>
+                      <div style={{ width: '100%', height: '220px' }}>
+                        {(() => {
+                          const validMonthly = (selectedIndicator.monthlyData || []).filter(d => d.result !== null && d.result !== undefined);
+                          const targetMatch = (selectedIndicator.target || '').match(/[\d\.]+/);
+                          const targetNum = targetMatch ? parseFloat(targetMatch[0]) : null;
+                          const isLessTarget = (selectedIndicator.target || '').includes('<') || (selectedIndicator.target || '').includes('≤');
+                          const vals = validMonthly.map(d => d.result);
+                          let yDomain = ['auto', 'auto'];
+                          if (vals.length > 0) {
+                            let min = Math.min(...vals);
+                            let max = Math.max(...vals);
+                            if (targetNum !== null && !isNaN(targetNum)) {
+                              min = Math.min(min, targetNum);
+                              max = Math.max(max, targetNum);
+                            }
+                            const pad = Math.max((max - min) * 0.2, 2);
+                            yDomain = [Math.max(0, Math.floor(min - pad)), Math.ceil(max + pad)];
+                          }
+                          return (
+                            <ResponsiveContainer width="100%" height="100%">
+                              <LineChart data={validMonthly} margin={{ top: 14, right: 14, left: -20, bottom: 0 }}>
+                                <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+                                <XAxis dataKey="month" tick={{ fontSize: 11, fill: '#64748b' }} axisLine={false} tickLine={false} />
+                                <YAxis tick={{ fontSize: 11, fill: '#64748b' }} axisLine={false} tickLine={false} domain={yDomain} />
+                                {targetNum !== null && Array.isArray(yDomain) && typeof yDomain[0] === 'number' && (
+                                  <ReferenceArea
+                                    y1={isLessTarget ? yDomain[0] : targetNum}
+                                    y2={isLessTarget ? targetNum : yDomain[1]}
+                                    fill="#10b981"
+                                    fillOpacity={0.08}
+                                    stroke="none"
+                                  />
+                                )}
+                                <RechartsTooltip
+                                  content={({ active, payload }) => {
+                                    if (active && payload && payload.length) {
+                                      const data = payload[0].payload;
+                                      return (
+                                        <div style={{ background: '#0f172a', color: '#ffffff', padding: '8px 12px', borderRadius: '8px', fontSize: '12px', boxShadow: '0 4px 12px rgba(0,0,0,0.3)' }}>
+                                          <p style={{ fontWeight: 800, color: '#60a5fa', margin: '0 0 2px 0' }}>{data.month} 2026</p>
+                                          <p style={{ fontWeight: 700, margin: 0 }}>Resultado: {data.resultFormatted}</p>
+                                          {data.numerator > 0 && <p style={{ fontSize: '11px', color: '#cbd5e1', margin: '2px 0 0 0' }}>({data.numerator} / {data.denominator})</p>}
+                                        </div>
+                                      );
+                                    }
+                                    return null;
+                                  }}
+                                />
+                                {targetNum !== null && (
+                                  <ReferenceLine y={targetNum} stroke="#ef4444" strokeDasharray="4 4" strokeWidth={1.5} label={{ value: `Meta ${selectedIndicator.target}`, fill: '#ef4444', fontSize: 11, fontWeight: 800, position: 'insideTopRight' }} />
+                                )}
+                                <Line type="monotone" dataKey="result" stroke="#2563eb" strokeWidth={2.5} dot={{ r: 4, fill: '#2563eb', strokeWidth: 2, stroke: '#fff' }} />
+                              </LineChart>
+                            </ResponsiveContainer>
+                          );
+                        })()}
+                      </div>
+                    </div>
+
+                    {/* Monthly Performance Table */}
+                    <div style={{ border: '1px solid #e2e8f0', borderRadius: '12px', overflow: 'hidden' }}>
+                      <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '13px' }}>
+                        <thead>
+                          <tr style={{ background: '#f8fafc', borderBottom: '1px solid #e2e8f0', color: '#475569', fontWeight: 700 }}>
+                            <th style={{ padding: '12px 16px' }}>Mes</th>
+                            <th style={{ padding: '12px 16px', textAlign: 'center' }}>Numerador</th>
+                            <th style={{ padding: '12px 16px', textAlign: 'center' }}>Denominador</th>
+                            <th style={{ padding: '12px 16px', textAlign: 'center' }}>Resultado</th>
+                            <th style={{ padding: '12px 16px', textAlign: 'center' }}>Estado</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {selectedIndicator.monthlyData.map((row, idx) => (
+                            <tr key={idx} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                              <td style={{ padding: '12px 16px', fontWeight: 700, color: '#0f172a' }}>{row.month}</td>
+                              <td style={{ padding: '12px 16px', textAlign: 'center', color: '#475569', fontFamily: 'monospace' }}>{row.numerator > 0 ? row.numerator.toLocaleString() : '-'}</td>
+                              <td style={{ padding: '12px 16px', textAlign: 'center', color: '#475569', fontFamily: 'monospace' }}>{row.denominator > 0 ? row.denominator.toLocaleString() : '-'}</td>
+                              <td style={{ padding: '12px 16px', textAlign: 'center', fontWeight: 800, color: '#0f172a' }}>{row.resultFormatted}</td>
+                              <td style={{ padding: '12px 16px', textAlign: 'center' }}>{getStatusBadge(row.status)}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
