@@ -297,25 +297,6 @@ export default function ComgesDashboard({ onBack }) {
                 </p>
               </div>
             </div>
-
-            {/* Monthly Update Info Box */}
-            <div className="comges-update-box">
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', color: '#5eead4', fontWeight: 700, marginBottom: '4px' }}>
-                <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <Calendar size={16} /> Carga Mensual Base
-                </span>
-                <span style={{ background: 'rgba(45, 212, 191, 0.2)', padding: '2px 8px', borderRadius: '4px' }}>
-                  {COMGES_META.lastUpdatedMonth} 2026
-                </span>
-              </div>
-              <p style={{ color: '#94a3b8', lineHeight: 1.4 }}>
-                11 Indicadores de Evaluación + 15 Indicadores de Monitoreo definidos para la red.
-              </p>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '6px', color: '#2dd4bf', fontWeight: 600, fontSize: '11px' }}>
-                <RefreshCw size={12} className="animate-spin" />
-                <span>Ingesta directa desde PLANILLA COMGES 2026.xlsx</span>
-              </div>
-            </div>
           </div>
 
           {/* Navigation Sub-Tabs */}
