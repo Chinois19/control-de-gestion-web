@@ -8,7 +8,7 @@ import {
 } from 'lucide-react';
 import {
   ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid,
-  Tooltip as RechartsTooltip, ReferenceLine
+  Tooltip as RechartsTooltip, ReferenceLine, ReferenceArea
 } from 'recharts';
 import { COMGES_META, COMGES_DOMAINS, COMGES_INDICATORS, REM_CALENDAR, REGIONAL_HOSPITALS } from '../data/comges2026Data';
 import './ComgesDashboard.css';
@@ -20,6 +20,12 @@ const MiniMonthlyLineChart = ({ monthlyData = [], target = '', status = '' }) =>
     if (!target) return null;
     const match = target.match(/[\d\.]+/);
     return match ? parseFloat(match[0]) : null;
+  }, [target]);
+
+  // Determine if target direction is "less than" (<, ≤) or "greater than" (>, ≥)
+  const isLessTarget = useMemo(() => {
+    if (!target) return false;
+    return target.includes('<') || target.includes('≤');
   }, [target]);
 
   // Format chart points
@@ -36,7 +42,7 @@ const MiniMonthlyLineChart = ({ monthlyData = [], target = '', status = '' }) =>
     }));
   }, [monthlyData]);
 
-  // Compute dynamic Y-Domain including both data values and target line so ReferenceLine is NEVER clipped!
+  // Compute dynamic Y-Domain including both data values and target line so ReferenceLine and Success Zone are NEVER clipped!
   const yDomain = useMemo(() => {
     if (!chartData || chartData.length === 0) return ['auto', 'auto'];
     const validVals = chartData.map(d => d.val).filter(v => v !== null && v !== undefined && !isNaN(v));
@@ -102,6 +108,18 @@ const MiniMonthlyLineChart = ({ monthlyData = [], target = '', status = '' }) =>
             <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
             <XAxis dataKey="month" tick={{ fontSize: 10, fill: '#64748b' }} axisLine={false} tickLine={false} />
             <YAxis tick={{ fontSize: 10, fill: '#64748b' }} axisLine={false} tickLine={false} domain={yDomain} />
+            
+            {/* Subtle Mint Green Success Zone Shading */}
+            {targetNum !== null && Array.isArray(yDomain) && typeof yDomain[0] === 'number' && (
+              <ReferenceArea
+                y1={isLessTarget ? yDomain[0] : targetNum}
+                y2={isLessTarget ? targetNum : yDomain[1]}
+                fill="#10b981"
+                fillOpacity={0.08}
+                stroke="none"
+              />
+            )}
+
             <RechartsTooltip
               content={({ active, payload }) => {
                 if (active && payload && payload.length) {

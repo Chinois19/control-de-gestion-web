@@ -6,7 +6,7 @@ import {
   ChevronRight, X, BarChart2, Filter, Stethoscope
 } from 'lucide-react';
 import {
-  ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip as RechartsTooltip, CartesianGrid, ReferenceLine
+  ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip as RechartsTooltip, CartesianGrid, ReferenceLine, ReferenceArea
 } from 'recharts';
 import { LEY19664_META, LEY19664_INDICATORS } from '../data/ley19664Data';
 
@@ -188,6 +188,7 @@ const HealthGoalsLey19664 = ({ onBack }) => {
                 {(() => {
                   const targetMatch = (ind.target || '').match(/[\d\.]+/);
                   const targetNum = targetMatch ? parseFloat(targetMatch[0]) : null;
+                  const isLessTarget = (ind.target || '').includes('<') || (ind.target || '').includes('≤');
                   const vals = validMonthly.map(d => d.result);
                   let yDomain = ['auto', 'auto'];
                   if (vals.length > 0) {
@@ -206,6 +207,15 @@ const HealthGoalsLey19664 = ({ onBack }) => {
                         <LineChart data={validMonthly} margin={{ top: 8, right: 8, left: -24, bottom: 0 }}>
                           <XAxis dataKey="month" hide />
                           <YAxis hide domain={yDomain} />
+                          {targetNum !== null && Array.isArray(yDomain) && typeof yDomain[0] === 'number' && (
+                            <ReferenceArea
+                              y1={isLessTarget ? yDomain[0] : targetNum}
+                              y2={isLessTarget ? targetNum : yDomain[1]}
+                              fill="#10b981"
+                              fillOpacity={0.08}
+                              stroke="none"
+                            />
+                          )}
                           {targetNum !== null && (
                             <ReferenceLine y={targetNum} stroke="#ef4444" strokeDasharray="3 3" strokeWidth={1.5} />
                           )}
