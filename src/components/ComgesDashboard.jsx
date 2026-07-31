@@ -287,9 +287,6 @@ export default function ComgesDashboard({ onBack }) {
                   <span className="comges-badge comges-badge-year">
                     Año {COMGES_META.year}
                   </span>
-                  <span className="comges-badge comges-badge-version">
-                    Videoconferencia MINSAL (21-07-2026)
-                  </span>
                 </div>
                 <h1 className="comges-title">
                   <Award size={32} color="#2dd4bf" />
