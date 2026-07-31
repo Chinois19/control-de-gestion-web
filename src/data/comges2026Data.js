@@ -1837,7 +1837,7 @@ export const COMGES_INDICATORS = [
     "name": "Porcentaje de pacientes en Peritoneodiálisis respecto al total de pacientes en tratamiento de diálisis",
     "ponderacion": "Monitoreo",
     "type": "monitoreo",
-    "target": "En Monitoreo",
+    "target": "≥ 20.0%",
     "frequency": "Mensual (Planilla COMGES 2026 hoja '2,8 PAC PD')",
     "dataSource": "PLANILLA COMGES 2026.xlsx (Hoja '2,8 PAC PD') / Registros de Nefrología y Peritoneodiálisis Hospital Villarrica",
     "definition": "Mide el porcentaje de pacientes con Insuficiencia Renal Crónica (IRC) que ingresan y se mantienen en terapia de Peritoneodiálisis (PD) domiciliaria o automatizada respecto del total de pacientes en programa de diálisis.",
@@ -1847,7 +1847,7 @@ export const COMGES_INDICATORS = [
       "denominator": "N° total de pacientes ingresados a terapias de sustitución renal (Hemodiálisis + Peritoneodiálisis).",
       "expression": "(Pacientes en Peritoneodiálisis / Total Pacientes en Diálisis) × 100"
     },
-    "evalRules": "Monitoreo mensual continuo. Seguimiento del programa de Peritoneodiálisis en el Hospital de Villarrica.",
+    "evalRules": "Meta MINSAL: ≥ 20.0% de prevalencia de pacientes en Peritoneodiálisis respecto al total de pacientes ingresados en terapias de sustitución renal.",
     "monthlyData": [
       {
         "month": "Enero",
