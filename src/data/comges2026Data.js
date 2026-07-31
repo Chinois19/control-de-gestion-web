@@ -2079,5 +2079,255 @@ export const COMGES_INDICATORS = [
       "status": "Cumple",
       "observation": "Acumulado a Julio 2026: 66.67% de cumplimiento MINSAL (16 de 24 especialidades médicas medidas cumplen su estándar de altas esperadas vs Meta ≥ 60.0%)."
     }
+  },
+  {
+    "id": "M1.13",
+    "code": "MONITOREO 1.13",
+    "domainId": "monitoreo",
+    "name": "Promedio de Días de Estada en Hospitalización Domiciliaria (HODOM)",
+    "ponderacion": "Monitoreo",
+    "type": "monitoreo",
+    "target": "< 8.5 días",
+    "frequency": "Mensual (Planilla COMGES 2026 hoja '1,13 HODOM ')",
+    "dataSource": "PLANILLA COMGES 2026.xlsx (Hoja '1,13 HODOM ') / Registros HODOM Hospital Villarrica",
+    "definition": "Mide el promedio de días de permanencia de los pacientes ingresados y egresados de la Unidad de Hospitalización Domiciliaria (HODOM) del Hospital de Villarrica.",
+    "objective": "Optimizar la gestión del recurso cama hospitalaria favoreciendo la recuperación domiciliaria oportuna y segura de los usuarios.",
+    "formula": {
+      "numerator": "N° total de días de estada de pacientes egresados de Hospitalización Domiciliaria (HODOM).",
+      "denominator": "N° total de pacientes egresados de Hospitalización Domiciliaria (HODOM).",
+      "expression": "Total Días de Estada HODOM / Total Egresos HODOM"
+    },
+    "evalRules": "Monitoreo mensual continuo. Meta MINSAL: mantener un promedio de estada inferior a 8,5 días por paciente egresado de HODOM.",
+    "monthlyData": [
+      {
+        "month": "Enero",
+        "numerator": 504,
+        "denominator": 61,
+        "result": 8.26,
+        "resultFormatted": "8.26 días",
+        "status": "Cumple"
+      },
+      {
+        "month": "Febrero",
+        "numerator": 556,
+        "denominator": 50,
+        "result": 11.12,
+        "resultFormatted": "11.12 días",
+        "status": "No Cumple"
+      },
+      {
+        "month": "Marzo",
+        "numerator": 538,
+        "denominator": 56,
+        "result": 9.61,
+        "resultFormatted": "9.61 días",
+        "status": "No Cumple"
+      },
+      {
+        "month": "Abril",
+        "numerator": 433,
+        "denominator": 51,
+        "result": 8.49,
+        "resultFormatted": "8.49 días",
+        "status": "Cumple"
+      },
+      {
+        "month": "Mayo",
+        "numerator": 531,
+        "denominator": 57,
+        "result": 9.32,
+        "resultFormatted": "9.32 días",
+        "status": "No Cumple"
+      },
+      {
+        "month": "Junio",
+        "numerator": 585,
+        "denominator": 66,
+        "result": 8.86,
+        "resultFormatted": "8.86 días",
+        "status": "No Cumple"
+      },
+      {
+        "month": "Julio",
+        "numerator": 0,
+        "denominator": 0,
+        "result": null,
+        "resultFormatted": "-",
+        "status": "Pendiente Actualización"
+      },
+      {
+        "month": "Agosto",
+        "numerator": 0,
+        "denominator": 0,
+        "result": null,
+        "resultFormatted": "-",
+        "status": "Pendiente Actualización"
+      },
+      {
+        "month": "Septiembre",
+        "numerator": 0,
+        "denominator": 0,
+        "result": null,
+        "resultFormatted": "-",
+        "status": "Pendiente Actualización"
+      },
+      {
+        "month": "Octubre",
+        "numerator": 0,
+        "denominator": 0,
+        "result": null,
+        "resultFormatted": "-",
+        "status": "Pendiente Actualización"
+      },
+      {
+        "month": "Noviembre",
+        "numerator": 0,
+        "denominator": 0,
+        "result": null,
+        "resultFormatted": "-",
+        "status": "Pendiente Actualización"
+      },
+      {
+        "month": "Diciembre",
+        "numerator": 0,
+        "denominator": 0,
+        "result": null,
+        "resultFormatted": "-",
+        "status": "Pendiente Actualización"
+      }
+    ],
+    "summaryYTD": {
+      "numerator": 3147,
+      "denominator": 341,
+      "result": 9.23,
+      "resultFormatted": "9.23 días",
+      "status": "No Cumple",
+      "observation": "Acumulado a Junio 2026: 9.23 días promedio de estada HODOM (3.147 días totales de estancia entre 341 egresos de HODOM vs Meta < 8.5 días)."
+    }
+  },
+  {
+    "id": "M1.15",
+    "code": "MONITOREO 1.15",
+    "domainId": "monitoreo",
+    "name": "Porcentaje de Camas Disponibles respecto de la Dotación Vigente",
+    "ponderacion": "Monitoreo",
+    "type": "monitoreo",
+    "target": "> 95.0%",
+    "frequency": "Mensual (Planilla COMGES 2026 hoja '1,15 CAMAS DISPONIBLES')",
+    "dataSource": "PLANILLA COMGES 2026.xlsx (Hoja '1,15 CAMAS DISPONIBLES') / Gestión de Camas Hospital Villarrica",
+    "definition": "Mide la proporción de días cama efectivamente disponibles en el establecimiento en relación con los días cama teóricos según la resolución de dotación vigente (125 camas contratadas/dotadas).",
+    "objective": "Asegurar la máxima disponibilidad de la dotación autorizada de camas hospitalarias para la atención cerrada de la red asistencial.",
+    "formula": {
+      "numerator": "Días Cama Disponibles acumulados en el periodo.",
+      "denominator": "Días Cama según Resolución de Dotación Vigente (Dotación 125 Camas × Días Calendario del Mes).",
+      "expression": "(Días Cama Disponibles / (Dotación Camas × Días Mes)) × 100"
+    },
+    "evalRules": "Monitoreo mensual continuo. Meta MINSAL: mantener un porcentaje de disponibilidad de camas superior al 95.0% respecto de la dotación aprobada.",
+    "monthlyData": [
+      {
+        "month": "Enero",
+        "numerator": 3751,
+        "denominator": 3875,
+        "result": 96.8,
+        "resultFormatted": "96.80%",
+        "status": "Cumple"
+      },
+      {
+        "month": "Febrero",
+        "numerator": 3388,
+        "denominator": 3500,
+        "result": 96.8,
+        "resultFormatted": "96.80%",
+        "status": "Cumple"
+      },
+      {
+        "month": "Marzo",
+        "numerator": 3751,
+        "denominator": 3875,
+        "result": 96.8,
+        "resultFormatted": "96.80%",
+        "status": "Cumple"
+      },
+      {
+        "month": "Abril",
+        "numerator": 3631,
+        "denominator": 3750,
+        "result": 96.83,
+        "resultFormatted": "96.83%",
+        "status": "Cumple"
+      },
+      {
+        "month": "Mayo",
+        "numerator": 3753,
+        "denominator": 3875,
+        "result": 96.85,
+        "resultFormatted": "96.85%",
+        "status": "Cumple"
+      },
+      {
+        "month": "Junio",
+        "numerator": 3772,
+        "denominator": 3750,
+        "result": 100.59,
+        "resultFormatted": "100.59%",
+        "status": "Cumple"
+      },
+      {
+        "month": "Julio",
+        "numerator": 0,
+        "denominator": 0,
+        "result": null,
+        "resultFormatted": "-",
+        "status": "Pendiente Actualización"
+      },
+      {
+        "month": "Agosto",
+        "numerator": 0,
+        "denominator": 0,
+        "result": null,
+        "resultFormatted": "-",
+        "status": "Pendiente Actualización"
+      },
+      {
+        "month": "Septiembre",
+        "numerator": 0,
+        "denominator": 0,
+        "result": null,
+        "resultFormatted": "-",
+        "status": "Pendiente Actualización"
+      },
+      {
+        "month": "Octubre",
+        "numerator": 0,
+        "denominator": 0,
+        "result": null,
+        "resultFormatted": "-",
+        "status": "Pendiente Actualización"
+      },
+      {
+        "month": "Noviembre",
+        "numerator": 0,
+        "denominator": 0,
+        "result": null,
+        "resultFormatted": "-",
+        "status": "Pendiente Actualización"
+      },
+      {
+        "month": "Diciembre",
+        "numerator": 0,
+        "denominator": 0,
+        "result": null,
+        "resultFormatted": "-",
+        "status": "Pendiente Actualización"
+      }
+    ],
+    "summaryYTD": {
+      "numerator": 22046,
+      "denominator": 22625,
+      "result": 97.44,
+      "resultFormatted": "97.44%",
+      "status": "Cumple",
+      "observation": "Acumulado a Junio 2026: 97.44% de disponibilidad operacional de camas (22.046 días cama disponibles de 22.625 días cama de dotación vigente vs Meta > 95.0%)."
+    }
   }
 ];
