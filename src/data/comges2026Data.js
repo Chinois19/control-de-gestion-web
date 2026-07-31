@@ -2329,5 +2329,130 @@ export const COMGES_INDICATORS = [
       "status": "Cumple",
       "observation": "Acumulado a Junio 2026: 97.44% de disponibilidad operacional de camas (22.046 días cama disponibles de 22.625 días cama de dotación vigente vs Meta > 95.0%)."
     }
+  },
+  {
+    "id": "M5.2",
+    "code": "MONITOREO 5.2",
+    "domainId": "monitoreo",
+    "name": "Cumplimiento de Supervisión del Proceso de Eventos Centinela Priorizados de Reporte Inmediato (ECPRI)",
+    "ponderacion": "Monitoreo",
+    "type": "monitoreo",
+    "target": "≥ 90.0%",
+    "frequency": "Semestral (Planilla COMGES 2026 hoja '5,2 SUPERV ECPRI')",
+    "dataSource": "PLANILLA COMGES 2026.xlsx (Hoja '5,2 SUPERV ECPRI') / DIGERA / Depto. Calidad y Seguridad de la Atención",
+    "definition": "Mide el nivel de cumplimiento en las acciones y gestiones de supervisión realizadas por el Servicio de Salud sobre los Eventos Centinela Priorizados de Reporte Inmediato (ECPRI) reportados por los establecimientos de atención cerrada.",
+    "objective": "Mejorar la calidad de la atención y la seguridad del paciente, a través de la supervisión efectiva del proceso de notificación, análisis causa raíz y gestión de eventos centinela.",
+    "formula": {
+      "numerator": "N° de ECPRI de hospitales con supervisión realizada por el Servicio de Salud (mínimo 2 actividades documentadas).",
+      "denominator": "Total de ECPRI reportados por hospitales en el Servicio de Salud.",
+      "expression": "(ECPRI con Supervisión Realizada / Total ECPRI Reportados en la Red) × 100"
+    },
+    "evalRules": "Monitoreo semestral continuo mediante el 'Informe de supervisión de los ECPRI del Servicio de Salud'. Meta MINSAL: mantener un porcentaje de supervisión igual o superior al 90,0% de los ECPRI reportados. Excluye eventos notificados en los últimos 15 días corridos previos a elaborar el informe.",
+    "monthlyData": [
+      {
+        "month": "Enero",
+        "numerator": 0,
+        "denominator": 0,
+        "result": null,
+        "resultFormatted": "-",
+        "status": "Sin Registro"
+      },
+      {
+        "month": "Febrero",
+        "numerator": 0,
+        "denominator": 0,
+        "result": null,
+        "resultFormatted": "-",
+        "status": "Sin Registro"
+      },
+      {
+        "month": "Marzo",
+        "numerator": 0,
+        "denominator": 0,
+        "result": null,
+        "resultFormatted": "-",
+        "status": "Sin Registro"
+      },
+      {
+        "month": "Abril",
+        "numerator": 0,
+        "denominator": 0,
+        "result": null,
+        "resultFormatted": "-",
+        "status": "Sin Registro"
+      },
+      {
+        "month": "Mayo",
+        "numerator": 0,
+        "denominator": 0,
+        "result": null,
+        "resultFormatted": "-",
+        "status": "Sin Registro"
+      },
+      {
+        "month": "Junio",
+        "numerator": 0,
+        "denominator": 0,
+        "result": null,
+        "resultFormatted": "-",
+        "status": "Sin Registro"
+      },
+      {
+        "month": "Julio",
+        "numerator": 0,
+        "denominator": 0,
+        "result": null,
+        "resultFormatted": "-",
+        "status": "Pendiente Actualización"
+      },
+      {
+        "month": "Agosto",
+        "numerator": 0,
+        "denominator": 0,
+        "result": null,
+        "resultFormatted": "-",
+        "status": "Pendiente Actualización"
+      },
+      {
+        "month": "Septiembre",
+        "numerator": 0,
+        "denominator": 0,
+        "result": null,
+        "resultFormatted": "-",
+        "status": "Pendiente Actualización"
+      },
+      {
+        "month": "Octubre",
+        "numerator": 0,
+        "denominator": 0,
+        "result": null,
+        "resultFormatted": "-",
+        "status": "Pendiente Actualización"
+      },
+      {
+        "month": "Noviembre",
+        "numerator": 0,
+        "denominator": 0,
+        "result": null,
+        "resultFormatted": "-",
+        "status": "Pendiente Actualización"
+      },
+      {
+        "month": "Diciembre",
+        "numerator": 0,
+        "denominator": 0,
+        "result": null,
+        "resultFormatted": "-",
+        "status": "Pendiente Actualización"
+      }
+    ],
+    "summaryYTD": {
+      "numerator": 0,
+      "denominator": 0,
+      "result": null,
+      "resultFormatted": "-",
+      "status": "Evaluación Semestral",
+      "observation": "Evaluación semestral por informe / pauta auditada de la Unidad de Calidad y Seguridad del Paciente del Servicio de Salud Araucanía Sur."
+    }
   }
 ];
