@@ -172,9 +172,9 @@ export default function ComgesDashboard({ onBack }) {
     return { total: monitoreoIndicators.length, cumple, riesgo, noCumple, sinMedicion };
   }, [monitoreoIndicators]);
 
-  // Filtered Evaluated Indicators List
+  // Filtered Indicators List (Includes COMGES Evaluados and Monitoreo)
   const filteredIndicators = useMemo(() => {
-    return evaluatedIndicators.filter(ind => {
+    return COMGES_INDICATORS.filter(ind => {
       if (selectedDomain !== 'all' && ind.domainId !== selectedDomain) return false;
       if (selectedStatus !== 'all') {
         const st = ind.summaryYTD?.status;
@@ -184,15 +184,17 @@ export default function ComgesDashboard({ onBack }) {
         if (selectedStatus === 'sinmedicion' && st !== 'Sin Medición') return false;
       }
       if (searchQuery.trim() !== '') {
-        const q = searchQuery.toLowerCase();
-        if (!ind.code.toLowerCase().includes(q) &&
-            !ind.name.toLowerCase().includes(q) &&
-            !(ind.definition || '').toLowerCase().includes(q) &&
-            !(ind.objective || '').toLowerCase().includes(q)) return false;
+        const q = searchQuery.toLowerCase().trim();
+        const codeMatch = ind.code.toLowerCase().includes(q);
+        const nameMatch = ind.name.toLowerCase().includes(q);
+        const defMatch = (ind.definition || '').toLowerCase().includes(q);
+        const objMatch = (ind.objective || '').toLowerCase().includes(q);
+        const domainMatch = (ind.domainId || '').toLowerCase().includes(q);
+        if (!codeMatch && !nameMatch && !defMatch && !objMatch && !domainMatch) return false;
       }
       return true;
     });
-  }, [evaluatedIndicators, selectedDomain, selectedStatus, searchQuery]);
+  }, [selectedDomain, selectedStatus, searchQuery]);
 
   // Filtered Monitoreo Indicators List
   const filteredMonitoreo = useMemo(() => {
@@ -332,7 +334,6 @@ export default function ComgesDashboard({ onBack }) {
               <button
                 onClick={() => setActiveTab('monitoreo')}
                 className={`comges-tab-btn ${activeTab === 'monitoreo' ? 'comges-tab-btn-active' : 'comges-tab-btn-inactive'}`}
-                style={activeTab === 'monitoreo' ? { borderBottomColor: '#64748b', color: '#475569' } : {}}
               >
                 <Activity size={16} />
                 Indicadores de Monitoreo ({monitoreoIndicators.length})
@@ -470,10 +471,10 @@ export default function ComgesDashboard({ onBack }) {
                         maxHeight: '42px'
                       }}
                     >
-                      <option value="all">🎯 Todos los Objetivos (6 Dominios)</option>
+                      <option value="all">🎯 Todos los Indicadores (16: 11 COMGES + 5 Monitoreo)</option>
                       {COMGES_DOMAINS.map(d => (
                         <option key={d.id} value={d.id}>
-                          {d.code}: {d.title} ({d.weight})
+                          {d.code}: {d.title} {d.weight !== 'Monitoreo' ? `(${d.weight})` : '(Obligatorio)'}
                         </option>
                       ))}
                     </select>
