@@ -2337,7 +2337,7 @@ export const COMGES_INDICATORS = [
     "name": "Cumplimiento de Supervisión del Proceso de Eventos Centinela Priorizados de Reporte Inmediato (ECPRI)",
     "ponderacion": "Monitoreo",
     "type": "monitoreo",
-    "target": "≥ 90.0%",
+    "target": "> 80.0%",
     "frequency": "Semestral (Planilla COMGES 2026 hoja '5,2 SUPERV ECPRI')",
     "dataSource": "PLANILLA COMGES 2026.xlsx (Hoja '5,2 SUPERV ECPRI') / DIGERA / Depto. Calidad y Seguridad de la Atención",
     "definition": "Mide el nivel de cumplimiento en las acciones y gestiones de supervisión realizadas por el Servicio de Salud sobre los Eventos Centinela Priorizados de Reporte Inmediato (ECPRI) reportados por los establecimientos de atención cerrada.",
@@ -2355,7 +2355,7 @@ export const COMGES_INDICATORS = [
         "denominator": 0,
         "result": null,
         "resultFormatted": "-",
-        "status": "Sin Registro"
+        "status": "Sin Eventos"
       },
       {
         "month": "Febrero",
@@ -2363,15 +2363,15 @@ export const COMGES_INDICATORS = [
         "denominator": 0,
         "result": null,
         "resultFormatted": "-",
-        "status": "Sin Registro"
+        "status": "Sin Eventos"
       },
       {
         "month": "Marzo",
-        "numerator": 0,
-        "denominator": 0,
-        "result": null,
-        "resultFormatted": "-",
-        "status": "Sin Registro"
+        "numerator": 1,
+        "denominator": 1,
+        "result": 100.0,
+        "resultFormatted": "100.0%",
+        "status": "Cumple"
       },
       {
         "month": "Abril",
@@ -2379,7 +2379,7 @@ export const COMGES_INDICATORS = [
         "denominator": 0,
         "result": null,
         "resultFormatted": "-",
-        "status": "Sin Registro"
+        "status": "Sin Eventos"
       },
       {
         "month": "Mayo",
@@ -2387,7 +2387,7 @@ export const COMGES_INDICATORS = [
         "denominator": 0,
         "result": null,
         "resultFormatted": "-",
-        "status": "Sin Registro"
+        "status": "Sin Eventos"
       },
       {
         "month": "Junio",
@@ -2395,7 +2395,7 @@ export const COMGES_INDICATORS = [
         "denominator": 0,
         "result": null,
         "resultFormatted": "-",
-        "status": "Sin Registro"
+        "status": "Sin Eventos"
       },
       {
         "month": "Julio",
@@ -2403,7 +2403,7 @@ export const COMGES_INDICATORS = [
         "denominator": 0,
         "result": null,
         "resultFormatted": "-",
-        "status": "Pendiente Actualización"
+        "status": "Sin Eventos"
       },
       {
         "month": "Agosto",
@@ -2447,12 +2447,14 @@ export const COMGES_INDICATORS = [
       }
     ],
     "summaryYTD": {
-      "numerator": 0,
-      "denominator": 0,
-      "result": null,
-      "resultFormatted": "-",
-      "status": "Evaluación Semestral",
-      "observation": "Evaluación semestral por informe / pauta auditada de la Unidad de Calidad y Seguridad del Paciente del Servicio de Salud Araucanía Sur."
+      "numerator": 1,
+      "denominator": 1,
+      "result": 100.0,
+      "resultFormatted": "100.0%",
+      "compliance": 100.0,
+      "status": "Cumple",
+      "statusLabel": "Cumple",
+      "observation": "1 ECPRI reportado y supervisado al 100% en marzo 2026 (Cumplimiento de meta > 80%)."
     }
   }
 ];
