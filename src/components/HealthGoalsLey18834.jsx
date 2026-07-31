@@ -105,8 +105,6 @@ export default function HealthGoalsLey18834({ onBack }) {
             <span style={{ background: 'rgba(59,130,246,0.2)', color: '#93c5fd', border: '1px solid rgba(147,197,253,0.3)', padding: '4px 12px', borderRadius: '20px', fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
               Ley N° 18.834 (Estatuto Administrativo)
             </span>
-            <span style={{ color: '#94a3b8', fontSize: '12px', fontWeight: 600 }}>•</span>
-            <span style={{ color: '#94a3b8', fontSize: '12px', fontWeight: 600 }}>Evaluación Acumulada a Mayo 2026</span>
           </div>
           <h1 style={{ fontSize: '28px', fontWeight: 800, color: '#ffffff', margin: 0, tracking: '-0.5px', lineHeight: 1.2 }}>
             Metas Sanitarias Ley N° 18.834 — Año 2026
