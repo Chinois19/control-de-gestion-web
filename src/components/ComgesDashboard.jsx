@@ -263,6 +263,20 @@ export default function ComgesDashboard({ onBack }) {
     });
   }, [monitoreoIndicators, monitoreoStatus, monitoreoSearch]);
 
+  const comgesScoreInfo = useMemo(() => {
+    let totalScore = 0;
+    evaluatedIndicators.forEach(ind => {
+      const pondVal = parseFloat(String(ind.ponderacion).replace('%', '').replace(' Puntos', '').replace(' pts', '')) || 0;
+      const status = ind.summaryYTD?.status;
+      if (['Cumple', 'Destacado', '100%', 'Cumplido'].includes(status)) {
+        totalScore += pondVal;
+      } else if (status === 'En Proceso') {
+        totalScore += pondVal * 0.75;
+      }
+    });
+    return totalScore;
+  }, [evaluatedIndicators]);
+
   const getStatusBadge = (status) => {
     switch (status) {
       case 'Cumple':
@@ -386,6 +400,24 @@ export default function ComgesDashboard({ onBack }) {
       <main className="comges-main">
         {/* KPI Cards Section */}
         <div className="comges-kpi-grid">
+          {/* Highlighted Green Score Card */}
+          <div className="comges-kpi-card" style={{ background: 'linear-gradient(135deg, #059669 0%, #10b981 100%)', color: '#ffffff', border: 'none', boxShadow: '0 4px 12px rgba(16, 185, 129, 0.25)' }}>
+            <span className="comges-kpi-label" style={{ color: '#ecfdf5', opacity: 0.95, textTransform: 'uppercase', letterSpacing: '0.3px', fontWeight: 800 }}>
+              Puntaje Acumulado COMGES <Award size={16} color="#ffffff" />
+            </span>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px' }}>
+              <span className="comges-kpi-val" style={{ color: '#ffffff', fontSize: '32px', fontWeight: 900 }}>
+                {comgesScoreInfo.toFixed(1)}%
+              </span>
+              <span style={{ fontSize: '12px', fontWeight: 800, color: '#d1fae5' }}>
+                / 100.0% Puntos
+              </span>
+            </div>
+            <span style={{ fontSize: '11px', color: '#a7f3d0', display: 'block', fontWeight: 600, marginTop: '2px' }}>
+              Compromiso de Gestión 2026
+            </span>
+          </div>
+
           <div className="comges-kpi-card">
             <span className="comges-kpi-label" style={{ color: '#64748b' }}>
               Indicadores Evaluables <FileText size={16} />

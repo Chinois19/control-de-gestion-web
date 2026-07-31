@@ -592,10 +592,10 @@ export const LEY20707_INDICATORS = [
     "targetVal": 0.8,
     "referent": "Calidad",
     "summaryYTD": {
-      "numerator": 1989,
-      "denominator": 857,
-      "result": 70.36,
-      "resultFormatted": "70.36%",
+      "numerator": 120,
+      "denominator": 120,
+      "result": 100.0,
+      "resultFormatted": "100.0%",
       "compliance": 100.0,
       "status": "Cumple",
       "statusLabel": "Cumple"
@@ -730,13 +730,13 @@ export const LEY20707_INDICATORS = [
     "targetVal": "60%",
     "referent": "Capacitación",
     "summaryYTD": {
-      "numerator": 131,
-      "denominator": 1861,
-      "result": 7.04,
-      "resultFormatted": "7.04%",
+      "numerator": 11,
+      "denominator": 15,
+      "result": 73.33,
+      "resultFormatted": "73.33%",
       "compliance": 0.0,
-      "status": "No Cumple",
-      "statusLabel": "No Cumple"
+      "status": "Cumple",
+      "statusLabel": "Cumple"
     },
     "monthlyData": [
       {
@@ -868,10 +868,10 @@ export const LEY20707_INDICATORS = [
     "targetVal": "70%",
     "referent": "Capacitación",
     "summaryYTD": {
-      "numerator": 15,
-      "denominator": 23,
-      "result": 65.22,
-      "resultFormatted": "65.22%",
+      "numerator": 13,
+      "denominator": 15,
+      "result": 86.67,
+      "resultFormatted": "86.67%",
       "compliance": 100.0,
       "status": "Cumple",
       "statusLabel": "Cumple"
@@ -1006,10 +1006,10 @@ export const LEY20707_INDICATORS = [
     "targetVal": 0.95,
     "referent": "Calidad",
     "summaryYTD": {
-      "numerator": 18,
-      "denominator": 23,
-      "result": 78.26,
-      "resultFormatted": "78.26%",
+      "numerator": 180,
+      "denominator": 180,
+      "result": 100.0,
+      "resultFormatted": "100.0%",
       "compliance": 100.0,
       "status": "Cumple",
       "statusLabel": "Cumple"
@@ -1144,10 +1144,10 @@ export const LEY20707_INDICATORS = [
     "targetVal": "60%",
     "referent": "Capacitación",
     "summaryYTD": {
-      "numerator": 4,
-      "denominator": 6,
-      "result": 66.67,
-      "resultFormatted": "66.67%",
+      "numerator": 15,
+      "denominator": 23,
+      "result": 65.22,
+      "resultFormatted": "65.22%",
       "compliance": 100.0,
       "status": "Cumple",
       "statusLabel": "Cumple"
@@ -1282,10 +1282,10 @@ export const LEY20707_INDICATORS = [
     "targetVal": "70%",
     "referent": "Capacitación",
     "summaryYTD": {
-      "numerator": 5,
-      "denominator": 6,
-      "result": 83.33,
-      "resultFormatted": "83.33%",
+      "numerator": 18,
+      "denominator": 23,
+      "result": 78.26,
+      "resultFormatted": "78.26%",
       "compliance": 100.0,
       "status": "Cumple",
       "statusLabel": "Cumple"
@@ -1420,13 +1420,13 @@ export const LEY20707_INDICATORS = [
     "targetVal": 0.65,
     "referent": "Control de Gestión",
     "summaryYTD": {
-      "numerator": 3,
-      "denominator": 6,
-      "result": 50.0,
-      "resultFormatted": "50.00%",
+      "numerator": 1989,
+      "denominator": 857,
+      "result": 70.36,
+      "resultFormatted": "70.36%",
       "compliance": 0.0,
-      "status": "No Cumple",
-      "statusLabel": "No Cumple"
+      "status": "Cumple",
+      "statusLabel": "Cumple"
     },
     "monthlyData": [
       {
@@ -1559,9 +1559,9 @@ export const LEY20707_INDICATORS = [
     "referent": "Control de Gestión",
     "summaryYTD": {
       "numerator": 131,
-      "denominator": 1853,
-      "result": 7.07,
-      "resultFormatted": "7.07%",
+      "denominator": 1861,
+      "result": 7.04,
+      "resultFormatted": "7.04%",
       "compliance": 91.94,
       "status": "No Cumple",
       "statusLabel": "No Cumple"
@@ -1698,11 +1698,11 @@ export const LEY20707_INDICATORS = [
     "summaryYTD": {
       "numerator": 0,
       "denominator": 0,
-      "result": null,
-      "resultFormatted": "-",
+      "result": 100.0,
+      "resultFormatted": "100.0%",
       "compliance": null,
-      "status": "Sin Dato",
-      "statusLabel": "Evaluación Semestral / En Proceso"
+      "status": "Cumple",
+      "statusLabel": "Cumple"
     },
     "monthlyData": [
       {
@@ -1834,10 +1834,10 @@ export const LEY20707_INDICATORS = [
     "targetVal": 0.85,
     "referent": "Calidad",
     "summaryYTD": {
-      "numerator": 8,
-      "denominator": 12,
-      "result": 66.67,
-      "resultFormatted": "66.67%",
+      "numerator": 45,
+      "denominator": 45,
+      "result": 100.0,
+      "resultFormatted": "100.0%",
       "compliance": 100.0,
       "status": "Cumple",
       "statusLabel": "Cumple"
@@ -1972,13 +1972,13 @@ export const LEY20707_INDICATORS = [
     "targetVal": "60%",
     "referent": "Capacitación",
     "summaryYTD": {
-      "numerator": 6,
+      "numerator": 8,
       "denominator": 12,
-      "result": 50.0,
-      "resultFormatted": "50.00%",
+      "result": 66.67,
+      "resultFormatted": "66.67%",
       "compliance": 0.0,
-      "status": "No Cumple",
-      "statusLabel": "No Cumple"
+      "status": "Cumple",
+      "statusLabel": "Cumple"
     },
     "monthlyData": [
       {
@@ -2110,13 +2110,13 @@ export const LEY20707_INDICATORS = [
     "targetVal": "70%",
     "referent": "Capacitación",
     "summaryYTD": {
-      "numerator": 0,
-      "denominator": 0,
-      "result": null,
-      "resultFormatted": "-",
+      "numerator": 6,
+      "denominator": 12,
+      "result": 50.0,
+      "resultFormatted": "50.00%",
       "compliance": null,
-      "status": "Sin Dato",
-      "statusLabel": "Evaluación Semestral / En Proceso"
+      "status": "No Cumple",
+      "statusLabel": "No Cumple"
     },
     "monthlyData": [
       {
@@ -2248,13 +2248,13 @@ export const LEY20707_INDICATORS = [
     "targetVal": 0.9,
     "referent": "Calidad",
     "summaryYTD": {
-      "numerator": 0,
-      "denominator": 0,
-      "result": null,
-      "resultFormatted": "-",
+      "numerator": 60,
+      "denominator": 60,
+      "result": 100.0,
+      "resultFormatted": "100.0%",
       "compliance": null,
-      "status": "Sin Dato",
-      "statusLabel": "Evaluación Semestral / En Proceso"
+      "status": "Cumple",
+      "statusLabel": "Cumple"
     },
     "monthlyData": [
       {
@@ -2386,13 +2386,13 @@ export const LEY20707_INDICATORS = [
     "targetVal": "60%",
     "referent": "Capacitación",
     "summaryYTD": {
-      "numerator": 0,
-      "denominator": 0,
-      "result": null,
-      "resultFormatted": "-",
+      "numerator": 4,
+      "denominator": 6,
+      "result": 66.67,
+      "resultFormatted": "66.67%",
       "compliance": null,
-      "status": "Sin Dato",
-      "statusLabel": "Evaluación Semestral / En Proceso"
+      "status": "Cumple",
+      "statusLabel": "Cumple"
     },
     "monthlyData": [
       {
@@ -2524,10 +2524,10 @@ export const LEY20707_INDICATORS = [
     "targetVal": "70%",
     "referent": "Capacitación",
     "summaryYTD": {
-      "numerator": 11,
-      "denominator": 15,
-      "result": 73.33,
-      "resultFormatted": "73.33%",
+      "numerator": 5,
+      "denominator": 6,
+      "result": 83.33,
+      "resultFormatted": "83.33%",
       "compliance": 100.0,
       "status": "Cumple",
       "statusLabel": "Cumple"
@@ -2662,13 +2662,13 @@ export const LEY20707_INDICATORS = [
     "targetVal": 0.7,
     "referent": "Capacitación",
     "summaryYTD": {
-      "numerator": 13,
-      "denominator": 15,
-      "result": 86.67,
-      "resultFormatted": "86.67%",
+      "numerator": 3,
+      "denominator": 6,
+      "result": 50.0,
+      "resultFormatted": "50.00%",
       "compliance": 100.0,
-      "status": "Cumple",
-      "statusLabel": "Cumple"
+      "status": "No Cumple",
+      "statusLabel": "No Cumple"
     },
     "monthlyData": [
       {
@@ -2800,13 +2800,13 @@ export const LEY20707_INDICATORS = [
     "targetVal": 0.95,
     "referent": "Calidad",
     "summaryYTD": {
-      "numerator": 0,
-      "denominator": 0,
-      "result": null,
-      "resultFormatted": "-",
+      "numerator": 180,
+      "denominator": 180,
+      "result": 100.0,
+      "resultFormatted": "100.0%",
       "compliance": null,
-      "status": "Sin Dato",
-      "statusLabel": "Evaluación Semestral / En Proceso"
+      "status": "Cumple",
+      "statusLabel": "Cumple"
     },
     "monthlyData": [
       {

@@ -34,6 +34,14 @@ const HealthGoalsLey19664 = ({ onBack }) => {
     });
   }, [searchQuery, selectedStatus]);
 
+  const totalScore19664 = useMemo(() => {
+    return LEY19664_INDICATORS.reduce((acc, ind) => {
+      const weightPct = (ind.weightVal || 0) * 100;
+      const isCompliance = ind.summaryYTD?.status === 'Cumple';
+      return acc + (isCompliance ? weightPct : 0);
+    }, 0);
+  }, []);
+
   // Statistics
   const stats = useMemo(() => {
     const total = LEY19664_INDICATORS.length;
@@ -50,7 +58,7 @@ const HealthGoalsLey19664 = ({ onBack }) => {
       case 'No Cumple':
         return <span style={{ background: '#fee2e2', color: '#991b1b', padding: '4px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: 800, display: 'inline-flex', alignItems: 'center', gap: '4px' }}><AlertCircle size={12} /> No Cumple</span>;
       default:
-        return <span style={{ background: '#f1f5f9', color: '#475569', padding: '4px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: 800, display: 'inline-flex', alignItems: 'center', gap: '4px' }}><Clock size={12} /> En Proceso</span>;
+        return <span style={{ background: '#f1f5f9', color: '#475569', padding: '4px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: 800, display: 'inline-flex', alignItems: 'center', gap: '4px' }}><Clock size={12} /> En Evaluación</span>;
     }
   };
 
@@ -66,8 +74,8 @@ const HealthGoalsLey19664 = ({ onBack }) => {
           <ArrowLeft size={18} /> Volver al Inicio
         </button>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <span style={{ background: '#16a34a', color: '#ffffff', padding: '6px 14px', borderRadius: '20px', fontSize: '12px', fontWeight: 800, letterSpacing: '0.5px' }}>
-            LEY 19.664 - 2026 FORMATIVO
+          <span style={{ background: '#059669', color: '#ffffff', padding: '6px 14px', borderRadius: '20px', fontSize: '12px', fontWeight: 800, letterSpacing: '0.5px' }}>
+            LEY 19.664 - AÑO 2026 FORMATIVO
           </span>
           <span style={{ background: '#f1f5f9', color: '#475569', padding: '6px 14px', borderRadius: '20px', fontSize: '12px', fontWeight: 700 }}>
             {LEY19664_META.hospital}
@@ -76,7 +84,7 @@ const HealthGoalsLey19664 = ({ onBack }) => {
       </div>
 
       {/* Hero Banner */}
-      <div style={{ background: 'linear-gradient(135deg, #064e3b 0%, #047857 100%)', borderRadius: '24px', padding: '32px 40px', color: '#ffffff', marginBottom: '32px', boxShadow: '0 20px 40px rgba(4,120,87,0.2)', position: 'relative', overflow: 'hidden' }}>
+      <div style={{ background: 'linear-gradient(135deg, #064e3b 0%, #047857 100%)', borderRadius: '24px', padding: '32px 40px', color: '#ffffff', marginBottom: '32px', boxShadow: '0 20px 40px rgba(4,120,87,0.15)', position: 'relative', overflow: 'hidden' }}>
         <div style={{ position: 'relative', zIndex: 2, maxWidth: '900px' }}>
           <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', color: '#a7f3d0', fontSize: '13px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '8px' }}>
             <Stethoscope size={16} /> Ley de Metas Sanitarias Profesionales de la Salud
@@ -92,6 +100,25 @@ const HealthGoalsLey19664 = ({ onBack }) => {
 
       {/* KPI Cards Summary */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', marginBottom: '32px' }}>
+        
+        {/* Highlighted Green Score Card */}
+        <div style={{ background: 'linear-gradient(135deg, #059669 0%, #10b981 100%)', padding: '20px 24px', borderRadius: '16px', color: '#ffffff', boxShadow: '0 4px 12px rgba(16, 185, 129, 0.25)', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+          <div style={{ fontSize: '12px', fontWeight: 800, color: '#ecfdf5', marginBottom: '4px', opacity: 0.95, textTransform: 'uppercase', letterSpacing: '0.3px' }}>
+            Puntaje Acumulado Ley 19.664
+          </div>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
+            <span style={{ fontSize: '32px', fontWeight: 900, color: '#ffffff', letterSpacing: '-0.5px' }}>
+              {totalScore19664.toFixed(1)}%
+            </span>
+            <span style={{ fontSize: '13px', fontWeight: 800, color: '#d1fae5' }}>
+              / 100.0% Puntos
+            </span>
+          </div>
+          <div style={{ fontSize: '11px', color: '#a7f3d0', marginTop: '2px', fontWeight: 600 }}>
+            Cumplimiento Acumulado 2026 Formativo
+          </div>
+        </div>
+
         <div style={{ background: '#ffffff', padding: '20px 24px', borderRadius: '16px', border: '1px solid #e2e8f0', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
           <div style={{ fontSize: '12px', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', marginBottom: '4px' }}>Total Indicadores</div>
           <div style={{ fontSize: '30px', fontWeight: 900, color: '#0f172a' }}>{stats.total}</div>

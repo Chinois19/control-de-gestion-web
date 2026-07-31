@@ -47,6 +47,36 @@ const HealthGoalsLey20707 = ({ onBack }) => {
     });
   }, [selectedUnit, searchQuery, selectedStatus]);
 
+  // Calculated Score by Unit / Global for Ley 20.707
+  const currentUnitScoreInfo = useMemo(() => {
+    const calculateUnitScore = (unitId) => {
+      const unitInds = LEY20707_INDICATORS.filter(ind => ind.deptInfo.id === unitId);
+      return unitInds.reduce((acc, ind) => {
+        const weightPct = parseFloat(ind.weight.replace('%', '')) || 0;
+        const isCompliance = ind.summaryYTD?.status === 'Cumple';
+        return acc + (isCompliance ? weightPct : 0);
+      }, 0);
+    };
+
+    const unitIds = ['ueh', 'ginecologia', 'pabellon', 'upc', 'pediatria'];
+    if (selectedUnit === 'todas') {
+      const totalScores = unitIds.reduce((sum, uId) => sum + calculateUnitScore(uId), 0);
+      return {
+        score: totalScores / unitIds.length,
+        label: 'Puntaje Global Ley 20.707',
+        sublabel: 'Promedio Ponderado de las 5 Unidades'
+      };
+    } else {
+      const unitObj = LEY20707_UNITS.find(u => u.id === selectedUnit);
+      const uScore = calculateUnitScore(selectedUnit);
+      return {
+        score: uScore,
+        label: `Puntaje Acumulado (${unitObj ? unitObj.code : selectedUnit.toUpperCase()})`,
+        sublabel: 'Ponderación Unidad Comprometida'
+      };
+    }
+  }, [selectedUnit]);
+
   // Statistics
   const stats = useMemo(() => {
     const total = LEY20707_INDICATORS.length;
@@ -109,6 +139,25 @@ const HealthGoalsLey20707 = ({ onBack }) => {
 
       {/* KPI Cards Summary */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', marginBottom: '32px' }}>
+        
+        {/* Highlighted Green Score Card */}
+        <div style={{ background: 'linear-gradient(135deg, #059669 0%, #10b981 100%)', padding: '20px 24px', borderRadius: '16px', color: '#ffffff', boxShadow: '0 4px 12px rgba(16, 185, 129, 0.25)', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+          <div style={{ fontSize: '12px', fontWeight: 800, color: '#ecfdf5', marginBottom: '4px', opacity: 0.95, textTransform: 'uppercase', letterSpacing: '0.3px' }}>
+            {currentUnitScoreInfo.label}
+          </div>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
+            <span style={{ fontSize: '32px', fontWeight: 900, color: '#ffffff', letterSpacing: '-0.5px' }}>
+              {currentUnitScoreInfo.score.toFixed(1)}%
+            </span>
+            <span style={{ fontSize: '13px', fontWeight: 800, color: '#d1fae5' }}>
+              / 100.0% Puntos
+            </span>
+          </div>
+          <div style={{ fontSize: '11px', color: '#a7f3d0', marginTop: '2px', fontWeight: 600 }}>
+            {currentUnitScoreInfo.sublabel}
+          </div>
+        </div>
+
         <div style={{ background: '#ffffff', padding: '20px 24px', borderRadius: '16px', border: '1px solid #e2e8f0', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
           <div style={{ fontSize: '12px', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', marginBottom: '4px' }}>Total Indicadores</div>
           <div style={{ fontSize: '30px', fontWeight: 900, color: '#0f172a' }}>{stats.total}</div>
