@@ -1,0 +1,345 @@
+import React, { useState, useEffect, useMemo } from 'react';
+import {
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+  PieChart, Pie, Cell, Legend
+} from 'recharts';
+import { ArrowLeft, RefreshCw, AlertTriangle, Users, Clock, Stethoscope, Filter, Download } from 'lucide-react';
+
+const COLORS_TRAMO = {
+  '0-90 días':    '#10b981',
+  '91-180 días':  '#f59e0b',
+  '181-365 días': '#f97316',
+  '366-540 días': '#ef4444',
+  '> 540 días':   '#7c3aed',
+  'Sin fecha':    '#94a3b8',
+};
+
+const COLORS_PIE = ['#6366f1','#0ea5e9','#10b981','#f59e0b','#ef4444','#8b5cf6','#ec4899','#14b8a6'];
+
+const TRAMOS_ORDER = ['0-90 días','91-180 días','181-365 días','366-540 días','> 540 días','Sin fecha'];
+
+function KPICard({ icon, label, value, sub, color }) {
+  return (
+    <div style={{
+      background: 'white', borderRadius: 16, padding: '20px 24px',
+      boxShadow: '0 2px 12px rgba(0,0,0,0.07)', borderLeft: `4px solid ${color}`,
+      display: 'flex', flexDirection: 'column', gap: 4
+    }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, color }}>
+        {icon}
+        <span style={{ fontSize: '0.78rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: 0.5 }}>{label}</span>
+      </div>
+      <div style={{ fontSize: '2rem', fontWeight: 800, color: '#1e293b', lineHeight: 1.1 }}>{value}</div>
+      {sub && <div style={{ fontSize: '0.78rem', color: '#94a3b8' }}>{sub}</div>}
+    </div>
+  );
+}
+
+const CustomTooltipBar = ({ active, payload, label }) => {
+  if (!active || !payload?.length) return null;
+  return (
+    <div style={{ background: 'white', border: '1px solid #e2e8f0', borderRadius: 10, padding: '10px 14px', boxShadow: '0 4px 20px rgba(0,0,0,0.1)' }}>
+      <p style={{ fontWeight: 700, fontSize: '0.82rem', color: '#1e293b', marginBottom: 4 }}>{label}</p>
+      {payload.map((p, i) => (
+        <p key={i} style={{ fontSize: '0.78rem', color: p.fill, margin: 0 }}>{p.name}: <b>{p.value.toLocaleString('es-CL')}</b></p>
+      ))}
+    </div>
+  );
+};
+
+export default function ListaEsperaDashboard({ onBack }) {
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [tipoFiltro, setTipoFiltro] = useState('Todas');   // Todas | Médica | Odontológica
+  const [estadoFiltro, setEstadoFiltro] = useState('Todas');
+  const [searchEsp, setSearchEsp] = useState('');
+  const [activeTab, setActiveTab] = useState('resumen');
+
+  const loadData = () => {
+    setLoading(true);
+    setError(null);
+    fetch('/data/lista_espera_cached.json?' + Date.now())
+      .then(r => { if (!r.ok) throw new Error('Archivo no encontrado'); return r.json(); })
+      .then(d => { setData(d); setLoading(false); })
+      .catch(e => { setError(e.message); setLoading(false); });
+  };
+
+  useEffect(() => { loadData(); }, []);
+
+  const records = useMemo(() => {
+    if (!data?.records) return [];
+    let r = data.records;
+    if (tipoFiltro !== 'Todas') r = r.filter(x => x.tipo_lista_espera === tipoFiltro);
+    if (estadoFiltro !== 'Todas') r = r.filter(x => x.estado_ic === estadoFiltro);
+    return r;
+  }, [data, tipoFiltro, estadoFiltro]);
+
+  const kpis = useMemo(() => {
+    if (!records.length) return {};
+    const conFecha = records.filter(r => r.dias_espera !== null);
+    const promDias = conFecha.length ? Math.round(conFecha.reduce((a, b) => a + b.dias_espera, 0) / conFecha.length) : 0;
+    const criticos = records.filter(r => r.dias_espera > 365).length;
+    return {
+      total: records.length,
+      medicas: records.filter(r => r.tipo_lista_espera === 'Médica').length,
+      odont: records.filter(r => r.tipo_lista_espera === 'Odontológica').length,
+      promDias,
+      criticos,
+    };
+  }, [records]);
+
+  const byTramo = useMemo(() => {
+    const m = {};
+    TRAMOS_ORDER.forEach(t => m[t] = 0);
+    records.forEach(r => { if (m[r.tramo_espera] !== undefined) m[r.tramo_espera]++; });
+    return TRAMOS_ORDER.map(t => ({ name: t, value: m[t], fill: COLORS_TRAMO[t] })).filter(x => x.value > 0);
+  }, [records]);
+
+  const byEspecialidad = useMemo(() => {
+    const m = {};
+    records.forEach(r => { const e = r.especialidad_destino || 'Sin dato'; m[e] = (m[e] || 0) + 1; });
+    return Object.entries(m).sort((a, b) => b[1] - a[1]).slice(0, 20)
+      .map(([name, value]) => ({ name: name.length > 38 ? name.substring(0, 36) + '…' : name, value, fullName: name }))
+      .filter(x => !searchEsp || x.fullName.toLowerCase().includes(searchEsp.toLowerCase()));
+  }, [records, searchEsp]);
+
+  const byEstado = useMemo(() => {
+    const m = {};
+    records.forEach(r => { m[r.estado_ic] = (m[r.estado_ic] || 0) + 1; });
+    return Object.entries(m).sort((a, b) => b[1] - a[1]).map(([name, value], i) => ({ name, value, fill: COLORS_PIE[i % COLORS_PIE.length] }));
+  }, [records]);
+
+  const byOrigen = useMemo(() => {
+    const m = {};
+    records.forEach(r => { const o = r.establecimiento_origen || 'Sin dato'; m[o] = (m[o] || 0) + 1; });
+    return Object.entries(m).sort((a, b) => b[1] - a[1]).slice(0, 15)
+      .map(([name, value]) => ({ name, value }));
+  }, [records]);
+
+  const estados = useMemo(() => {
+    if (!data?.records) return [];
+    return ['Todas', ...Array.from(new Set(data.records.map(r => r.estado_ic).filter(Boolean)))];
+  }, [data]);
+
+  const exportCSV = () => {
+    const headers = ['N° IC','Establecimiento Origen','Estado','Especialidad','Tipo LE','Sexo','Prevision','Urbano/Rural','PRAIS','Fecha IC','Dias Espera','Tramo Espera','Gestión IC'];
+    const rows = records.map(r => [
+      r.num_interconsulta, r.establecimiento_origen, r.estado_ic,
+      r.especialidad_destino, r.tipo_lista_espera, r.sexo, r.prevision,
+      r.urbano_rural, r.prais, r.fecha_ic ? String(r.fecha_ic).substring(0, 10) : '',
+      r.dias_espera ?? '', r.tramo_espera, r.gestion_interconsulta
+    ]);
+    const csv = [headers, ...rows].map(r => r.map(v => `"${String(v ?? '').replace(/"/g, '""')}"`).join(',')).join('\n');
+    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = `lista_espera_${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click(); URL.revokeObjectURL(url);
+  };
+
+  if (loading) return (
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '60vh', gap: 16, color: '#64748b' }}>
+      <div style={{ width: 48, height: 48, border: '4px solid #e2e8f0', borderTopColor: '#6366f1', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+      <p style={{ fontWeight: 600 }}>Cargando lista de espera…</p>
+      <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+    </div>
+  );
+
+  if (error) return (
+    <div style={{ maxWidth: 600, margin: '80px auto', background: '#fff7ed', border: '1px solid #fed7aa', borderRadius: 16, padding: 32, textAlign: 'center' }}>
+      <AlertTriangle size={40} color="#f97316" style={{ marginBottom: 12 }} />
+      <h2 style={{ color: '#9a3412', fontWeight: 800, marginBottom: 8 }}>Datos no disponibles</h2>
+      <p style={{ color: '#9a3412', marginBottom: 16 }}>
+        No se encontró el archivo de datos. Debes ejecutar primero el script de extracción:
+      </p>
+      <code style={{ background: '#fef3c7', padding: '8px 16px', borderRadius: 8, display: 'block', marginBottom: 20, fontWeight: 700 }}>
+        node fetch-lista-espera.cjs
+      </code>
+      <p style={{ color: '#78350f', fontSize: '0.85rem' }}>O haz doble clic en <b>update-lista-espera.bat</b> (con VPN activa)</p>
+      <button onClick={loadData} style={{ marginTop: 16, background: '#6366f1', color: 'white', border: 'none', borderRadius: 10, padding: '10px 24px', fontWeight: 700, cursor: 'pointer', fontSize: '0.9rem' }}>
+        Reintentar
+      </button>
+    </div>
+  );
+
+  return (
+    <div style={{ padding: '24px 32px', maxWidth: 1400, margin: '0 auto', fontFamily: 'inherit' }}>
+      {/* Header */}
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 28, flexWrap: 'wrap', gap: 12 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+          <button onClick={onBack} style={{ background: 'white', border: '1px solid #e2e8f0', borderRadius: 10, padding: '8px 14px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, fontWeight: 600, color: '#475569', fontSize: '0.85rem' }}>
+            <ArrowLeft size={16} /> Volver
+          </button>
+          <div>
+            <h1 style={{ fontSize: '1.6rem', fontWeight: 900, color: '#1e293b', margin: 0 }}>
+              Lista de Espera — Consultas 2026
+            </h1>
+            <p style={{ fontSize: '0.82rem', color: '#94a3b8', margin: '2px 0 0', fontWeight: 500 }}>
+              Establecimiento destino: <b>VILLARRICA HOSP.</b> · FONASA A-B-C-D ·
+              Actualizado: {data?.lastUpdated ? new Date(data.lastUpdated).toLocaleString('es-CL') : '—'}
+            </p>
+          </div>
+        </div>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button onClick={exportCSV} style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#f0fdf4', color: '#16a34a', border: '1px solid #bbf7d0', borderRadius: 10, padding: '8px 16px', cursor: 'pointer', fontWeight: 700, fontSize: '0.82rem' }}>
+            <Download size={15} /> Exportar CSV
+          </button>
+          <button onClick={loadData} style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#6366f1', color: 'white', border: 'none', borderRadius: 10, padding: '8px 16px', cursor: 'pointer', fontWeight: 700, fontSize: '0.82rem' }}>
+            <RefreshCw size={15} /> Recargar
+          </button>
+        </div>
+      </div>
+
+      {/* Filtros */}
+      <div style={{ display: 'flex', gap: 12, marginBottom: 24, flexWrap: 'wrap', alignItems: 'center' }}>
+        <div style={{ display: 'flex', gap: 4, background: '#f1f5f9', borderRadius: 10, padding: 4 }}>
+          {['Todas', 'Médica', 'Odontológica'].map(t => (
+            <button key={t} onClick={() => setTipoFiltro(t)} style={{
+              padding: '6px 16px', borderRadius: 8, border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: '0.82rem',
+              background: tipoFiltro === t ? '#6366f1' : 'transparent',
+              color: tipoFiltro === t ? 'white' : '#64748b',
+              transition: 'all 0.2s'
+            }}>{t}</button>
+          ))}
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'white', border: '1px solid #e2e8f0', borderRadius: 10, padding: '6px 14px' }}>
+          <Filter size={14} color="#94a3b8" />
+          <select value={estadoFiltro} onChange={e => setEstadoFiltro(e.target.value)}
+            style={{ border: 'none', background: 'transparent', fontWeight: 600, color: '#475569', fontSize: '0.84rem', cursor: 'pointer', outline: 'none' }}>
+            {estados.map(e => <option key={e} value={e}>{e}</option>)}
+          </select>
+        </div>
+      </div>
+
+      {/* KPIs */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16, marginBottom: 28 }}>
+        <KPICard icon={<Users size={18} />} label="Total en Lista de Espera" value={kpis.total?.toLocaleString('es-CL')} color="#6366f1" sub={`${kpis.medicas?.toLocaleString('es-CL')} Médicas · ${kpis.odont?.toLocaleString('es-CL')} Odontológicas`} />
+        <KPICard icon={<Stethoscope size={18} />} label="Especialidades Médicas" value={kpis.medicas?.toLocaleString('es-CL')} color="#0ea5e9" sub={`${kpis.total ? Math.round(kpis.medicas / kpis.total * 100) : 0}% del total`} />
+        <KPICard icon={<Stethoscope size={18} />} label="Especialidades Odontológicas" value={kpis.odont?.toLocaleString('es-CL')} color="#10b981" sub={`${kpis.total ? Math.round(kpis.odont / kpis.total * 100) : 0}% del total`} />
+        <KPICard icon={<Clock size={18} />} label="Espera Promedio" value={`${kpis.promDias?.toLocaleString('es-CL')} días`} color="#f59e0b" sub="Pacientes con fecha IC registrada" />
+        <KPICard icon={<AlertTriangle size={18} />} label="Espera > 365 días" value={kpis.criticos?.toLocaleString('es-CL')} color="#ef4444" sub={`${kpis.total ? Math.round((kpis.criticos || 0) / kpis.total * 100) : 0}% del total`} />
+      </div>
+
+      {/* Tabs */}
+      <div style={{ display: 'flex', gap: 4, marginBottom: 20, background: '#f1f5f9', borderRadius: 12, padding: 4, width: 'fit-content' }}>
+        {[['resumen', 'Resumen'], ['especialidades', 'Por Especialidad'], ['origen', 'Por Establecimiento'], ['tramos', 'Tramos de Espera']].map(([id, label]) => (
+          <button key={id} onClick={() => setActiveTab(id)} style={{
+            padding: '8px 20px', borderRadius: 9, border: 'none', cursor: 'pointer',
+            fontWeight: 700, fontSize: '0.82rem',
+            background: activeTab === id ? 'white' : 'transparent',
+            color: activeTab === id ? '#1e293b' : '#64748b',
+            boxShadow: activeTab === id ? '0 2px 8px rgba(0,0,0,0.08)' : 'none',
+            transition: 'all 0.2s'
+          }}>{label}</button>
+        ))}
+      </div>
+
+      {/* Tab: Resumen */}
+      {activeTab === 'resumen' && (
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+          <div style={{ background: 'white', borderRadius: 16, padding: 24, boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
+            <h3 style={{ fontWeight: 800, color: '#1e293b', marginBottom: 20, fontSize: '1rem' }}>Tramos de Espera (días)</h3>
+            <ResponsiveContainer width="100%" height={280}>
+              <BarChart data={byTramo} layout="vertical" margin={{ left: 10, right: 30 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" horizontal={false} />
+                <XAxis type="number" tick={{ fontSize: 11, fill: '#94a3b8' }} />
+                <YAxis type="category" dataKey="name" width={100} tick={{ fontSize: 11, fill: '#475569' }} />
+                <Tooltip content={<CustomTooltipBar />} />
+                <Bar dataKey="value" name="Pacientes" radius={[0, 6, 6, 0]}>
+                  {byTramo.map((entry, i) => <Cell key={i} fill={entry.fill} />)}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+          <div style={{ background: 'white', borderRadius: 16, padding: 24, boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
+            <h3 style={{ fontWeight: 800, color: '#1e293b', marginBottom: 20, fontSize: '1rem' }}>Estado Interconsulta</h3>
+            <ResponsiveContainer width="100%" height={280}>
+              <PieChart>
+                <Pie data={byEstado} cx="50%" cy="50%" innerRadius={60} outerRadius={100} paddingAngle={3} dataKey="value">
+                  {byEstado.map((entry, i) => <Cell key={i} fill={entry.fill} />)}
+                </Pie>
+                <Tooltip formatter={(v) => [v.toLocaleString('es-CL'), 'Pacientes']} />
+                <Legend formatter={(v) => <span style={{ fontSize: '0.78rem', color: '#475569' }}>{v}</span>} />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      )}
+
+      {/* Tab: Especialidades */}
+      {activeTab === 'especialidades' && (
+        <div style={{ background: 'white', borderRadius: 16, padding: 24, boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+            <h3 style={{ fontWeight: 800, color: '#1e293b', fontSize: '1rem', margin: 0 }}>Top 20 Especialidades con mayor lista de espera</h3>
+            <input value={searchEsp} onChange={e => setSearchEsp(e.target.value)} placeholder="Buscar especialidad…"
+              style={{ border: '1px solid #e2e8f0', borderRadius: 8, padding: '6px 12px', fontSize: '0.82rem', outline: 'none', width: 220 }} />
+          </div>
+          <ResponsiveContainer width="100%" height={560}>
+            <BarChart data={byEspecialidad} layout="vertical" margin={{ left: 10, right: 60 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" horizontal={false} />
+              <XAxis type="number" tick={{ fontSize: 11, fill: '#94a3b8' }} />
+              <YAxis type="category" dataKey="name" width={280} tick={{ fontSize: 10, fill: '#475569' }} />
+              <Tooltip content={({ active, payload }) => {
+                if (!active || !payload?.length) return null;
+                const d = payload[0];
+                return (
+                  <div style={{ background: 'white', border: '1px solid #e2e8f0', borderRadius: 10, padding: '10px 14px', boxShadow: '0 4px 20px rgba(0,0,0,0.1)' }}>
+                    <p style={{ fontWeight: 700, fontSize: '0.82rem', color: '#1e293b', marginBottom: 4 }}>{d.payload.fullName}</p>
+                    <p style={{ fontSize: '0.78rem', color: '#6366f1', margin: 0 }}>Pacientes: <b>{d.value.toLocaleString('es-CL')}</b></p>
+                  </div>
+                );
+              }} />
+              <Bar dataKey="value" name="Pacientes" fill="#6366f1" radius={[0, 6, 6, 0]} label={{ position: 'right', fontSize: 11, fill: '#475569', formatter: v => v.toLocaleString('es-CL') }} />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      )}
+
+      {/* Tab: Origen */}
+      {activeTab === 'origen' && (
+        <div style={{ background: 'white', borderRadius: 16, padding: 24, boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
+          <h3 style={{ fontWeight: 800, color: '#1e293b', marginBottom: 20, fontSize: '1rem' }}>Top 15 Establecimientos de Origen</h3>
+          <ResponsiveContainer width="100%" height={480}>
+            <BarChart data={byOrigen} layout="vertical" margin={{ left: 10, right: 60 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" horizontal={false} />
+              <XAxis type="number" tick={{ fontSize: 11, fill: '#94a3b8' }} />
+              <YAxis type="category" dataKey="name" width={240} tick={{ fontSize: 11, fill: '#475569' }} />
+              <Tooltip content={<CustomTooltipBar />} />
+              <Bar dataKey="value" name="Pacientes" fill="#0ea5e9" radius={[0, 6, 6, 0]} label={{ position: 'right', fontSize: 11, fill: '#475569', formatter: v => v.toLocaleString('es-CL') }} />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      )}
+
+      {/* Tab: Tramos detallado */}
+      {activeTab === 'tramos' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          {TRAMOS_ORDER.filter(t => byTramo.find(x => x.name === t)).map(tramo => {
+            const item = byTramo.find(x => x.name === tramo);
+            const pct = kpis.total ? Math.round(item.value / kpis.total * 100) : 0;
+            return (
+              <div key={tramo} style={{ background: 'white', borderRadius: 14, padding: '18px 24px', boxShadow: '0 2px 10px rgba(0,0,0,0.06)', display: 'flex', alignItems: 'center', gap: 20 }}>
+                <div style={{ width: 14, height: 14, borderRadius: '50%', background: COLORS_TRAMO[tramo], flexShrink: 0 }} />
+                <div style={{ flex: 1 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
+                    <span style={{ fontWeight: 700, color: '#1e293b', fontSize: '0.92rem' }}>{tramo}</span>
+                    <span style={{ fontWeight: 800, color: COLORS_TRAMO[tramo], fontSize: '1.1rem' }}>{item.value.toLocaleString('es-CL')}</span>
+                  </div>
+                  <div style={{ background: '#f1f5f9', borderRadius: 8, height: 8, overflow: 'hidden' }}>
+                    <div style={{ width: `${pct}%`, height: '100%', background: COLORS_TRAMO[tramo], borderRadius: 8, transition: 'width 0.8s ease' }} />
+                  </div>
+                </div>
+                <div style={{ width: 48, textAlign: 'right', fontWeight: 700, color: '#94a3b8', fontSize: '0.88rem' }}>{pct}%</div>
+              </div>
+            );
+          })}
+          <div style={{ background: '#f8fafc', borderRadius: 14, padding: '16px 24px', border: '1px dashed #cbd5e1', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span style={{ fontWeight: 800, color: '#475569' }}>Total general</span>
+            <span style={{ fontWeight: 900, fontSize: '1.2rem', color: '#1e293b' }}>{kpis.total?.toLocaleString('es-CL')}</span>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

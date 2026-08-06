@@ -50,6 +50,7 @@ import UserManagementPanel from './components/UserManagementPanel';
 import ProgramacionMedicaDashboard from './components/ProgramacionMedicaDashboard';
 import ProgramacionProfesionalesDashboard from './components/ProgramacionProfesionalesDashboard';
 import ProgramacionOdontologiaDashboard from './components/ProgramacionOdontologiaDashboard';
+import ListaEsperaDashboard from './components/ListaEsperaDashboard';
 import './App.css';
 
 const SESSION_TIMEOUT_MS = 30 * 60 * 1000; // 30 minutes
@@ -135,6 +136,14 @@ const menuStructure = [
     ]
   },
   { id: 'solicitudes_ciudadanas', icon: <User size={22} />, label: 'Solicitudes Ciudadanas' },
+  {
+    id: 'listas_espera',
+    icon: <ClipboardList size={22} />,
+    label: 'Listas de Espera',
+    subItems: [
+      { id: 'lista_espera', label: 'Consultas Esp. Médicas y Odontológicas' }
+    ]
+  },
   { id: 'repositorio', icon: <FileText size={22} />, label: 'Repositorio Anual' },
   { id: 'costeo', icon: <Activity size={22} />, label: 'Costeo GRD' },
   { id: 'agenda', icon: <Calendar size={22} />, label: 'Agenda Gestión' },
@@ -1109,6 +1118,9 @@ function App() {
               )}
               {activeView === 'programacion_odontologia' && (
                 <ProgramacionOdontologiaDashboard onBack={() => navigateToView('home')} />
+              )}
+              {activeView === 'lista_espera' && (
+                <ListaEsperaDashboard onBack={() => navigateToView('home')} />
               )}
             </div>
           )}
