@@ -229,38 +229,55 @@ body {
 /* Precision Floating Glass Drawer - LEFT */
 .collapsible-sidebar {
   position: fixed;
-  left: -450px; 
-  top: 100px; bottom: 40px; 
-  width: 400px; /* Adjusted to fit longest text comfortably */
-  background: rgba(8, 15, 20, 0.9);
+  left: -450px;
+  top: 90px; bottom: 20px;
+  width: 340px;
+  background: rgba(8, 15, 20, 0.92);
   backdrop-filter: blur(25px);
   -webkit-backdrop-filter: blur(25px);
   z-index: 2000;
   box-shadow: 0 40px 100px rgba(0,0,0,0.6);
-  padding: 50px 32px;
+  padding: 28px 24px 20px;
   transition: left 0.7s cubic-bezier(0.16, 1, 0.3, 1);
   color: white;
   border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 40px;
+  border-radius: 32px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
-.collapsible-sidebar.open { left: 24px; }
+.collapsible-sidebar.open { left: 16px; }
+
+/* Scrollable menu list */
+.collapsible-sidebar .menu-scroll-area {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  margin-right: -6px;
+  padding-right: 6px;
+}
+.collapsible-sidebar .menu-scroll-area::-webkit-scrollbar { width: 4px; }
+.collapsible-sidebar .menu-scroll-area::-webkit-scrollbar-track { background: transparent; }
+.collapsible-sidebar .menu-scroll-area::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 4px; }
+.collapsible-sidebar .menu-scroll-area::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.3); }
 
 .menu-item-container {
-  margin-bottom: 8px;
+  margin-bottom: 2px;
 }
 
 .menu-item-main {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 14px 16px;
-  border-radius: 12px;
+  padding: 10px 14px;
+  border-radius: 10px;
   cursor: pointer;
   transition: all 0.3s;
   background: transparent;
   position: relative;
   overflow: hidden;
+  font-size: 0.9rem;
 }
 
 /* Neon Green Bar */
@@ -296,18 +313,18 @@ body {
 }
 
 .submenu-container {
-  padding-left: 44px;
+  padding-left: 38px;
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  margin-top: 4px;
+  gap: 2px;
+  margin-top: 2px;
 }
 
 .submenu-item {
-  font-size: 1rem;
+  font-size: 0.85rem;
   color: rgba(255, 255, 255, 0.4);
-  padding: 10px 16px;
+  padding: 7px 14px;
   border-radius: 8px;
   cursor: pointer;
   transition: all 0.3s;

@@ -774,12 +774,13 @@ function App() {
           <>
             <motion.div className="search-modal-overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setIsSidebarOpen(false)} style={{ zIndex: 1900 }} />
             <motion.div className="collapsible-sidebar open" initial={{ x: -450 }} animate={{ x: 24 }} exit={{ x: -450 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '40px' }}>
-                <h3 style={{ fontSize: '1.2rem', fontWeight: 700 }}>Menú</h3>
-                <X size={24} cursor="pointer" onClick={() => setIsSidebarOpen(false)} style={{ opacity: 0.5 }} />
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexShrink: 0 }}>
+                <h3 style={{ fontSize: '1.1rem', fontWeight: 700 }}>Menú</h3>
+                <X size={22} cursor="pointer" onClick={() => setIsSidebarOpen(false)} style={{ opacity: 0.5 }} />
               </div>
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+              <div className="menu-scroll-area">
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                 {menuStructure.map(item => (
                   <div key={item.id} className="menu-item-container">
                     <div className={`menu-item-main ${activeView === item.id ? 'active' : ''}`} onClick={() => handleMenuClick(item.id)}>
@@ -867,6 +868,7 @@ function App() {
                     </AnimatePresence>
                   </div>
                 ))}
+              </div>
               </div>
             </motion.div>
           </>
