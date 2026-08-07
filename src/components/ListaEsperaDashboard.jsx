@@ -116,6 +116,16 @@ export default function ListaEsperaDashboard({ onBack, tipo }) {
   const [activeTab, setActiveTab] = useState('resumen');
   const [selectedEspecialidad, setSelectedEspecialidad] = useState(null);
 
+  const isOdonto = tipo === 'Odontológica';
+  const accentColor = isOdonto ? '#0d9488' : '#6366f1';
+  const accentGradient = isOdonto
+    ? 'linear-gradient(135deg, #0d9488 0%, #0f766e 100%)'
+    : 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)';
+  const accentShadow = isOdonto
+    ? '0 4px 14px rgba(13,148,136,0.45)'
+    : '0 4px 14px rgba(99,102,241,0.45)';
+  const accentSub = isOdonto ? '#2dd4bf' : '#818cf8';
+
   const loadData = () => {
     setLoading(true);
     setError(null);
@@ -248,7 +258,7 @@ export default function ListaEsperaDashboard({ onBack, tipo }) {
     if (pct540 > 0) ins.push({ label: 'Situación Crítica', lucideIcon: <AlertOctagon size={20} color="#ef4444" />, bgColor: '#fee2e2', labelColor: '#dc2626', borderColor: '#fecaca', text: `${mayor540.toLocaleString('es-CL')} pacientes (${pct540}%) llevan más de 540 días en lista de espera.` });
     if (kpis.promDias > kpis.medianaDias * 1.3) ins.push({ label: 'Distribución Asimétrica', lucideIcon: <TrendingUp size={20} color="#8b5cf6" />, bgColor: '#ede9fe', labelColor: '#7c3aed', borderColor: '#ddd6fe', text: `Promedio (${kpis.promDias} días) muy superior a la mediana (${kpis.medianaDias} días) — hay pacientes con esperas extremas que elevan el promedio.` });
     const topEsp = Object.entries(records.reduce((a,r) => { a[r.especialidad_destino]=(a[r.especialidad_destino]||0)+1; return a; }, {})).sort((a,b)=>b[1]-a[1])[0];
-    if (topEsp) ins.push({ label: 'Mayor Demanda', lucideIcon: <Activity size={20} color="#0ea5e9" />, bgColor: '#e0f2fe', labelColor: '#0369a1', borderColor: '#bae6fd', text: `${topEsp[0]} concentra la mayor demanda: ${topEsp[1].toLocaleString('es-CL')} pacientes (${Math.round(topEsp[1]/kpis.total*100)}% del total).` });
+    if (topEsp) ins.push({ label: 'Mayor Demanda', lucideIcon: <Activity size={20} color={isOdonto ? "#0d9488" : "#0ea5e9"} />, bgColor: isOdonto ? '#ccfbf1' : '#e0f2fe', labelColor: isOdonto ? '#0f766e' : '#0369a1', borderColor: isOdonto ? '#99f6e4' : '#bae6fd', text: `${topEsp[0]} concentra la mayor demanda: ${topEsp[1].toLocaleString('es-CL')} pacientes (${Math.round(topEsp[1]/kpis.total*100)}% del total).` });
     const rural = records.filter(r => (r.urbano_rural||'').toUpperCase().includes('RURAL')).length;
     if (rural > 0) ins.push({ label: 'Brecha Territorial', lucideIcon: <MapPin size={20} color="#10b981" />, bgColor: '#d1fae5', labelColor: '#065f46', borderColor: '#a7f3d0', text: `${rural.toLocaleString('es-CL')} pacientes (${Math.round(rural/kpis.total*100)}%) provienen de zonas rurales — posible barrera de acceso.` });
     return ins;
@@ -328,7 +338,7 @@ export default function ListaEsperaDashboard({ onBack, tipo }) {
           <button onClick={exportCSV} style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#f0fdf4', color: '#16a34a', border: '1px solid #bbf7d0', borderRadius: 10, padding: '8px 16px', cursor: 'pointer', fontWeight: 700, fontSize: '0.82rem' }}>
             <Download size={15} /> Exportar CSV
           </button>
-          <button onClick={loadData} style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#6366f1', color: 'white', border: 'none', borderRadius: 10, padding: '8px 16px', cursor: 'pointer', fontWeight: 700, fontSize: '0.82rem' }}>
+          <button onClick={loadData} style={{ display: 'flex', alignItems: 'center', gap: 6, background: accentColor, color: 'white', border: 'none', borderRadius: 10, padding: '8px 16px', cursor: 'pointer', fontWeight: 700, fontSize: '0.82rem' }}>
             <RefreshCw size={15} /> Recargar
           </button>
         </div>
@@ -336,8 +346,8 @@ export default function ListaEsperaDashboard({ onBack, tipo }) {
 
       {/* Filtros multi-select */}
       <div style={{ display: 'flex', gap: 10, marginBottom: 24, flexWrap: 'wrap', alignItems: 'center' }}>
-        <MultiSelect label="Estado IC" options={optsEstado} selected={estadoFiltro} onChange={setEstadoFiltro} color="#6366f1" />
-        <MultiSelect label="Especialidad" options={optsEsp} selected={espFiltro} onChange={setEspFiltro} color="#0ea5e9" />
+        <MultiSelect label="Estado IC" options={optsEstado} selected={estadoFiltro} onChange={setEstadoFiltro} color={accentColor} />
+        <MultiSelect label="Especialidad" options={optsEsp} selected={espFiltro} onChange={setEspFiltro} color={isOdonto ? '#0d9488' : '#0ea5e9'} />
         <MultiSelect label="Establecimiento Origen" options={optsOrigen} selected={origenFiltro} onChange={setOrigenFiltro} color="#10b981" />
         <MultiSelect label="Tramo de Espera" options={optsTramo} selected={tramoFiltro} onChange={setTramoFiltro} color="#f59e0b" />
         {hasFilters && (
@@ -350,7 +360,7 @@ export default function ListaEsperaDashboard({ onBack, tipo }) {
 
       {/* KPIs */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16, marginBottom: 28 }}>
-        <KPICard icon={<Users size={18} />} label="Total en Lista de Espera" value={kpis.total?.toLocaleString('es-CL')} color="#6366f1" sub={tipo ? `${tipo}s · FONASA A-B-C-D` : `${kpis.medicas?.toLocaleString('es-CL')} Médicas · ${kpis.odont?.toLocaleString('es-CL')} Odontológicas`} />
+        <KPICard icon={<Users size={18} />} label={isOdonto ? "Total L.E. Odontológica" : "Total en Lista de Espera"} value={kpis.total?.toLocaleString('es-CL')} color={accentColor} sub={tipo ? `Especialidades ${tipo}s · FONASA A-B-C-D` : `${kpis.medicas?.toLocaleString('es-CL')} Médicas · ${kpis.odont?.toLocaleString('es-CL')} Odontológicas`} />
         {!tipo && <KPICard icon={<Stethoscope size={18} />} label="Especialidades Médicas" value={kpis.medicas?.toLocaleString('es-CL')} color="#0ea5e9" sub={`${kpis.total ? Math.round(kpis.medicas / kpis.total * 100) : 0}% del total`} />}
         {!tipo && <KPICard icon={<Stethoscope size={18} />} label="Especialidades Odontológicas" value={kpis.odont?.toLocaleString('es-CL')} color="#10b981" sub={`${kpis.total ? Math.round(kpis.odont / kpis.total * 100) : 0}% del total`} />}
         <KPICard icon={<Clock size={18} />} label="Espera Promedio" value={`${kpis.promDias?.toLocaleString('es-CL')} días`} color="#f59e0b" sub="Media aritmética con fecha IC" />
@@ -382,7 +392,7 @@ export default function ListaEsperaDashboard({ onBack, tipo }) {
       {/* Selector Prominente de Vistas / Pestañas de Navegación */}
       <div style={{ marginBottom: 24, background: '#0f172a', borderRadius: 16, padding: '8px 10px', boxShadow: '0 8px 30px rgba(15,23,42,0.18)', border: '1px solid rgba(255,255,255,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, paddingLeft: 8 }}>
-          <Layers size={17} color="#818cf8" />
+          <Layers size={17} color={accentSub} />
           <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.6px' }}>
             Seleccionar Vista de Análisis:
           </span>
@@ -402,9 +412,9 @@ export default function ListaEsperaDashboard({ onBack, tipo }) {
                 display: 'flex', alignItems: 'center', gap: 6,
                 padding: '9px 18px', borderRadius: 11, border: 'none', cursor: 'pointer',
                 fontWeight: isActive ? 800 : 600, fontSize: '0.8rem',
-                background: isActive ? 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)' : 'rgba(255,255,255,0.06)',
+                background: isActive ? accentGradient : 'rgba(255,255,255,0.06)',
                 color: isActive ? '#ffffff' : '#cbd5e1',
-                boxShadow: isActive ? '0 4px 14px rgba(99,102,241,0.45)' : 'none',
+                boxShadow: isActive ? accentShadow : 'none',
                 transition: 'all 0.2s ease',
                 outline: 'none'
               }}
@@ -483,7 +493,7 @@ export default function ListaEsperaDashboard({ onBack, tipo }) {
 
       {/* Pirámide poblacional + Mapa — dentro del tab resumen */}
       {activeTab === 'resumen' && (
-        <ListaEsperaPoblacion records={records} />
+        <ListaEsperaPoblacion records={records} tipo={tipo} />
       )}
 
 

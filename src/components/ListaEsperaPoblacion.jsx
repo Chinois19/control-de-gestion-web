@@ -634,17 +634,24 @@ function PrevisionInsights({ records }) {
 }
 
 /* ── Main export: Estructura por Secciones y Filas ── */
-export default function ListaEsperaPoblacion({ records }) {
+export default function ListaEsperaPoblacion({ records, tipo }) {
+  const isOdonto = tipo === 'Odontológica';
+  const sec1Color = isOdonto ? '#0d9488' : '#6366f1';
+  const sec1Bg = isOdonto ? '#ccfbf1' : '#e0e7ff';
+  const sec1Text = isOdonto ? '#0f766e' : '#4338ca';
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 28 }}>
 
       {/* SECCIÓN 1: Caracterización Sociodemográfica & Estructura Socioeconómica */}
       <div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14, background: 'linear-gradient(90deg, #f8fafc 0%, #ffffff 100%)', padding: '10px 16px', borderRadius: 14, borderLeft: '4px solid #6366f1', border: '1px solid #e2e8f0', borderLeftWidth: 4 }}>
-          <div style={{ width: 28, height: 28, borderRadius: 8, background: '#e0e7ff', color: '#4338ca', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: '0.85rem' }}>👥</div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14, background: 'linear-gradient(90deg, #f8fafc 0%, #ffffff 100%)', padding: '10px 16px', borderRadius: 14, borderLeft: `4px solid ${sec1Color}`, border: '1px solid #e2e8f0', borderLeftWidth: 4 }}>
+          <div style={{ width: 28, height: 28, borderRadius: 8, background: sec1Bg, color: sec1Text, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: '0.85rem' }}>
+            {isOdonto ? '🦷' : '👥'}
+          </div>
           <div>
             <h2 style={{ fontSize: '1rem', fontWeight: 900, color: '#0f172a', margin: 0, letterSpacing: '-0.2px' }}>
-              Caracterización Sociodemográfica de la Población en Espera
+              {isOdonto ? 'Caracterización Sociodemográfica de la Población Odontológica en Espera' : 'Caracterización Sociodemográfica de la Población en Espera'}
             </h2>
             <p style={{ fontSize: '0.72rem', color: '#64748b', margin: '1px 0 0', fontWeight: 500 }}>
               Estructura etaria quinquenal, distribución por sexo e ingresos impositivos según tramos FONASA
@@ -670,7 +677,7 @@ export default function ListaEsperaPoblacion({ records }) {
           <div style={{ width: 28, height: 28, borderRadius: 8, background: '#d1fae5', color: '#047857', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: '0.85rem' }}>🗺️</div>
           <div>
             <h2 style={{ fontSize: '1rem', fontWeight: 900, color: '#0f172a', margin: 0, letterSpacing: '-0.2px' }}>
-              Distribución Territorial y Accesibilidad Rural
+              {isOdonto ? 'Distribución Territorial y Accesibilidad Rural — Odontología' : 'Distribución Territorial y Accesibilidad Rural'}
             </h2>
             <p style={{ fontSize: '0.72rem', color: '#64748b', margin: '1px 0 0', fontWeight: 500 }}>
               Procedencia geográfica por comuna de la IX Región de La Araucanía y brechas de ruralidad
