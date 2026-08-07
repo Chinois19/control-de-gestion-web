@@ -1,5 +1,5 @@
-import React, { useMemo, useEffect } from 'react';
-import { MapContainer, TileLayer, CircleMarker, Tooltip as LTooltip } from 'react-leaflet';
+import React, { useMemo, useEffect, useRef } from 'react';
+import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
 /* ── Lat/Lon de comunas de la Araucanía ── */
@@ -47,12 +47,6 @@ const COMUNAS_LATLON = {
   'LOS ANGELES':     [-37.4707, -72.3532],
   'DONIHUE':         [-34.1766, -70.9636], // fuera de región, skip
 };
-
-function getLatLon(rawComuna) {
-  if (!rawComuna) return null;
-  const key = rawComuna.toUpperCase().trim();
-  return COMUNAS_LATLON[key] || null;
-}
 
 const TRAMO_COLORS = {
   '0-90 días':    '#10b981',
@@ -149,8 +143,11 @@ function Piramide({ records }) {
   );
 }
 
-/* ── Mapa Leaflet de comunas ── */
+/* ── Pure Leaflet Map (direct L.map for 100% stability) ── */
 function MapaAraucania({ records }) {
+  const mapRef = useRef(null);
+  const leafletInstance = useRef(null);
+
   const comunaData = useMemo(() => {
     const m = {};
     records.forEach(r => {
@@ -158,9 +155,8 @@ function MapaAraucania({ records }) {
       const key = r.comuna.toUpperCase().trim();
       const ll = COMUNAS_LATLON[key];
       if (!ll) return;
-      // skip Donihue (fuera de región, lat > -35)
-      if (ll[0] > -35) return;
-      if (!m[r.comuna.toUpperCase().trim()]) m[key] = { name: r.comuna, count: 0, tramos: {} };
+      if (ll[0] > -35) return; // Skip fuera de región
+      if (!m[key]) m[key] = { name: r.comuna, count: 0, tramos: {} };
       m[key].count++;
       if (r.tramo_espera) m[key].tramos[r.tramo_espera] = (m[key].tramos[r.tramo_espera] || 0) + 1;
     });
@@ -169,14 +165,71 @@ function MapaAraucania({ records }) {
 
   const maxCount = Math.max(...comunaData.map(d => d.count), 1);
   const total = records.length;
-  const getRadius = count => 5 + Math.sqrt(count / maxCount) * 28;
 
-  // Color by dominant tramo
-  const getDomColor = tramos => {
-    if (!tramos || Object.keys(tramos).length === 0) return '#6366f1';
-    const dom = Object.entries(tramos).sort((a, b) => b[1] - a[1])[0][0];
-    return TRAMO_COLORS[dom] || '#6366f1';
-  };
+  useEffect(() => {
+    if (!mapRef.current) return;
+
+    // Clean existing instance
+    if (leafletInstance.current) {
+      leafletInstance.current.remove();
+      leafletInstance.current = null;
+    }
+
+    const map = L.map(mapRef.current, {
+      center: [-38.85, -72.45],
+      zoom: 8,
+      scrollWheelZoom: false,
+      attributionControl: false,
+    });
+    leafletInstance.current = map;
+
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+      maxZoom: 18,
+    }).addTo(map);
+
+    comunaData.forEach(d => {
+      const ll = COMUNAS_LATLON[d.name.toUpperCase().trim()];
+      if (!ll) return;
+
+      const r = 5 + Math.sqrt(d.count / maxCount) * 28;
+      const domTramo = Object.entries(d.tramos).sort((a, b) => b[1] - a[1])[0]?.[0];
+      const color = TRAMO_COLORS[domTramo] || '#6366f1';
+      const pct = total ? ((d.count / total) * 100).toFixed(1) : '0';
+      const topTramo = Object.entries(d.tramos).sort((a, b) => b[1] - a[1]).slice(0, 3);
+
+      const circle = L.circleMarker(ll, {
+        radius: r,
+        color: 'white',
+        weight: 1.5,
+        fillColor: color,
+        fillOpacity: 0.78,
+      }).addTo(map);
+
+      const tooltipContent = `
+        <div style="min-width:150px; font-family:system-ui, sans-serif;">
+          <div style="font-weight:800; font-size:0.8rem; color:#1e293b; margin-bottom:4px;">${d.name.toUpperCase()}</div>
+          <div style="font-size:0.75rem; color:#6366f1; margin-bottom:4px;">
+            Pacientes: <b>${d.count.toLocaleString('es-CL')}</b> <span style="color:#94a3b8">(${pct}%)</span>
+          </div>
+          ${topTramo.map(([t, n]) => `
+            <div style="font-size:0.7rem; color:#475569; display:flex; align-items:center; gap:4px; margin-top:2px;">
+              <span style="width:8px; height:8px; border-radius:50%; background:${TRAMO_COLORS[t]}; display:inline-block;"></span>
+              ${t}: <b>${n.toLocaleString('es-CL')}</b>
+            </div>
+          `).join('')}
+        </div>
+      `;
+
+      circle.bindTooltip(tooltipContent, { direction: 'top', offset: [0, -r], opacity: 1 });
+    });
+
+    return () => {
+      if (leafletInstance.current) {
+        leafletInstance.current.remove();
+        leafletInstance.current = null;
+      }
+    };
+  }, [comunaData, maxCount, total]);
 
   return (
     <div style={{ background: 'white', borderRadius: 20, boxShadow: '0 4px 24px rgba(0,0,0,0.07)', border: '1px solid rgba(0,0,0,0.05)', overflow: 'hidden', height: '100%', display: 'flex', flexDirection: 'column' }}>
@@ -202,49 +255,9 @@ function MapaAraucania({ records }) {
         </div>
       </div>
 
-      {/* Mapa */}
-      <div style={{ flex: 1, minHeight: 360 }}>
-        <MapContainer
-          center={[-38.85, -72.45]}
-          zoom={8}
-          style={{ width: '100%', height: '100%', minHeight: 360 }}
-          scrollWheelZoom={false}
-          attributionControl={false}>
-          <TileLayer
-            url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
-            attribution='&copy; <a href="https://carto.com/">CARTO</a>'
-          />
-          {comunaData.map(d => {
-            const ll = COMUNAS_LATLON[d.name.toUpperCase().trim()];
-            if (!ll) return null;
-            const r = getRadius(d.count);
-            const pct = total ? (d.count / total * 100).toFixed(1) : '0';
-            const color = getDomColor(d.tramos);
-            const topTramo = Object.entries(d.tramos).sort((a,b)=>b[1]-a[1]).slice(0,3);
-            return (
-              <CircleMarker
-                key={d.name}
-                center={ll}
-                radius={r}
-                pathOptions={{ color: 'white', weight: 1.5, fillColor: color, fillOpacity: 0.78 }}>
-                <LTooltip direction="top" offset={[0, -r]} opacity={1}>
-                  <div style={{ minWidth: 160 }}>
-                    <div style={{ fontWeight: 800, fontSize: '0.8rem', color: '#1e293b', marginBottom: 4 }}>{d.name.toUpperCase()}</div>
-                    <div style={{ fontSize: '0.75rem', color: '#6366f1' }}>
-                      Pacientes: <b>{d.count.toLocaleString('es-CL')}</b> <span style={{ color: '#94a3b8' }}>({pct}%)</span>
-                    </div>
-                    {topTramo.map(([t, n]) => (
-                      <div key={t} style={{ fontSize: '0.7rem', color: '#475569', display: 'flex', alignItems: 'center', gap: 4, marginTop: 2 }}>
-                        <span style={{ width: 8, height: 8, borderRadius: '50%', background: TRAMO_COLORS[t], display: 'inline-block', flexShrink: 0 }} />
-                        {t}: <b>{n.toLocaleString('es-CL')}</b>
-                      </div>
-                    ))}
-                  </div>
-                </LTooltip>
-              </CircleMarker>
-            );
-          })}
-        </MapContainer>
+      {/* Container Leaflet */}
+      <div style={{ flex: 1, minHeight: 360, width: '100%', position: 'relative' }}>
+        <div ref={mapRef} style={{ width: '100%', height: '100%', minHeight: 360, borderRadius: '0 0 20px 20px' }} />
       </div>
     </div>
   );
