@@ -176,6 +176,24 @@ export default function ListaEsperaDashboard({ onBack, tipo }) {
       .filter(x => !searchEsp || x.fullName.toLowerCase().includes(searchEsp.toLowerCase()));
   }, [records, searchEsp]);
 
+  const byEspecialidadStacked = useMemo(() => {
+    if (!records.length) return [];
+    const total = records.length;
+    const m = {};
+    records.forEach(r => {
+      const e = r.especialidad_destino || 'Sin dato';
+      if (!m[e]) { m[e] = { name: e, total: 0 }; TRAMOS_ORDER.forEach(t => { m[e][t] = 0; }); }
+      m[e].total++;
+      const t = r.tramo_espera;
+      if (t && m[e][t] !== undefined) m[e][t]++;
+    });
+    return Object.values(m)
+      .sort((a, b) => b.total - a.total)
+      .slice(0, 20)
+      .filter(d => !searchEsp || d.name.toLowerCase().includes(searchEsp.toLowerCase()))
+      .map(d => ({ ...d, pct: total ? (d.total / total * 100).toFixed(1) : '0.0', shortName: d.name.length > 32 ? d.name.substring(0, 30) + '…' : d.name }));
+  }, [records, searchEsp]);
+
   const byEstado = useMemo(() => {
     const m = {};
     records.forEach(r => { m[r.estado_ic] = (m[r.estado_ic] || 0) + 1; });
@@ -407,37 +425,67 @@ export default function ListaEsperaDashboard({ onBack, tipo }) {
         </div>
       )}
 
-      {/* Tab: Especialidades */}
+      {/* Tab: Especialidades — Stacked Bar Chart con tramos */}
       {activeTab === 'especialidades' && (
         <div style={{ background: 'white', borderRadius: 16, padding: 24, boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, flexWrap: 'wrap', gap: 10 }}>
             <div>
               <h3 style={{ fontWeight: 800, color: '#1e293b', fontSize: '1rem', margin: 0 }}>Top 20 Especialidades</h3>
-              <p style={{ fontSize: '0.78rem', color: '#94a3b8', margin: '2px 0 0' }}>Haz clic en una barra para ver diagnósticos detallados</p>
+              <p style={{ fontSize: '0.78rem', color: '#94a3b8', margin: '2px 0 0' }}>Barra segmentada por tramo de espera · Clic para ver diagnósticos</p>
             </div>
-            <input value={searchEsp} onChange={e => setSearchEsp(e.target.value)} placeholder="Buscar especialidad…"
-              style={{ border: '1px solid #e2e8f0', borderRadius: 8, padding: '6px 12px', fontSize: '0.82rem', outline: 'none', width: 220 }} />
+            <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
+              {TRAMOS_ORDER.filter(t => t !== 'Sin fecha').map(t => (
+                <div key={t} style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                  <div style={{ width: 10, height: 10, borderRadius: 3, background: COLORS_TRAMO[t] }} />
+                  <span style={{ fontSize: '0.72rem', color: '#64748b', fontWeight: 600 }}>{t}</span>
+                </div>
+              ))}
+              <input value={searchEsp} onChange={e => setSearchEsp(e.target.value)} placeholder="Buscar…"
+                style={{ border: '1px solid #e2e8f0', borderRadius: 8, padding: '5px 10px', fontSize: '0.8rem', outline: 'none', width: 160 }} />
+            </div>
           </div>
-          <ResponsiveContainer width="100%" height={600}>
-            <BarChart data={byEspecialidad.map(d => ({ ...d, pct: kpis.total ? Math.round(d.value/kpis.total*100) : 0 }))} layout="vertical" margin={{ left: 10, right: 100 }}
-              onClick={e => e?.activePayload?.[0] && setSelectedEspecialidad(e.activePayload[0].payload.fullName) && setActiveTab('diagnosticos')}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" horizontal={false} />
-              <XAxis type="number" tick={{ fontSize: 11, fill: '#94a3b8' }} />
-              <YAxis type="category" dataKey="name" width={280} tick={{ fontSize: 10, fill: '#475569' }} />
-              <Tooltip content={({ active, payload }) => {
-                if (!active || !payload?.length) return null;
-                const d = payload[0];
-                return <div style={{ background:'white', border:'1px solid #e2e8f0', borderRadius:10, padding:'10px 14px', boxShadow:'0 4px 20px rgba(0,0,0,0.1)' }}>
-                  <p style={{ fontWeight:700, fontSize:'0.82rem', color:'#1e293b', marginBottom:4 }}>{d.payload.fullName}</p>
-                  <p style={{ fontSize:'0.78rem', color:'#6366f1', margin:0 }}>Pacientes: <b>{d.value.toLocaleString('es-CL')}</b></p>
-                  <p style={{ fontSize:'0.78rem', color:'#8b5cf6', margin:0 }}>Participación: <b>{d.payload.pct}%</b></p>
-                  <p style={{ fontSize:'0.72rem', color:'#94a3b8', margin:'4px 0 0' }}>👆 Clic para ver diagnósticos</p>
-                </div>;
-              }} />
-              <Bar dataKey="value" name="Pacientes" fill="#6366f1" radius={[0,6,6,0]} cursor="pointer"
-                label={{ position:'right', fontSize:10, fill:'#475569', formatter:(v,e) => `${v.toLocaleString('es-CL')} (${e?.payload?.pct||0}%)` }} />
-            </BarChart>
-          </ResponsiveContainer>
+
+          {/* Custom SVG stacked bars */}
+          <div style={{ overflowY: 'auto', maxHeight: 680 }}>
+            {byEspecialidadStacked.map((d, i) => {
+              const maxVal = byEspecialidadStacked[0]?.total || 1;
+              const BAR_W = 560; // px inner bar area
+              const totalW = Math.round((d.total / maxVal) * BAR_W);
+              const tramos = TRAMOS_ORDER.filter(t => t !== 'Sin fecha');
+              return (
+                <div key={d.name} onClick={() => { setSelectedEspecialidad(d.name); setActiveTab('diagnosticos'); }}
+                  style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '5px 0', cursor: 'pointer', borderRadius: 8,
+                    transition: 'background 0.15s' }}
+                  onMouseEnter={e => e.currentTarget.style.background = '#f8fafc'}
+                  onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
+                  {/* Name */}
+                  <div style={{ width: 240, textAlign: 'right', fontSize: '0.78rem', fontWeight: 600, color: '#475569',
+                    whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', flexShrink: 0 }}>
+                    {d.shortName}
+                  </div>
+                  {/* Stacked bar */}
+                  <div style={{ flex: 1, height: 26, display: 'flex', borderRadius: 5, overflow: 'hidden', background: '#f1f5f9' }}>
+                    {tramos.map(t => {
+                      const segW = d.total > 0 ? (d[t] / d.total) * totalW : 0;
+                      if (segW < 1) return null;
+                      return (
+                        <div key={t} title={`${t}: ${d[t].toLocaleString('es-CL')} pac.`}
+                          style={{ width: segW, background: COLORS_TRAMO[t], height: '100%',
+                            transition: 'opacity 0.2s' }}
+                          onMouseEnter={e => e.currentTarget.style.opacity = '0.75'}
+                          onMouseLeave={e => e.currentTarget.style.opacity = '1'} />
+                      );
+                    })}
+                  </div>
+                  {/* Label */}
+                  <div style={{ width: 110, fontSize: '0.78rem', fontWeight: 700, color: '#1e293b', flexShrink: 0 }}>
+                    {d.total.toLocaleString('es-CL')}
+                    <span style={{ color: '#6366f1', marginLeft: 4, fontWeight: 800 }}>({d.pct}%)</span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         </div>
       )}
 
