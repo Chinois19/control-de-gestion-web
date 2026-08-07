@@ -400,7 +400,13 @@ export default function ListaEsperaDashboard({ onBack, tipo }) {
                     <p style={{ fontSize:'0.78rem', margin:0, color:'#6366f1' }}>Participación: <b>{d.payload.pct}%</b></p>
                   </div>;
                 }} />
-                <Bar dataKey="value" name="Pacientes" radius={[0,6,6,0]} label={{ position:'right', fontSize:11, fill:'#475569', formatter:(v,entry) => `${v.toLocaleString('es-CL')} (${entry?.payload?.pct||0}%)` }}>
+                <Bar dataKey="value" name="Pacientes" radius={[0,6,6,0]}
+                  label={{ content: (props) => {
+                    const { x, y, width, height, value } = props;
+                    if (!value) return null;
+                    const pct = kpis.total ? Math.round(value / kpis.total * 100) : 0;
+                    return <text x={x + width + 8} y={y + height / 2 + 4} fill="#475569" fontSize={11} fontWeight={600}>{value.toLocaleString('es-CL')} ({pct}%)</text>;
+                  }}}>
                   {byTramo.map((entry, i) => <Cell key={i} fill={entry.fill} />)}
                 </Bar>
               </BarChart>
