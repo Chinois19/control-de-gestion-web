@@ -1173,7 +1173,7 @@ function App() {
                   onBack={() => navigateToView('procedimientos_especialidades')} 
                 />
               )}
-              {activeView === 'actividades_medicina' && (
+              {(activeView === 'actividades_medicina' || activeView === 'esp_medicas') && (
                 <ActividadesMedicinaDashboard 
                   onBack={() => navigateToView('atencion_abierta')} 
                 />
