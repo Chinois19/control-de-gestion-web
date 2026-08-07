@@ -141,7 +141,8 @@ const menuStructure = [
     icon: <ClipboardList size={22} />,
     label: 'Listas de Espera',
     subItems: [
-      { id: 'lista_espera', label: 'Consultas Esp. Médicas y Odontológicas' }
+      { id: 'lista_espera_medica', label: 'L.E. Especialidades Médicas' },
+      { id: 'lista_espera_odontologica', label: 'L.E. Especialidades Odontológicas' }
     ]
   },
   { id: 'repositorio', icon: <FileText size={22} />, label: 'Repositorio Anual' },
@@ -1119,8 +1120,11 @@ function App() {
               {activeView === 'programacion_odontologia' && (
                 <ProgramacionOdontologiaDashboard onBack={() => navigateToView('home')} />
               )}
-              {activeView === 'lista_espera' && (
-                <ListaEsperaDashboard onBack={() => navigateToView('home')} />
+              {activeView === 'lista_espera_medica' && (
+                <ListaEsperaDashboard key="medica" tipo="Médica" onBack={() => navigateToView('home')} />
+              )}
+              {activeView === 'lista_espera_odontologica' && (
+                <ListaEsperaDashboard key="odontologica" tipo="Odontológica" onBack={() => navigateToView('home')} />
               )}
             </div>
           )}

@@ -3,7 +3,7 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, Legend
 } from 'recharts';
-import { ArrowLeft, RefreshCw, AlertTriangle, Users, Clock, Stethoscope, Filter, Download } from 'lucide-react';
+import { ArrowLeft, RefreshCw, AlertTriangle, Users, Clock, Stethoscope, Filter, Download, ChevronDown, TrendingUp, AlertOctagon, MapPin, Activity } from 'lucide-react';
 import ListaEsperaAnalysis from './ListaEsperaAnalysis';
 
 const COLORS_TRAMO = {
@@ -48,12 +48,69 @@ const CustomTooltipBar = ({ active, payload, label }) => {
   );
 };
 
-export default function ListaEsperaDashboard({ onBack }) {
+/* ── MultiSelect dropdown ── */
+function MultiSelect({ label, options, selected, onChange, color = '#6366f1' }) {
+  const [open, setOpen] = useState(false);
+  const ref = React.useRef();
+  useEffect(() => {
+    const h = e => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
+    document.addEventListener('mousedown', h);
+    return () => document.removeEventListener('mousedown', h);
+  }, []);
+  const toggle = v => onChange(selected.includes(v) ? selected.filter(x => x !== v) : [...selected, v]);
+  const allSelected = selected.length === 0;
+  return (
+    <div ref={ref} style={{ position: 'relative' }}>
+      <button onClick={() => setOpen(o => !o)} style={{
+        display: 'flex', alignItems: 'center', gap: 8, background: 'white',
+        border: `1.5px solid ${selected.length ? color : '#e2e8f0'}`,
+        borderRadius: 10, padding: '7px 14px', cursor: 'pointer', fontWeight: 600,
+        fontSize: '0.82rem', color: selected.length ? color : '#64748b', whiteSpace: 'nowrap',
+        boxShadow: selected.length ? `0 0 0 3px ${color}18` : 'none', transition: 'all 0.2s'
+      }}>
+        <Filter size={13} />
+        {label}{selected.length > 0 && <span style={{ background: color, color: 'white', borderRadius: 20, padding: '1px 7px', fontSize: '0.72rem', fontWeight: 800 }}>{selected.length}</span>}
+        <ChevronDown size={13} style={{ transform: open ? 'rotate(180deg)' : 'none', transition: '0.2s' }} />
+      </button>
+      {open && (
+        <div style={{
+          position: 'absolute', top: 'calc(100% + 6px)', left: 0, minWidth: 240, maxHeight: 280,
+          overflowY: 'auto', background: 'white', borderRadius: 12, border: '1px solid #e2e8f0',
+          boxShadow: '0 8px 32px rgba(0,0,0,0.12)', zIndex: 999, padding: '6px'
+        }}>
+          <div onClick={() => onChange([])} style={{ padding: '7px 12px', borderRadius: 8, cursor: 'pointer',
+            fontSize: '0.8rem', fontWeight: 700, color: allSelected ? color : '#64748b',
+            background: allSelected ? `${color}12` : 'transparent', marginBottom: 2 }}>Todas</div>
+          {options.map(opt => {
+            const active = selected.includes(opt);
+            return (
+              <div key={opt} onClick={() => toggle(opt)} style={{
+                display: 'flex', alignItems: 'center', gap: 8, padding: '7px 12px',
+                borderRadius: 8, cursor: 'pointer', fontSize: '0.8rem', fontWeight: active ? 700 : 500,
+                color: active ? color : '#475569', background: active ? `${color}10` : 'transparent'
+              }}>
+                <div style={{ width: 15, height: 15, borderRadius: 4, border: `2px solid ${active ? color : '#cbd5e1'}`,
+                  background: active ? color : 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  {active && <span style={{ color: 'white', fontSize: 9, fontWeight: 900 }}>✓</span>}
+                </div>
+                {opt}
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+export default function ListaEsperaDashboard({ onBack, tipo }) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [tipoFiltro, setTipoFiltro] = useState('Todas');   // Todas | Médica | Odontológica
-  const [estadoFiltro, setEstadoFiltro] = useState('Todas');
+  const [estadoFiltro, setEstadoFiltro] = useState([]);
+  const [espFiltro, setEspFiltro] = useState([]);
+  const [origenFiltro, setOrigenFiltro] = useState([]);
+  const [tramoFiltro, setTramoFiltro] = useState([]);
   const [searchEsp, setSearchEsp] = useState('');
   const [activeTab, setActiveTab] = useState('resumen');
   const [selectedEspecialidad, setSelectedEspecialidad] = useState(null);
@@ -72,10 +129,13 @@ export default function ListaEsperaDashboard({ onBack }) {
   const records = useMemo(() => {
     if (!data?.records) return [];
     let r = data.records;
-    if (tipoFiltro !== 'Todas') r = r.filter(x => x.tipo_lista_espera === tipoFiltro);
-    if (estadoFiltro !== 'Todas') r = r.filter(x => x.estado_ic === estadoFiltro);
+    if (tipo) r = r.filter(x => x.tipo_lista_espera === tipo);
+    if (estadoFiltro.length) r = r.filter(x => estadoFiltro.includes(x.estado_ic));
+    if (espFiltro.length) r = r.filter(x => espFiltro.includes(x.especialidad_destino));
+    if (origenFiltro.length) r = r.filter(x => origenFiltro.includes(x.establecimiento_origen));
+    if (tramoFiltro.length) r = r.filter(x => tramoFiltro.includes(x.tramo_espera));
     return r;
-  }, [data, tipoFiltro, estadoFiltro]);
+  }, [data, tipo, estadoFiltro, espFiltro, origenFiltro, tramoFiltro]);
 
   const kpis = useMemo(() => {
     if (!records.length) return {};
@@ -143,19 +203,25 @@ export default function ListaEsperaDashboard({ onBack }) {
     const ins = [];
     const mayor540 = records.filter(r => r.dias_espera > 540).length;
     const pct540 = Math.round(mayor540 / kpis.total * 100);
-    if (pct540 > 0) ins.push({ icon: '🔴', text: `${mayor540.toLocaleString('es-CL')} pacientes (${pct540}%) llevan más de 540 días en lista de espera — situación crítica que requiere atención prioritaria.` });
-    if (kpis.promDias > kpis.medianaDias * 1.3) ins.push({ icon: '📊', text: `El promedio (${kpis.promDias} días) supera ampliamente la mediana (${kpis.medianaDias} días), lo que indica que un grupo de pacientes con esperas muy largas está inflando el indicador promedio.` });
+    if (pct540 > 0) ins.push({ label: 'Situación Crítica', lucideIcon: <AlertOctagon size={20} color="#ef4444" />, bgColor: '#fee2e2', labelColor: '#dc2626', borderColor: '#fecaca', text: `${mayor540.toLocaleString('es-CL')} pacientes (${pct540}%) llevan más de 540 días en lista de espera.` });
+    if (kpis.promDias > kpis.medianaDias * 1.3) ins.push({ label: 'Distribución Asimétrica', lucideIcon: <TrendingUp size={20} color="#8b5cf6" />, bgColor: '#ede9fe', labelColor: '#7c3aed', borderColor: '#ddd6fe', text: `Promedio (${kpis.promDias} días) muy superior a la mediana (${kpis.medianaDias} días) — hay pacientes con esperas extremas que elevan el promedio.` });
     const topEsp = Object.entries(records.reduce((a,r) => { a[r.especialidad_destino]=(a[r.especialidad_destino]||0)+1; return a; }, {})).sort((a,b)=>b[1]-a[1])[0];
-    if (topEsp) ins.push({ icon: '⚠️', text: `La especialidad con mayor demanda es ${topEsp[0]} con ${topEsp[1].toLocaleString('es-CL')} pacientes (${Math.round(topEsp[1]/kpis.total*100)}% del total).` });
+    if (topEsp) ins.push({ label: 'Mayor Demanda', lucideIcon: <Activity size={20} color="#0ea5e9" />, bgColor: '#e0f2fe', labelColor: '#0369a1', borderColor: '#bae6fd', text: `${topEsp[0]} concentra la mayor demanda: ${topEsp[1].toLocaleString('es-CL')} pacientes (${Math.round(topEsp[1]/kpis.total*100)}% del total).` });
     const rural = records.filter(r => (r.urbano_rural||'').toUpperCase().includes('RURAL')).length;
-    if (rural > 0) ins.push({ icon: '🏡', text: `${rural.toLocaleString('es-CL')} pacientes (${Math.round(rural/kpis.total*100)}%) provienen de zonas rurales, lo que puede implicar barreras adicionales de acceso.` });
+    if (rural > 0) ins.push({ label: 'Brecha Territorial', lucideIcon: <MapPin size={20} color="#10b981" />, bgColor: '#d1fae5', labelColor: '#065f46', borderColor: '#a7f3d0', text: `${rural.toLocaleString('es-CL')} pacientes (${Math.round(rural/kpis.total*100)}%) provienen de zonas rurales — posible barrera de acceso.` });
     return ins;
   }, [records, kpis]);
 
-  const estados = useMemo(() => {
+  // Options for multi-selects (from full dataset filtered by tipo only)
+  const baseRecords = useMemo(() => {
     if (!data?.records) return [];
-    return ['Todas', ...Array.from(new Set(data.records.map(r => r.estado_ic).filter(Boolean)))];
-  }, [data]);
+    return tipo ? data.records.filter(x => x.tipo_lista_espera === tipo) : data.records;
+  }, [data, tipo]);
+  const optsEstado = useMemo(() => [...new Set(baseRecords.map(r => r.estado_ic).filter(Boolean))].sort(), [baseRecords]);
+  const optsEsp = useMemo(() => [...new Set(baseRecords.map(r => r.especialidad_destino).filter(Boolean))].sort(), [baseRecords]);
+  const optsOrigen = useMemo(() => [...new Set(baseRecords.map(r => r.establecimiento_origen).filter(Boolean))].sort(), [baseRecords]);
+  const optsTramo = TRAMOS_ORDER.filter(t => baseRecords.some(r => r.tramo_espera === t));
+  const hasFilters = estadoFiltro.length || espFiltro.length || origenFiltro.length || tramoFiltro.length;
 
   const exportCSV = () => {
     const headers = ['N° IC','Establecimiento Origen','Estado','Especialidad','Tipo LE','Sexo','Prevision','Urbano/Rural','PRAIS','Fecha IC','Dias Espera','Tramo Espera','Gestión IC'];
@@ -208,7 +274,7 @@ export default function ListaEsperaDashboard({ onBack }) {
           </button>
           <div>
             <h1 style={{ fontSize: '1.6rem', fontWeight: 900, color: '#1e293b', margin: 0 }}>
-              Lista de Espera — Consultas 2026
+              Lista de Espera — {tipo ? `Especialidades ${tipo}s` : 'Consultas 2026'}
             </h1>
             <p style={{ fontSize: '0.82rem', color: '#94a3b8', margin: '2px 0 0', fontWeight: 500 }}>
               Establecimiento destino: <b>VILLARRICA HOSP.</b> · FONASA A-B-C-D ·
@@ -226,25 +292,18 @@ export default function ListaEsperaDashboard({ onBack }) {
         </div>
       </div>
 
-      {/* Filtros */}
-      <div style={{ display: 'flex', gap: 12, marginBottom: 24, flexWrap: 'wrap', alignItems: 'center' }}>
-        <div style={{ display: 'flex', gap: 4, background: '#f1f5f9', borderRadius: 10, padding: 4 }}>
-          {['Todas', 'Médica', 'Odontológica'].map(t => (
-            <button key={t} onClick={() => setTipoFiltro(t)} style={{
-              padding: '6px 16px', borderRadius: 8, border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: '0.82rem',
-              background: tipoFiltro === t ? '#6366f1' : 'transparent',
-              color: tipoFiltro === t ? 'white' : '#64748b',
-              transition: 'all 0.2s'
-            }}>{t}</button>
-          ))}
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'white', border: '1px solid #e2e8f0', borderRadius: 10, padding: '6px 14px' }}>
-          <Filter size={14} color="#94a3b8" />
-          <select value={estadoFiltro} onChange={e => setEstadoFiltro(e.target.value)}
-            style={{ border: 'none', background: 'transparent', fontWeight: 600, color: '#475569', fontSize: '0.84rem', cursor: 'pointer', outline: 'none' }}>
-            {estados.map(e => <option key={e} value={e}>{e}</option>)}
-          </select>
-        </div>
+      {/* Filtros multi-select */}
+      <div style={{ display: 'flex', gap: 10, marginBottom: 24, flexWrap: 'wrap', alignItems: 'center' }}>
+        <MultiSelect label="Estado IC" options={optsEstado} selected={estadoFiltro} onChange={setEstadoFiltro} color="#6366f1" />
+        <MultiSelect label="Especialidad" options={optsEsp} selected={espFiltro} onChange={setEspFiltro} color="#0ea5e9" />
+        <MultiSelect label="Establecimiento Origen" options={optsOrigen} selected={origenFiltro} onChange={setOrigenFiltro} color="#10b981" />
+        <MultiSelect label="Tramo de Espera" options={optsTramo} selected={tramoFiltro} onChange={setTramoFiltro} color="#f59e0b" />
+        {hasFilters && (
+          <button onClick={() => { setEstadoFiltro([]); setEspFiltro([]); setOrigenFiltro([]); setTramoFiltro([]); }}
+            style={{ background: '#fee2e2', color: '#dc2626', border: 'none', borderRadius: 10, padding: '7px 14px', cursor: 'pointer', fontWeight: 700, fontSize: '0.8rem' }}>
+            ✕ Limpiar filtros
+          </button>
+        )}
       </div>
 
       {/* KPIs */}
@@ -257,13 +316,22 @@ export default function ListaEsperaDashboard({ onBack }) {
         <KPICard icon={<AlertTriangle size={18} />} label="Espera > 365 días" value={kpis.criticos?.toLocaleString('es-CL')} color="#ef4444" sub={`${kpis.total ? Math.round((kpis.criticos || 0) / kpis.total * 100) : 0}% del total`} />
       </div>
 
-      {/* Insights */}
+      {/* Insights rediseñados */}
       {insights.length > 0 && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 24 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(280px,1fr))', gap: 12, marginBottom: 24 }}>
           {insights.map((ins, i) => (
-            <div key={i} style={{ background: 'linear-gradient(135deg,#f8fafc,#f1f5f9)', border: '1px solid #e2e8f0', borderRadius: 12, padding: '12px 18px', display: 'flex', alignItems: 'flex-start', gap: 12 }}>
-              <span style={{ fontSize: '1.2rem', flexShrink: 0 }}>{ins.icon}</span>
-              <span style={{ fontSize: '0.85rem', color: '#475569', lineHeight: 1.5, fontWeight: 500 }}>{ins.text}</span>
+            <div key={i} style={{
+              background: 'white', borderRadius: 14, padding: '16px 18px',
+              boxShadow: '0 2px 12px rgba(0,0,0,0.06)', border: `1px solid ${ins.borderColor || '#e2e8f0'}`,
+              display: 'flex', alignItems: 'flex-start', gap: 14, transition: 'box-shadow 0.2s'
+            }}>
+              <div style={{ width: 40, height: 40, borderRadius: 12, background: ins.bgColor, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                {ins.lucideIcon}
+              </div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: '0.72rem', fontWeight: 800, color: ins.labelColor, textTransform: 'uppercase', letterSpacing: '0.4px', marginBottom: 3 }}>{ins.label}</div>
+                <div style={{ fontSize: '0.83rem', color: '#475569', lineHeight: 1.5, fontWeight: 500 }}>{ins.text}</div>
+              </div>
             </div>
           ))}
         </div>
