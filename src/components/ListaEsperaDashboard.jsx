@@ -80,11 +80,21 @@ export default function ListaEsperaDashboard({ onBack }) {
     const conFecha = records.filter(r => r.dias_espera !== null);
     const promDias = conFecha.length ? Math.round(conFecha.reduce((a, b) => a + b.dias_espera, 0) / conFecha.length) : 0;
     const criticos = records.filter(r => r.dias_espera > 365).length;
+    // Mediana
+    let medianaDias = 0;
+    if (conFecha.length) {
+      const sorted = [...conFecha].sort((a, b) => a.dias_espera - b.dias_espera);
+      const mid = Math.floor(sorted.length / 2);
+      medianaDias = sorted.length % 2 !== 0
+        ? sorted[mid].dias_espera
+        : Math.round((sorted[mid - 1].dias_espera + sorted[mid].dias_espera) / 2);
+    }
     return {
       total: records.length,
       medicas: records.filter(r => r.tipo_lista_espera === 'Médica').length,
       odont: records.filter(r => r.tipo_lista_espera === 'Odontológica').length,
       promDias,
+      medianaDias,
       criticos,
     };
   }, [records]);
@@ -217,7 +227,8 @@ export default function ListaEsperaDashboard({ onBack }) {
         <KPICard icon={<Users size={18} />} label="Total en Lista de Espera" value={kpis.total?.toLocaleString('es-CL')} color="#6366f1" sub={`${kpis.medicas?.toLocaleString('es-CL')} Médicas · ${kpis.odont?.toLocaleString('es-CL')} Odontológicas`} />
         <KPICard icon={<Stethoscope size={18} />} label="Especialidades Médicas" value={kpis.medicas?.toLocaleString('es-CL')} color="#0ea5e9" sub={`${kpis.total ? Math.round(kpis.medicas / kpis.total * 100) : 0}% del total`} />
         <KPICard icon={<Stethoscope size={18} />} label="Especialidades Odontológicas" value={kpis.odont?.toLocaleString('es-CL')} color="#10b981" sub={`${kpis.total ? Math.round(kpis.odont / kpis.total * 100) : 0}% del total`} />
-        <KPICard icon={<Clock size={18} />} label="Espera Promedio" value={`${kpis.promDias?.toLocaleString('es-CL')} días`} color="#f59e0b" sub="Pacientes con fecha IC registrada" />
+        <KPICard icon={<Clock size={18} />} label="Espera Promedio" value={`${kpis.promDias?.toLocaleString('es-CL')} días`} color="#f59e0b" sub="Media aritmética con fecha IC" />
+        <KPICard icon={<Clock size={18} />} label="Mediana de Espera" value={`${kpis.medianaDias?.toLocaleString('es-CL')} días`} color="#8b5cf6" sub="50% espera menos que esto" />
         <KPICard icon={<AlertTriangle size={18} />} label="Espera > 365 días" value={kpis.criticos?.toLocaleString('es-CL')} color="#ef4444" sub={`${kpis.total ? Math.round((kpis.criticos || 0) / kpis.total * 100) : 0}% del total`} />
       </div>
 
