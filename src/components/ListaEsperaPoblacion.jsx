@@ -45,7 +45,6 @@ const COMUNAS_LATLON = {
   'VILCUN':          [-38.6667, -72.2167],
   'VILCÚN':          [-38.6667, -72.2167],
   'LOS ANGELES':     [-37.4707, -72.3532],
-  'PITRUFQUEN':      [-38.9833, -72.6500],
   'DONIHUE':         [-34.1766, -70.9636], // fuera de región, skip
 };
 
