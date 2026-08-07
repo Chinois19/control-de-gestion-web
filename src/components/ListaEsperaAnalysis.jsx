@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useRef, useEffect } from 'react';
+import React, { useMemo, useState } from 'react';
 import { ChevronRight, ChevronDown } from 'lucide-react';
 
 const PALETTE = [
@@ -8,90 +8,83 @@ const PALETTE = [
   '#dc2626','#2563eb','#16a34a','#9333ea','#0891b2','#b45309',
 ];
 
-/* ── Bubble Chart (SVG custom) ── */
-function BubbleChart({ data, width = 600, height = 500 }) {
-  const sorted = [...data].sort((a, b) => b.totalDias - a.totalDias).slice(0, 28);
+/* ── Flat Bubble Chart (SVG) ── */
+function BubbleChart({ data }) {
+  const [hov, setHov] = useState(null);
+  const W = 1100, H = 520;
+  const sorted = [...data].sort((a, b) => b.totalDias - a.totalDias).slice(0, 30);
   const maxDias = sorted[0]?.totalDias || 1;
-  const MIN_R = 28, MAX_R = 90;
-  const getR = v => MIN_R + Math.sqrt(v / maxDias) * (MAX_R - MIN_R);
+  const getR = v => 24 + Math.sqrt(v / maxDias) * 76;
 
-  // Simple spiral placement
+  // Spiral placement
   const placed = [];
   sorted.forEach((d, i) => {
     const r = getR(d.totalDias);
     let x, y, tries = 0;
     const angle0 = (i / sorted.length) * Math.PI * 2;
-    let dist = MAX_R * 1.2;
-    while (tries < 400) {
-      const angle = angle0 + tries * 0.35;
-      x = width / 2 + dist * Math.cos(angle);
-      y = height / 2 + dist * Math.sin(angle) * 0.85;
-      const cx = Math.max(r + 4, Math.min(width - r - 4, x));
-      const cy = Math.max(r + 4, Math.min(height - r - 4, y));
-      const ok = placed.every(p => {
-        const dx = cx - p.x, dy = cy - p.y;
-        return Math.sqrt(dx*dx + dy*dy) >= p.r + r + 4;
-      });
-      if (ok) { placed.push({ ...d, x: cx, y: cy, r, color: PALETTE[i % PALETTE.length] }); break; }
-      dist += 2; tries++;
+    let dist = 90;
+    while (tries < 500) {
+      const angle = angle0 + tries * 0.3;
+      x = W / 2 + dist * Math.cos(angle);
+      y = H / 2 + dist * Math.sin(angle) * 0.82;
+      const cx = Math.max(r + 6, Math.min(W - r - 6, x));
+      const cy = Math.max(r + 6, Math.min(H - r - 6, y));
+      if (placed.every(p => Math.hypot(cx - p.x, cy - p.y) >= p.r + r + 3)) {
+        placed.push({ ...d, x: cx, y: cy, r, color: PALETTE[i % PALETTE.length] });
+        break;
+      }
+      dist += 2.5; tries++;
     }
-    if (tries === 400) placed.push({ ...d, x: Math.random()*width*0.8+width*0.1, y: Math.random()*height*0.8+height*0.1, r, color: PALETTE[i % PALETTE.length] });
+    if (tries === 500) placed.push({ ...d, x: 80 + Math.random() * (W - 160), y: 60 + Math.random() * (H - 120), r, color: PALETTE[i % PALETTE.length] });
   });
 
-  const [hov, setHov] = useState(null);
+  const [tipPos, setTipPos] = useState({ x: 0, y: 0 });
 
   return (
-    <svg width="100%" viewBox={`0 0 ${width} ${height}`} style={{ overflow: 'visible' }}>
-      <defs>
-        {placed.map((d, i) => (
-          <radialGradient key={i} id={`bg${i}`} cx="35%" cy="35%">
-            <stop offset="0%" stopColor="white" stopOpacity="0.35" />
-            <stop offset="100%" stopColor={d.color} stopOpacity="1" />
-          </radialGradient>
-        ))}
-      </defs>
+    <svg width="100%" viewBox={`0 0 ${W} ${H}`} style={{ display: 'block' }}>
       {placed.map((d, i) => {
-        const label = d.name.length > 18 ? d.name.substring(0, 16) + '…' : d.name;
-        const isHov = hov === i;
-        const dias = d.totalDias.toLocaleString('es-CL');
-        const pac = d.pacientes.toLocaleString('es-CL');
+        const isH = hov === i;
+        const label = d.name.length > 20 ? d.name.substring(0, 18) + '…' : d.name;
+        const scale = isH ? 1.06 : 1;
         return (
-          <g key={i} style={{ cursor: 'pointer' }}
-            onMouseEnter={() => setHov(i)} onMouseLeave={() => setHov(null)}>
-            <circle cx={d.x} cy={d.y} r={d.r + (isHov ? 4 : 0)}
-              fill={`url(#bg${i})`} stroke={d.color} strokeWidth={isHov ? 2.5 : 1}
-              style={{ filter: isHov ? `drop-shadow(0 0 8px ${d.color}88)` : 'none', transition: 'all 0.2s' }} />
-            {d.r > 38 && (
-              <text x={d.x} y={d.y - 6} textAnchor="middle" fontSize={Math.min(11, d.r / 4.5)}
-                fontWeight="700" fill="white" style={{ pointerEvents: 'none', textShadow: '0 1px 3px rgba(0,0,0,0.5)' }}>
-                {label}
+          <g key={i} style={{ cursor: 'default' }}
+            onMouseEnter={e => { setHov(i); setTipPos({ x: e.clientX, y: e.clientY }); }}
+            onMouseLeave={() => setHov(null)}
+            transform={`translate(${d.x},${d.y}) scale(${scale})`}
+            style={{ transition: 'transform 0.15s', transformOrigin: `${d.x}px ${d.y}px`, cursor: 'default' }}>
+            <circle cx={0} cy={0} r={d.r}
+              fill={d.color} fillOpacity={isH ? 1 : 0.82}
+              stroke={isH ? 'white' : 'rgba(255,255,255,0.3)'} strokeWidth={isH ? 2.5 : 1}
+              style={{ filter: isH ? `drop-shadow(0 2px 8px ${d.color}66)` : 'none' }} />
+            {d.r > 36 && (
+              <text textAnchor="middle" fill="white" fontWeight="700" style={{ pointerEvents: 'none' }}>
+                <tspan x={0} y={d.r > 52 ? -8 : 4} fontSize={Math.min(12, d.r / 4)}>{label}</tspan>
+                {d.r > 52 && <tspan x={0} dy={16} fontSize={Math.min(10, d.r / 5)} fillOpacity={0.85}>{d.pacientes.toLocaleString('es-CL')} pac.</tspan>}
               </text>
-            )}
-            {d.r > 38 && (
-              <text x={d.x} y={d.y + 10} textAnchor="middle" fontSize={Math.min(10, d.r / 5)}
-                fill="rgba(255,255,255,0.9)" style={{ pointerEvents: 'none' }}>
-                {pac} pac.
-              </text>
-            )}
-            {isHov && (
-              <g>
-                <rect x={d.x + d.r + 6} y={d.y - 36} width={200} height={72} rx={8}
-                  fill="white" stroke="#e2e8f0" strokeWidth={1}
-                  style={{ filter: 'drop-shadow(0 4px 16px rgba(0,0,0,0.15))' }} />
-                <text x={d.x + d.r + 14} y={d.y - 18} fontSize={10} fontWeight="700" fill="#1e293b">{d.name}</text>
-                <text x={d.x + d.r + 14} y={d.y - 2} fontSize={10} fill="#475569">Pacientes: <tspan fontWeight="700">{pac}</tspan></text>
-                <text x={d.x + d.r + 14} y={d.y + 14} fontSize={10} fill="#6366f1">Días acumulados: <tspan fontWeight="700">{dias}</tspan></text>
-                <text x={d.x + d.r + 14} y={d.y + 30} fontSize={10} fill="#8b5cf6">Promedio/pac.: <tspan fontWeight="700">{Math.round(d.totalDias/d.pacientes)} días</tspan></text>
-              </g>
             )}
           </g>
         );
       })}
+      {/* Tooltip inline */}
+      {hov !== null && placed[hov] && (() => {
+        const d = placed[hov];
+        const tx = Math.min(d.x + d.r + 8, W - 210);
+        const ty = Math.max(8, d.y - 50);
+        return (
+          <g>
+            <rect x={tx} y={ty} width={200} height={80} rx={10} fill="white" stroke="#e2e8f0" strokeWidth={1} style={{ filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.12))' }} />
+            <text x={tx + 12} y={ty + 18} fontSize={10} fontWeight={800} fill="#1e293b">{d.name.length > 28 ? d.name.substring(0, 26) + '…' : d.name}</text>
+            <text x={tx + 12} y={ty + 34} fontSize={10} fill="#475569">Pacientes: <tspan fontWeight={700}>{d.pacientes.toLocaleString('es-CL')}</tspan></text>
+            <text x={tx + 12} y={ty + 50} fontSize={10} fill="#6366f1">Días acumul.: <tspan fontWeight={700}>{d.totalDias.toLocaleString('es-CL')}</tspan></text>
+            <text x={tx + 12} y={ty + 66} fontSize={10} fill="#8b5cf6">Prom./pac.: <tspan fontWeight={700}>{Math.round(d.totalDias / d.pacientes)} días</tspan></text>
+          </g>
+        );
+      })()}
     </svg>
   );
 }
 
-/* ── Expandable Table ── */
+/* ── Expandable row ── */
 function EspRow({ esp, years, grandTotal, allRecords }) {
   const [open, setOpen] = useState(false);
   const [openGroups, setOpenGroups] = useState({});
@@ -99,68 +92,100 @@ function EspRow({ esp, years, grandTotal, allRecords }) {
   const espRecords = allRecords.filter(r => r.especialidad_destino === esp.name);
   const total = esp.total;
   const pct = grandTotal ? ((total / grandTotal) * 100).toFixed(1) : '0.0';
+  const avgDias = esp.avgDias;
 
-  // CIE-10 groups by first 3 chars of cod_diagno
+  // Build CIE-10 groups: key = 3-char code, display name = shortest unique nom_diagnostico in group
   const groups = useMemo(() => {
     const m = {};
     espRecords.forEach(r => {
-      const cod = (r.cod_diagno || 'S/C').substring(0, 3).toUpperCase();
-      if (!m[cod]) m[cod] = { cod, diags: {} };
-      const diag = r.nom_diagnostico || 'Sin diagnóstico';
-      if (!m[cod].diags[diag]) m[cod].diags[diag] = {};
-      const yr = r.fecha_ic ? new Date(r.fecha_ic).getFullYear() : 'S/F';
-      m[cod].diags[diag][yr] = (m[cod].diags[diag][yr] || 0) + 1;
+      const cod3 = (r.cod_diagno || 'S/C').substring(0, 3).toUpperCase();
+      if (!m[cod3]) m[cod3] = { cod: cod3, nameCount: {}, recs: [] };
+      m[cod3].recs.push(r);
+      const n = r.nom_diagnostico || 'Sin diagnóstico';
+      m[cod3].nameCount[n] = (m[cod3].nameCount[n] || 0) + 1;
     });
-    return Object.values(m).sort((a,b) => {
-      const ta = Object.values(a.diags).reduce((s,d)=>s+Object.values(d).reduce((x,v)=>x+v,0),0);
-      const tb = Object.values(b.diags).reduce((s,d)=>s+Object.values(d).reduce((x,v)=>x+v,0),0);
-      return tb - ta;
-    });
+    return Object.values(m).map(g => {
+      // Group display name: shortest name (most generic category)
+      const names = Object.keys(g.nameCount);
+      const shortest = names.reduce((a, b) => a.length <= b.length ? a : b, names[0] || g.cod);
+      // Specific diagnoses within this group
+      const diagMap = {};
+      g.recs.forEach(r => {
+        const key = `${(r.cod_diagno || 'S/C').toUpperCase()} — ${r.nom_diagnostico || 'Sin diagnóstico'}`;
+        if (!diagMap[key]) diagMap[key] = { byYear: {}, total: 0, totalDias: 0 };
+        diagMap[key].total++;
+        if (r.dias_espera != null) diagMap[key].totalDias += r.dias_espera;
+        const yr = r.fecha_ic ? new Date(r.fecha_ic).getFullYear() : 'S/F';
+        diagMap[key].byYear[yr] = (diagMap[key].byYear[yr] || 0) + 1;
+      });
+      const byYear = {};
+      let grpTotal = 0; let grpDias = 0;
+      g.recs.forEach(r => {
+        const yr = r.fecha_ic ? new Date(r.fecha_ic).getFullYear() : 'S/F';
+        byYear[yr] = (byYear[yr] || 0) + 1;
+        grpTotal++;
+        if (r.dias_espera != null) grpDias += r.dias_espera;
+      });
+      return {
+        cod: g.cod,
+        displayName: shortest,
+        byYear, grpTotal,
+        avgDias: grpTotal ? Math.round(grpDias / grpTotal) : null,
+        diags: Object.entries(diagMap).sort((a, b) => b[1].total - a[1].total),
+      };
+    }).sort((a, b) => b.grpTotal - a.grpTotal);
   }, [espRecords]);
 
-  const tdStyle = { padding: '6px 10px', borderBottom: '1px solid #f1f5f9', textAlign: 'right', fontSize: '0.8rem', color: '#475569' };
-  const tdStyleL = { ...tdStyle, textAlign: 'left' };
+  const tdR = { padding: '6px 10px', borderBottom: '1px solid #f1f5f9', textAlign: 'right', fontSize: '0.79rem', color: '#475569', whiteSpace: 'nowrap' };
+  const tdL = { ...tdR, textAlign: 'left' };
 
   return (
     <>
       {/* Specialty row */}
       <tr style={{ background: '#f8fafc', cursor: 'pointer' }} onClick={() => setOpen(o => !o)}>
-        <td style={{ ...tdStyleL, paddingLeft: 12, fontWeight: 700, color: '#1e293b', display: 'flex', alignItems: 'center', gap: 6 }}>
-          {open ? <ChevronDown size={14} color="#6366f1" /> : <ChevronRight size={14} color="#94a3b8" />}
-          <span style={{ fontSize: '0.82rem' }}>{esp.name}</span>
+        <td style={{ ...tdL, paddingLeft: 10, fontWeight: 700, color: '#1e293b', fontSize: '0.82rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            {open ? <ChevronDown size={14} color="#6366f1" /> : <ChevronRight size={14} color="#94a3b8" />}
+            {esp.name}
+          </div>
         </td>
-        {years.map(yr => <td key={yr} style={tdStyle}>{(esp.byYear[yr] || 0).toLocaleString('es-CL') || '—'}</td>)}
-        <td style={{ ...tdStyle, fontWeight: 800, color: '#1e293b', background: '#f1f5f9' }}>{total.toLocaleString('es-CL')}</td>
-        <td style={{ ...tdStyle, fontWeight: 700, color: '#6366f1', background: '#f1f5f9' }}>{pct}%</td>
+        {years.map(yr => <td key={yr} style={tdR}>{(esp.byYear[yr] || 0) || '—'}</td>)}
+        <td style={{ ...tdR, fontWeight: 800, color: '#1e293b', background: '#eef2ff' }}>{total.toLocaleString('es-CL')}</td>
+        <td style={{ ...tdR, fontWeight: 700, color: '#6366f1', background: '#eef2ff' }}>{pct}%</td>
+        <td style={{ ...tdR, fontWeight: 700, color: '#f59e0b', background: '#fffbeb' }}>{avgDias != null ? `${avgDias}d` : '—'}</td>
       </tr>
 
       {/* CIE-10 group rows */}
       {open && groups.map(grp => {
-        const grpByYear = {};
-        let grpTotal = 0;
-        Object.values(grp.diags).forEach(d => Object.entries(d).forEach(([yr, v]) => { grpByYear[yr]=(grpByYear[yr]||0)+v; grpTotal+=v; }));
         const grpOpen = openGroups[grp.cod];
         return (
           <React.Fragment key={grp.cod}>
-            <tr style={{ background: '#fff', cursor: 'pointer' }} onClick={() => setOpenGroups(p => ({ ...p, [grp.cod]: !p[grp.cod] }))}>
-              <td style={{ ...tdStyleL, paddingLeft: 36, color: '#6366f1', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6 }}>
-                {grpOpen ? <ChevronDown size={12} color="#8b5cf6" /> : <ChevronRight size={12} color="#c4b5fd" />}
-                <span style={{ fontSize: '0.77rem', fontFamily: 'monospace', background: '#ede9fe', padding: '1px 6px', borderRadius: 4 }}>{grp.cod}</span>
+            <tr style={{ background: '#fafafa', cursor: 'pointer' }} onClick={() => setOpenGroups(p => ({ ...p, [grp.cod]: !p[grp.cod] }))}>
+              <td style={{ ...tdL, paddingLeft: 32, color: '#4338ca', fontWeight: 600, fontSize: '0.78rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  {grpOpen ? <ChevronDown size={12} color="#8b5cf6" /> : <ChevronRight size={12} color="#c4b5fd" />}
+                  <span style={{ background: '#ede9fe', color: '#6d28d9', padding: '1px 6px', borderRadius: 4, fontFamily: 'monospace', fontSize: '0.72rem', fontWeight: 800 }}>{grp.cod}</span>
+                  <span>{grp.displayName.length > 50 ? grp.displayName.substring(0, 48) + '…' : grp.displayName}</span>
+                </div>
               </td>
-              {years.map(yr => <td key={yr} style={{ ...tdStyle, fontSize: '0.77rem' }}>{(grpByYear[yr] || 0) || '—'}</td>)}
-              <td style={{ ...tdStyle, fontWeight: 700, fontSize: '0.77rem', color: '#6366f1', background: '#faf5ff' }}>{grpTotal.toLocaleString('es-CL')}</td>
-              <td style={{ ...tdStyle, fontSize: '0.77rem', color: '#8b5cf6', background: '#faf5ff' }}>{total ? ((grpTotal/total)*100).toFixed(1) : 0}%</td>
+              {years.map(yr => <td key={yr} style={{ ...tdR, fontSize: '0.76rem' }}>{(grp.byYear[yr] || 0) || '—'}</td>)}
+              <td style={{ ...tdR, fontWeight: 700, fontSize: '0.76rem', color: '#6366f1', background: '#f5f3ff' }}>{grp.grpTotal.toLocaleString('es-CL')}</td>
+              <td style={{ ...tdR, fontSize: '0.76rem', color: '#8b5cf6', background: '#f5f3ff' }}>{total ? ((grp.grpTotal / total) * 100).toFixed(1) : 0}%</td>
+              <td style={{ ...tdR, fontSize: '0.76rem', color: '#f59e0b', background: '#fffbeb' }}>{grp.avgDias != null ? `${grp.avgDias}d` : '—'}</td>
             </tr>
 
             {/* Specific diagnoses */}
-            {grpOpen && Object.entries(grp.diags).sort((a,b)=>Object.values(b[1]).reduce((x,v)=>x+v,0)-Object.values(a[1]).reduce((x,v)=>x+v,0)).map(([diag, byYr]) => {
-              const diagTotal = Object.values(byYr).reduce((s,v)=>s+v,0);
+            {grpOpen && grp.diags.map(([key, dg]) => {
+              const diagAvg = dg.total ? Math.round(dg.totalDias / dg.total) : null;
               return (
-                <tr key={diag} style={{ background: '#fdfcff' }}>
-                  <td style={{ ...tdStyleL, paddingLeft: 60, color: '#64748b', fontSize: '0.74rem' }}>↳ {diag.length > 60 ? diag.substring(0,58)+'…' : diag}</td>
-                  {years.map(yr => <td key={yr} style={{ ...tdStyle, fontSize: '0.74rem', color: '#94a3b8' }}>{(byYr[yr] || 0) || '—'}</td>)}
-                  <td style={{ ...tdStyle, fontSize: '0.74rem', fontWeight: 600, color: '#475569', background: '#faf5ff' }}>{diagTotal.toLocaleString('es-CL')}</td>
-                  <td style={{ ...tdStyle, fontSize: '0.74rem', color: '#a78bfa', background: '#faf5ff' }}>{total ? ((diagTotal/total)*100).toFixed(1) : 0}%</td>
+                <tr key={key} style={{ background: '#fdfcff' }}>
+                  <td style={{ ...tdL, paddingLeft: 58, color: '#64748b', fontSize: '0.73rem' }}>
+                    ↳ {key.length > 70 ? key.substring(0, 68) + '…' : key}
+                  </td>
+                  {years.map(yr => <td key={yr} style={{ ...tdR, fontSize: '0.73rem', color: '#94a3b8' }}>{(dg.byYear[yr] || 0) || '—'}</td>)}
+                  <td style={{ ...tdR, fontSize: '0.73rem', fontWeight: 600, color: '#475569', background: '#f5f3ff' }}>{dg.total.toLocaleString('es-CL')}</td>
+                  <td style={{ ...tdR, fontSize: '0.73rem', color: '#a78bfa', background: '#f5f3ff' }}>{total ? ((dg.total / total) * 100).toFixed(1) : 0}%</td>
+                  <td style={{ ...tdR, fontSize: '0.73rem', color: '#f59e0b', background: '#fffbeb' }}>{diagAvg != null ? `${diagAvg}d` : '—'}</td>
                 </tr>
               );
             })}
@@ -187,80 +212,82 @@ export default function ListaEsperaAnalysis({ records }) {
       m[e].pacientes++;
       if (r.dias_espera != null) m[e].totalDias += r.dias_espera;
     });
-    return Object.values(m).filter(d => d.totalDias > 0).sort((a,b)=>b.totalDias-a.totalDias);
+    return Object.values(m).filter(d => d.totalDias > 0).sort((a, b) => b.totalDias - a.totalDias);
   }, [records]);
 
   const tableEsps = useMemo(() => {
     const m = {};
     records.forEach(r => {
       const e = r.especialidad_destino || 'Sin dato';
-      if (!m[e]) m[e] = { name: e, byYear: {}, total: 0 };
+      if (!m[e]) m[e] = { name: e, byYear: {}, total: 0, totalDias: 0 };
       const yr = r.fecha_ic ? new Date(r.fecha_ic).getFullYear() : 'S/F';
       m[e].byYear[yr] = (m[e].byYear[yr] || 0) + 1;
       m[e].total++;
+      if (r.dias_espera != null) m[e].totalDias += r.dias_espera;
     });
-    return Object.values(m).sort((a,b) => b.total - a.total);
+    return Object.values(m).map(e => ({ ...e, avgDias: e.total ? Math.round(e.totalDias / e.total) : null }))
+      .sort((a, b) => b.total - a.total);
   }, [records]);
 
-  const grandTotal = useMemo(() => tableEsps.reduce((s,e)=>s+e.total,0), [tableEsps]);
-
+  const grandTotal = useMemo(() => tableEsps.reduce((s, e) => s + e.total, 0), [tableEsps]);
   const yearTotals = useMemo(() => {
-    const t = {};
-    tableEsps.forEach(e => Object.entries(e.byYear).forEach(([yr,v])=>{ t[yr]=(t[yr]||0)+v; }));
-    return t;
+    const t = {}; let td = 0; let tn = 0;
+    tableEsps.forEach(e => { Object.entries(e.byYear).forEach(([yr, v]) => { t[yr] = (t[yr] || 0) + v; }); td += e.totalDias; tn += e.total; });
+    return { ...t, _avgDias: tn ? Math.round(td / tn) : 0 };
   }, [tableEsps]);
 
-  const thStyle = { padding: '10px 10px', fontWeight: 800, fontSize: '0.78rem', color: '#475569', textTransform: 'uppercase', letterSpacing: '0.3px', background: '#f1f5f9', borderBottom: '2px solid #e2e8f0', whiteSpace: 'nowrap', textAlign: 'right' };
+  const thS = { padding: '10px 10px', fontWeight: 800, fontSize: '0.75rem', color: '#475569', textTransform: 'uppercase', letterSpacing: '0.3px', background: '#f1f5f9', borderBottom: '2px solid #e2e8f0', whiteSpace: 'nowrap', textAlign: 'right' };
 
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.4fr', gap: 20, alignItems: 'start' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
 
-      {/* ── Bubble Chart Panel ── */}
-      <div style={{ background: 'white', borderRadius: 20, padding: 24, boxShadow: '0 4px 24px rgba(0,0,0,0.08)', border: '1px solid rgba(0,0,0,0.05)' }}>
+      {/* ── Bubble Chart ── */}
+      <div style={{ background: 'white', borderRadius: 20, padding: '24px 24px 16px', boxShadow: '0 4px 24px rgba(0,0,0,0.07)', border: '1px solid rgba(0,0,0,0.05)' }}>
         <h3 style={{ fontWeight: 800, color: '#1e293b', margin: '0 0 4px', fontSize: '1rem' }}>Volumen de Espera por Especialidad</h3>
-        <p style={{ fontSize: '0.78rem', color: '#94a3b8', margin: '0 0 16px' }}>
-          Cada círculo representa una especialidad. Tamaño proporcional a los <b>días de espera acumulados</b> (suma de días de todos sus pacientes)
+        <p style={{ fontSize: '0.78rem', color: '#94a3b8', margin: '0 0 12px' }}>
+          Cada círculo representa una especialidad. Tamaño proporcional a los <b>días de espera acumulados</b> de todos sus pacientes. Pasa el cursor para ver detalles.
         </p>
-        <BubbleChart data={bubbleData} width={580} height={480} />
-        <div style={{ display: 'flex', gap: 16, marginTop: 12, flexWrap: 'wrap' }}>
-          {bubbleData.slice(0,6).map((d,i)=>(
-            <div key={i} style={{ display:'flex', alignItems:'center', gap:4 }}>
-              <div style={{ width:10, height:10, borderRadius:'50%', background:PALETTE[i%PALETTE.length] }} />
-              <span style={{ fontSize:'0.72rem', color:'#64748b', fontWeight:600 }}>{d.name.length>22?d.name.substring(0,20)+'…':d.name}</span>
+        <BubbleChart data={bubbleData} />
+        <div style={{ display: 'flex', gap: 14, marginTop: 8, flexWrap: 'wrap' }}>
+          {bubbleData.slice(0, 8).map((d, i) => (
+            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+              <div style={{ width: 10, height: 10, borderRadius: '50%', background: PALETTE[i % PALETTE.length] }} />
+              <span style={{ fontSize: '0.71rem', color: '#64748b', fontWeight: 600 }}>{d.name.length > 24 ? d.name.substring(0, 22) + '…' : d.name}</span>
             </div>
           ))}
-          {bubbleData.length > 6 && <span style={{ fontSize:'0.72rem', color:'#94a3b8' }}>+{bubbleData.length-6} más</span>}
+          {bubbleData.length > 8 && <span style={{ fontSize: '0.71rem', color: '#94a3b8' }}>+{bubbleData.length - 8} más</span>}
         </div>
       </div>
 
-      {/* ── Table Panel ── */}
-      <div style={{ background: 'white', borderRadius: 20, boxShadow: '0 4px 24px rgba(0,0,0,0.08)', border: '1px solid rgba(0,0,0,0.05)', overflow: 'hidden' }}>
+      {/* ── Table ── */}
+      <div style={{ background: 'white', borderRadius: 20, boxShadow: '0 4px 24px rgba(0,0,0,0.07)', border: '1px solid rgba(0,0,0,0.05)', overflow: 'hidden' }}>
         <div style={{ padding: '20px 24px 12px', borderBottom: '1px solid #f1f5f9' }}>
           <h3 style={{ fontWeight: 800, color: '#1e293b', margin: '0 0 4px', fontSize: '1rem' }}>Pacientes en Espera por Especialidad y Año IC</h3>
           <p style={{ fontSize: '0.78rem', color: '#94a3b8', margin: 0 }}>
-            Expande cada fila para ver agrupación por código CIE-10 y diagnóstico específico
+            Expande cada especialidad → grupo diagnóstico CIE-10 → diagnóstico específico (CIE-10 — Nombre). Última columna: promedio de días de espera.
           </p>
         </div>
-        <div style={{ overflowX: 'auto', overflowY: 'auto', maxHeight: 560 }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 600 }}>
+        <div style={{ overflowX: 'auto', overflowY: 'auto', maxHeight: 620 }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 700 }}>
             <thead style={{ position: 'sticky', top: 0, zIndex: 10 }}>
               <tr>
-                <th style={{ ...thStyle, textAlign: 'left', paddingLeft: 12, minWidth: 200 }}>Especialidad / CIE-10</th>
-                {years.map(yr => <th key={yr} style={thStyle}>{yr}</th>)}
-                <th style={{ ...thStyle, background: '#e0e7ff', color: '#4338ca' }}>Total</th>
-                <th style={{ ...thStyle, background: '#e0e7ff', color: '#4338ca' }}>% Total</th>
+                <th style={{ ...thS, textAlign: 'left', paddingLeft: 10, minWidth: 220 }}>Especialidad / Diagnóstico</th>
+                {years.map(yr => <th key={yr} style={thS}>{yr}</th>)}
+                <th style={{ ...thS, background: '#e0e7ff', color: '#4338ca' }}>Total</th>
+                <th style={{ ...thS, background: '#e0e7ff', color: '#4338ca' }}>%</th>
+                <th style={{ ...thS, background: '#fef3c7', color: '#92400e' }}>Prom. días</th>
               </tr>
             </thead>
             <tbody>
               {tableEsps.map(esp => (
                 <EspRow key={esp.name} esp={esp} years={years} grandTotal={grandTotal} allRecords={records} />
               ))}
-              {/* Grand total row */}
               <tr style={{ background: '#1e293b', position: 'sticky', bottom: 0 }}>
-                <td style={{ padding: '10px 12px', fontWeight: 800, color: 'white', fontSize: '0.82rem' }}>TOTAL GENERAL</td>
-                {years.map(yr => <td key={yr} style={{ padding: '10px 10px', textAlign: 'right', fontWeight: 700, color: '#94a3b8', fontSize: '0.8rem' }}>{(yearTotals[yr]||0).toLocaleString('es-CL')}</td>)}
+                <td style={{ padding: '10px 10px', fontWeight: 800, color: 'white', fontSize: '0.82rem' }}>TOTAL GENERAL</td>
+                {years.map(yr => <td key={yr} style={{ padding: '10px 10px', textAlign: 'right', fontWeight: 700, color: '#94a3b8', fontSize: '0.79rem' }}>{(yearTotals[yr] || 0).toLocaleString('es-CL')}</td>)}
                 <td style={{ padding: '10px 10px', textAlign: 'right', fontWeight: 900, color: '#a5b4fc', fontSize: '0.88rem' }}>{grandTotal.toLocaleString('es-CL')}</td>
                 <td style={{ padding: '10px 10px', textAlign: 'right', fontWeight: 800, color: '#a5b4fc', fontSize: '0.82rem' }}>100%</td>
+                <td style={{ padding: '10px 10px', textAlign: 'right', fontWeight: 800, color: '#fbbf24', fontSize: '0.82rem' }}>{yearTotals._avgDias}d</td>
               </tr>
             </tbody>
           </table>
