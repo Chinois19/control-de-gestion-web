@@ -82,58 +82,111 @@ function Piramide({ records }) {
     });
   }, [records]);
 
+  const stats = useMemo(() => {
+    const recsM = records.filter(r => r.sexo === 'MUJER' && r.edad != null);
+    const recsH = records.filter(r => r.sexo === 'HOMBRE' && r.edad != null);
+    const totM = recsM.length;
+    const totH = recsH.length;
+    const total = totM + totH;
+
+    const sumM = recsM.reduce((s, r) => s + r.edad, 0);
+    const sumH = recsH.reduce((s, r) => s + r.edad, 0);
+    const avgAgeM = totM ? (sumM / totM).toFixed(1) : '0';
+    const avgAgeH = totH ? (sumH / totH).toFixed(1) : '0';
+    const pctM = total ? (totM / total * 100).toFixed(1) : '0';
+    const pctH = total ? (totH / total * 100).toFixed(1) : '0';
+    const ratioMH = totH ? (totM / totH).toFixed(1) : '0';
+
+    return { totM, totH, total, avgAgeM, avgAgeH, pctM, pctH, ratioMH };
+  }, [records]);
+
   const maxVal = Math.max(...data.flatMap(d => [d.mujeres, d.hombres]), 1);
-  const totM = data.reduce((s, d) => s + d.mujeres, 0);
-  const totH = data.reduce((s, d) => s + d.hombres, 0);
-  const total = totM + totH;
-  const BAR_MAX = 140;
-  const LABEL_W = 46;
 
   return (
-    <div style={{ background: 'white', borderRadius: 20, padding: '20px 20px 16px', boxShadow: '0 4px 24px rgba(0,0,0,0.07)', border: '1px solid rgba(0,0,0,0.05)', height: '100%', display: 'flex', flexDirection: 'column' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 }}>
-        <div>
-          <h3 style={{ fontWeight: 800, color: '#1e293b', fontSize: '0.95rem', margin: 0 }}>Pirámide Poblacional</h3>
-          <p style={{ fontSize: '0.72rem', color: '#94a3b8', margin: '2px 0 0' }}>Distribución quinquenal por edad y sexo</p>
+    <div style={{ background: 'white', borderRadius: 20, padding: '20px', boxShadow: '0 4px 24px rgba(0,0,0,0.07)', border: '1px solid rgba(0,0,0,0.05)', height: '100%', display: 'flex', flexDirection: 'column' }}>
+      {/* Title Header */}
+      <div style={{ marginBottom: 12 }}>
+        <h3 style={{ fontWeight: 800, color: '#1e293b', fontSize: '0.95rem', margin: 0 }}>Pirámide Poblacional por Edad y Sexo</h3>
+        <p style={{ fontSize: '0.72rem', color: '#94a3b8', margin: '2px 0 0' }}>Distribución simétrica quinquenal de la lista de espera</p>
+      </div>
+
+      {/* Symmetrical Sex Statistics Banner */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', gap: 10, alignItems: 'center', marginBottom: 16, background: '#f8fafc', padding: '10px 14px', borderRadius: 14, border: '1px solid #f1f5f9' }}>
+        {/* Women Stat Block */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div style={{ width: 36, height: 36, borderRadius: 10, background: '#fce7f3', color: '#ec4899', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: '1rem', flexShrink: 0 }}>♀</div>
+          <div>
+            <div style={{ fontSize: '0.78rem', fontWeight: 800, color: '#be185d' }}>
+              {stats.totM.toLocaleString('es-CL')} <span style={{ fontSize: '0.68rem', fontWeight: 600, color: '#db2777' }}>({stats.pctM}%)</span>
+            </div>
+            <div style={{ fontSize: '0.68rem', color: '#64748b', fontWeight: 600 }}>
+              Promedio: <b style={{ color: '#1e293b' }}>{stats.avgAgeM} años</b>
+            </div>
+          </div>
         </div>
-        <div style={{ display: 'flex', gap: 14 }}>
-          <div style={{ textAlign: 'center' }}>
-            <div style={{ fontSize: '1.1rem', fontWeight: 800, color: '#ec4899' }}>{totM.toLocaleString('es-CL')}</div>
-            <div style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 600 }}>Mujeres ({total ? Math.round(totM/total*100) : 0}%)</div>
+
+        {/* Center Ratio Badge */}
+        <div style={{ textAlign: 'center', padding: '0 10px', borderLeft: '1px solid #e2e8f0', borderRight: '1px solid #e2e8f0' }}>
+          <div style={{ fontSize: '0.85rem', fontWeight: 900, color: '#6366f1' }}>{stats.ratioMH} M/H</div>
+          <div style={{ fontSize: '0.6rem', color: '#94a3b8', fontWeight: 700, textTransform: 'uppercase' }}>Proporción</div>
+        </div>
+
+        {/* Men Stat Block */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, justifyContent: 'flex-end', textAlign: 'right' }}>
+          <div>
+            <div style={{ fontSize: '0.78rem', fontWeight: 800, color: '#1d4ed8' }}>
+              {stats.totH.toLocaleString('es-CL')} <span style={{ fontSize: '0.68rem', fontWeight: 600, color: '#2563eb' }}>({stats.pctH}%)</span>
+            </div>
+            <div style={{ fontSize: '0.68rem', color: '#64748b', fontWeight: 600 }}>
+              Promedio: <b style={{ color: '#1e293b' }}>{stats.avgAgeH} años</b>
+            </div>
           </div>
-          <div style={{ textAlign: 'center' }}>
-            <div style={{ fontSize: '1.1rem', fontWeight: 800, color: '#3b82f6' }}>{totH.toLocaleString('es-CL')}</div>
-            <div style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 600 }}>Hombres ({total ? Math.round(totH/total*100) : 0}%)</div>
-          </div>
+          <div style={{ width: 36, height: 36, borderRadius: 10, background: '#dbeafe', color: '#3b82f6', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: '1rem', flexShrink: 0 }}>♂</div>
         </div>
       </div>
 
-      {/* Column headers */}
-      <div style={{ display: 'flex', alignItems: 'center', marginBottom: 5 }}>
-        <div style={{ width: BAR_MAX, textAlign: 'center', fontSize: '0.68rem', fontWeight: 700, color: '#ec4899' }}>← MUJER</div>
-        <div style={{ width: LABEL_W, textAlign: 'center', fontSize: '0.64rem', color: '#94a3b8', fontWeight: 600 }}>Edad</div>
-        <div style={{ width: BAR_MAX, textAlign: 'center', fontSize: '0.68rem', fontWeight: 700, color: '#3b82f6' }}>HOMBRE →</div>
+      {/* Pyramid Column Headers */}
+      <div style={{ display: 'flex', alignItems: 'center', marginBottom: 6, padding: '0 4px' }}>
+        <div style={{ flex: 1, textAlign: 'right', fontSize: '0.68rem', fontWeight: 800, color: '#ec4899', letterSpacing: '0.5px' }}>← MUJERES</div>
+        <div style={{ width: 54, textAlign: 'center', fontSize: '0.64rem', color: '#94a3b8', fontWeight: 700 }}>EDAD</div>
+        <div style={{ flex: 1, textAlign: 'left', fontSize: '0.68rem', fontWeight: 800, color: '#3b82f6', letterSpacing: '0.5px' }}>HOMBRES →</div>
       </div>
 
+      {/* Symmetrical Pyramid Bars */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
         {[...data].reverse().map(d => {
-          const wM = Math.round((d.mujeres / maxVal) * BAR_MAX);
-          const wH = Math.round((d.hombres / maxVal) * BAR_MAX);
-          const pctM = total ? (d.mujeres / total * 100).toFixed(1) : '0';
-          const pctH = total ? (d.hombres / total * 100).toFixed(1) : '0';
+          const pctM = maxVal ? (d.mujeres / maxVal * 100) : 0;
+          const pctH = maxVal ? (d.hombres / maxVal * 100) : 0;
+          const totalGroup = d.mujeres + d.hombres;
+          const pctTotalGroup = stats.total ? (totalGroup / stats.total * 100).toFixed(1) : '0';
+
           return (
-            <div key={d.label} style={{ display: 'flex', alignItems: 'center', marginBottom: 2 }}
-              title={`${d.label} años | Mujeres: ${d.mujeres.toLocaleString('es-CL')} (${pctM}%) | Hombres: ${d.hombres.toLocaleString('es-CL')} (${pctH}%)`}>
-              {/* Mujer bar RTL */}
-              <div style={{ width: BAR_MAX, display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 3 }}>
-                {d.mujeres > 0 && <span style={{ fontSize: '0.6rem', color: '#94a3b8' }}>{d.mujeres.toLocaleString('es-CL')}</span>}
-                <div style={{ width: wM, height: 20, borderRadius: '4px 0 0 4px', background: 'linear-gradient(90deg, #fbcfe8, #ec4899)' }} />
+            <div key={d.label} style={{ display: 'flex', alignItems: 'center', margin: '2px 0' }}
+              title={`${d.label} años | Mujeres: ${d.mujeres.toLocaleString('es-CL')} | Hombres: ${d.hombres.toLocaleString('es-CL')} | Total: ${totalGroup.toLocaleString('es-CL')} (${pctTotalGroup}%)`}>
+              
+              {/* Women Bar (Right-to-Left) */}
+              <div style={{ flex: 1, display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 6 }}>
+                {d.mujeres > 0 && (
+                  <span style={{ fontSize: '0.63rem', color: '#64748b', fontWeight: 600 }}>
+                    {d.mujeres.toLocaleString('es-CL')}
+                  </span>
+                )}
+                <div style={{ width: `${pctM}%`, height: 20, borderRadius: '4px 0 0 4px', background: 'linear-gradient(90deg, #fbcfe8, #ec4899)', transition: 'width 0.3s' }} />
               </div>
-              <div style={{ width: LABEL_W, textAlign: 'center', fontSize: '0.68rem', fontWeight: 700, color: '#475569', flexShrink: 0 }}>{d.label}</div>
-              {/* Hombre bar LTR */}
-              <div style={{ width: BAR_MAX, display: 'flex', alignItems: 'center', gap: 3 }}>
-                <div style={{ width: wH, height: 20, borderRadius: '0 4px 4px 0', background: 'linear-gradient(90deg, #93c5fd, #3b82f6)' }} />
-                {d.hombres > 0 && <span style={{ fontSize: '0.6rem', color: '#94a3b8' }}>{d.hombres.toLocaleString('es-CL')}</span>}
+
+              {/* Age Label */}
+              <div style={{ width: 54, textAlign: 'center', fontSize: '0.72rem', fontWeight: 800, color: '#334155', flexShrink: 0 }}>
+                {d.label}
+              </div>
+
+              {/* Men Bar (Left-to-Right) */}
+              <div style={{ flex: 1, display: 'flex', justifyContent: 'flex-start', alignItems: 'center', gap: 6 }}>
+                <div style={{ width: `${pctH}%`, height: 20, borderRadius: '0 4px 4px 0', background: 'linear-gradient(90deg, #93c5fd, #3b82f6)', transition: 'width 0.3s' }} />
+                {d.hombres > 0 && (
+                  <span style={{ fontSize: '0.63rem', color: '#64748b', fontWeight: 600 }}>
+                    {d.hombres.toLocaleString('es-CL')}
+                  </span>
+                )}
               </div>
             </div>
           );
@@ -142,6 +195,7 @@ function Piramide({ records }) {
     </div>
   );
 }
+
 
 /* ── Insights Estructura Etaria (Fila 1 - Derecha) ── */
 function DemographicInsights({ records }) {
