@@ -130,66 +130,25 @@ async function run() {
     const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
     console.log(`      ✓ Consulta ejecutada en ${elapsed}s. Filas: ${result.length.toLocaleString('es-CL')}`);
 
-    console.log('\n[3/4] Procesando registros...');
+    console.log('\n[3/4] Procesando registros y compactando...');
     const records = result.map(row => {
       const nombreProf = [row.NOMBRES, row.APELLIDO_PAT, row.APELLIDO_MAT].filter(Boolean).join(' ').trim();
-      return {
-        accion_a_tomar: row.ACCION_A_TOMAR || '',
-        actividad: row.ACTIVIDAD || '',
-        agrupacion_1: row.AGRUPACION_1 || '',
-        agrupacion_2: row.AGRUPACION_2 || '',
-        agrupacion_3: row.AGRUPACION_3 || '',
-        profesional_nombre: nombreProf,
-        apellido_pat: row.APELLIDO_PAT || '',
-        apellido_mat: row.APELLIDO_MAT || '',
-        nombres: row.NOMBRES || '',
-        especialidad: row.ESPECIALIDAD || '',
-        subespecialidad: row.SUBESPECIALIDAD || '',
-        policlinico: row.POLICLINICO || '',
-        auge_1: row.AUGE_1 || '',
-        auge_2: row.AUGE_2 || '',
-        auge_3: row.AUGE_3 || '',
-        cantidad_diag: row.CANTIDAD_DIAG || 0,
-        cantidad_prest: row.CANTIDAD_PREST || 0,
-        codigo_diag_1: row.CODIGO_DIAG_1 || '',
-        codigo_prest_1: row.CODIGO_PREST_1 || '',
-        cta_cte: row.CTA_CTE || '',
-        diagnostico_ic: row.DIAGNOSTICO_IC || '',
-        diagnostico_1: row.DIAGNOSTICO_1 || '',
-        diagnostico_2: row.DIAGNOSTICO_2 || '',
-        diagnostico_3: row.DIAGNOSTICO_3 || '',
-        edad: row.EDAD || null,
-        estab_origen_ic: row.ESTAB_ORIGEN_IC || '',
-        estado_atencion: row.ESTADO_ATENCION || '',
-        estado_auge: row.ESTADO_AUGE || '',
-        estado_hora: row.ESTADO_HORA || '',
-        fecha_ic: row.FECHA_IC || null,
-        fecha_nac: row.FECHA_NAC || null,
-        grupo_diag: row.GRUPO_DIAG || '',
-        hora_generada: row.HORA_GENERADA || null,
-        ic_asoc_hora: row.IC_ASOC_HORA || '',
-        prestacion_1: row.PRESTACION_1 || '',
-        prestacion_2: row.PRESTACION_2 || '',
-        prestacion_3: row.PRESTACION_3 || '',
-        prevision: row.PREVISION || '',
-        problema_salud: row.PROBLEMA_SALUD || '',
-        sexo: row.SEXO || '',
-        tipo_consulta: row.TIPO_CONSULTA || '',
-        fecha_atencion: row.FECHA_ATENCION || null,
-        procedencia: row.PROCEDENCIA || '',
-        pertinencia: row.PERTINENCIA || '',
-        tiempo_establecido_pertinencia: row.TIEMPO_ESTABLECIDO_PERTINENCIA || '',
-        grupo_actividad: row.GRUPO_ACTIVIDAD || '',
-        nacionalidad: row.NACIONALIDAD || '',
-        pueblo_originario: row.PUEBLO_ORIGINARIO || '',
-        hip_diagnostica: row.HIP_DIAGNOSTICA || '',
-        tipo_atencion_programada: row.TIPO_ATENCION_PROGRAMADA || '',
-        tipo_atencion_realizada: row.TIPO_ATENCION_REALIZADA || '',
-        contrareferir_establecimiento: row.CONTRAREFERIR_ESTABLECIMIENTO || '',
-        contrareferir: row.CONTRAREFERIR || '',
-        videoconsulta: row.VIDEOCONSULTA || '',
-        sobrecupo: row.SOBRECUPO || ''
-      };
+      const obj = {};
+      if (row.ESPECIALIDAD) obj.especialidad = row.ESPECIALIDAD;
+      if (nombreProf) obj.profesional_nombre = nombreProf;
+      if (row.POLICLINICO) obj.policlinico = row.POLICLINICO;
+      if (row.TIPO_CONSULTA) obj.tipo_consulta = row.TIPO_CONSULTA;
+      if (row.DIAGNOSTICO_1) obj.diagnostico_1 = row.DIAGNOSTICO_1;
+      if (row.PRESTACION_1) obj.prestacion_1 = row.PRESTACION_1;
+      if (row.ESTADO_ATENCION) obj.estado_atencion = row.ESTADO_ATENCION;
+      if (row.ESTADO_HORA) obj.estado_hora = row.ESTADO_HORA;
+      if (row.FECHA_ATENCION) obj.fecha_atencion = String(row.FECHA_ATENCION).substring(0, 10);
+      if (row.PERTINENCIA) obj.pertinencia = row.PERTINENCIA;
+      if (row.SOBRECUPO) obj.sobrecupo = row.SOBRECUPO;
+      if (row.VIDEOCONSULTA) obj.videoconsulta = row.VIDEOCONSULTA;
+      if (row.AUGE_1 || row.PROBLEMA_SALUD || row.ESTADO_AUGE) obj.auge_1 = row.AUGE_1 || row.PROBLEMA_SALUD || row.ESTADO_AUGE;
+      if (row.HIP_DIAGNOSTICA) obj.hip_diagnostica = row.HIP_DIAGNOSTICA;
+      return obj;
     });
 
     console.log('\n[4/4] Guardando JSON en public/data/actividades_medicina_cached.json...');
