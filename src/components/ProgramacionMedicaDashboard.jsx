@@ -243,8 +243,8 @@ function EspecialidadRow({ esp, filterRR }) {
 }
 
 // ─── MAIN DASHBOARD ──────────────────────────────────────────────────────────
-export default function ProgramacionMedicaDashboard({ onBack }) {
-  const [searchEsp, setSearchEsp] = useState('');
+export default function ProgramacionMedicaDashboard({ onBack, initialSearch }) {
+  const [searchEsp, setSearchEsp] = useState(initialSearch || '');
   const [filterRR, setFilterRR] = useState('todos');
   const [filterProceso, setFilterProceso] = useState('todos');
 

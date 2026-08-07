@@ -104,7 +104,7 @@ function MultiSelect({ label, options, selected, onChange, color = '#6366f1' }) 
   );
 }
 
-export default function ListaEsperaDashboard({ onBack, tipo }) {
+export default function ListaEsperaDashboard({ onBack, tipo, initialTab }) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -113,8 +113,14 @@ export default function ListaEsperaDashboard({ onBack, tipo }) {
   const [origenFiltro, setOrigenFiltro] = useState([]);
   const [tramoFiltro, setTramoFiltro] = useState([]);
   const [searchEsp, setSearchEsp] = useState('');
-  const [activeTab, setActiveTab] = useState('resumen');
+  const [activeTab, setActiveTab] = useState(initialTab || 'resumen');
   const [selectedEspecialidad, setSelectedEspecialidad] = useState(null);
+
+  useEffect(() => {
+    if (initialTab) {
+      setActiveTab(initialTab);
+    }
+  }, [initialTab]);
 
   const isOdonto = tipo === 'Odontológica';
   const accentColor = isOdonto ? '#0d9488' : '#6366f1';

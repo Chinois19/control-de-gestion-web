@@ -182,8 +182,8 @@ function EspecialidadRow({ esp, filterRR, color }) {
   );
 }
 
-export default function ProgramacionOdontologiaDashboard({ onBack }) {
-  const [searchEsp, setSearchEsp] = useState('');
+export default function ProgramacionOdontologiaDashboard({ onBack, initialSearch }) {
+  const [searchEsp, setSearchEsp] = useState(initialSearch || '');
   const [filterRR, setFilterRR] = useState('todos');
 
   const totalEsp = programacionOdontologia.length;

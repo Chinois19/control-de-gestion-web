@@ -231,8 +231,8 @@ function ProfesionRow({ grp, filterRR, profColor }) {
   );
 }
 
-export default function ProgramacionProfesionalesDashboard({ onBack }) {
-  const [searchGrp, setSearchGrp] = useState('');
+export default function ProgramacionProfesionalesDashboard({ onBack, initialSearch }) {
+  const [searchGrp, setSearchGrp] = useState(initialSearch || '');
   const [filterRR, setFilterRR] = useState('todos');
 
   const totalGrupos = programacionProfesionales.filter(g => g.nombre !== 'Sin agrupación').length;

@@ -435,6 +435,69 @@ const searchIndex = [
     path: 'Indicadores de Gestión ➔ COMGES 2026',
     desc: 'Evaluación mensual de los 23 indicadores normados por el MINSAL, fichas técnicas, fórmulas de cálculo y orientaciones técnicas institucionales.',
     action: { view: 'comgest' }
+  },
+  {
+    keys: ['programacion medica', 'programacion 2026', 'medicos', 'especialidades medicas', 'rendimiento medico', 'rr', 'horas medicas', 'cardiologia', 'traumatologia', 'pediatria', 'ginecologia', 'neurologia', 'cirugia general', 'medicina interna', 'oftalmologia', 'otorrino', 'dermatologia', 'anestesia', 'urologia', 'planificacion rrhh', 'rendimiento mss'],
+    title: 'Programación Médica 2026 (Especialidades)',
+    path: 'Programación Hospital ➔ Médica',
+    desc: 'Planificación de horas contractuales, asignación de rendimiento (R.R.), actividades clínicas y volumen de producción programado.',
+    action: { view: 'programacion_medica' }
+  },
+  {
+    keys: ['programacion profesionales', 'profesionales no medicos', 'enfermeria', 'matroneria', 'kinesiologia', 'nutricion', 'tecnologia medica', 'trabajo social', 'psicologia', 'terapia ocupacional', 'fonoaudiologia', 'farmaceuticos', 'horas no medicas', 'atencion profesional'],
+    title: 'Programación Profesionales No Médicos 2026',
+    path: 'Programación Hospital ➔ Profesionales',
+    desc: 'Asignación horaria y producción evaluable para Enfermería, Matronería, Kinesiología, Nutrición, Psicología y Tecnólogos.',
+    action: { view: 'programacion_profesionales' }
+  },
+  {
+    keys: ['programacion odontologia', 'programacion dental', 'odontologos', 'salud oral', 'endodoncia', 'periodoncia', 'cirugia maxilofacial', 'ortodoncia', 'odontopediatria', 'rehabilitacion oral', 'horas odontologicas', 'rendimiento dental', 'dentista'],
+    title: 'Programación Odontológica 2026',
+    path: 'Programación Hospital ➔ Odontología',
+    desc: 'Programación de horas y rendimiento R.R. por especialidad dental (Ortodoncia, Endodoncia, Periodoncia, Cirugía Maxilofacial).',
+    action: { view: 'programacion_odontologia' }
+  },
+  {
+    keys: ['lista de espera', 'lista de espera medica', 'le medica', 'espera medica', 'dias de espera', 'mediana espera', 'espera > 365 dias', 'criticos lista espera', 'fonasa a-b-c-d', 'piramide etaria', 'ruralidad', 'demora interconsulta', 'ic'],
+    title: 'Lista de Espera — Especialidades Médicas (Resumen & Demografía)',
+    path: 'Listas de Espera ➔ Médica',
+    desc: 'Indicadores globales de demora, distribución por tramos FONASA, pirámide poblacional etaria y mapa territorial de La Araucanía.',
+    action: { view: 'lista_espera_medica', tab: 'resumen' }
+  },
+  {
+    keys: ['especialidades lista de espera', 'demanda por especialidad', 'traumatologia espera', 'oftalmologia espera', 'otorrino espera', 'cirugias en espera', 'top especialidades le', 'graficos le especialidad'],
+    title: 'Lista de Espera Médica por Especialidad',
+    path: 'Listas de Espera ➔ Médica ➔ Especialidades',
+    desc: 'Ranking y volumen acumulado de pacientes en espera según la especialidad de destino requerida.',
+    action: { view: 'lista_espera_medica', tab: 'especialidades' }
+  },
+  {
+    keys: ['diagnosticos lista de espera', 'cie10', 'patologias en espera', 'enfermedades lista espera', 'cie-10 medicas', 'diagnosticos por especialidad'],
+    title: 'Diagnósticos CIE-10 en Lista de Espera Médica',
+    path: 'Listas de Espera ➔ Médica ➔ Diagnósticos',
+    desc: 'Mapeo clínico de sospechas diagnósticas y clasificaciones CIE-10 asociadas a interconsultas en espera.',
+    action: { view: 'lista_espera_medica', tab: 'diagnosticos' }
+  },
+  {
+    keys: ['lista de espera odontologica', 'le odontologica', 'espera dental', 'interconsultas odontologicas', 'tramos espera odontologia', 'ortodoncia espera', 'endodoncia espera', 'maxilofacial espera', 'odontologia le'],
+    title: 'Lista de Espera — Especialidades Odontológicas',
+    path: 'Listas de Espera ➔ Odontología',
+    desc: 'Monitoreo de solicitudes en espera para especialidades dentales, tiempos medios de demora y perfil sociodemográfico.',
+    action: { view: 'lista_espera_odontologica', tab: 'resumen' }
+  },
+  {
+    keys: ['ley 19664', 'ley 19.664', 'metas 19664', 'formativo', 'altas odontologicas', 'urgencia ley 19664', 'cesareas', 'outliers', 'cancer y ges', 'metas medicos'],
+    title: 'Metas Sanitarias Ley 19.664 (Médicos y Odontólogos)',
+    path: 'Indicadores ➔ Ley 19.664',
+    desc: 'Monitoreo de metas formativas 2026: Altas Odontológicas, Atención en Urgencia, Tasas de Cesáreas, Estancias Outliers y Cáncer/GES.',
+    action: { view: 'ley19664' }
+  },
+  {
+    keys: ['ley 20707', 'ley 20.707', 'metas 20707', 'ueh', 'pabellon ley 20707', 'upc', 'pauta pediatrica', 'gin-obs', 'medicos y odontologos metas'],
+    title: 'Metas Sanitarias Ley 20.707 (Unidades Asistenciales)',
+    path: 'Indicadores ➔ Ley 20.707',
+    desc: 'Evaluación y seguimiento de metas clínicas por unidades: UEH, Pabellón, UPC, Pauta Pediátrica y Gineco-Obstetricia.',
+    action: { view: 'ley20707' }
   }
 ];
 
@@ -491,6 +554,8 @@ function App() {
   const [mammographyFilterNsp, setMammographyFilterNsp] = useState(false);
   const [closedAttentionInitialTab, setClosedAttentionInitialTab] = useState(null);
   const [closedAttentionInitialSubTab, setClosedAttentionInitialSubTab] = useState(null);
+  const [listaEsperaInitialTab, setListaEsperaInitialTab] = useState(null);
+  const [programacionInitialSearch, setProgramacionInitialSearch] = useState('');
   const [hoveredIdx, setHoveredIdx] = useState(null);
 
   useEffect(() => {
@@ -583,8 +648,16 @@ function App() {
     
     if (action.tab) {
       setMammographyInitialTab(action.tab);
+      setListaEsperaInitialTab(action.tab);
     } else {
       setMammographyInitialTab('summary');
+      setListaEsperaInitialTab(null);
+    }
+
+    if (action.search) {
+      setProgramacionInitialSearch(action.search);
+    } else {
+      setProgramacionInitialSearch('');
     }
     
     if (action.filterNsp) {
@@ -1114,19 +1187,19 @@ function App() {
                 <ComgesDashboard onBack={() => navigateToView('home')} />
               )}
               {activeView === 'programacion_medica' && (
-                <ProgramacionMedicaDashboard onBack={() => navigateToView('home')} />
+                <ProgramacionMedicaDashboard key={`prog-med-${programacionInitialSearch}`} initialSearch={programacionInitialSearch} onBack={() => navigateToView('home')} />
               )}
               {activeView === 'programacion_profesionales' && (
-                <ProgramacionProfesionalesDashboard onBack={() => navigateToView('home')} />
+                <ProgramacionProfesionalesDashboard key={`prog-prof-${programacionInitialSearch}`} initialSearch={programacionInitialSearch} onBack={() => navigateToView('home')} />
               )}
               {activeView === 'programacion_odontologia' && (
-                <ProgramacionOdontologiaDashboard onBack={() => navigateToView('home')} />
+                <ProgramacionOdontologiaDashboard key={`prog-odont-${programacionInitialSearch}`} initialSearch={programacionInitialSearch} onBack={() => navigateToView('home')} />
               )}
               {activeView === 'lista_espera_medica' && (
-                <ListaEsperaDashboard key="medica" tipo="Médica" onBack={() => navigateToView('home')} />
+                <ListaEsperaDashboard key={`medica-${listaEsperaInitialTab}`} tipo="Médica" initialTab={listaEsperaInitialTab} onBack={() => navigateToView('home')} />
               )}
               {activeView === 'lista_espera_odontologica' && (
-                <ListaEsperaDashboard key="odontologica" tipo="Odontológica" onBack={() => navigateToView('home')} />
+                <ListaEsperaDashboard key={`odontologica-${listaEsperaInitialTab}`} tipo="Odontológica" initialTab={listaEsperaInitialTab} onBack={() => navigateToView('home')} />
               )}
             </div>
           )}
