@@ -4,6 +4,7 @@ import {
   PieChart, Pie, Cell, Legend
 } from 'recharts';
 import { ArrowLeft, RefreshCw, AlertTriangle, Users, Clock, Stethoscope, Filter, Download } from 'lucide-react';
+import ListaEsperaAnalysis from './ListaEsperaAnalysis';
 
 const COLORS_TRAMO = {
   '0-90 días':    '#10b981',
@@ -270,7 +271,7 @@ export default function ListaEsperaDashboard({ onBack }) {
 
       {/* Tabs */}
       <div style={{ display: 'flex', gap: 4, marginBottom: 20, background: '#f1f5f9', borderRadius: 12, padding: 4, flexWrap: 'wrap' }}>
-        {[['resumen','Resumen'],['especialidades','Por Especialidad'],['diagnosticos','Diagnósticos por Especialidad'],['origen','Por Establecimiento'],['tramos','Tramos de Espera']].map(([id, label]) => (
+        {[['resumen','Resumen'],['especialidades','Por Especialidad'],['diagnosticos','Diagnósticos por Especialidad'],['analisis_volumen','Análisis de Volumen'],['origen','Por Establecimiento'],['tramos','Tramos de Espera']].map(([id, label]) => (
           <button key={id} onClick={() => setActiveTab(id)} style={{
             padding: '8px 20px', borderRadius: 9, border: 'none', cursor: 'pointer',
             fontWeight: 700, fontSize: '0.82rem',
@@ -419,6 +420,10 @@ export default function ListaEsperaDashboard({ onBack }) {
             </>
           )}
         </div>
+      )}
+      {/* Tab: Análisis de Volumen */}
+      {activeTab === 'analisis_volumen' && (
+        <ListaEsperaAnalysis records={records} />
       )}
 
       {/* Tab: Origen */}
