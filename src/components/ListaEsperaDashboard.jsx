@@ -5,6 +5,7 @@ import {
 } from 'recharts';
 import { ArrowLeft, RefreshCw, AlertTriangle, Users, Clock, Stethoscope, Filter, Download, ChevronDown, TrendingUp, AlertOctagon, MapPin, Activity } from 'lucide-react';
 import ListaEsperaAnalysis from './ListaEsperaAnalysis';
+import ListaEsperaPoblacion from './ListaEsperaPoblacion';
 
 const COLORS_TRAMO = {
   '0-90 días':    '#10b981',
@@ -453,6 +454,12 @@ export default function ListaEsperaDashboard({ onBack, tipo }) {
           </div>
         </div>
       )}
+
+      {/* Pirámide poblacional + Mapa — dentro del tab resumen */}
+      {activeTab === 'resumen' && (
+        <ListaEsperaPoblacion records={records} />
+      )}
+
 
       {/* Tab: Especialidades — Stacked Bar Chart con tramos */}
       {activeTab === 'especialidades' && (
