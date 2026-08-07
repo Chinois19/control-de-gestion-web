@@ -209,11 +209,22 @@ export default function ListaEsperaDashboard({ onBack, tipo }) {
 
   const byDiagnostico = useMemo(() => {
     if (!selectedEspecialidad) return [];
+    const espRecs = records.filter(r => r.especialidad_destino === selectedEspecialidad);
+    const espTotal = espRecs.length;
     const m = {};
-    records.filter(r => r.especialidad_destino === selectedEspecialidad)
-      .forEach(r => { const d = r.nom_diagnostico || 'Sin diagnóstico'; m[d] = (m[d] || 0) + 1; });
-    return Object.entries(m).sort((a,b) => b[1]-a[1]).slice(0,20)
-      .map(([name, value]) => ({ name: name.length > 50 ? name.substring(0,48)+'…' : name, value, fullName: name }));
+    espRecs.forEach(r => {
+      const d = r.nom_diagnostico || 'Sin diagnóstico';
+      if (!m[d]) { m[d] = { name: d, total: 0 }; TRAMOS_ORDER.forEach(t => { m[d][t] = 0; }); }
+      m[d].total++;
+      if (r.tramo_espera && m[d][r.tramo_espera] !== undefined) m[d][r.tramo_espera]++;
+    });
+    return Object.values(m)
+      .sort((a, b) => b.total - a.total).slice(0, 20)
+      .map(d => ({
+        ...d,
+        pct: espTotal ? (d.total / espTotal * 100).toFixed(1) : '0.0',
+        shortName: d.name.length > 45 ? d.name.substring(0, 43) + '…' : d.name,
+      }));
   }, [records, selectedEspecialidad]);
 
   const insights = useMemo(() => {
@@ -514,26 +525,42 @@ export default function ListaEsperaDashboard({ onBack, tipo }) {
           ) : byDiagnostico.length === 0 ? (
             <p style={{ color:'#94a3b8', textAlign:'center', padding:'40px 0' }}>No hay diagnósticos registrados para esta especialidad.</p>
           ) : (
-            <>
-              <ResponsiveContainer width="100%" height={Math.max(400, byDiagnostico.length * 28)}>
-                <BarChart data={byDiagnostico.map(d => ({ ...d, pct: records.filter(r=>r.especialidad_destino===selectedEspecialidad).length ? Math.round(d.value/records.filter(r=>r.especialidad_destino===selectedEspecialidad).length*100) : 0 }))} layout="vertical" margin={{ left:10, right:100 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" horizontal={false} />
-                  <XAxis type="number" tick={{ fontSize:11, fill:'#94a3b8' }} />
-                  <YAxis type="category" dataKey="name" width={320} tick={{ fontSize:10, fill:'#475569' }} />
-                  <Tooltip content={({ active, payload }) => {
-                    if (!active || !payload?.length) return null;
-                    const d = payload[0];
-                    return <div style={{ background:'white', border:'1px solid #e2e8f0', borderRadius:10, padding:'10px 14px', boxShadow:'0 4px 20px rgba(0,0,0,0.1)', maxWidth:320 }}>
-                      <p style={{ fontWeight:700, fontSize:'0.82rem', color:'#1e293b', marginBottom:4 }}>{d.payload.fullName}</p>
-                      <p style={{ fontSize:'0.78rem', color:'#0ea5e9', margin:0 }}>Pacientes: <b>{d.value.toLocaleString('es-CL')}</b></p>
-                      <p style={{ fontSize:'0.78rem', color:'#8b5cf6', margin:0 }}>Del total esp.: <b>{d.payload.pct}%</b></p>
-                    </div>;
-                  }} />
-                  <Bar dataKey="value" name="Pacientes" fill="#0ea5e9" radius={[0,6,6,0]}
-                    label={{ position:'right', fontSize:10, fill:'#475569', formatter:(v,e) => `${v.toLocaleString('es-CL')} (${e?.payload?.pct||0}%)` }} />
-                </BarChart>
-              </ResponsiveContainer>
-            </>
+            <div style={{ overflowY: 'auto', maxHeight: 620 }}>
+              {byDiagnostico.map((d, i) => {
+                const maxVal = byDiagnostico[0]?.total || 1;
+                const BAR_W = 500;
+                const totalW = Math.round((d.total / maxVal) * BAR_W);
+                const tramos = TRAMOS_ORDER.filter(t => t !== 'Sin fecha');
+                return (
+                  <div key={d.name}
+                    style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '4px 0',
+                      borderRadius: 8, transition: 'background 0.15s', cursor: 'default' }}
+                    onMouseEnter={e => e.currentTarget.style.background = '#f8fafc'}
+                    onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
+                    <div style={{ width: 280, textAlign: 'right', fontSize: '0.76rem', fontWeight: 600, color: '#475569',
+                      whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', flexShrink: 0 }}>
+                      {d.shortName}
+                    </div>
+                    <div style={{ flex: 1, height: 24, display: 'flex', borderRadius: 4, overflow: 'hidden', background: '#f1f5f9' }}>
+                      {tramos.map(t => {
+                        const segW = d.total > 0 ? (d[t] / d.total) * totalW : 0;
+                        if (segW < 1) return null;
+                        return (
+                          <div key={t} title={`${t}: ${d[t].toLocaleString('es-CL')} pac.`}
+                            style={{ width: segW, background: COLORS_TRAMO[t], height: '100%', transition: 'opacity 0.2s' }}
+                            onMouseEnter={e => e.currentTarget.style.opacity = '0.75'}
+                            onMouseLeave={e => e.currentTarget.style.opacity = '1'} />
+                        );
+                      })}
+                    </div>
+                    <div style={{ width: 100, fontSize: '0.76rem', fontWeight: 700, color: '#1e293b', flexShrink: 0 }}>
+                      {d.total.toLocaleString('es-CL')}
+                      <span style={{ color: '#0ea5e9', marginLeft: 4, fontWeight: 800 }}>({d.pct}%)</span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           )}
         </div>
       )}
