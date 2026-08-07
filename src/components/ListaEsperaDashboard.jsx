@@ -201,10 +201,22 @@ export default function ListaEsperaDashboard({ onBack, tipo }) {
   }, [records]);
 
   const byOrigen = useMemo(() => {
+    if (!records.length) return [];
+    const total = records.length;
     const m = {};
-    records.forEach(r => { const o = r.establecimiento_origen || 'Sin dato'; m[o] = (m[o] || 0) + 1; });
-    return Object.entries(m).sort((a, b) => b[1] - a[1]).slice(0, 15)
-      .map(([name, value]) => ({ name, value }));
+    records.forEach(r => {
+      const o = r.establecimiento_origen || 'Sin dato';
+      if (!m[o]) { m[o] = { name: o, total: 0 }; TRAMOS_ORDER.forEach(t => { m[o][t] = 0; }); }
+      m[o].total++;
+      if (r.tramo_espera && m[o][r.tramo_espera] !== undefined) m[o][r.tramo_espera]++;
+    });
+    return Object.values(m)
+      .sort((a, b) => b.total - a.total).slice(0, 15)
+      .map(d => ({
+        ...d,
+        pct: total ? (d.total / total * 100).toFixed(1) : '0.0',
+        shortName: d.name.length > 38 ? d.name.substring(0, 36) + '…' : d.name,
+      }));
   }, [records]);
 
   const byDiagnostico = useMemo(() => {
@@ -578,16 +590,56 @@ export default function ListaEsperaDashboard({ onBack, tipo }) {
       {/* Tab: Origen */}
       {activeTab === 'origen' && (
         <div style={{ background: 'white', borderRadius: 16, padding: 24, boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
-          <h3 style={{ fontWeight: 800, color: '#1e293b', marginBottom: 20, fontSize: '1rem' }}>Top 15 Establecimientos de Origen</h3>
-          <ResponsiveContainer width="100%" height={480}>
-            <BarChart data={byOrigen} layout="vertical" margin={{ left: 10, right: 60 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" horizontal={false} />
-              <XAxis type="number" tick={{ fontSize: 11, fill: '#94a3b8' }} />
-              <YAxis type="category" dataKey="name" width={240} tick={{ fontSize: 11, fill: '#475569' }} />
-              <Tooltip content={<CustomTooltipBar />} />
-              <Bar dataKey="value" name="Pacientes" fill="#0ea5e9" radius={[0, 6, 6, 0]} label={{ position: 'right', fontSize: 11, fill: '#475569', formatter: v => v.toLocaleString('es-CL') }} />
-            </BarChart>
-          </ResponsiveContainer>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, flexWrap: 'wrap', gap: 10 }}>
+            <div>
+              <h3 style={{ fontWeight: 800, color: '#1e293b', fontSize: '1rem', margin: 0 }}>Top 15 Establecimientos de Origen</h3>
+              <p style={{ fontSize: '0.78rem', color: '#94a3b8', margin: '2px 0 0' }}>Barra segmentada por tramo de espera · % respecto del total de derivaciones</p>
+            </div>
+            <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
+              {TRAMOS_ORDER.filter(t => t !== 'Sin fecha').map(t => (
+                <div key={t} style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                  <div style={{ width: 10, height: 10, borderRadius: 3, background: COLORS_TRAMO[t] }} />
+                  <span style={{ fontSize: '0.72rem', color: '#64748b', fontWeight: 600 }}>{t}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div style={{ overflowY: 'auto', maxHeight: 620 }}>
+            {byOrigen.map((d, i) => {
+              const maxVal = byOrigen[0]?.total || 1;
+              const BAR_W = 520;
+              const totalW = Math.round((d.total / maxVal) * BAR_W);
+              const tramos = TRAMOS_ORDER.filter(t => t !== 'Sin fecha');
+              return (
+                <div key={d.name}
+                  style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '5px 0',
+                    borderRadius: 8, transition: 'background 0.15s' }}
+                  onMouseEnter={e => e.currentTarget.style.background = '#f8fafc'}
+                  onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
+                  <div style={{ width: 220, textAlign: 'right', fontSize: '0.77rem', fontWeight: 600, color: '#475569',
+                    whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', flexShrink: 0 }}>
+                    {d.shortName}
+                  </div>
+                  <div style={{ flex: 1, height: 26, display: 'flex', borderRadius: 5, overflow: 'hidden', background: '#f1f5f9' }}>
+                    {tramos.map(t => {
+                      const segW = d.total > 0 ? (d[t] / d.total) * totalW : 0;
+                      if (segW < 1) return null;
+                      return (
+                        <div key={t} title={`${t}: ${d[t].toLocaleString('es-CL')} pac.`}
+                          style={{ width: segW, background: COLORS_TRAMO[t], height: '100%', transition: 'opacity 0.2s' }}
+                          onMouseEnter={e => e.currentTarget.style.opacity = '0.75'}
+                          onMouseLeave={e => e.currentTarget.style.opacity = '1'} />
+                      );
+                    })}
+                  </div>
+                  <div style={{ width: 120, fontSize: '0.77rem', fontWeight: 700, color: '#1e293b', flexShrink: 0 }}>
+                    {d.total.toLocaleString('es-CL')}
+                    <span style={{ color: '#0ea5e9', marginLeft: 4, fontWeight: 800 }}>({d.pct}%)</span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         </div>
       )}
 
