@@ -518,23 +518,174 @@ function MapaAraucania({ records }) {
   );
 }
 
-/* ── Main export: 2 Filas ── */
-export default function ListaEsperaPoblacion({ records }) {
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+/* ── Componente Distribución por Previsión e Ingresos FONASA ── */
+function PrevisionInsights({ records }) {
+  const stats = useMemo(() => {
+    if (!records.length) return null;
+    const total = records.length;
 
-      {/* FILA 1: Estructura Poblacional (Pirámide + Insights Demográficos a la derecha) */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: 20, alignItems: 'stretch' }}>
-        <Piramide records={records} />
-        <DemographicInsights records={records} />
+    const counts = {
+      'FONASA - B': 0,
+      'FONASA - A': 0,
+      'FONASA - C': 0,
+      'FONASA - D': 0,
+      'OTRO/PRIVADO': 0
+    };
+
+    records.forEach(r => {
+      const prev = (r.prevision || '').toUpperCase().trim();
+      if (counts[prev] !== undefined) {
+        counts[prev]++;
+      } else if (prev.includes('FONASA')) {
+        if (prev.includes('A')) counts['FONASA - A']++;
+        else if (prev.includes('B')) counts['FONASA - B']++;
+        else if (prev.includes('C')) counts['FONASA - C']++;
+        else if (prev.includes('D')) counts['FONASA - D']++;
+      } else {
+        counts['OTRO/PRIVADO']++;
+      }
+    });
+
+    const fA = counts['FONASA - A'];
+    const fB = counts['FONASA - B'];
+    const fC = counts['FONASA - C'];
+    const fD = counts['FONASA - D'];
+    const otro = counts['OTRO/PRIVADO'];
+
+    const vulnCount = fA + fB;
+    const pctVuln = (vulnCount / total * 100).toFixed(1);
+    const pctCZero = ((fC + fD) / total * 100).toFixed(1);
+
+    return {
+      total,
+      fA, pctA: (fA / total * 100).toFixed(1),
+      fB, pctB: (fB / total * 100).toFixed(1),
+      fC, pctC: (fC / total * 100).toFixed(1),
+      fD, pctD: (fD / total * 100).toFixed(1),
+      otro, pctOtro: (otro / total * 100).toFixed(1),
+      vulnCount, pctVuln, pctCZero
+    };
+  }, [records]);
+
+  if (!stats) return null;
+
+  const tramoItems = [
+    { label: 'FONASA B', name: 'Ingresos ≤ 1 Sueldo Mínimo', count: stats.fB, pct: stats.pctB, color: '#2563eb', bg: '#dbeafe' },
+    { label: 'FONASA A', name: 'Carenciados o Indigentes', count: stats.fA, pct: stats.pctA, color: '#dc2626', bg: '#fee2e2' },
+    { label: 'FONASA C', name: 'Ingresos 1 - 1.46 IMM', count: stats.fC, pct: stats.pctC, color: '#059669', bg: '#d1fae5' },
+    { label: 'FONASA D', name: 'Ingresos > 1.46 IMM', count: stats.fD, pct: stats.pctD, color: '#7c3aed', bg: '#ede9fe' },
+  ];
+
+  return (
+    <div style={{ background: 'white', borderRadius: 20, padding: '20px', boxShadow: '0 4px 24px rgba(0,0,0,0.07)', border: '1px solid rgba(0,0,0,0.05)', display: 'flex', flexDirection: 'column', gap: 14 }}>
+      <div>
+        <h3 style={{ fontWeight: 800, color: '#1e293b', fontSize: '0.95rem', margin: 0 }}>Distribución por Tramo FONASA e Estructura de Ingresos</h3>
+        <p style={{ fontSize: '0.72rem', color: '#94a3b8', margin: '2px 0 0' }}>Estratificación socioeconómica imponible de los pacientes en espera</p>
       </div>
 
-      {/* FILA 2: Geografía y Ruralidad (Insights Ruralidad a la izquierda + Mapa a la derecha) */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.2fr', gap: 20, alignItems: 'stretch' }}>
-        <GeographicInsights records={records} />
-        <MapaAraucania records={records} />
+      {/* Grid de 4 Tramos FONASA */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 10 }}>
+        {tramoItems.map(item => (
+          <div key={item.label} style={{ background: '#f8fafc', borderRadius: 14, padding: '10px 12px', border: `1px solid #f1f5f9`, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+              <span style={{ fontSize: '0.68rem', fontWeight: 900, color: item.color, background: item.bg, padding: '2px 6px', borderRadius: 6 }}>
+                {item.label}
+              </span>
+              <span style={{ fontSize: '0.72rem', fontWeight: 800, color: '#1e293b' }}>
+                {item.pct}%
+              </span>
+            </div>
+            <div>
+              <div style={{ fontSize: '1.15rem', fontWeight: 800, color: '#0f172a' }}>
+                {item.count.toLocaleString('es-CL')} <span style={{ fontSize: '0.68rem', fontWeight: 600, color: '#64748b' }}>pac.</span>
+              </div>
+              <div style={{ fontSize: '0.66rem', fontWeight: 600, color: '#64748b', marginTop: 1 }}>{item.name}</div>
+            </div>
+            {/* Visual Bar Indicator */}
+            <div style={{ width: '100%', height: 4, borderRadius: 2, background: '#e2e8f0', marginTop: 6, overflow: 'hidden' }}>
+              <div style={{ width: `${item.pct}%`, height: '100%', background: item.color, borderRadius: 2 }} />
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* 2 Insights de Estructura de Ingresos */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+        <div style={{ background: 'linear-gradient(135deg, #eff6ff 0%, #fff 100%)', borderRadius: 12, padding: '10px 12px', borderLeft: '4px solid #2563eb', borderTop: '1px solid #dbeafe', borderRight: '1px solid #dbeafe', borderBottom: '1px solid #dbeafe' }}>
+          <div style={{ fontSize: '0.74rem', fontWeight: 800, color: '#1e40af', marginBottom: 2 }}>
+            🛡️ Alta Vulnerabilidad Socioeconómica ({stats.pctVuln}%)
+          </div>
+          <p style={{ fontSize: '0.7rem', color: '#475569', margin: 0, lineHeight: 1.35 }}>
+            El <b>{stats.pctVuln}%</b> de los pacientes pertenece a tramos <b>A y B</b> ({stats.vulnCount.toLocaleString('es-CL')} pers.), reflejando dependencia crítica del sistema público por bajos ingresos.
+          </p>
+        </div>
+
+        <div style={{ background: 'linear-gradient(135deg, #faf5ff 0%, #fff 100%)', borderRadius: 12, padding: '10px 12px', borderLeft: '4px solid #7c3aed', borderTop: '1px solid #ede9fe', borderRight: '1px solid #ede9fe', borderBottom: '1px solid #ede9fe' }}>
+          <div style={{ fontSize: '0.74rem', fontWeight: 800, color: '#5b21b6', marginBottom: 2 }}>
+            ✨ Retención por "Copago Cero" ({stats.pctCZero}%)
+          </div>
+          <p style={{ fontSize: '0.7rem', color: '#475569', margin: 0, lineHeight: 1.35 }}>
+            Tramos <b>C y D</b> representan el <b>{stats.pctCZero}%</b>. La gratuidad en atención secundaria elimina la barrera financiera y consolida la atención especializada pública.
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ── Main export: Estructura por Secciones y Filas ── */
+export default function ListaEsperaPoblacion({ records }) {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 28 }}>
+
+      {/* SECCIÓN 1: Caracterización Sociodemográfica & Estructura Socioeconómica */}
+      <div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14, background: 'linear-gradient(90deg, #f8fafc 0%, #ffffff 100%)', padding: '10px 16px', borderRadius: 14, borderLeft: '4px solid #6366f1', border: '1px solid #e2e8f0', borderLeftWidth: 4 }}>
+          <div style={{ width: 28, height: 28, borderRadius: 8, background: '#e0e7ff', color: '#4338ca', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: '0.85rem' }}>👥</div>
+          <div>
+            <h2 style={{ fontSize: '1rem', fontWeight: 900, color: '#0f172a', margin: 0, letterSpacing: '-0.2px' }}>
+              Caracterización Sociodemográfica de la Población en Espera
+            </h2>
+            <p style={{ fontSize: '0.72rem', color: '#64748b', margin: '1px 0 0', fontWeight: 500 }}>
+              Estructura etaria quinquenal, distribución por sexo e ingresos impositivos según tramos FONASA
+            </p>
+          </div>
+        </div>
+
+        {/* Fila 1A: Pirámide + Insights Etarios */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: 20, alignItems: 'stretch', marginBottom: 20 }}>
+          <Piramide records={records} />
+          <DemographicInsights records={records} />
+        </div>
+
+        {/* Fila 1B: Estratificación Previsión & Ingresos FONASA */}
+        <div>
+          <PrevisionInsights records={records} />
+        </div>
+      </div>
+
+      {/* SECCIÓN 2: Distribución Territorial y Accesibilidad Rural */}
+      <div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14, background: 'linear-gradient(90deg, #f8fafc 0%, #ffffff 100%)', padding: '10px 16px', borderRadius: 14, borderLeft: '4px solid #10b981', border: '1px solid #e2e8f0', borderLeftWidth: 4 }}>
+          <div style={{ width: 28, height: 28, borderRadius: 8, background: '#d1fae5', color: '#047857', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: '0.85rem' }}>🗺️</div>
+          <div>
+            <h2 style={{ fontSize: '1rem', fontWeight: 900, color: '#0f172a', margin: 0, letterSpacing: '-0.2px' }}>
+              Distribución Territorial y Accesibilidad Rural
+            </h2>
+            <p style={{ fontSize: '0.72rem', color: '#64748b', margin: '1px 0 0', fontWeight: 500 }}>
+              Procedencia geográfica por comuna de la IX Región de La Araucanía y brechas de ruralidad
+            </p>
+          </div>
+        </div>
+
+        {/* Fila 2: Insights Ruralidad + Mapa */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.2fr', gap: 20, alignItems: 'stretch' }}>
+          <GeographicInsights records={records} />
+          <MapaAraucania records={records} />
+        </div>
       </div>
 
     </div>
   );
 }
+

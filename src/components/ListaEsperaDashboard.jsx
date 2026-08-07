@@ -3,7 +3,7 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, Legend
 } from 'recharts';
-import { ArrowLeft, RefreshCw, AlertTriangle, Users, Clock, Stethoscope, Filter, Download, ChevronDown, TrendingUp, AlertOctagon, MapPin, Activity } from 'lucide-react';
+import { ArrowLeft, RefreshCw, AlertTriangle, Users, Clock, Stethoscope, Filter, Download, ChevronDown, TrendingUp, AlertOctagon, MapPin, Activity, Layers, BarChart2, FileText, PieChart as PieIcon } from 'lucide-react';
 import ListaEsperaAnalysis from './ListaEsperaAnalysis';
 import ListaEsperaPoblacion from './ListaEsperaPoblacion';
 
@@ -379,18 +379,44 @@ export default function ListaEsperaDashboard({ onBack, tipo }) {
         </div>
       )}
 
-      {/* Tabs */}
-      <div style={{ display: 'flex', gap: 4, marginBottom: 20, background: '#f1f5f9', borderRadius: 12, padding: 4, flexWrap: 'wrap' }}>
-        {[['resumen','Resumen'],['especialidades','Por Especialidad'],['diagnosticos','Diagnósticos por Especialidad'],['analisis_volumen','Análisis de Volumen'],['origen','Por Establecimiento'],['tramos','Tramos de Espera']].map(([id, label]) => (
-          <button key={id} onClick={() => setActiveTab(id)} style={{
-            padding: '8px 20px', borderRadius: 9, border: 'none', cursor: 'pointer',
-            fontWeight: 700, fontSize: '0.82rem',
-            background: activeTab === id ? 'white' : 'transparent',
-            color: activeTab === id ? '#1e293b' : '#64748b',
-            boxShadow: activeTab === id ? '0 2px 8px rgba(0,0,0,0.08)' : 'none',
-            transition: 'all 0.2s'
-          }}>{label}</button>
-        ))}
+      {/* Selector Prominente de Vistas / Pestañas de Navegación */}
+      <div style={{ marginBottom: 24, background: '#0f172a', borderRadius: 16, padding: '8px 10px', boxShadow: '0 8px 30px rgba(15,23,42,0.18)', border: '1px solid rgba(255,255,255,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, paddingLeft: 8 }}>
+          <Layers size={17} color="#818cf8" />
+          <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.6px' }}>
+            Seleccionar Vista de Análisis:
+          </span>
+        </div>
+        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+          {[
+            ['resumen', 'Resumen General', <PieIcon size={14} />],
+            ['especialidades', 'Por Especialidad', <BarChart2 size={14} />],
+            ['diagnosticos', 'Diagnósticos por Especialidad', <FileText size={14} />],
+            ['analisis_volumen', 'Análisis de Volumen', <TrendingUp size={14} />],
+            ['origen', 'Por Establecimiento', <MapPin size={14} />],
+            ['tramos', 'Tramos de Espera', <Clock size={14} />]
+          ].map(([id, label, icon]) => {
+            const isActive = activeTab === id;
+            return (
+              <button key={id} onClick={() => setActiveTab(id)} style={{
+                display: 'flex', alignItems: 'center', gap: 6,
+                padding: '9px 18px', borderRadius: 11, border: 'none', cursor: 'pointer',
+                fontWeight: isActive ? 800 : 600, fontSize: '0.8rem',
+                background: isActive ? 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)' : 'rgba(255,255,255,0.06)',
+                color: isActive ? '#ffffff' : '#cbd5e1',
+                boxShadow: isActive ? '0 4px 14px rgba(99,102,241,0.45)' : 'none',
+                transition: 'all 0.2s ease',
+                outline: 'none'
+              }}
+              onMouseEnter={(e) => { if (!isActive) e.currentTarget.style.background = 'rgba(255,255,255,0.12)'; }}
+              onMouseLeave={(e) => { if (!isActive) e.currentTarget.style.background = 'rgba(255,255,255,0.06)'; }}
+              >
+                {icon}
+                <span>{label}</span>
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       {/* Tab: Resumen */}
