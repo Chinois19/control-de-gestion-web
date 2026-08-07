@@ -29,15 +29,19 @@ echo [6/7] Procesando Libro de Pabellon...
 node procesar-libro.js
 if %errorlevel% neq 0 echo Error en procesar-libro.js
 
-echo [7/7] Procesando datos de Laboratorio...
+echo [7/8] Procesando datos de Laboratorio...
 node scripts/process_lab_excel.cjs
 if %errorlevel% neq 0 echo Error en process_lab_excel.cjs
+
+echo [8/8] Obteniendo Actividades Medicina de Especialidad desde ODBC...
+node fetch-actividades-medicina.cjs
+if %errorlevel% neq 0 echo Error en fetch-actividades-medicina.cjs
 
 echo.
 echo ===================================================
 echo   SUBIENDO CAMBIOS A PRODUCCION...
 echo ===================================================
-git add public/ src/data/sigcom_data.json update-pharmacy.bat actualizar_todo.bat
+git add public/ src/data/sigcom_data.json update-pharmacy.bat update-actividades-medicina.bat fetch-actividades-medicina.cjs actualizar_todo.bat
 git commit -m "chore: actualizacion completa de paneles desde VPN"
 git push
 
