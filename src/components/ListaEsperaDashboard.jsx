@@ -55,6 +55,7 @@ export default function ListaEsperaDashboard({ onBack }) {
   const [estadoFiltro, setEstadoFiltro] = useState('Todas');
   const [searchEsp, setSearchEsp] = useState('');
   const [activeTab, setActiveTab] = useState('resumen');
+  const [selectedEspecialidad, setSelectedEspecialidad] = useState(null);
 
   const loadData = () => {
     setLoading(true);
@@ -126,6 +127,29 @@ export default function ListaEsperaDashboard({ onBack }) {
     return Object.entries(m).sort((a, b) => b[1] - a[1]).slice(0, 15)
       .map(([name, value]) => ({ name, value }));
   }, [records]);
+
+  const byDiagnostico = useMemo(() => {
+    if (!selectedEspecialidad) return [];
+    const m = {};
+    records.filter(r => r.especialidad_destino === selectedEspecialidad)
+      .forEach(r => { const d = r.nom_diagnostico || 'Sin diagnóstico'; m[d] = (m[d] || 0) + 1; });
+    return Object.entries(m).sort((a,b) => b[1]-a[1]).slice(0,20)
+      .map(([name, value]) => ({ name: name.length > 50 ? name.substring(0,48)+'…' : name, value, fullName: name }));
+  }, [records, selectedEspecialidad]);
+
+  const insights = useMemo(() => {
+    if (!records.length || !kpis.total) return [];
+    const ins = [];
+    const mayor540 = records.filter(r => r.dias_espera > 540).length;
+    const pct540 = Math.round(mayor540 / kpis.total * 100);
+    if (pct540 > 0) ins.push({ icon: '🔴', text: `${mayor540.toLocaleString('es-CL')} pacientes (${pct540}%) llevan más de 540 días en lista de espera — situación crítica que requiere atención prioritaria.` });
+    if (kpis.promDias > kpis.medianaDias * 1.3) ins.push({ icon: '📊', text: `El promedio (${kpis.promDias} días) supera ampliamente la mediana (${kpis.medianaDias} días), lo que indica que un grupo de pacientes con esperas muy largas está inflando el indicador promedio.` });
+    const topEsp = Object.entries(records.reduce((a,r) => { a[r.especialidad_destino]=(a[r.especialidad_destino]||0)+1; return a; }, {})).sort((a,b)=>b[1]-a[1])[0];
+    if (topEsp) ins.push({ icon: '⚠️', text: `La especialidad con mayor demanda es ${topEsp[0]} con ${topEsp[1].toLocaleString('es-CL')} pacientes (${Math.round(topEsp[1]/kpis.total*100)}% del total).` });
+    const rural = records.filter(r => (r.urbano_rural||'').toUpperCase().includes('RURAL')).length;
+    if (rural > 0) ins.push({ icon: '🏡', text: `${rural.toLocaleString('es-CL')} pacientes (${Math.round(rural/kpis.total*100)}%) provienen de zonas rurales, lo que puede implicar barreras adicionales de acceso.` });
+    return ins;
+  }, [records, kpis]);
 
   const estados = useMemo(() => {
     if (!data?.records) return [];
@@ -232,9 +256,21 @@ export default function ListaEsperaDashboard({ onBack }) {
         <KPICard icon={<AlertTriangle size={18} />} label="Espera > 365 días" value={kpis.criticos?.toLocaleString('es-CL')} color="#ef4444" sub={`${kpis.total ? Math.round((kpis.criticos || 0) / kpis.total * 100) : 0}% del total`} />
       </div>
 
+      {/* Insights */}
+      {insights.length > 0 && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 24 }}>
+          {insights.map((ins, i) => (
+            <div key={i} style={{ background: 'linear-gradient(135deg,#f8fafc,#f1f5f9)', border: '1px solid #e2e8f0', borderRadius: 12, padding: '12px 18px', display: 'flex', alignItems: 'flex-start', gap: 12 }}>
+              <span style={{ fontSize: '1.2rem', flexShrink: 0 }}>{ins.icon}</span>
+              <span style={{ fontSize: '0.85rem', color: '#475569', lineHeight: 1.5, fontWeight: 500 }}>{ins.text}</span>
+            </div>
+          ))}
+        </div>
+      )}
+
       {/* Tabs */}
-      <div style={{ display: 'flex', gap: 4, marginBottom: 20, background: '#f1f5f9', borderRadius: 12, padding: 4, width: 'fit-content' }}>
-        {[['resumen', 'Resumen'], ['especialidades', 'Por Especialidad'], ['origen', 'Por Establecimiento'], ['tramos', 'Tramos de Espera']].map(([id, label]) => (
+      <div style={{ display: 'flex', gap: 4, marginBottom: 20, background: '#f1f5f9', borderRadius: 12, padding: 4, flexWrap: 'wrap' }}>
+        {[['resumen','Resumen'],['especialidades','Por Especialidad'],['diagnosticos','Diagnósticos por Especialidad'],['origen','Por Establecimiento'],['tramos','Tramos de Espera']].map(([id, label]) => (
           <button key={id} onClick={() => setActiveTab(id)} style={{
             padding: '8px 20px', borderRadius: 9, border: 'none', cursor: 'pointer',
             fontWeight: 700, fontSize: '0.82rem',
@@ -250,30 +286,54 @@ export default function ListaEsperaDashboard({ onBack }) {
       {activeTab === 'resumen' && (
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
           <div style={{ background: 'white', borderRadius: 16, padding: 24, boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
-            <h3 style={{ fontWeight: 800, color: '#1e293b', marginBottom: 20, fontSize: '1rem' }}>Tramos de Espera (días)</h3>
-            <ResponsiveContainer width="100%" height={280}>
-              <BarChart data={byTramo} layout="vertical" margin={{ left: 10, right: 30 }}>
+            <h3 style={{ fontWeight: 800, color: '#1e293b', marginBottom: 4, fontSize: '1rem' }}>Tramos de Espera</h3>
+            <p style={{ fontSize: '0.78rem', color: '#94a3b8', marginBottom: 16 }}>Distribución de pacientes por tiempo de espera acumulado desde fecha IC</p>
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={byTramo.map(d => ({ ...d, pct: kpis.total ? Math.round(d.value/kpis.total*100) : 0 }))} layout="vertical" margin={{ left: 10, right: 80 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" horizontal={false} />
                 <XAxis type="number" tick={{ fontSize: 11, fill: '#94a3b8' }} />
-                <YAxis type="category" dataKey="name" width={100} tick={{ fontSize: 11, fill: '#475569' }} />
-                <Tooltip content={<CustomTooltipBar />} />
-                <Bar dataKey="value" name="Pacientes" radius={[0, 6, 6, 0]}>
+                <YAxis type="category" dataKey="name" width={110} tick={{ fontSize: 11, fill: '#475569' }} />
+                <Tooltip content={({ active, payload, label }) => {
+                  if (!active || !payload?.length) return null;
+                  const d = payload[0];
+                  return <div style={{ background:'white', border:'1px solid #e2e8f0', borderRadius:10, padding:'10px 14px', boxShadow:'0 4px 20px rgba(0,0,0,0.1)' }}>
+                    <p style={{ fontWeight:700, fontSize:'0.82rem', color:'#1e293b', marginBottom:4 }}>{label}</p>
+                    <p style={{ fontSize:'0.78rem', margin:0 }}>Pacientes: <b>{d.value.toLocaleString('es-CL')}</b></p>
+                    <p style={{ fontSize:'0.78rem', margin:0, color:'#6366f1' }}>Participación: <b>{d.payload.pct}%</b></p>
+                  </div>;
+                }} />
+                <Bar dataKey="value" name="Pacientes" radius={[0,6,6,0]} label={{ position:'right', fontSize:11, fill:'#475569', formatter:(v,entry) => `${v.toLocaleString('es-CL')} (${entry?.payload?.pct||0}%)` }}>
                   {byTramo.map((entry, i) => <Cell key={i} fill={entry.fill} />)}
                 </Bar>
               </BarChart>
             </ResponsiveContainer>
           </div>
           <div style={{ background: 'white', borderRadius: 16, padding: 24, boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
-            <h3 style={{ fontWeight: 800, color: '#1e293b', marginBottom: 20, fontSize: '1rem' }}>Estado Interconsulta</h3>
-            <ResponsiveContainer width="100%" height={280}>
+            <h3 style={{ fontWeight: 800, color: '#1e293b', marginBottom: 4, fontSize: '1rem' }}>Estado de Interconsulta</h3>
+            <p style={{ fontSize: '0.78rem', color: '#94a3b8', marginBottom: 8 }}>Distribución según estado administrativo de la IC en el sistema</p>
+            <ResponsiveContainer width="100%" height={200}>
               <PieChart>
-                <Pie data={byEstado} cx="50%" cy="50%" innerRadius={60} outerRadius={100} paddingAngle={3} dataKey="value">
+                <Pie data={byEstado} cx="50%" cy="50%" outerRadius={80} paddingAngle={3} dataKey="value"
+                  label={({ name, value, percent }) => `${Math.round(percent*100)}%`} labelLine={false}>
                   {byEstado.map((entry, i) => <Cell key={i} fill={entry.fill} />)}
                 </Pie>
-                <Tooltip formatter={(v) => [v.toLocaleString('es-CL'), 'Pacientes']} />
-                <Legend formatter={(v) => <span style={{ fontSize: '0.78rem', color: '#475569' }}>{v}</span>} />
+                <Tooltip formatter={(v, name) => [`${v.toLocaleString('es-CL')} (${kpis.total ? Math.round(v/kpis.total*100) : 0}%)`, name]} />
               </PieChart>
             </ResponsiveContainer>
+            <div style={{ display:'flex', flexDirection:'column', gap:6, marginTop:8 }}>
+              {byEstado.map((e,i) => (
+                <div key={i} style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'6px 10px', borderRadius:8, background:'#f8fafc' }}>
+                  <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+                    <div style={{ width:10, height:10, borderRadius:'50%', background:e.fill }} />
+                    <span style={{ fontSize:'0.8rem', fontWeight:600, color:'#475569' }}>{e.name}</span>
+                  </div>
+                  <div style={{ display:'flex', gap:12 }}>
+                    <span style={{ fontSize:'0.8rem', fontWeight:700, color:'#1e293b' }}>{e.value.toLocaleString('es-CL')}</span>
+                    <span style={{ fontSize:'0.8rem', fontWeight:700, color:e.fill, minWidth:36, textAlign:'right' }}>{kpis.total ? Math.round(e.value/kpis.total*100) : 0}%</span>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       )}
@@ -281,29 +341,83 @@ export default function ListaEsperaDashboard({ onBack }) {
       {/* Tab: Especialidades */}
       {activeTab === 'especialidades' && (
         <div style={{ background: 'white', borderRadius: 16, padding: 24, boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-            <h3 style={{ fontWeight: 800, color: '#1e293b', fontSize: '1rem', margin: 0 }}>Top 20 Especialidades con mayor lista de espera</h3>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+            <div>
+              <h3 style={{ fontWeight: 800, color: '#1e293b', fontSize: '1rem', margin: 0 }}>Top 20 Especialidades</h3>
+              <p style={{ fontSize: '0.78rem', color: '#94a3b8', margin: '2px 0 0' }}>Haz clic en una barra para ver diagnósticos detallados</p>
+            </div>
             <input value={searchEsp} onChange={e => setSearchEsp(e.target.value)} placeholder="Buscar especialidad…"
               style={{ border: '1px solid #e2e8f0', borderRadius: 8, padding: '6px 12px', fontSize: '0.82rem', outline: 'none', width: 220 }} />
           </div>
-          <ResponsiveContainer width="100%" height={560}>
-            <BarChart data={byEspecialidad} layout="vertical" margin={{ left: 10, right: 60 }}>
+          <ResponsiveContainer width="100%" height={600}>
+            <BarChart data={byEspecialidad.map(d => ({ ...d, pct: kpis.total ? Math.round(d.value/kpis.total*100) : 0 }))} layout="vertical" margin={{ left: 10, right: 100 }}
+              onClick={e => e?.activePayload?.[0] && setSelectedEspecialidad(e.activePayload[0].payload.fullName) && setActiveTab('diagnosticos')}>
               <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" horizontal={false} />
               <XAxis type="number" tick={{ fontSize: 11, fill: '#94a3b8' }} />
               <YAxis type="category" dataKey="name" width={280} tick={{ fontSize: 10, fill: '#475569' }} />
               <Tooltip content={({ active, payload }) => {
                 if (!active || !payload?.length) return null;
                 const d = payload[0];
-                return (
-                  <div style={{ background: 'white', border: '1px solid #e2e8f0', borderRadius: 10, padding: '10px 14px', boxShadow: '0 4px 20px rgba(0,0,0,0.1)' }}>
-                    <p style={{ fontWeight: 700, fontSize: '0.82rem', color: '#1e293b', marginBottom: 4 }}>{d.payload.fullName}</p>
-                    <p style={{ fontSize: '0.78rem', color: '#6366f1', margin: 0 }}>Pacientes: <b>{d.value.toLocaleString('es-CL')}</b></p>
-                  </div>
-                );
+                return <div style={{ background:'white', border:'1px solid #e2e8f0', borderRadius:10, padding:'10px 14px', boxShadow:'0 4px 20px rgba(0,0,0,0.1)' }}>
+                  <p style={{ fontWeight:700, fontSize:'0.82rem', color:'#1e293b', marginBottom:4 }}>{d.payload.fullName}</p>
+                  <p style={{ fontSize:'0.78rem', color:'#6366f1', margin:0 }}>Pacientes: <b>{d.value.toLocaleString('es-CL')}</b></p>
+                  <p style={{ fontSize:'0.78rem', color:'#8b5cf6', margin:0 }}>Participación: <b>{d.payload.pct}%</b></p>
+                  <p style={{ fontSize:'0.72rem', color:'#94a3b8', margin:'4px 0 0' }}>👆 Clic para ver diagnósticos</p>
+                </div>;
               }} />
-              <Bar dataKey="value" name="Pacientes" fill="#6366f1" radius={[0, 6, 6, 0]} label={{ position: 'right', fontSize: 11, fill: '#475569', formatter: v => v.toLocaleString('es-CL') }} />
+              <Bar dataKey="value" name="Pacientes" fill="#6366f1" radius={[0,6,6,0]} cursor="pointer"
+                label={{ position:'right', fontSize:10, fill:'#475569', formatter:(v,e) => `${v.toLocaleString('es-CL')} (${e?.payload?.pct||0}%)` }} />
             </BarChart>
           </ResponsiveContainer>
+        </div>
+      )}
+
+      {/* Tab: Diagnósticos por Especialidad */}
+      {activeTab === 'diagnosticos' && (
+        <div style={{ background: 'white', borderRadius: 16, padding: 24, boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
+          <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:20, flexWrap:'wrap', gap:12 }}>
+            <div>
+              <h3 style={{ fontWeight:800, color:'#1e293b', fontSize:'1rem', margin:0 }}>Diagnósticos más frecuentes</h3>
+              {selectedEspecialidad && <p style={{ fontSize:'0.82rem', color:'#6366f1', margin:'4px 0 0', fontWeight:700 }}>Especialidad: {selectedEspecialidad}</p>}
+            </div>
+            <div style={{ display:'flex', gap:8 }}>
+              <select value={selectedEspecialidad || ''} onChange={e => setSelectedEspecialidad(e.target.value || null)}
+                style={{ border:'1px solid #e2e8f0', borderRadius:8, padding:'6px 12px', fontSize:'0.82rem', outline:'none', maxWidth:300 }}>
+                <option value=''>— Selecciona especialidad —</option>
+                {byEspecialidad.map(e => <option key={e.fullName} value={e.fullName}>{e.fullName}</option>)}
+              </select>
+              <button onClick={() => { setSelectedEspecialidad(null); setActiveTab('especialidades'); }}
+                style={{ background:'#f1f5f9', border:'none', borderRadius:8, padding:'6px 14px', cursor:'pointer', fontWeight:600, fontSize:'0.82rem', color:'#475569' }}>← Volver</button>
+            </div>
+          </div>
+          {!selectedEspecialidad ? (
+            <div style={{ textAlign:'center', padding:'60px 0', color:'#94a3b8' }}>
+              <p style={{ fontSize:'1rem' }}>Selecciona una especialidad del menú o haz clic en una barra del tab «Por Especialidad»</p>
+            </div>
+          ) : byDiagnostico.length === 0 ? (
+            <p style={{ color:'#94a3b8', textAlign:'center', padding:'40px 0' }}>No hay diagnósticos registrados para esta especialidad.</p>
+          ) : (
+            <>
+              <ResponsiveContainer width="100%" height={Math.max(400, byDiagnostico.length * 28)}>
+                <BarChart data={byDiagnostico.map(d => ({ ...d, pct: records.filter(r=>r.especialidad_destino===selectedEspecialidad).length ? Math.round(d.value/records.filter(r=>r.especialidad_destino===selectedEspecialidad).length*100) : 0 }))} layout="vertical" margin={{ left:10, right:100 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" horizontal={false} />
+                  <XAxis type="number" tick={{ fontSize:11, fill:'#94a3b8' }} />
+                  <YAxis type="category" dataKey="name" width={320} tick={{ fontSize:10, fill:'#475569' }} />
+                  <Tooltip content={({ active, payload }) => {
+                    if (!active || !payload?.length) return null;
+                    const d = payload[0];
+                    return <div style={{ background:'white', border:'1px solid #e2e8f0', borderRadius:10, padding:'10px 14px', boxShadow:'0 4px 20px rgba(0,0,0,0.1)', maxWidth:320 }}>
+                      <p style={{ fontWeight:700, fontSize:'0.82rem', color:'#1e293b', marginBottom:4 }}>{d.payload.fullName}</p>
+                      <p style={{ fontSize:'0.78rem', color:'#0ea5e9', margin:0 }}>Pacientes: <b>{d.value.toLocaleString('es-CL')}</b></p>
+                      <p style={{ fontSize:'0.78rem', color:'#8b5cf6', margin:0 }}>Del total esp.: <b>{d.payload.pct}%</b></p>
+                    </div>;
+                  }} />
+                  <Bar dataKey="value" name="Pacientes" fill="#0ea5e9" radius={[0,6,6,0]}
+                    label={{ position:'right', fontSize:10, fill:'#475569', formatter:(v,e) => `${v.toLocaleString('es-CL')} (${e?.payload?.pct||0}%)` }} />
+                </BarChart>
+              </ResponsiveContainer>
+            </>
+          )}
         </div>
       )}
 
