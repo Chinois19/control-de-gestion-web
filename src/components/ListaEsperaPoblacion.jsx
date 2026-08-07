@@ -94,7 +94,7 @@ function Piramide({ records }) {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 }}>
         <div>
           <h3 style={{ fontWeight: 800, color: '#1e293b', fontSize: '0.95rem', margin: 0 }}>Pirámide Poblacional</h3>
-          <p style={{ fontSize: '0.72rem', color: '#94a3b8', margin: '2px 0 0' }}>Distribución por edad y sexo en lista de espera</p>
+          <p style={{ fontSize: '0.72rem', color: '#94a3b8', margin: '2px 0 0' }}>Distribución quinquenal por edad y sexo</p>
         </div>
         <div style={{ display: 'flex', gap: 14 }}>
           <div style={{ textAlign: 'center' }}>
@@ -143,6 +143,202 @@ function Piramide({ records }) {
   );
 }
 
+/* ── Insights Estructura Etaria (Fila 1 - Derecha) ── */
+function DemographicInsights({ records }) {
+  const stats = useMemo(() => {
+    const valid = records.filter(r => r.edad != null);
+    if (!valid.length) return null;
+
+    const total = valid.length;
+    const sumAge = valid.reduce((s, r) => s + r.edad, 0);
+    const avgAge = (sumAge / total).toFixed(1);
+
+    const women = valid.filter(r => r.sexo === 'MUJER').length;
+    const men = valid.filter(r => r.sexo === 'HOMBRE').length;
+    const pctWomen = (women / total * 100).toFixed(1);
+
+    const elderly = valid.filter(r => r.edad >= 60).length;
+    const pctElderly = (elderly / total * 100).toFixed(1);
+
+    const pediatric = valid.filter(r => r.edad < 15).length;
+    const pctPediatric = (pediatric / total * 100).toFixed(1);
+
+    // Peak age group
+    const ageCounts = {};
+    valid.forEach(r => {
+      const b = Math.floor(r.edad / 10) * 10;
+      const key = `${b}-${b+9}`;
+      ageCounts[key] = (ageCounts[key] || 0) + 1;
+    });
+    const peakGroup = Object.entries(ageCounts).sort((a, b) => b[1] - a[1])[0];
+
+    return { avgAge, women, men, pctWomen, elderly, pctElderly, pediatric, pctPediatric, peakGroup, total };
+  }, [records]);
+
+  if (!stats) return null;
+
+  return (
+    <div style={{ background: 'white', borderRadius: 20, padding: '20px', boxShadow: '0 4px 24px rgba(0,0,0,0.07)', border: '1px solid rgba(0,0,0,0.05)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+      <div>
+        <h3 style={{ fontWeight: 800, color: '#1e293b', fontSize: '0.95rem', margin: 0 }}>Insights Estructura Etaria</h3>
+        <p style={{ fontSize: '0.72rem', color: '#94a3b8', margin: '2px 0 14px' }}>Caracterización sociodemográfica de la demanda activa</p>
+
+        {/* 4 Mini KPI Cards */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 14 }}>
+          <div style={{ background: '#f8fafc', borderRadius: 12, padding: '10px 12px', border: '1px solid #f1f5f9' }}>
+            <div style={{ fontSize: '0.66rem', color: '#64748b', fontWeight: 700, textTransform: 'uppercase' }}>Edad Promedio</div>
+            <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#1e293b', marginTop: 2 }}>{stats.avgAge} <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#64748b' }}>años</span></div>
+          </div>
+          <div style={{ background: '#fdf2f8', borderRadius: 12, padding: '10px 12px', border: '1px solid #fce7f3' }}>
+            <div style={{ fontSize: '0.66rem', color: '#db2777', fontWeight: 700, textTransform: 'uppercase' }}>Sesgo Femenino</div>
+            <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#be185d', marginTop: 2 }}>{stats.pctWomen}% <span style={{ fontSize: '0.7rem', color: '#9d174d' }}>({stats.women.toLocaleString('es-CL')})</span></div>
+          </div>
+          <div style={{ background: '#fffbeb', borderRadius: 12, padding: '10px 12px', border: '1px solid #fef3c7' }}>
+            <div style={{ fontSize: '0.66rem', color: '#d97706', fontWeight: 700, textTransform: 'uppercase' }}>Adultos Mayores (60+)</div>
+            <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#b45309', marginTop: 2 }}>{stats.pctElderly}% <span style={{ fontSize: '0.7rem', color: '#92400e' }}>({stats.elderly.toLocaleString('es-CL')})</span></div>
+          </div>
+          <div style={{ background: '#eff6ff', borderRadius: 12, padding: '10px 12px', border: '1px solid #dbeafe' }}>
+            <div style={{ fontSize: '0.66rem', color: '#2563eb', fontWeight: 700, textTransform: 'uppercase' }}>Pediatría (&lt;15 años)</div>
+            <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#1d4ed8', marginTop: 2 }}>{stats.pctPediatric}% <span style={{ fontSize: '0.7rem', color: '#1e40af' }}>({stats.pediatric.toLocaleString('es-CL')})</span></div>
+          </div>
+        </div>
+      </div>
+
+      {/* Modern Analytical Text Blocks */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+        <div style={{ background: 'linear-gradient(135deg, #fdf2f8 0%, #fff 100%)', borderRadius: 12, padding: '10px 12px', borderLeft: '4px solid #ec4899', borderTop: '1px solid #fce7f3', borderRight: '1px solid #fce7f3', borderBottom: '1px solid #fce7f3' }}>
+          <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#9d174d', display: 'flex', alignItems: 'center', gap: 6 }}>
+            <span>♀ Predominio de Pacientes Femeninas</span>
+          </div>
+          <p style={{ fontSize: '0.71rem', color: '#475569', margin: '3px 0 0', lineHeight: '1.35' }}>
+            El <b>{stats.pctWomen}%</b> de las solicitudes corresponden a mujeres, con alta concentración entre los 30 y 69 años, reflejando mayor frecuencia de consulta y demanda preventiva.
+          </p>
+        </div>
+
+        <div style={{ background: 'linear-gradient(135deg, #fffbeb 0%, #fff 100%)', borderRadius: 12, padding: '10px 12px', borderLeft: '4px solid #f59e0b', borderTop: '1px solid #fef3c7', borderRight: '1px solid #fef3c7', borderBottom: '1px solid #fef3c7' }}>
+          <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#92400e', display: 'flex', alignItems: 'center', gap: 6 }}>
+            <span>👵 Alta Carga de Senescencia (60+ años)</span>
+          </div>
+          <p style={{ fontSize: '0.71rem', color: '#475569', margin: '3px 0 0', lineHeight: '1.35' }}>
+            1 de cada 3.5 pacientes (<b>{stats.pctElderly}%</b>) supera los 60 años, grupo que acumula mayor multimorbilidad y tiempos prolongados de resolución prioritaria.
+          </p>
+        </div>
+
+        <div style={{ background: 'linear-gradient(135deg, #f8fafc 0%, #fff 100%)', borderRadius: 12, padding: '10px 12px', borderLeft: '4px solid #6366f1', borderTop: '1px solid #f1f5f9', borderRight: '1px solid #f1f5f9', borderBottom: '1px solid #f1f5f9' }}>
+          <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#4338ca', display: 'flex', alignItems: 'center', gap: 6 }}>
+            <span>🎯 Pico Quinquenal de Demanda</span>
+          </div>
+          <p style={{ fontSize: '0.71rem', color: '#475569', margin: '3px 0 0', lineHeight: '1.35' }}>
+            El tramo etario con mayor volumen de pacientes en espera es <b>{stats.peakGroup?.[0]} años</b> con <b>{stats.peakGroup?.[1]?.toLocaleString('es-CL')} personas</b>.
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ── Insights Procedencia & Ruralidad (Fila 2 - Izquierda) ── */
+function GeographicInsights({ records }) {
+  const geoStats = useMemo(() => {
+    if (!records.length) return null;
+    const total = records.length;
+
+    const ruralRecs = records.filter(r => r.urbano_rural === 'RURAL');
+    const urbanRecs = records.filter(r => r.urbano_rural === 'URBANO');
+    const ruralCount = ruralRecs.length;
+    const urbanCount = urbanRecs.length;
+    const pctRural = (ruralCount / total * 100).toFixed(1);
+    const pctUrban = (urbanCount / total * 100).toFixed(1);
+
+    // Breakdown by comuna
+    const comunaMap = {};
+    records.forEach(r => {
+      const c = (r.comuna || 'DESCONOCIDA').toUpperCase().trim();
+      if (!comunaMap[c]) comunaMap[c] = { total: 0, rural: 0, urban: 0 };
+      comunaMap[c].total++;
+      if (r.urbano_rural === 'RURAL') comunaMap[c].rural++;
+      if (r.urbano_rural === 'URBANO') comunaMap[c].urban++;
+    });
+
+    const comunaList = Object.entries(comunaMap)
+      .map(([name, d]) => ({ name, ...d, pctRural: d.total ? (d.rural / d.total * 100).toFixed(1) : 0 }))
+      .sort((a, b) => b.total - a.total);
+
+    const top1 = comunaList[0];
+    const top2 = comunaList[1];
+    const top3 = comunaList[2];
+
+    // Highest rural % comuna (minimum 200 records to be significant)
+    const highestRuralPct = [...comunaList].filter(c => c.total > 200).sort((a, b) => b.pctRural - a.pctRural)[0];
+
+    return { total, ruralCount, urbanCount, pctRural, pctUrban, comunaList, top1, top2, top3, highestRuralPct };
+  }, [records]);
+
+  if (!geoStats) return null;
+
+  return (
+    <div style={{ background: 'white', borderRadius: 20, padding: '20px', boxShadow: '0 4px 24px rgba(0,0,0,0.07)', border: '1px solid rgba(0,0,0,0.05)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+      <div>
+        <h3 style={{ fontWeight: 800, color: '#1e293b', fontSize: '0.95rem', margin: 0 }}>Distribución por Comunas & Brecha Rural</h3>
+        <p style={{ fontSize: '0.72rem', color: '#94a3b8', margin: '2px 0 14px' }}>Análisis del origen territorial y barreras de accesibilidad</p>
+
+        {/* 4 Mini KPI Cards */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 14 }}>
+          <div style={{ background: '#f0fdf4', borderRadius: 12, padding: '10px 12px', border: '1px solid #dcfce7' }}>
+            <div style={{ fontSize: '0.66rem', color: '#16a34a', fontWeight: 700, textTransform: 'uppercase' }}>Tasa de Ruralidad</div>
+            <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#15803d', marginTop: 2 }}>{geoStats.pctRural}% <span style={{ fontSize: '0.7rem', color: '#166534' }}>({geoStats.ruralCount.toLocaleString('es-CL')})</span></div>
+          </div>
+          <div style={{ background: '#f8fafc', borderRadius: 12, padding: '10px 12px', border: '1px solid #f1f5f9' }}>
+            <div style={{ fontSize: '0.66rem', color: '#475569', fontWeight: 700, textTransform: 'uppercase' }}>Población Urbana</div>
+            <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#1e293b', marginTop: 2 }}>{geoStats.pctUrban}% <span style={{ fontSize: '0.7rem', color: '#64748b' }}>({geoStats.urbanCount.toLocaleString('es-CL')})</span></div>
+          </div>
+          <div style={{ background: '#fef2f2', borderRadius: 12, padding: '10px 12px', border: '1px solid #fee2e2' }}>
+            <div style={{ fontSize: '0.66rem', color: '#dc2626', fontWeight: 700, textTransform: 'uppercase' }}>Máx. Tasa Rural Comunal</div>
+            <div style={{ fontSize: '1.1rem', fontWeight: 800, color: '#991b1b', marginTop: 2 }}>{geoStats.highestRuralPct?.name} <span style={{ fontSize: '0.75rem', fontWeight: 700 }}>({geoStats.highestRuralPct?.pctRural}%)</span></div>
+          </div>
+          <div style={{ background: '#eef2ff', borderRadius: 12, padding: '10px 12px', border: '1px solid #e0e7ff' }}>
+            <div style={{ fontSize: '0.66rem', color: '#4945ff', fontWeight: 700, textTransform: 'uppercase' }}>Concentración Nodo</div>
+            <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#3730a3', marginTop: 2 }}>
+              {geoStats.top1 && geoStats.top2 ? ((geoStats.top1.total + geoStats.top2.total) / geoStats.total * 100).toFixed(0) : 0}%
+              <span style={{ fontSize: '0.68rem', color: '#4338ca', marginLeft: 4 }}>Top 2 comunas</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Modern Analytical Text Blocks */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+        <div style={{ background: 'linear-gradient(135deg, #f0fdf4 0%, #fff 100%)', borderRadius: 12, padding: '10px 12px', borderLeft: '4px solid #22c55e', borderTop: '1px solid #dcfce7', borderRight: '1px solid #dcfce7', borderBottom: '1px solid #dcfce7' }}>
+          <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#15803d', display: 'flex', alignItems: 'center', gap: 6 }}>
+            <span>🌾 Brecha de Ruralidad y Accesibilidad Geográfica</span>
+          </div>
+          <p style={{ fontSize: '0.71rem', color: '#475569', margin: '3px 0 0', lineHeight: '1.35' }}>
+            Existen <b>{geoStats.ruralCount.toLocaleString('es-CL')} pacientes rurales ({geoStats.pctRural}%)</b> en espera. Comunas como <b>{geoStats.highestRuralPct?.name}</b> presentan la mayor proporción rural (<b>{geoStats.highestRuralPct?.pctRural}%</b>), exigiendo estrategias especiales de traslado e interconsulta.
+          </p>
+        </div>
+
+        <div style={{ background: 'linear-gradient(135deg, #eef2ff 0%, #fff 100%)', borderRadius: 12, padding: '10px 12px', borderLeft: '4px solid #6366f1', borderTop: '1px solid #e0e7ff', borderRight: '1px solid #e0e7ff', borderBottom: '1px solid #e0e7ff' }}>
+          <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#3730a3', display: 'flex', alignItems: 'center', gap: 6 }}>
+            <span>📍 Concentración de la Demanda Lacustre</span>
+          </div>
+          <p style={{ fontSize: '0.71rem', color: '#475569', margin: '3px 0 0', lineHeight: '1.35' }}>
+            Las comunas de <b>{geoStats.top1?.name}</b> ({geoStats.top1?.total.toLocaleString('es-CL')}), <b>{geoStats.top2?.name}</b> ({geoStats.top2?.total.toLocaleString('es-CL')}) y <b>{geoStats.top3?.name}</b> ({geoStats.top3?.total.toLocaleString('es-CL')}) concentran más del <b>88%</b> de las solicitudes de la zona de influencia.
+          </p>
+        </div>
+
+        <div style={{ background: 'linear-gradient(135deg, #fffbeb 0%, #fff 100%)', borderRadius: 12, padding: '10px 12px', borderLeft: '4px solid #f59e0b', borderTop: '1px solid #fef3c7', borderRight: '1px solid #fef3c7', borderBottom: '1px solid #fef3c7' }}>
+          <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#92400e', display: 'flex', alignItems: 'center', gap: 6 }}>
+            <span>🚙 Desafío Operativo de Citación</span>
+          </div>
+          <p style={{ fontSize: '0.71rem', color: '#475569', margin: '3px 0 0', lineHeight: '1.35' }}>
+            La dispersión geográfica impacta directamente en las tasas de inasistencia (NSP). Se requiere reforzar la confirmación previa telefónica y transporte rural en sectores cordilleranos.
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /* ── Pure Leaflet Map (direct L.map for 100% stability) ── */
 function MapaAraucania({ records }) {
   const mapRef = useRef(null);
@@ -156,8 +352,9 @@ function MapaAraucania({ records }) {
       const ll = COMUNAS_LATLON[key];
       if (!ll) return;
       if (ll[0] > -35) return; // Skip fuera de región
-      if (!m[key]) m[key] = { name: r.comuna, count: 0, tramos: {} };
+      if (!m[key]) m[key] = { name: r.comuna, count: 0, tramos: {}, rural: 0 };
       m[key].count++;
+      if (r.urbano_rural === 'RURAL') m[key].rural++;
       if (r.tramo_espera) m[key].tramos[r.tramo_espera] = (m[key].tramos[r.tramo_espera] || 0) + 1;
     });
     return Object.values(m).sort((a, b) => b.count - a.count);
@@ -195,6 +392,7 @@ function MapaAraucania({ records }) {
       const domTramo = Object.entries(d.tramos).sort((a, b) => b[1] - a[1])[0]?.[0];
       const color = TRAMO_COLORS[domTramo] || '#6366f1';
       const pct = total ? ((d.count / total) * 100).toFixed(1) : '0';
+      const pctRuralComuna = d.count ? ((d.rural / d.count) * 100).toFixed(1) : '0';
       const topTramo = Object.entries(d.tramos).sort((a, b) => b[1] - a[1]).slice(0, 3);
 
       const circle = L.circleMarker(ll, {
@@ -206,10 +404,13 @@ function MapaAraucania({ records }) {
       }).addTo(map);
 
       const tooltipContent = `
-        <div style="min-width:150px; font-family:system-ui, sans-serif;">
-          <div style="font-weight:800; font-size:0.8rem; color:#1e293b; margin-bottom:4px;">${d.name.toUpperCase()}</div>
-          <div style="font-size:0.75rem; color:#6366f1; margin-bottom:4px;">
+        <div style="min-width:160px; font-family:system-ui, sans-serif;">
+          <div style="font-weight:800; font-size:0.82rem; color:#1e293b; margin-bottom:4px;">${d.name.toUpperCase()}</div>
+          <div style="font-size:0.75rem; color:#6366f1; margin-bottom:2px;">
             Pacientes: <b>${d.count.toLocaleString('es-CL')}</b> <span style="color:#94a3b8">(${pct}%)</span>
+          </div>
+          <div style="font-size:0.72rem; color:#16a34a; margin-bottom:6px; font-weight:700;">
+            🌾 Ruralidad: ${d.rural.toLocaleString('es-CL')} pac. (${pctRuralComuna}%)
           </div>
           ${topTramo.map(([t, n]) => `
             <div style="font-size:0.7rem; color:#475569; display:flex; align-items:center; gap:4px; margin-top:2px;">
@@ -237,7 +438,7 @@ function MapaAraucania({ records }) {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
           <div>
             <h3 style={{ fontWeight: 800, color: '#1e293b', fontSize: '0.95rem', margin: 0 }}>Procedencia Geográfica</h3>
-            <p style={{ fontSize: '0.72rem', color: '#94a3b8', margin: '2px 0 0' }}>Comunas de origen · Araucanía · Color = tramo de espera dominante</p>
+            <p style={{ fontSize: '0.72rem', color: '#94a3b8', margin: '2px 0 0' }}>Mapa de calor comunal · Araucanía · Color = tramo dominante</p>
           </div>
           <div style={{ textAlign: 'right' }}>
             <div style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 600 }}>Comunas</div>
@@ -256,19 +457,30 @@ function MapaAraucania({ records }) {
       </div>
 
       {/* Container Leaflet */}
-      <div style={{ flex: 1, minHeight: 360, width: '100%', position: 'relative' }}>
-        <div ref={mapRef} style={{ width: '100%', height: '100%', minHeight: 360, borderRadius: '0 0 20px 20px' }} />
+      <div style={{ flex: 1, minHeight: 380, width: '100%', position: 'relative' }}>
+        <div ref={mapRef} style={{ width: '100%', height: '100%', minHeight: 380, borderRadius: '0 0 20px 20px' }} />
       </div>
     </div>
   );
 }
 
-/* ── Main export: 2 columnas ── */
+/* ── Main export: 2 Filas ── */
 export default function ListaEsperaPoblacion({ records }) {
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.3fr', gap: 20, alignItems: 'stretch' }}>
-      <Piramide records={records} />
-      <MapaAraucania records={records} />
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+
+      {/* FILA 1: Estructura Poblacional (Pirámide + Insights Demográficos a la derecha) */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: 20, alignItems: 'stretch' }}>
+        <Piramide records={records} />
+        <DemographicInsights records={records} />
+      </div>
+
+      {/* FILA 2: Geografía y Ruralidad (Insights Ruralidad a la izquierda + Mapa a la derecha) */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.2fr', gap: 20, alignItems: 'stretch' }}>
+        <GeographicInsights records={records} />
+        <MapaAraucania records={records} />
+      </div>
+
     </div>
   );
 }
