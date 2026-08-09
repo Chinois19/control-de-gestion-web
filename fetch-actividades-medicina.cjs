@@ -138,6 +138,7 @@ async function run() {
       if (nombreProf) obj.profesional_nombre = nombreProf;
       if (row.POLICLINICO) obj.policlinico = row.POLICLINICO;
       if (row.TIPO_CONSULTA) obj.tipo_consulta = row.TIPO_CONSULTA;
+      if (row.ACTIVIDAD) obj.actividad = row.ACTIVIDAD;
       if (row.DIAGNOSTICO_1) obj.diagnostico_1 = row.DIAGNOSTICO_1;
       if (row.PRESTACION_1) obj.prestacion_1 = row.PRESTACION_1;
       if (row.ESTADO_ATENCION) obj.estado_atencion = row.ESTADO_ATENCION;

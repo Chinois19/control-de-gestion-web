@@ -1,15 +1,88 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-  PieChart, Pie, Cell, Legend
+  PieChart, Pie, Cell, Legend, LabelList
 } from 'recharts';
 import {
   ArrowLeft, RefreshCw, AlertTriangle, Users, Clock, Stethoscope, Filter,
   Download, ChevronDown, TrendingUp, Activity, Layers, BarChart2, FileText,
-  PieChart as PieIcon, Video, UserCheck, Calendar, Search, ChevronRight, CheckCircle2, XCircle
+  PieChart as PieIcon, Video, UserCheck, Calendar, Search, ChevronRight, CheckCircle2, XCircle, ChevronUp
 } from 'lucide-react';
 
 const COLORS_PIE = ['#6366f1', '#0ea5e9', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#14b8a6', '#f97316'];
+
+const TIPO_CONSULTA_COLORS = {
+  'CONSULTA Y CONTROL': '#6366f1',
+  'SALUD MENTAL ESPECIALIDAD/ENLACE': '#10b981',
+  'ATENCION A HOSPITALIZADOS': '#f59e0b',
+  'MEDICINA COMPLEMENTARIA Y PRACTICAS DE BIENESTAR DE LA SALUD  INDIVIDUAL': '#8b5cf6',
+  'SALUD MENTAL ESPECIALIDAD': '#0ea5e9',
+  'TELEMEDICINA CONTROL': '#ec4899',
+  'ATENCION TELEFONICA - CONTROL': '#14b8a6',
+  'CONSULTORIAS DE MEDICOS ESPECIALISTAS OTORGADAS': '#f97316',
+  'CONSULTA ABREVIADA POR ATENCION REMOTA': '#06b6d4',
+  'Sin dato': '#94a3b8',
+  'Otros': '#64748b'
+};
+
+const getTipoColor = (tipo, index) => {
+  if (TIPO_CONSULTA_COLORS[tipo]) return TIPO_CONSULTA_COLORS[tipo];
+  return COLORS_PIE[index % COLORS_PIE.length];
+};
+
+function MonthlyEvolutionTooltip({ active, payload, label }) {
+  if (!active || !payload || !payload.length) return null;
+
+  const rowData = payload[0]?.payload;
+  const monthTotal = rowData?.total || payload.reduce((acc, p) => acc + (p.name !== 'Total Mes' ? (Number(p.value) || 0) : 0), 0);
+
+  return (
+    <div style={{
+      background: 'rgba(15, 23, 42, 0.95)',
+      backdropFilter: 'blur(8px)',
+      color: 'white',
+      padding: '14px 18px',
+      borderRadius: 14,
+      boxShadow: '0 10px 30px rgba(0,0,0,0.3)',
+      border: '1px solid rgba(255,255,255,0.15)',
+      fontSize: '0.82rem',
+      minWidth: 280,
+      maxWidth: 380
+    }}>
+      <div style={{ fontWeight: 800, fontSize: '0.95rem', color: '#38bdf8', marginBottom: 6, borderBottom: '1px solid rgba(255,255,255,0.12)', paddingBottom: 6, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <span>📅 {label}</span>
+        <span style={{ fontSize: '0.75rem', background: 'rgba(56, 189, 248, 0.15)', color: '#38bdf8', padding: '2px 10px', borderRadius: 10, fontWeight: 800 }}>
+          Total: {monthTotal.toLocaleString('es-CL')}
+        </span>
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 8 }}>
+        {payload.map((entry, index) => {
+          if (entry.name === 'Total Mes' || !entry.value) return null;
+          const val = Number(entry.value) || 0;
+          const pct = monthTotal ? ((val / monthTotal) * 100).toFixed(1) : 0;
+          return (
+            <div key={`item-${index}`} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, overflow: 'hidden' }}>
+                <div style={{ width: 10, height: 10, borderRadius: 3, background: entry.color, flexShrink: 0 }} />
+                <span style={{ color: '#e2e8f0', fontSize: '0.78rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  {entry.name}
+                </span>
+              </div>
+              <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                <span style={{ fontWeight: 800, color: '#ffffff', fontSize: '0.82rem' }}>
+                  {val.toLocaleString('es-CL')}
+                </span>
+                <span style={{ color: '#94a3b8', fontWeight: 500, fontSize: '0.72rem', marginLeft: 6 }}>
+                  ({pct}%)
+                </span>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
 
 function KPICard({ icon, label, value, sub, color }) {
   return (
@@ -111,6 +184,15 @@ export default function ActividadesMedicinaDashboard({ onBack }) {
   const [currentPage, setCurrentPage] = useState(1);
   const rowsPerPage = 25;
 
+  // Monthly Evolution Chart State
+  const [chartMode, setChartMode] = useState('stacked'); // 'stacked' | 'grouped'
+  const [startDateFilter, setStartDateFilter] = useState('2025-01'); // '2025-01' | 'all'
+
+  // Pivot table: set of expanded especialidad rows
+  const [pivotExpandedEsps, setPivotExpandedEsps] = useState(new Set());
+  // Pivot table: set of expanded tipo-consulta rows (key = 'esp|||tipo')
+  const [pivotExpandedTipos, setPivotExpandedTipos] = useState(new Set());
+
   const loadData = () => {
     setLoading(true);
     setError(null);
@@ -183,6 +265,174 @@ export default function ActividadesMedicinaDashboard({ onBack }) {
       controles
     };
   }, [records]);
+
+  // Only production records: SE PRESENTO (estado_atencion) = EJECUTADA (estado_hora)
+  const productionRecords = useMemo(() =>
+    records.filter(r =>
+      (r.estado_atencion || '').toUpperCase().trim() === 'SE PRESENTO' ||
+      (r.estado_hora || '').toUpperCase().trim() === 'EJECUTADA'
+    ),
+  [records]);
+
+  const monthlyEvolution = useMemo(() => {
+    let source = productionRecords;
+    if (startDateFilter === '2025-01') {
+      source = productionRecords.filter(r => r.fecha_atencion && String(r.fecha_atencion).substring(0, 10) >= '2025-01-01');
+    }
+
+    const monthMap = {};
+    const tipoTotals = {};
+
+    source.forEach(r => {
+      if (!r.fecha_atencion) return;
+      const ym = String(r.fecha_atencion).substring(0, 7);
+      const t = r.tipo_consulta || 'Sin dato';
+      tipoTotals[t] = (tipoTotals[t] || 0) + 1;
+      if (!monthMap[ym]) monthMap[ym] = { total: 0 };
+      monthMap[ym][t] = (monthMap[ym][t] || 0) + 1;
+      monthMap[ym].total += 1;
+    });
+
+    const sortedMonths = Object.keys(monthMap).sort();
+
+    // Select top 7 tipo_consulta categories across filtered period, group rest into 'Otros'
+    const topTipos = Object.entries(tipoTotals)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 7)
+      .map(x => x[0]);
+
+    if (Object.keys(tipoTotals).length > 7) {
+      topTipos.push('Otros');
+    }
+
+    const monthNames = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+
+    const chartData = sortedMonths.map(ym => {
+      const year = ym.substring(0, 4);
+      const monthNum = parseInt(ym.substring(5, 7), 10);
+      const monthLabel = `${monthNames[monthNum - 1]} ${year}`;
+
+      const row = {
+        ym,
+        monthLabel,
+        total: monthMap[ym].total
+      };
+
+      topTipos.forEach(tipo => {
+        if (tipo === 'Otros') {
+          let otrosSum = 0;
+          Object.keys(monthMap[ym]).forEach(t => {
+            if (t !== 'total' && !topTipos.includes(t)) {
+              otrosSum += monthMap[ym][t];
+            }
+          });
+          row[tipo] = otrosSum;
+        } else {
+          row[tipo] = monthMap[ym][tipo] || 0;
+        }
+      });
+
+      return row;
+    });
+
+    return {
+      chartData,
+      tipoKeys: topTipos,
+      totalPeriodo: source.length,
+      avgMonthly: sortedMonths.length ? Math.round(source.length / sortedMonths.length) : 0
+    };
+  }, [productionRecords, startDateFilter]);
+
+  // ── Pivot Table: Especialidad × Tipo Consulta × Month ──────────────────────
+  const pivotData = useMemo(() => {
+    // Source: SE PRESENTO records within the selected date range
+    let source = productionRecords;
+    if (startDateFilter === '2025-01') {
+      source = productionRecords.filter(r => r.fecha_atencion && String(r.fecha_atencion).substring(0, 10) >= '2025-01-01');
+    }
+
+    const monthNames = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+
+    // Collect all months present
+    const monthSet = new Set();
+    source.forEach(r => { if (r.fecha_atencion) monthSet.add(String(r.fecha_atencion).substring(0, 7)); });
+    const months = [...monthSet].sort();
+    const monthLabels = months.map(ym => {
+      const mn = parseInt(ym.substring(5, 7), 10);
+      return { ym, label: `${monthNames[mn - 1]} ${ym.substring(0, 4)}`, year: ym.substring(0, 4) };
+    });
+
+    // Unique years for year-total columns
+    const years = [...new Set(months.map(ym => ym.substring(0, 4)))].sort();
+
+    // Map: esp -> tipo -> actividad -> ym -> count
+    const espMap = {};
+    const grandTotal = { byMonth: {}, byYear: {}, total: 0 };
+    source.forEach(r => {
+      const esp = r.especialidad || 'Sin especialidad';
+      const tipo = r.tipo_consulta || 'Sin tipo';
+      // Level 3: use diagnostico_1 (available in current JSON; actividad field coming in next extraction)
+      const act = r.diagnostico_1 || 'Sin diagnóstico';
+      const ym = r.fecha_atencion ? String(r.fecha_atencion).substring(0, 7) : null;
+      if (!ym) return;
+      const year = ym.substring(0, 4);
+
+      if (!espMap[esp]) espMap[esp] = { esp, tipos: {}, byMonth: {}, byYear: {}, total: 0 };
+      const espNode = espMap[esp];
+      espNode.byMonth[ym] = (espNode.byMonth[ym] || 0) + 1;
+      espNode.byYear[year] = (espNode.byYear[year] || 0) + 1;
+      espNode.total += 1;
+
+      if (!espNode.tipos[tipo]) espNode.tipos[tipo] = { tipo, actividades: {}, byMonth: {}, byYear: {}, total: 0 };
+      const tipoNode = espNode.tipos[tipo];
+      tipoNode.byMonth[ym] = (tipoNode.byMonth[ym] || 0) + 1;
+      tipoNode.byYear[year] = (tipoNode.byYear[year] || 0) + 1;
+      tipoNode.total += 1;
+
+      if (!tipoNode.actividades[act]) tipoNode.actividades[act] = { act, byMonth: {}, byYear: {}, total: 0 };
+      const actNode = tipoNode.actividades[act];
+      actNode.byMonth[ym] = (actNode.byMonth[ym] || 0) + 1;
+      actNode.byYear[year] = (actNode.byYear[year] || 0) + 1;
+      actNode.total += 1;
+
+      grandTotal.byMonth[ym] = (grandTotal.byMonth[ym] || 0) + 1;
+      grandTotal.byYear[year] = (grandTotal.byYear[year] || 0) + 1;
+      grandTotal.total += 1;
+    });
+
+    // Sort especialidades by total desc; tipos within each esp by total desc; actividades within each tipo by total desc
+    const espRows = Object.values(espMap).sort((a, b) => b.total - a.total);
+    espRows.forEach(e => {
+      e.tipoRows = Object.values(e.tipos).sort((a, b) => b.total - a.total);
+      e.tipoRows.forEach(t => {
+        t.actRows = Object.values(t.actividades).sort((a, b) => b.total - a.total);
+      });
+    });
+
+    // Compute heatmap max per-month across all cells (for intensity scaling)
+    const allMonthValues = [];
+    espRows.forEach(e => {
+      months.forEach(ym => { if (e.byMonth[ym]) allMonthValues.push(e.byMonth[ym]); });
+    });
+    const maxMonthVal = allMonthValues.length ? Math.max(...allMonthValues) : 1;
+
+    // Build interleaved columns: months + year-total inserted after last month of each year
+    const columns = [];
+    months.forEach((ym, i) => {
+      const year = ym.substring(0, 4);
+      const mn = parseInt(ym.substring(5, 7), 10);
+      const label = `${monthNames[mn - 1]} ${year}`;
+      const isNewYear = i === 0 || months[i - 1].substring(0, 4) !== year;
+      columns.push({ type: 'month', ym, label, year, isNewYear });
+      // If next month belongs to a different year (or this is the last month), insert year total
+      const nextYm = months[i + 1];
+      if (!nextYm || nextYm.substring(0, 4) !== year) {
+        columns.push({ type: 'yearTotal', year, label: `Total ${year}` });
+      }
+    });
+
+    return { espRows, months, monthLabels, columns, years, grandTotal, maxMonthVal };
+  }, [productionRecords, startDateFilter]);
 
   const byEspecialidad = useMemo(() => {
     const m = {};
@@ -399,42 +649,387 @@ export default function ActividadesMedicinaDashboard({ onBack }) {
 
       {/* Tab: Resumen */}
       {activeTab === 'resumen' && (
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+          {/* Main Chart: Evolución Mensual por Tipo de Consulta */}
           <div style={{ background: 'white', borderRadius: 16, padding: 24, boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
-            <h3 style={{ fontWeight: 800, color: '#1e293b', marginBottom: 4, fontSize: '1rem' }}>Producción por Especialidad Médica</h3>
-            <p style={{ fontSize: '0.78rem', color: '#94a3b8', marginBottom: 16 }}>Volumen acumulado de atenciones por especialidad</p>
-            <ResponsiveContainer width="100%" height={320}>
-              <BarChart data={byEspecialidad.slice(0, 10)} layout="vertical" margin={{ left: 10, right: 40 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" horizontal={false} />
-                <XAxis type="number" tick={{ fontSize: 11, fill: '#94a3b8' }} />
-                <YAxis type="category" dataKey="name" width={140} tick={{ fontSize: 11, fill: '#475569' }} />
-                <Tooltip formatter={(val) => [val.toLocaleString('es-CL'), 'Atenciones']} />
-                <Bar dataKey="value" fill="#6366f1" radius={[0, 6, 6, 0]} />
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 18, flexWrap: 'wrap', gap: 14 }}>
+              <div>
+                <h3 style={{ fontWeight: 800, color: '#1e293b', margin: 0, fontSize: '1.1rem', display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <TrendingUp size={20} color="#6366f1" /> Evolución Mensual de Actividades por Tipo de Consulta
+                </h3>
+                <p style={{ fontSize: '0.8rem', color: '#94a3b8', margin: '4px 0 0', fontWeight: 500 }}>
+                  Comportamiento mes a mes desde Enero 2025 hasta la fecha · Colores por Tipo de Consulta · Pasa el cursor para ver desglose (N y %)
+                </p>
+              </div>
+
+              {/* Chart Controls */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                <div style={{ display: 'flex', background: '#f1f5f9', padding: 3, borderRadius: 10, border: '1px solid #e2e8f0' }}>
+                  <button
+                    onClick={() => setStartDateFilter('2025-01')}
+                    style={{
+                      padding: '5px 12px', borderRadius: 8, border: 'none', cursor: 'pointer',
+                      fontWeight: startDateFilter === '2025-01' ? 800 : 600, fontSize: '0.78rem',
+                      background: startDateFilter === '2025-01' ? '#ffffff' : 'transparent',
+                      color: startDateFilter === '2025-01' ? '#4f46e5' : '#64748b',
+                      boxShadow: startDateFilter === '2025-01' ? '0 1px 4px rgba(0,0,0,0.08)' : 'none',
+                      transition: 'all 0.2s'
+                    }}
+                  >
+                    📅 Ene 2025 - Hoy
+                  </button>
+                  <button
+                    onClick={() => setStartDateFilter('all')}
+                    style={{
+                      padding: '5px 12px', borderRadius: 8, border: 'none', cursor: 'pointer',
+                      fontWeight: startDateFilter === 'all' ? 800 : 600, fontSize: '0.78rem',
+                      background: startDateFilter === 'all' ? '#ffffff' : 'transparent',
+                      color: startDateFilter === 'all' ? '#4f46e5' : '#64748b',
+                      boxShadow: startDateFilter === 'all' ? '0 1px 4px rgba(0,0,0,0.08)' : 'none',
+                      transition: 'all 0.2s'
+                    }}
+                  >
+                    Histórico Completo
+                  </button>
+                </div>
+
+                <div style={{ display: 'flex', background: '#f1f5f9', padding: 3, borderRadius: 10, border: '1px solid #e2e8f0' }}>
+                  <button
+                    onClick={() => setChartMode('stacked')}
+                    style={{
+                      padding: '5px 12px', borderRadius: 8, border: 'none', cursor: 'pointer',
+                      fontWeight: chartMode === 'stacked' ? 800 : 600, fontSize: '0.78rem',
+                      background: chartMode === 'stacked' ? '#6366f1' : 'transparent',
+                      color: chartMode === 'stacked' ? '#ffffff' : '#64748b',
+                      boxShadow: chartMode === 'stacked' ? '0 2px 6px rgba(99,102,241,0.35)' : 'none',
+                      transition: 'all 0.2s'
+                    }}
+                  >
+                    Apiladas (Acumulado)
+                  </button>
+                  <button
+                    onClick={() => setChartMode('grouped')}
+                    style={{
+                      padding: '5px 12px', borderRadius: 8, border: 'none', cursor: 'pointer',
+                      fontWeight: chartMode === 'grouped' ? 800 : 600, fontSize: '0.78rem',
+                      background: chartMode === 'grouped' ? '#6366f1' : 'transparent',
+                      color: chartMode === 'grouped' ? '#ffffff' : '#64748b',
+                      boxShadow: chartMode === 'grouped' ? '0 2px 6px rgba(99,102,241,0.35)' : 'none',
+                      transition: 'all 0.2s'
+                    }}
+                  >
+                    Agrupadas (Comparativo)
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Quick Metrics Bar */}
+            <div style={{ display: 'flex', gap: 20, marginBottom: 20, background: '#f8fafc', padding: '10px 16px', borderRadius: 12, border: '1px solid #f1f5f9', flexWrap: 'wrap' }}>
+              <div style={{ fontSize: '0.8rem', color: '#64748b' }}>
+                Total Período Seleccionado: <strong style={{ color: '#1e293b' }}>{monthlyEvolution.totalPeriodo.toLocaleString('es-CL')}</strong>
+              </div>
+              <div style={{ fontSize: '0.8rem', color: '#64748b' }}>
+                Promedio Mensual: <strong style={{ color: '#6366f1' }}>{monthlyEvolution.avgMonthly.toLocaleString('es-CL')}</strong> atenciones/mes
+              </div>
+              <div style={{ fontSize: '0.8rem', color: '#64748b' }}>
+                Meses Visualizados: <strong style={{ color: '#0ea5e9' }}>{monthlyEvolution.chartData.length}</strong>
+              </div>
+            </div>
+
+            {/* Recharts BarChart */}
+            <ResponsiveContainer width="100%" height={380}>
+              <BarChart data={monthlyEvolution.chartData} margin={{ top: 25, right: 20, left: 10, bottom: 25 }} barCategoryGap="3%">
+                <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+                <XAxis
+                  dataKey="monthLabel"
+                  tick={{ fontSize: 11, fill: '#64748b', fontWeight: 600 }}
+                  angle={-25}
+                  textAnchor="end"
+                  height={50}
+                />
+                <YAxis
+                  tick={{ fontSize: 11, fill: '#64748b' }}
+                  tickFormatter={v => v >= 1000 ? `${(v / 1000).toFixed(0)}k` : v}
+                />
+                <Tooltip content={<MonthlyEvolutionTooltip />} />
+                <Legend wrapperStyle={{ paddingTop: 14, fontSize: 11, fontWeight: 600 }} />
+
+                {monthlyEvolution.tipoKeys.map((tipo, idx) => (
+                  <Bar
+                    key={tipo}
+                    dataKey={tipo}
+                    name={tipo}
+                    fill={getTipoColor(tipo, idx)}
+                    stackId={chartMode === 'stacked' ? 'a' : undefined}
+                    radius={chartMode === 'stacked' && idx === monthlyEvolution.tipoKeys.length - 1 ? [4, 4, 0, 0] : (chartMode === 'grouped' ? [4, 4, 0, 0] : undefined)}
+                  />
+                ))}
+
+                {/* Show total count on top of stacked bars */}
+                {chartMode === 'stacked' && (
+                  <Bar dataKey="total" name="Total Mes" fill="transparent" isAnimationActive={false}>
+                    <LabelList
+                      dataKey="total"
+                      position="top"
+                      formatter={val => val ? val.toLocaleString('es-CL') : ''}
+                      style={{ fill: '#1e293b', fontWeight: 800, fontSize: 10 }}
+                    />
+                  </Bar>
+                )}
               </BarChart>
             </ResponsiveContainer>
           </div>
 
+          {/* Pivot Table: Especialidad × Tipo Consulta × Mes */}
           <div style={{ background: 'white', borderRadius: 16, padding: 24, boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
-            <h3 style={{ fontWeight: 800, color: '#1e293b', marginBottom: 4, fontSize: '1rem' }}>Distribución por Tipo de Consulta</h3>
-            <p style={{ fontSize: '0.78rem', color: '#94a3b8', marginBottom: 8 }}>Consultas Nuevas, Controles y Procedimientos</p>
-            <ResponsiveContainer width="100%" height={220}>
-              <PieChart>
-                <Pie data={byTipoConsulta} cx="50%" cy="50%" outerRadius={75} paddingAngle={3} dataKey="value" label={({ name, percent }) => `${Math.round(percent * 100)}%`}>
-                  {byTipoConsulta.map((entry, i) => <Cell key={i} fill={entry.fill} />)}
-                </Pie>
-                <Tooltip formatter={(v) => [v.toLocaleString('es-CL'), 'Atenciones']} />
-              </PieChart>
-            </ResponsiveContainer>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 12 }}>
-              {byTipoConsulta.map((item, i) => (
-                <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 10px', borderRadius: 8, background: '#f8fafc' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <div style={{ width: 10, height: 10, borderRadius: '50%', background: item.fill }} />
-                    <span style={{ fontSize: '0.8rem', fontWeight: 600, color: '#475569' }}>{item.name}</span>
-                  </div>
-                  <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#1e293b' }}>{item.value.toLocaleString('es-CL')}</span>
-                </div>
-              ))}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16, flexWrap: 'wrap', gap: 12 }}>
+              <div>
+                <h3 style={{ fontWeight: 800, color: '#1e293b', margin: 0, fontSize: '1.05rem', display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <Layers size={18} color="#6366f1" /> Producción por Especialidad · Tipo de Consulta · Diagnóstico × Mes
+                </h3>
+                <p style={{ fontSize: '0.78rem', color: '#94a3b8', margin: '4px 0 0' }}>
+                  Solo atenciones con estado <strong style={{ color: '#10b981' }}>SE PRESENTÓ</strong> · 3 niveles: Especialidad → Tipo Consulta → Diagnóstico · Intensidad de celda = volumen relativo
+                </p>
+              </div>
+              <button
+                onClick={() => { setPivotExpandedEsps(new Set()); setPivotExpandedTipos(new Set()); }}
+                style={{ padding: '6px 14px', borderRadius: 8, border: '1px solid #e2e8f0', background: '#f8fafc', color: '#64748b', fontSize: '0.78rem', fontWeight: 700, cursor: 'pointer' }}
+              >
+                Colapsar todo
+              </button>
+            </div>
+
+            {/* Table */}
+            <div style={{ overflowX: 'auto', borderRadius: 12, border: '1px solid #e2e8f0' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.76rem', tableLayout: 'auto' }}>
+                <thead>
+                  <tr style={{ background: '#0f172a', color: 'white' }}>
+                    <th style={{ padding: '10px 14px', fontWeight: 700, textAlign: 'left', position: 'sticky', left: 0, background: '#0f172a', zIndex: 2, minWidth: 220, borderRight: '1px solid rgba(255,255,255,0.1)' }}>Especialidad / Tipo Consulta / Diagnóstico</th>
+                    {pivotData.columns.map((col, i) => {
+                      if (col.type === 'month') return (
+                        <th key={col.ym} style={{
+                          padding: '6px 8px', fontWeight: 700, textAlign: 'right', whiteSpace: 'nowrap', minWidth: 62,
+                          borderLeft: col.isNewYear && i > 0 ? '2px solid rgba(255,255,255,0.25)' : '1px solid rgba(255,255,255,0.08)',
+                          fontSize: '0.7rem', color: '#cbd5e1'
+                        }}>{col.label}</th>
+                      );
+                      // yearTotal column
+                      return (
+                        <th key={`yr-h-${col.year}`} style={{
+                          padding: '6px 10px', fontWeight: 800, textAlign: 'right',
+                          background: '#1e293b', borderLeft: '2px solid #4f46e5',
+                          whiteSpace: 'nowrap', fontSize: '0.72rem', color: '#a5b4fc'
+                        }}>{col.label}</th>
+                      );
+                    })}
+                    <th style={{ padding: '6px 10px', fontWeight: 800, textAlign: 'right', background: '#1e293b', borderLeft: '2px solid #6366f1', whiteSpace: 'nowrap', fontSize: '0.72rem', color: '#a5b4fc' }}>Total</th>
+                    <th style={{ padding: '6px 10px', fontWeight: 800, textAlign: 'right', background: '#1e293b', borderLeft: '1px solid rgba(255,255,255,0.12)', whiteSpace: 'nowrap', fontSize: '0.72rem', color: '#fbbf24' }}>% Tabla</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {pivotData.espRows.map((espRow, ei) => {
+                    const isExpanded = pivotExpandedEsps.has(espRow.esp);
+                    const toggleEsp = () => setPivotExpandedEsps(prev => {
+                      const next = new Set(prev);
+                      if (next.has(espRow.esp)) next.delete(espRow.esp); else next.add(espRow.esp);
+                      return next;
+                    });
+                    const espPct = pivotData.grandTotal.total ? ((espRow.total / pivotData.grandTotal.total) * 100).toFixed(1) : '0.0';
+                    return (
+                      <React.Fragment key={espRow.esp}>
+                        {/* Especialidad Row */}
+                        <tr
+                          onClick={toggleEsp}
+                          style={{ cursor: 'pointer', background: ei % 2 === 0 ? '#f8fafc' : '#ffffff', borderBottom: '1px solid #e2e8f0' }}
+                          onMouseEnter={e => e.currentTarget.style.background = '#f0f7ff'}
+                          onMouseLeave={e => e.currentTarget.style.background = ei % 2 === 0 ? '#f8fafc' : '#ffffff'}
+                        >
+                          <td style={{
+                            padding: '9px 14px', fontWeight: 800, color: '#1e293b',
+                            position: 'sticky', left: 0, background: 'inherit', zIndex: 1,
+                            borderRight: '1px solid #e2e8f0',
+                            display: 'flex', alignItems: 'center', gap: 7
+                          }}>
+                            <span style={{
+                              width: 18, height: 18, borderRadius: 5, background: isExpanded ? '#6366f1' : '#e2e8f0',
+                              color: isExpanded ? 'white' : '#64748b',
+                              display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                              flexShrink: 0, fontSize: 10, fontWeight: 900, transition: 'all 0.15s'
+                            }}>
+                              {isExpanded ? <ChevronUp size={11} /> : <ChevronDown size={11} />}
+                            </span>
+                            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{espRow.esp}</span>
+                          </td>
+                          {pivotData.columns.map(col => {
+                            if (col.type === 'month') {
+                              const val = espRow.byMonth[col.ym] || 0;
+                              const intensity = pivotData.maxMonthVal ? val / pivotData.maxMonthVal : 0;
+                              // 40% more transparent: base 0.048, scale 0.33 (was 0.08+0.55)
+                              const bg = intensity > 0 ? `rgba(99,102,241,${(0.048 + intensity * 0.33).toFixed(3)})` : 'transparent';
+                              return (
+                                <td key={col.ym} style={{ padding: '7px 8px', textAlign: 'right', fontWeight: val > 0 ? 700 : 400, color: intensity > 0.65 ? '#312e81' : '#475569', background: bg, transition: 'background 0.1s', whiteSpace: 'nowrap' }}>
+                                  {val > 0 ? val.toLocaleString('es-CL') : <span style={{ color: '#e2e8f0' }}>—</span>}
+                                </td>
+                              );
+                            }
+                            // yearTotal column
+                            return (
+                              <td key={`${espRow.esp}-yr-${col.year}`} style={{ padding: '7px 10px', textAlign: 'right', fontWeight: 800, color: '#4f46e5', borderLeft: '2px solid #ede9fe', background: '#f5f3ff', whiteSpace: 'nowrap' }}>
+                                {(espRow.byYear[col.year] || 0).toLocaleString('es-CL')}
+                              </td>
+                            );
+                          })}
+                          <td style={{ padding: '7px 10px', textAlign: 'right', fontWeight: 900, color: '#1e293b', borderLeft: '2px solid #c7d2fe', background: '#eef2ff', whiteSpace: 'nowrap' }}>
+                            {espRow.total.toLocaleString('es-CL')}
+                          </td>
+                          <td style={{ padding: '7px 10px', textAlign: 'right', fontWeight: 800, color: '#b45309', borderLeft: '1px solid #fde68a', background: '#fffbeb', whiteSpace: 'nowrap' }}>
+                            {espPct}%
+                          </td>
+                        </tr>
+
+                        {/* Tipo Consulta Rows (expanded) */}
+                        {isExpanded && espRow.tipoRows.map((tipoRow, ti) => {
+                          const tipoKey = `${espRow.esp}|||${tipoRow.tipo}`;
+                          const isTipoExpanded = pivotExpandedTipos.has(tipoKey);
+                          const toggleTipo = (e) => {
+                            e.stopPropagation();
+                            setPivotExpandedTipos(prev => {
+                              const next = new Set(prev);
+                              if (next.has(tipoKey)) next.delete(tipoKey); else next.add(tipoKey);
+                              return next;
+                            });
+                          };
+                          const tipoPct = pivotData.grandTotal.total ? ((tipoRow.total / pivotData.grandTotal.total) * 100).toFixed(1) : '0.0';
+                          return (
+                            <React.Fragment key={tipoKey}>
+                              {/* Tipo Row */}
+                              <tr
+                                onClick={toggleTipo}
+                                style={{ background: '#f0f9ff', borderBottom: '1px solid #e0f2fe', cursor: 'pointer' }}
+                                onMouseEnter={e => e.currentTarget.style.background = '#e0f7ff'}
+                                onMouseLeave={e => e.currentTarget.style.background = '#f0f9ff'}
+                              >
+                                <td style={{
+                                  padding: '7px 14px 7px 34px', fontWeight: 700, color: '#0369a1',
+                                  position: 'sticky', left: 0, background: 'inherit', zIndex: 1,
+                                  borderRight: '1px solid #e2e8f0',
+                                  display: 'flex', alignItems: 'center', gap: 6,
+                                  fontSize: '0.73rem'
+                                }}>
+                                  <span style={{
+                                    width: 15, height: 15, borderRadius: 4, background: isTipoExpanded ? '#0ea5e9' : '#bae6fd',
+                                    color: isTipoExpanded ? 'white' : '#0369a1',
+                                    display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                                    flexShrink: 0, transition: 'all 0.15s'
+                                  }}>
+                                    {isTipoExpanded ? <ChevronUp size={9} /> : <ChevronDown size={9} />}
+                                  </span>
+                                  <span style={{ display: 'inline-block', width: 7, height: 7, borderRadius: '50%', background: getTipoColor(tipoRow.tipo, ti), flexShrink: 0 }} />
+                                  <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{tipoRow.tipo}</span>
+                                </td>
+                                {pivotData.columns.map(col => {
+                                  if (col.type === 'month') {
+                                    const val = tipoRow.byMonth[col.ym] || 0;
+                                    const intensity = pivotData.maxMonthVal ? val / pivotData.maxMonthVal : 0;
+                                    const bg = intensity > 0 ? `rgba(14,165,233,${(0.03 + intensity * 0.27).toFixed(3)})` : 'transparent';
+                                    return (
+                                      <td key={col.ym} style={{ padding: '6px 8px', textAlign: 'right', fontWeight: val > 0 ? 600 : 400, color: intensity > 0.65 ? '#075985' : '#64748b', background: bg, fontSize: '0.72rem', whiteSpace: 'nowrap' }}>
+                                        {val > 0 ? val.toLocaleString('es-CL') : <span style={{ color: '#e2e8f0' }}>—</span>}
+                                      </td>
+                                    );
+                                  }
+                                  return (
+                                    <td key={`${tipoRow.tipo}-yr-${col.year}`} style={{ padding: '6px 10px', textAlign: 'right', fontWeight: 700, color: '#0369a1', borderLeft: '2px solid #bae6fd', background: '#f0f9ff', fontSize: '0.72rem', whiteSpace: 'nowrap' }}>
+                                      {(tipoRow.byYear[col.year] || 0).toLocaleString('es-CL')}
+                                    </td>
+                                  );
+                                })}
+                                <td style={{ padding: '6px 10px', textAlign: 'right', fontWeight: 800, color: '#0369a1', borderLeft: '2px solid #bae6fd', background: '#e0f2fe', fontSize: '0.72rem', whiteSpace: 'nowrap' }}>
+                                  {tipoRow.total.toLocaleString('es-CL')}
+                                </td>
+                                <td style={{ padding: '6px 10px', textAlign: 'right', fontWeight: 700, color: '#92400e', borderLeft: '1px solid #fde68a', background: '#fefce8', fontSize: '0.72rem', whiteSpace: 'nowrap' }}>
+                                  {tipoPct}%
+                                </td>
+                              </tr>
+
+                              {/* Actividad / Prestación Rows (expanded from tipo) */}
+                              {isTipoExpanded && tipoRow.actRows.map((actRow, ai) => {
+                                const actPct = pivotData.grandTotal.total ? ((actRow.total / pivotData.grandTotal.total) * 100).toFixed(2) : '0.00';
+                                return (
+                                  <tr key={`${tipoKey}-${actRow.act}`} style={{ background: '#f8fffe', borderBottom: '1px solid #e0fdf4' }}
+                                    onMouseEnter={e => e.currentTarget.style.background = '#ccfbf1'}
+                                    onMouseLeave={e => e.currentTarget.style.background = '#f8fffe'}
+                                  >
+                                    <td style={{
+                                      padding: '5px 14px 5px 58px', fontWeight: 500, color: '#047857',
+                                      position: 'sticky', left: 0, background: 'inherit', zIndex: 1,
+                                      borderRight: '1px solid #e2e8f0', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 260,
+                                      fontSize: '0.68rem', fontStyle: 'italic'
+                                    }}>
+                                      <span style={{ display: 'inline-block', width: 4, height: 4, borderRadius: '50%', background: '#10b981', marginRight: 7, flexShrink: 0, verticalAlign: 'middle' }} />
+                                      {actRow.act}
+                                    </td>
+                                    {pivotData.columns.map(col => {
+                                      if (col.type === 'month') {
+                                        const val = actRow.byMonth[col.ym] || 0;
+                                        const intensity = pivotData.maxMonthVal ? val / pivotData.maxMonthVal : 0;
+                                        const bg = intensity > 0 ? `rgba(16,185,129,${(0.04 + intensity * 0.22).toFixed(3)})` : 'transparent';
+                                        return (
+                                          <td key={col.ym} style={{ padding: '5px 8px', textAlign: 'right', fontWeight: val > 0 ? 500 : 400, color: intensity > 0.65 ? '#065f46' : '#6b7280', background: bg, fontSize: '0.68rem', whiteSpace: 'nowrap' }}>
+                                            {val > 0 ? val.toLocaleString('es-CL') : <span style={{ color: '#d1fae5' }}>—</span>}
+                                          </td>
+                                        );
+                                      }
+                                      return (
+                                        <td key={`${actRow.act}-yr-${col.year}`} style={{ padding: '5px 10px', textAlign: 'right', fontWeight: 600, color: '#047857', borderLeft: '2px solid #a7f3d0', background: '#ecfdf5', fontSize: '0.68rem', whiteSpace: 'nowrap' }}>
+                                          {(actRow.byYear[col.year] || 0).toLocaleString('es-CL')}
+                                        </td>
+                                      );
+                                    })}
+                                    <td style={{ padding: '5px 10px', textAlign: 'right', fontWeight: 700, color: '#047857', borderLeft: '2px solid #a7f3d0', background: '#d1fae5', fontSize: '0.68rem', whiteSpace: 'nowrap' }}>
+                                      {actRow.total.toLocaleString('es-CL')}
+                                    </td>
+                                    <td style={{ padding: '5px 10px', textAlign: 'right', fontWeight: 600, color: '#78350f', borderLeft: '1px solid #fde68a', background: '#fffbeb', fontSize: '0.68rem', whiteSpace: 'nowrap' }}>
+                                      {actPct}%
+                                    </td>
+                                  </tr>
+                                );
+                              })}
+                            </React.Fragment>
+                          );
+                        })}
+                      </React.Fragment>
+                    );
+                  })}
+
+                  {/* Grand Total Row */}
+                  <tr style={{ background: '#0f172a', borderTop: '2px solid #6366f1' }}>
+                    <td style={{ padding: '10px 14px', fontWeight: 900, color: '#ffffff', position: 'sticky', left: 0, background: '#0f172a', zIndex: 1, borderRight: '1px solid rgba(255,255,255,0.15)', fontSize: '0.8rem' }}>
+                      🏥 TOTAL GENERAL
+                    </td>
+                    {pivotData.columns.map(col => {
+                      if (col.type === 'month') return (
+                        <td key={`grand-${col.ym}`} style={{ padding: '8px 8px', textAlign: 'right', fontWeight: 800, color: '#e2e8f0', borderLeft: '1px solid rgba(255,255,255,0.08)', whiteSpace: 'nowrap', fontSize: '0.76rem' }}>
+                          {(pivotData.grandTotal.byMonth[col.ym] || 0).toLocaleString('es-CL')}
+                        </td>
+                      );
+                      return (
+                        <td key={`grand-yr-${col.year}`} style={{ padding: '8px 10px', textAlign: 'right', fontWeight: 900, color: '#a5b4fc', borderLeft: '2px solid #6366f1', background: '#1e1b4b', whiteSpace: 'nowrap', fontSize: '0.76rem' }}>
+                          {(pivotData.grandTotal.byYear[col.year] || 0).toLocaleString('es-CL')}
+                        </td>
+                      );
+                    })}
+                    <td style={{ padding: '8px 10px', textAlign: 'right', fontWeight: 900, color: '#ffffff', borderLeft: '2px solid #818cf8', background: '#312e81', whiteSpace: 'nowrap', fontSize: '0.8rem' }}>
+                      {pivotData.grandTotal.total.toLocaleString('es-CL')}
+                    </td>
+                    <td style={{ padding: '8px 10px', textAlign: 'right', fontWeight: 900, color: '#fbbf24', borderLeft: '1px solid rgba(255,255,255,0.12)', background: '#1c1917', whiteSpace: 'nowrap', fontSize: '0.76rem' }}>
+                      100%
+                    </td>
+                  </tr>
+                </tbody>
+
+              </table>
             </div>
           </div>
         </div>
