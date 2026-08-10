@@ -1184,7 +1184,7 @@ export default function ActividadesMedicinaDashboard({ onBack }) {
                     <LineChart data={trendData} margin={{ top: 20, right: 24, left: 0, bottom: 40 }}>
                       <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
                       <XAxis dataKey="label" tick={{ fontSize: 10, fill: '#64748b' }} angle={-35} textAnchor="end" height={55} interval={0} />
-                      <YAxis tickFormatter={v => `${v}%`} tick={{ fontSize: 11, fill: '#64748b' }} domain={[0, 100]} />
+                      <YAxis tickFormatter={v => `${v}%`} tick={{ fontSize: 11, fill: '#64748b' }} domain={[dataMin => Math.max(0, Math.floor(dataMin - 5)), dataMax => Math.min(100, Math.ceil(dataMax + 5))]} />
                       <ReferenceLine
                         y={active.key === 'nsp' ? 20 : 80}
                         stroke={active.key === 'nsp' ? '#ef444488' : '#10b98188'}
