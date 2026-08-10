@@ -184,6 +184,9 @@ export default function ActividadesMedicinaDashboard({ onBack }) {
   const [currentPage, setCurrentPage] = useState(1);
   const rowsPerPage = 25;
 
+  // Indicadores de Gestión
+  const [selectedIndicator, setSelectedIndicator] = useState('nsp');
+
   // Monthly Evolution Chart State
   const [chartMode, setChartMode] = useState('stacked'); // 'stacked' | 'grouped'
   const [startDateFilter, setStartDateFilter] = useState('2025-01'); // '2025-01' | 'all'
@@ -434,10 +437,9 @@ export default function ActividadesMedicinaDashboard({ onBack }) {
     return { espRows, months, monthLabels, columns, years, grandTotal, maxMonthVal };
   }, [productionRecords, startDateFilter]);
 
-  // ─── NSP Analysis Data ───────────────────────────────────────────────────
-  const nspData = useMemo(() => {
+  // ─── Indicadores de Gestión Data ────────────────────────────────────────────
+  const indicadoresData = useMemo(() => {
     const monthNames = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
-    // All records from 2025 onwards (no production filter — we need ALL states)
     const source = baseRecords.filter(r => {
       const ym = r.fecha_atencion ? String(r.fecha_atencion).substring(0, 7) : null;
       return ym && ym >= '2025-01';
@@ -446,81 +448,45 @@ export default function ActividadesMedicinaDashboard({ onBack }) {
     const isNSP = r => {
       const ea = (r.estado_atencion || '').toUpperCase();
       const eh = (r.estado_hora || '').toUpperCase();
-      return ea.includes('NO SE PRESENTO') || ea.includes('NO SE PRESENTÓ') || eh.includes('NO SE PRESENTO') || eh.includes('NO SE PRESENTÓ');
-    };
-    const isSP = r => {
-      const ea = (r.estado_atencion || '').toUpperCase();
-      const eh = (r.estado_hora || '').toUpperCase();
-      return ea === 'SE PRESENTO' || ea === 'SE PRESENTÓ' || eh === 'EJECUTADA';
+      return ea.includes('NO SE PRESENTO') || ea.includes('NO SE PRESENT\u00d3') || eh.includes('NO SE PRESENTO') || eh.includes('NO SE PRESENT\u00d3');
     };
 
-    // Global KPIs
+    // Months present in the dataset
+    const months = [...new Set(source.map(r => String(r.fecha_atencion).substring(0, 7)))].sort();
+
+    // ── NSP ──────────────────────────────────────────────────────────────────
     const totalCitados = source.length;
     const totalNSP = source.filter(isNSP).length;
-    const totalSP = source.filter(isSP).length;
-    const pctNSP = totalCitados ? ((totalNSP / totalCitados) * 100).toFixed(1) : '0.0';
-    const citasRecuperables = totalNSP;
+    const pctNSP = totalCitados ? parseFloat(((totalNSP / totalCitados) * 100).toFixed(1)) : 0;
 
-    // Monthly evolution: NSP% per month (all specialties combined)
-    const months = [...new Set(source.map(r => String(r.fecha_atencion).substring(0, 7)))].sort();
-    const monthlyTrend = months.map(ym => {
+    const nspTrend = months.map(ym => {
       const mn = parseInt(ym.substring(5, 7), 10);
       const yr = ym.substring(0, 4);
       const recs = source.filter(r => String(r.fecha_atencion).substring(0, 7) === ym);
       const nsp = recs.filter(isNSP).length;
-      const sp = recs.filter(isSP).length;
-      const total = recs.length;
-      return {
-        ym,
-        label: `${monthNames[mn - 1]} ${yr}`,
-        nsp,
-        sp,
-        total,
-        pctNSP: total ? parseFloat(((nsp / total) * 100).toFixed(1)) : 0
-      };
+      return { label: `${monthNames[mn - 1]} ${yr}`, value: recs.length ? parseFloat(((nsp / recs.length) * 100).toFixed(1)) : 0, nsp, total: recs.length };
     });
 
-    // Per-specialty NSP ranking
-    const espMap = {};
-    source.forEach(r => {
-      const esp = r.especialidad || 'Sin especialidad';
-      if (!espMap[esp]) espMap[esp] = { esp, total: 0, nsp: 0, sp: 0 };
-      espMap[esp].total++;
-      if (isNSP(r)) espMap[esp].nsp++;
-      if (isSP(r)) espMap[esp].sp++;
-    });
-    const espRanking = Object.values(espMap)
-      .filter(e => e.total >= 20)
-      .map(e => ({ ...e, pctNSP: parseFloat(((e.nsp / e.total) * 100).toFixed(1)) }))
-      .sort((a, b) => b.pctNSP - a.pctNSP);
+    // ── Pertinencia ──────────────────────────────────────────────────────────
+    // Only records that have a pertinencia value (S or N)
+    const withPert = source.filter(r => r.pertinencia && (r.pertinencia.toUpperCase() === 'S' || r.pertinencia.toUpperCase() === 'N'));
+    const pertS = withPert.filter(r => r.pertinencia.toUpperCase() === 'S').length;
+    const pctPert = withPert.length ? parseFloat(((pertS / withPert.length) * 100).toFixed(1)) : 0;
 
-    // Top 8 especialidades by volume for evolution lines
-    const topEsps = [...espRanking].sort((a, b) => b.total - a.total).slice(0, 8).map(e => e.esp);
-
-    // Monthly NSP% per specialty (for line chart)
-    const espTrendMap = {};
-    topEsps.forEach(esp => { espTrendMap[esp] = {}; });
-    source.forEach(r => {
-      const esp = r.especialidad || 'Sin especialidad';
-      if (!topEsps.includes(esp)) return;
-      const ym = String(r.fecha_atencion).substring(0, 7);
-      if (!espTrendMap[esp][ym]) espTrendMap[esp][ym] = { total: 0, nsp: 0 };
-      espTrendMap[esp][ym].total++;
-      if (isNSP(r)) espTrendMap[esp][ym].nsp++;
-    });
-    const espTrendData = months.map(ym => {
+    const pertTrend = months.map(ym => {
       const mn = parseInt(ym.substring(5, 7), 10);
       const yr = ym.substring(0, 4);
-      const row = { ym, label: `${monthNames[mn - 1]} ${yr}` };
-      topEsps.forEach(esp => {
-        const d = espTrendMap[esp][ym];
-        row[esp] = d && d.total >= 3 ? parseFloat(((d.nsp / d.total) * 100).toFixed(1)) : null;
-      });
-      return row;
+      const recs = withPert.filter(r => String(r.fecha_atencion).substring(0, 7) === ym);
+      const s = recs.filter(r => r.pertinencia.toUpperCase() === 'S').length;
+      return { label: `${monthNames[mn - 1]} ${yr}`, value: recs.length ? parseFloat(((s / recs.length) * 100).toFixed(1)) : 0, pertS: s, total: recs.length };
     });
 
-    return { totalCitados, totalNSP, totalSP, pctNSP, citasRecuperables, monthlyTrend, espRanking, espTrendData, topEsps, months };
+    return {
+      nsp: { pct: pctNSP, total: totalCitados, n: totalNSP, trend: nspTrend },
+      pertinencia: { pct: pctPert, total: withPert.length, n: pertS, trend: pertTrend }
+    };
   }, [baseRecords]);
+
 
   const exportCSV = () => {
     const headers = ['Fecha Atención','Especialidad','Profesional','Tipo Consulta','Actividad','Diagnóstico 1','Estado Atención','Estado Hora','Sobrecupo','Videoconsulta'];
@@ -648,7 +614,7 @@ export default function ActividadesMedicinaDashboard({ onBack }) {
         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
           {[
             ['resumen', 'Resumen General', <PieIcon size={14} />],
-            ['nsp', 'Análisis NSP', <AlertTriangle size={14} />]
+            ['indicadores', 'Indicadores de Gestión', <BarChart2 size={14} />]
           ].map(([id, label, icon]) => {
             const isActive = activeTab === id;
             return (
@@ -1057,137 +1023,170 @@ export default function ActividadesMedicinaDashboard({ onBack }) {
         </div>
       )}
 
-      {/* Tab: Análisis NSP */}
-      {activeTab === 'nsp' && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
 
-          {/* NSP KPI Cards */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16 }}>
-            {[
-              { label: 'Citas Citadas', value: nspData.totalCitados.toLocaleString('es-CL'), sub: 'Total agendadas 2025–hoy', color: '#6366f1', icon: <Calendar size={18}/> },
-              { label: 'No Se Presentaron', value: nspData.totalNSP.toLocaleString('es-CL'), sub: `${nspData.pctNSP}% de las citas`, color: '#ef4444', icon: <XCircle size={18}/> },
-              { label: 'Se Presentaron', value: nspData.totalSP.toLocaleString('es-CL'), sub: `${(100 - parseFloat(nspData.pctNSP)).toFixed(1)}% de asistencia`, color: '#10b981', icon: <CheckCircle2 size={18}/> },
-              { label: '% NSP Global', value: `${nspData.pctNSP}%`, sub: parseFloat(nspData.pctNSP) > 20 ? '⚠️ Por encima del umbral' : '✅ Dentro del umbral', color: parseFloat(nspData.pctNSP) > 20 ? '#ef4444' : '#10b981', icon: <AlertTriangle size={18}/> }
-            ].map((k, i) => (
-              <div key={i} style={{ background: 'white', borderRadius: 16, padding: '20px 24px', boxShadow: '0 2px 12px rgba(0,0,0,0.07)', borderLeft: `4px solid ${k.color}` }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10, color: k.color, marginBottom: 6 }}>
-                  {k.icon}
-                  <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: 0.5 }}>{k.label}</span>
-                </div>
-                <div style={{ fontSize: '2rem', fontWeight: 800, color: '#1e293b', lineHeight: 1.1 }}>{k.value}</div>
-                <div style={{ fontSize: '0.78rem', color: '#94a3b8', marginTop: 3 }}>{k.sub}</div>
+      {/* Tab: Indicadores de Gestión */}
+      {activeTab === 'indicadores' && (() => {
+        const indicators = [
+          {
+            key: 'nsp',
+            title: '% No Se Presentó (NSP)',
+            shortTitle: '% NSP',
+            icon: XCircle,
+            color: '#ef4444',
+            colorBg: '#fef2f2',
+            borderColor: '#fca5a5',
+            definition: 'Porcentaje de pacientes citados que no asistieron a su consulta médica de especialidad en el período evaluado.',
+            formula: 'N° NSP / Total Citados × 100',
+            value: `${indicadoresData.nsp.pct}%`,
+            sub: `${indicadoresData.nsp.n.toLocaleString('es-CL')} NSP de ${indicadoresData.nsp.total.toLocaleString('es-CL')} citas`,
+            trend: indicadoresData.nsp.trend,
+            metaLabel: 'Umbral crítico: 20%',
+            isGood: (v) => v < 20
+          },
+          {
+            key: 'pertinencia',
+            title: '% Pertinencia de Consulta',
+            shortTitle: '% Pertinencia',
+            icon: CheckCircle2,
+            color: '#10b981',
+            colorBg: '#f0fdf4',
+            borderColor: '#6ee7b7',
+            definition: 'Porcentaje de consultas evaluadas en las que el profesional confirmó que la derivación fue pertinente (campo Pertinencia = S).',
+            formula: 'N° Pertinentes (S) / Total Evaluados × 100',
+            value: `${indicadoresData.pertinencia.pct}%`,
+            sub: `${indicadoresData.pertinencia.n.toLocaleString('es-CL')} pertinentes de ${indicadoresData.pertinencia.total.toLocaleString('es-CL')} evaluados`,
+            trend: indicadoresData.pertinencia.trend,
+            metaLabel: 'Meta: ≥ 80%',
+            isGood: (v) => v >= 80
+          }
+        ];
+
+        const active = indicators.find(i => i.key === selectedIndicator) || indicators[0];
+        const ActiveIcon = active.icon;
+        const trendData = active.trend;
+        const lastVal = trendData.length ? trendData[trendData.length - 1].value : 0;
+        const good = active.isGood(lastVal);
+        const maxVal = trendData.length ? Math.max(...trendData.map(d => d.value)) : 0;
+        const minVal = trendData.length ? Math.min(...trendData.map(d => d.value)) : 0;
+
+        return (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <BarChart2 size={22} color="#6366f1" />
+              <div>
+                <h2 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 900, color: '#1e293b' }}>Indicadores de Gestión Clínica</h2>
+                <p style={{ margin: 0, fontSize: '0.78rem', color: '#94a3b8' }}>Haz clic en un indicador para ver su evolución mensual · Datos desde Ene 2025</p>
               </div>
-            ))}
-          </div>
+            </div>
 
-          {/* Evolución mensual NSP absoluto + % */}
-          <div style={{ background: 'white', borderRadius: 16, padding: 24, boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
-            <h3 style={{ fontWeight: 800, color: '#1e293b', margin: '0 0 4px', fontSize: '1.05rem', display: 'flex', alignItems: 'center', gap: 8 }}>
-              <TrendingUp size={18} color="#ef4444" /> Evolución Mensual de NSP — Volumen y Tasa %
-            </h3>
-            <p style={{ fontSize: '0.78rem', color: '#94a3b8', margin: '0 0 18px' }}>
-              Barras = N° de inasistencias · Línea roja = % NSP sobre total citado · Umbral crítico: 20%
-            </p>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={nspData.monthlyTrend} margin={{ top: 10, right: 40, left: 10, bottom: 30 }} barCategoryGap="3%">
-                <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
-                <XAxis dataKey="label" tick={{ fontSize: 10, fill: '#64748b' }} angle={-30} textAnchor="end" height={50} />
-                <YAxis yAxisId="left" tick={{ fontSize: 11, fill: '#64748b' }} />
-                <YAxis yAxisId="right" orientation="right" tickFormatter={v => `${v}%`} tick={{ fontSize: 11, fill: '#ef4444' }} domain={[0, 'dataMax + 5']} />
-                <Tooltip
-                  formatter={(value, name) => name === '% NSP' ? [`${value}%`, name] : [value.toLocaleString('es-CL'), name]}
-                  contentStyle={{ background: 'rgba(15,23,42,0.95)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 12, color: 'white', fontSize: '0.82rem' }}
-                />
-                <Legend wrapperStyle={{ paddingTop: 10, fontSize: 11 }} />
-                <Bar yAxisId="left" dataKey="nsp" name="NSP (N°)" fill="#fca5a5" radius={[4,4,0,0]}>
-                  <LabelList dataKey="nsp" position="top" style={{ fontSize: 9, fill: '#dc2626', fontWeight: 700 }} formatter={v => v > 0 ? v : ''} />
-                </Bar>
-                <Bar yAxisId="left" dataKey="sp" name="Se Presentó (N°)" fill="#6ee7b7" radius={[4,4,0,0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '300px 1fr', gap: 24, alignItems: 'stretch' }}>
 
-          {/* Curva NSP% por Especialidad */}
-          <div style={{ background: 'white', borderRadius: 16, padding: 24, boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
-            <h3 style={{ fontWeight: 800, color: '#1e293b', margin: '0 0 4px', fontSize: '1.05rem', display: 'flex', alignItems: 'center', gap: 8 }}>
-              <Activity size={18} color="#6366f1" /> Curva Evolutiva % NSP por Especialidad
-            </h3>
-            <p style={{ fontSize: '0.78rem', color: '#94a3b8', margin: '0 0 18px' }}>
-              Top 8 especialidades por volumen · Valores solo cuando N ≥ 3 · Línea punteada roja = umbral 20%
-            </p>
-            <ResponsiveContainer width="100%" height={340}>
-              <BarChart data={nspData.espTrendData} margin={{ top: 10, right: 20, left: 10, bottom: 30 }} barCategoryGap="3%">
-                <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
-                <XAxis dataKey="label" tick={{ fontSize: 10, fill: '#64748b' }} angle={-30} textAnchor="end" height={50} />
-                <YAxis tickFormatter={v => `${v}%`} tick={{ fontSize: 11, fill: '#64748b' }} domain={[0, 'dataMax + 5']} />
-                <Tooltip
-                  formatter={(v, name) => v != null ? [`${v}%`, name.length > 35 ? name.substring(0,33)+'…' : name] : ['—', name]}
-                  contentStyle={{ background: 'rgba(15,23,42,0.95)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 12, color: 'white', fontSize: '0.78rem' }}
-                />
-                <Legend wrapperStyle={{ paddingTop: 10, fontSize: 10 }} formatter={v => v.length > 30 ? v.substring(0,28)+'…' : v} />
-                {nspData.topEsps.map((esp, i) => (
-                  <Bar key={esp} dataKey={esp} fill={COLORS_PIE[i % COLORS_PIE.length]} radius={[3,3,0,0]} stackId={undefined} />
-                ))}
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-
-          {/* Ranking de Especialidades por NSP */}
-          <div style={{ background: 'white', borderRadius: 16, padding: 24, boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
-            <h3 style={{ fontWeight: 800, color: '#1e293b', margin: '0 0 4px', fontSize: '1.05rem', display: 'flex', alignItems: 'center', gap: 8 }}>
-              <BarChart2 size={18} color="#f59e0b" /> Ranking de Especialidades por Tasa NSP
-            </h3>
-            <p style={{ fontSize: '0.78rem', color: '#94a3b8', margin: '0 0 18px' }}>
-              Ordenado de mayor a menor % NSP · Solo especialidades con ≥ 20 citas · 🔴 &gt;20% crítico · 🟡 10–20% alerta · 🟢 &lt;10% óptimo
-            </p>
-            <div style={{ overflowX: 'auto', borderRadius: 12, border: '1px solid #e2e8f0' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.82rem' }}>
-                <thead>
-                  <tr style={{ background: '#0f172a', color: 'white' }}>
-                    <th style={{ padding: '10px 16px', fontWeight: 700, textAlign: 'left', minWidth: 280 }}>Especialidad</th>
-                    <th style={{ padding: '10px 12px', fontWeight: 700, textAlign: 'right' }}>Citados</th>
-                    <th style={{ padding: '10px 12px', fontWeight: 700, textAlign: 'right', color: '#fca5a5' }}>NSP (N°)</th>
-                    <th style={{ padding: '10px 12px', fontWeight: 700, textAlign: 'right', color: '#6ee7b7' }}>SP (N°)</th>
-                    <th style={{ padding: '10px 16px', fontWeight: 700, textAlign: 'right', color: '#fbbf24' }}>% NSP</th>
-                    <th style={{ padding: '10px 16px', fontWeight: 700, textAlign: 'left', minWidth: 180 }}>Barra NSP</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {nspData.espRanking.map((e, i) => {
-                    const pct = e.pctNSP;
-                    const alertColor = pct >= 20 ? '#ef4444' : pct >= 10 ? '#f59e0b' : '#10b981';
-                    const alertBg = pct >= 20 ? '#fef2f2' : pct >= 10 ? '#fffbeb' : '#f0fdf4';
-                    const badge = pct >= 20 ? '🔴' : pct >= 10 ? '🟡' : '🟢';
-                    return (
-                      <tr key={i} style={{ borderBottom: '1px solid #f1f5f9', background: i % 2 === 0 ? '#f8fafc' : 'white' }}
-                        onMouseEnter={ev => ev.currentTarget.style.background = '#f0f7ff'}
-                        onMouseLeave={ev => ev.currentTarget.style.background = i % 2 === 0 ? '#f8fafc' : 'white'}
-                      >
-                        <td style={{ padding: '10px 16px', fontWeight: 700, color: '#1e293b' }}>
-                          {badge} {e.esp.length > 50 ? e.esp.substring(0,48)+'…' : e.esp}
-                        </td>
-                        <td style={{ padding: '10px 12px', textAlign: 'right', color: '#64748b', fontWeight: 600 }}>{e.total.toLocaleString('es-CL')}</td>
-                        <td style={{ padding: '10px 12px', textAlign: 'right', fontWeight: 800, color: '#dc2626' }}>{e.nsp.toLocaleString('es-CL')}</td>
-                        <td style={{ padding: '10px 12px', textAlign: 'right', fontWeight: 700, color: '#059669' }}>{e.sp.toLocaleString('es-CL')}</td>
-                        <td style={{ padding: '10px 16px', textAlign: 'right', fontWeight: 900, color: alertColor, background: alertBg }}>
-                          {pct}%
-                        </td>
-                        <td style={{ padding: '10px 16px' }}>
-                          <div style={{ background: '#f1f5f9', borderRadius: 8, height: 10, width: '100%', overflow: 'hidden', position: 'relative' }}>
-                            <div style={{ width: `${Math.min(pct, 100)}%`, height: '100%', background: alertColor, borderRadius: 8, transition: 'width 0.4s' }} />
-                            {/* 20% threshold marker */}
-                            <div style={{ position: 'absolute', left: '20%', top: 0, height: '100%', width: 2, background: '#1e293b', opacity: 0.3 }} />
+              {/* LEFT: Indicator cards */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                {indicators.map(ind => {
+                  const IndIcon = ind.icon;
+                  const isActive = ind.key === selectedIndicator;
+                  const indLastVal = ind.trend.length ? ind.trend[ind.trend.length - 1].value : 0;
+                  const indGood = ind.isGood(indLastVal);
+                  return (
+                    <div
+                      key={ind.key}
+                      onClick={() => setSelectedIndicator(ind.key)}
+                      style={{
+                        background: isActive ? ind.colorBg : '#ffffff',
+                        border: isActive ? `2.5px solid ${ind.color}` : '1.5px solid #e2e8f0',
+                        borderLeft: `5px solid ${ind.color}`,
+                        borderRadius: 16,
+                        padding: '16px 18px',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s ease',
+                        boxShadow: isActive ? `0 8px 24px ${ind.color}22` : '0 1px 4px rgba(0,0,0,0.04)',
+                        transform: isActive ? 'scale(1.02)' : 'scale(1)'
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <div style={{ background: isActive ? ind.color : '#f1f5f9', color: isActive ? 'white' : '#64748b', width: 30, height: 30, borderRadius: 9, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <IndIcon size={15} />
                           </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+                          <span style={{ fontWeight: 800, fontSize: '0.88rem', color: isActive ? '#1e293b' : '#475569' }}>{ind.shortTitle}</span>
+                        </div>
+                        <span style={{ fontSize: '0.68rem', fontWeight: 700, padding: '2px 8px', borderRadius: 20, background: indGood ? '#dcfce7' : '#fef2f2', color: indGood ? '#15803d' : '#dc2626' }}>
+                          {indGood ? '✅ OK' : '⚠️ Alerta'}
+                        </span>
+                      </div>
+                      <div style={{ fontSize: '2.2rem', fontWeight: 900, color: ind.color, lineHeight: 1, marginBottom: 4 }}>{ind.value}</div>
+                      <div style={{ fontSize: '0.72rem', color: '#64748b', marginBottom: 10 }}>{ind.sub}</div>
+                      <div style={{ borderTop: '1px solid #f1f5f9', paddingTop: 10 }}>
+                        <div style={{ fontSize: '0.68rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: 0.4, marginBottom: 3 }}>Definición</div>
+                        <div style={{ fontSize: '0.72rem', color: '#475569', lineHeight: 1.4, marginBottom: 8 }}>{ind.definition}</div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                          <span style={{ fontSize: '0.65rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase' }}>Fórmula:</span>
+                          <span style={{ fontSize: '0.72rem', fontWeight: 700, color: ind.color, fontStyle: 'italic' }}>{ind.formula}</span>
+                        </div>
+                        <div style={{ fontSize: '0.68rem', color: '#64748b', marginTop: 4, fontStyle: 'italic' }}>{ind.metaLabel}</div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* RIGHT: Chart panel */}
+              <div style={{ background: 'white', borderRadius: 18, padding: 24, boxShadow: '0 2px 16px rgba(0,0,0,0.07)', border: `1.5px solid ${active.borderColor}`, display: 'flex', flexDirection: 'column' }}>
+                <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 16 }}>
+                  <div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                      <div style={{ background: active.color, color: 'white', width: 32, height: 32, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <ActiveIcon size={16} />
+                      </div>
+                      <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 900, color: '#1e293b' }}>Evolución Mensual: {active.shortTitle}</h3>
+                    </div>
+                    <p style={{ margin: 0, fontSize: '0.75rem', color: '#94a3b8' }}>{active.formula} · {active.metaLabel}</p>
+                  </div>
+                  <div style={{ textAlign: 'right' }}>
+                    <div style={{ fontSize: '2rem', fontWeight: 900, color: active.color }}>{active.value}</div>
+                    <div style={{ fontSize: '0.72rem', color: good ? '#15803d' : '#dc2626', fontWeight: 700 }}>
+                      {good ? '✅ Dentro del umbral' : '⚠️ Fuera del umbral'}
+                    </div>
+                  </div>
+                </div>
+
+                <div style={{ flex: 1, minHeight: 300 }}>
+                  <ResponsiveContainer width="100%" height={300}>
+                    <BarChart data={trendData} margin={{ top: 14, right: 20, left: 0, bottom: 40 }} barCategoryGap="8%">
+                      <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+                      <XAxis dataKey="label" tick={{ fontSize: 10, fill: '#64748b' }} angle={-35} textAnchor="end" height={55} interval={0} />
+                      <YAxis tickFormatter={v => `${v}%`} tick={{ fontSize: 11, fill: '#64748b' }} domain={[0, 100]} />
+                      <Tooltip
+                        formatter={(v) => [`${v}%`, active.shortTitle]}
+                        contentStyle={{ background: 'rgba(15,23,42,0.95)', border: `1px solid ${active.color}44`, borderRadius: 12, color: 'white', fontSize: '0.82rem' }}
+                        cursor={{ fill: `${active.color}11` }}
+                      />
+                      <Bar dataKey="value" name={active.shortTitle} fill={active.colorBg} stroke={active.color} strokeWidth={2} radius={[5,5,0,0]}>
+                        <LabelList dataKey="value" position="top" style={{ fontSize: 9, fill: active.color, fontWeight: 700 }} formatter={v => `${v}%`} />
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginTop: 16, borderTop: '1px solid #f1f5f9', paddingTop: 16 }}>
+                  {[
+                    { label: 'Valor Actual', val: active.value, color: active.color },
+                    { label: 'Máximo registrado', val: `${maxVal}%`, color: '#f59e0b' },
+                    { label: 'Mínimo registrado', val: `${minVal}%`, color: '#6366f1' }
+                  ].map((s, i) => (
+                    <div key={i} style={{ textAlign: 'center', background: '#f8fafc', borderRadius: 10, padding: '10px 8px' }}>
+                      <div style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 700, textTransform: 'uppercase', marginBottom: 4 }}>{s.label}</div>
+                      <div style={{ fontSize: '1.3rem', fontWeight: 900, color: s.color }}>{s.val}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
     </div>
   );
 }
