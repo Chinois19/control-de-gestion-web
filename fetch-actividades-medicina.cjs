@@ -152,6 +152,7 @@ async function run() {
       if (row.HIP_DIAGNOSTICA) obj.hip_diagnostica = row.HIP_DIAGNOSTICA;
       if (row.CONTRAREFERIR) obj.contrareferir = row.CONTRAREFERIR;
       if (row.CONTRAREFERIR_ESTABLECIMIENTO) obj.contrareferir_establecimiento = row.CONTRAREFERIR_ESTABLECIMIENTO;
+      if (row.ACCION_A_TOMAR) obj.accion_a_tomar = row.ACCION_A_TOMAR;
       return obj;
     });
 

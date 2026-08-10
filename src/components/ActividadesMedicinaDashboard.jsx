@@ -561,11 +561,46 @@ export default function ActividadesMedicinaDashboard({ onBack }) {
       .map(e => ({ ...e, pct: parseFloat(((e.pertS / e.total) * 100).toFixed(1)) }))
       .sort((a, b) => a.pct - b.pct); // lowest contrareferral rate first (worst)
 
+    // ── Resolutividad (% Altas de Especialidad) ──────────────────────────────
+    // Evaluates percentage of attended consultations where action taken was Discharge / Alta
+    const withAccion = source.filter(r => r.accion_a_tomar);
+    const altas = withAccion.filter(r => {
+      const act = (r.accion_a_tomar || '').toUpperCase();
+      return act.includes('ALTA') || act.includes('ALTAS') || act.includes('EGRESO');
+    }).length;
+    const pctAltas = withAccion.length ? parseFloat(((altas / withAccion.length) * 100).toFixed(1)) : 0;
+
+    const altasTrend = months.map(ym => {
+      const mn = parseInt(ym.substring(5, 7), 10);
+      const yr = ym.substring(0, 4);
+      const recs = withAccion.filter(r => String(r.fecha_atencion).substring(0, 7) === ym);
+      const a = recs.filter(r => {
+        const act = (r.accion_a_tomar || '').toUpperCase();
+        return act.includes('ALTA') || act.includes('ALTAS') || act.includes('EGRESO');
+      }).length;
+      return { label: `${monthNames[mn - 1]} ${yr}`, value: recs.length ? parseFloat(((a / recs.length) * 100).toFixed(1)) : 0, pertS: a, total: recs.length };
+    });
+
+    // ── Insights: Per-specialty Resolutividad ranking ─────────────────────────
+    const espAltasMap = {};
+    withAccion.forEach(r => {
+      const esp = r.especialidad || 'Sin especialidad';
+      if (!espAltasMap[esp]) espAltasMap[esp] = { esp, total: 0, pertS: 0 };
+      espAltasMap[esp].total++;
+      const act = (r.accion_a_tomar || '').toUpperCase();
+      if (act.includes('ALTA') || act.includes('ALTAS') || act.includes('EGRESO')) espAltasMap[esp].pertS++;
+    });
+    const altasByEsp = Object.values(espAltasMap)
+      .filter(e => e.total >= 5)
+      .map(e => ({ ...e, pct: parseFloat(((e.pertS / e.total) * 100).toFixed(1)) }))
+      .sort((a, b) => a.pct - b.pct); // lowest resolutividad rate first (worst)
+
     return {
       nsp: { pct: pctNSP, total: totalCitados, n: totalNSP, trend: nspTrend, byEsp: nspByEsp },
       pertinencia: { pct: pctPert, total: withPert.length, n: pertS, trend: pertTrend, byEsp: pertByEsp },
       pertinenciaTiempo: { pct: pctPertTiempo, total: withPertTiempo.length, n: pertTiempoS, trend: pertTiempoTrend, byEsp: pertTiempoByEsp },
-      contrareferencia: { pct: pctContraref, total: withContraref.length, n: contrarefS, trend: contrarefTrend, byEsp: contrarefByEsp }
+      contrareferencia: { pct: pctContraref, total: withContraref.length, n: contrarefS, trend: contrarefTrend, byEsp: contrarefByEsp },
+      resolutividad: { pct: pctAltas, total: withAccion.length, n: altas, trend: altasTrend, byEsp: altasByEsp }
     };
   }, [baseRecords]);
 
@@ -1172,6 +1207,22 @@ export default function ActividadesMedicinaDashboard({ onBack }) {
             trend: indicadoresData.contrareferencia.trend,
             metaLabel: 'Meta: ≥ 75%',
             isGood: (v) => v >= 75
+          },
+          {
+            key: 'resolutividad',
+            title: '% Resolutividad (Altas)',
+            shortTitle: '% Resolutividad (Altas)',
+            icon: UserCheck,
+            color: '#d97706',
+            colorBg: '#fffbeb',
+            borderColor: '#fcd34d',
+            definition: 'Porcentaje de atenciones de especialidad finalizadas con Alta Médica/Especialista según el campo "Acción A Tomar", midiendo la capacidad resolutiva del servicio.',
+            formula: 'N° Altas (Acción a Tomar) / Total Atendidos × 100',
+            value: `${indicadoresData.resolutividad.pct}%`,
+            sub: `${indicadoresData.resolutividad.n.toLocaleString('es-CL')} altas de ${indicadoresData.resolutividad.total.toLocaleString('es-CL')} evaluados`,
+            trend: indicadoresData.resolutividad.trend,
+            metaLabel: 'Meta: ≥ 30%',
+            isGood: (v) => v >= 30
           }
         ];
 
@@ -1274,10 +1325,10 @@ export default function ActividadesMedicinaDashboard({ onBack }) {
                       <XAxis dataKey="label" tick={{ fontSize: 10, fill: '#64748b' }} angle={-35} textAnchor="end" height={55} interval={0} />
                       <YAxis tickFormatter={v => `${v}%`} tick={{ fontSize: 11, fill: '#64748b' }} domain={[dataMin => Math.max(0, Math.floor(dataMin - 5)), dataMax => Math.min(100, Math.ceil(dataMax + 5))]} />
                       <ReferenceLine
-                        y={active.key === 'nsp' ? 20 : (active.key === 'pertinenciaTiempo' ? 85 : (active.key === 'contrareferencia' ? 75 : 80))}
-                        stroke={active.key === 'nsp' ? '#ef444488' : (active.key === 'pertinenciaTiempo' ? '#0284c788' : (active.key === 'contrareferencia' ? '#8b5cf688' : '#10b98188'))}
+                        y={active.key === 'nsp' ? 20 : (active.key === 'pertinenciaTiempo' ? 85 : (active.key === 'contrareferencia' ? 75 : (active.key === 'resolutividad' ? 30 : 80)))}
+                        stroke={active.key === 'nsp' ? '#ef444488' : (active.key === 'pertinenciaTiempo' ? '#0284c788' : (active.key === 'contrareferencia' ? '#8b5cf688' : (active.key === 'resolutividad' ? '#d9770688' : '#10b98188')))}
                         strokeDasharray="6 3"
-                        label={{ value: active.key === 'nsp' ? 'Umbral 20%' : (active.key === 'pertinenciaTiempo' ? 'Meta 85%' : (active.key === 'contrareferencia' ? 'Meta 75%' : 'Meta 80%')), position: 'right', fontSize: 10, fill: active.color, fontWeight: 700 }}
+                        label={{ value: active.key === 'nsp' ? 'Umbral 20%' : (active.key === 'pertinenciaTiempo' ? 'Meta 85%' : (active.key === 'contrareferencia' ? 'Meta 75%' : (active.key === 'resolutividad' ? 'Meta 30%' : 'Meta 80%'))), position: 'right', fontSize: 10, fill: active.color, fontWeight: 700 }}
                       />
                       <Tooltip
                         formatter={(v) => [`${v}%`, active.shortTitle]}
@@ -1321,9 +1372,11 @@ export default function ActividadesMedicinaDashboard({ onBack }) {
                         ? (indicadoresData.pertinenciaTiempo.byEsp || []).slice(0, 5)
                         : (active.key === 'contrareferencia'
                             ? (indicadoresData.contrareferencia.byEsp || []).slice(0, 5)
-                            : (indicadoresData.pertinencia.byEsp || []).slice(0, 5)));
+                            : (active.key === 'resolutividad'
+                                ? (indicadoresData.resolutividad.byEsp || []).slice(0, 5)
+                                : (indicadoresData.pertinencia.byEsp || []).slice(0, 5))));
                   const isNspInd = active.key === 'nsp';
-                  const threshold = isNspInd ? 20 : (active.key === 'pertinenciaTiempo' ? 85 : (active.key === 'contrareferencia' ? 75 : 80));
+                  const threshold = isNspInd ? 20 : (active.key === 'pertinenciaTiempo' ? 85 : (active.key === 'contrareferencia' ? 75 : (active.key === 'resolutividad' ? 30 : 80)));
                   const alertFn = isNspInd ? v => v >= threshold : v => v < threshold;
                   if (!insightRows.length) return null;
                   return (
@@ -1337,7 +1390,9 @@ export default function ActividadesMedicinaDashboard({ onBack }) {
                                 ? 'Especialidades con menor oportunidad en tiempo (bajo umbral)'
                                 : (active.key === 'contrareferencia'
                                     ? 'Especialidades con menor tasa de contrarreferencia (bajo umbral)'
-                                    : 'Especialidades con menor pertinencia (bajo umbral)'))}
+                                    : (active.key === 'resolutividad'
+                                        ? 'Especialidades con menor resolutividad / % de altas (bajo umbral)'
+                                        : 'Especialidades con menor pertinencia (bajo umbral)')))}
                         </span>
                         <span style={{ fontSize: '0.72rem', color: '#94a3b8', fontStyle: 'italic' }}>· Top 5 · evaluadas</span>
                       </div>
@@ -1357,7 +1412,7 @@ export default function ActividadesMedicinaDashboard({ onBack }) {
                                 </div>
                               </div>
                               <span style={{ fontSize: '0.72rem', color: '#64748b', whiteSpace: 'nowrap' }}>
-                                {isNspInd ? `${row.nsp} NSP de ${row.total}` : `${row.pertS} contrarreferidos de ${row.total}`}
+                                {isNspInd ? `${row.nsp} NSP de ${row.total}` : (active.key === 'resolutividad' ? `${row.pertS} altas de ${row.total}` : `${row.pertS} evaluados de ${row.total}`)}
                               </span>
                               <span style={{ fontSize: '1rem', fontWeight: 900, color: barColor, minWidth: 48, textAlign: 'right' }}>
                                 {row.pct}%
