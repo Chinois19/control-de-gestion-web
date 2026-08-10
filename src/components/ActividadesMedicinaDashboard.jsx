@@ -1056,10 +1056,9 @@ export default function ActividadesMedicinaDashboard({ onBack }) {
           </div>
         </div>
       )}
-    </div>
-  );
-}
 
+      {/* Tab: Análisis NSP */}
+      {activeTab === 'nsp' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
 
           {/* NSP KPI Cards */}
