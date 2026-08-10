@@ -371,8 +371,8 @@ export default function ActividadesMedicinaDashboard({ onBack }) {
     source.forEach(r => {
       const esp = r.especialidad || 'Sin especialidad';
       const tipo = r.tipo_consulta || 'Sin tipo';
-      // Level 3: use diagnostico_1 (available in current JSON; actividad field coming in next extraction)
-      const act = r.diagnostico_1 || 'Sin diagnóstico';
+      // Level 3: actividad (Oracle field, available after re-extraction)
+      const act = r.actividad || r.diagnostico_1 || 'Sin actividad';
       const ym = r.fecha_atencion ? String(r.fecha_atencion).substring(0, 7) : null;
       if (!ym) return;
       const year = ym.substring(0, 4);
@@ -786,10 +786,10 @@ export default function ActividadesMedicinaDashboard({ onBack }) {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16, flexWrap: 'wrap', gap: 12 }}>
               <div>
                 <h3 style={{ fontWeight: 800, color: '#1e293b', margin: 0, fontSize: '1.05rem', display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <Layers size={18} color="#6366f1" /> Producción por Especialidad · Tipo de Consulta · Diagnóstico × Mes
+                  <Layers size={18} color="#6366f1" /> Producción por Especialidad · Tipo de Consulta · Actividad × Mes
                 </h3>
                 <p style={{ fontSize: '0.78rem', color: '#94a3b8', margin: '4px 0 0' }}>
-                  Solo atenciones con estado <strong style={{ color: '#10b981' }}>SE PRESENTÓ</strong> · 3 niveles: Especialidad → Tipo Consulta → Diagnóstico · Intensidad de celda = volumen relativo
+                  Solo atenciones con estado <strong style={{ color: '#10b981' }}>SE PRESENTÓ</strong> · 3 niveles: Especialidad → Tipo Consulta → Actividad · Intensidad de celda = volumen relativo
                 </p>
               </div>
               <button
@@ -805,7 +805,7 @@ export default function ActividadesMedicinaDashboard({ onBack }) {
               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.76rem', tableLayout: 'auto' }}>
                 <thead>
                   <tr style={{ background: '#0f172a', color: 'white' }}>
-                    <th style={{ padding: '10px 14px', fontWeight: 700, textAlign: 'left', position: 'sticky', left: 0, background: '#0f172a', zIndex: 2, minWidth: 220, borderRight: '1px solid rgba(255,255,255,0.1)' }}>Especialidad / Tipo Consulta / Diagnóstico</th>
+                    <th style={{ padding: '10px 14px', fontWeight: 700, textAlign: 'left', position: 'sticky', left: 0, background: '#0f172a', zIndex: 2, minWidth: 220, borderRight: '1px solid rgba(255,255,255,0.1)' }}>Especialidad / Tipo Consulta / Actividad</th>
                     {pivotData.columns.map((col, i) => {
                       if (col.type === 'month') return (
                         <th key={col.ym} style={{
