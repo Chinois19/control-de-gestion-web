@@ -150,6 +150,8 @@ async function run() {
       if (row.VIDEOCONSULTA) obj.videoconsulta = row.VIDEOCONSULTA;
       if (row.AUGE_1 || row.PROBLEMA_SALUD || row.ESTADO_AUGE) obj.auge_1 = row.AUGE_1 || row.PROBLEMA_SALUD || row.ESTADO_AUGE;
       if (row.HIP_DIAGNOSTICA) obj.hip_diagnostica = row.HIP_DIAGNOSTICA;
+      if (row.CONTRAREFERIR) obj.contrareferir = row.CONTRAREFERIR;
+      if (row.CONTRAREFERIR_ESTABLECIMIENTO) obj.contrareferir_establecimiento = row.CONTRAREFERIR_ESTABLECIMIENTO;
       return obj;
     });
 

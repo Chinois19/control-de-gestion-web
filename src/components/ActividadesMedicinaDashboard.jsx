@@ -6,7 +6,7 @@ import {
 import {
   ArrowLeft, RefreshCw, AlertTriangle, Users, Clock, Stethoscope, Filter,
   Download, ChevronDown, TrendingUp, Activity, Layers, BarChart2, FileText,
-  PieChart as PieIcon, Video, UserCheck, Calendar, Search, ChevronRight, CheckCircle2, XCircle, ChevronUp, Timer
+  PieChart as PieIcon, Video, UserCheck, Calendar, Search, ChevronRight, CheckCircle2, XCircle, ChevronUp, Timer, ArrowLeftRight
 } from 'lucide-react';
 
 const COLORS_PIE = ['#6366f1', '#0ea5e9', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#14b8a6', '#f97316'];
@@ -534,10 +534,38 @@ export default function ActividadesMedicinaDashboard({ onBack }) {
       .map(e => ({ ...e, pct: parseFloat(((e.pertS / e.total) * 100).toFixed(1)) }))
       .sort((a, b) => a.pct - b.pct); // lowest first
 
+    // ── Contrareferencia ─────────────────────────────────────────────────────
+    // Evaluates percentage of consultations that generated a formal contra-referral back to primary care / originating establishment
+    const withContraref = source.filter(r => r.contrareferir && (r.contrareferir.toUpperCase() === 'S' || r.contrareferir.toUpperCase() === 'SI' || r.contrareferir.toUpperCase() === 'N' || r.contrareferir.toUpperCase() === 'NO'));
+    const contrarefS = withContraref.filter(r => r.contrareferir.toUpperCase() === 'S' || r.contrareferir.toUpperCase() === 'SI').length;
+    const pctContraref = withContraref.length ? parseFloat(((contrarefS / withContraref.length) * 100).toFixed(1)) : 0;
+
+    const contrarefTrend = months.map(ym => {
+      const mn = parseInt(ym.substring(5, 7), 10);
+      const yr = ym.substring(0, 4);
+      const recs = withContraref.filter(r => String(r.fecha_atencion).substring(0, 7) === ym);
+      const s = recs.filter(r => r.contrareferir.toUpperCase() === 'S' || r.contrareferir.toUpperCase() === 'SI').length;
+      return { label: `${monthNames[mn - 1]} ${yr}`, value: recs.length ? parseFloat(((s / recs.length) * 100).toFixed(1)) : 0, pertS: s, total: recs.length };
+    });
+
+    // ── Insights: Per-specialty Contrareferencia ranking ──────────────────────
+    const espContrarefMap = {};
+    withContraref.forEach(r => {
+      const esp = r.especialidad || 'Sin especialidad';
+      if (!espContrarefMap[esp]) espContrarefMap[esp] = { esp, total: 0, pertS: 0 };
+      espContrarefMap[esp].total++;
+      if (r.contrareferir.toUpperCase() === 'S' || r.contrareferir.toUpperCase() === 'SI') espContrarefMap[esp].pertS++;
+    });
+    const contrarefByEsp = Object.values(espContrarefMap)
+      .filter(e => e.total >= 5)
+      .map(e => ({ ...e, pct: parseFloat(((e.pertS / e.total) * 100).toFixed(1)) }))
+      .sort((a, b) => a.pct - b.pct); // lowest contrareferral rate first (worst)
+
     return {
       nsp: { pct: pctNSP, total: totalCitados, n: totalNSP, trend: nspTrend, byEsp: nspByEsp },
       pertinencia: { pct: pctPert, total: withPert.length, n: pertS, trend: pertTrend, byEsp: pertByEsp },
-      pertinenciaTiempo: { pct: pctPertTiempo, total: withPertTiempo.length, n: pertTiempoS, trend: pertTiempoTrend, byEsp: pertTiempoByEsp }
+      pertinenciaTiempo: { pct: pctPertTiempo, total: withPertTiempo.length, n: pertTiempoS, trend: pertTiempoTrend, byEsp: pertTiempoByEsp },
+      contrareferencia: { pct: pctContraref, total: withContraref.length, n: contrarefS, trend: contrarefTrend, byEsp: contrarefByEsp }
     };
   }, [baseRecords]);
 
@@ -1128,6 +1156,22 @@ export default function ActividadesMedicinaDashboard({ onBack }) {
             trend: indicadoresData.pertinenciaTiempo.trend,
             metaLabel: 'Meta: ≥ 85%',
             isGood: (v) => v >= 85
+          },
+          {
+            key: 'contrareferencia',
+            title: '% Contrarreferencia Generada',
+            shortTitle: '% Contrarreferencia',
+            icon: ArrowLeftRight,
+            color: '#8b5cf6',
+            colorBg: '#f5f3ff',
+            borderColor: '#c4b5fd',
+            definition: 'Porcentaje de consultas de especialidad que emitieron informe de contrarreferencia al establecimiento de origen/APS para continuidad de atención (Norma MINSAL Redes Asistenciales).',
+            formula: 'N° Contrarreferidos (S) / Total Evaluados × 100',
+            value: `${indicadoresData.contrareferencia.pct}%`,
+            sub: `${indicadoresData.contrareferencia.n.toLocaleString('es-CL')} contrarreferidos de ${indicadoresData.contrareferencia.total.toLocaleString('es-CL')} evaluados`,
+            trend: indicadoresData.contrareferencia.trend,
+            metaLabel: 'Meta: ≥ 75%',
+            isGood: (v) => v >= 75
           }
         ];
 
@@ -1230,10 +1274,10 @@ export default function ActividadesMedicinaDashboard({ onBack }) {
                       <XAxis dataKey="label" tick={{ fontSize: 10, fill: '#64748b' }} angle={-35} textAnchor="end" height={55} interval={0} />
                       <YAxis tickFormatter={v => `${v}%`} tick={{ fontSize: 11, fill: '#64748b' }} domain={[dataMin => Math.max(0, Math.floor(dataMin - 5)), dataMax => Math.min(100, Math.ceil(dataMax + 5))]} />
                       <ReferenceLine
-                        y={active.key === 'nsp' ? 20 : (active.key === 'pertinenciaTiempo' ? 85 : 80)}
-                        stroke={active.key === 'nsp' ? '#ef444488' : (active.key === 'pertinenciaTiempo' ? '#0284c788' : '#10b98188')}
+                        y={active.key === 'nsp' ? 20 : (active.key === 'pertinenciaTiempo' ? 85 : (active.key === 'contrareferencia' ? 75 : 80))}
+                        stroke={active.key === 'nsp' ? '#ef444488' : (active.key === 'pertinenciaTiempo' ? '#0284c788' : (active.key === 'contrareferencia' ? '#8b5cf688' : '#10b98188'))}
                         strokeDasharray="6 3"
-                        label={{ value: active.key === 'nsp' ? 'Umbral 20%' : (active.key === 'pertinenciaTiempo' ? 'Meta 85%' : 'Meta 80%'), position: 'right', fontSize: 10, fill: active.color, fontWeight: 700 }}
+                        label={{ value: active.key === 'nsp' ? 'Umbral 20%' : (active.key === 'pertinenciaTiempo' ? 'Meta 85%' : (active.key === 'contrareferencia' ? 'Meta 75%' : 'Meta 80%')), position: 'right', fontSize: 10, fill: active.color, fontWeight: 700 }}
                       />
                       <Tooltip
                         formatter={(v) => [`${v}%`, active.shortTitle]}
@@ -1275,9 +1319,11 @@ export default function ActividadesMedicinaDashboard({ onBack }) {
                     ? (indicadoresData.nsp.byEsp || []).slice(0, 5)
                     : (active.key === 'pertinenciaTiempo'
                         ? (indicadoresData.pertinenciaTiempo.byEsp || []).slice(0, 5)
-                        : (indicadoresData.pertinencia.byEsp || []).slice(0, 5));
+                        : (active.key === 'contrareferencia'
+                            ? (indicadoresData.contrareferencia.byEsp || []).slice(0, 5)
+                            : (indicadoresData.pertinencia.byEsp || []).slice(0, 5)));
                   const isNspInd = active.key === 'nsp';
-                  const threshold = isNspInd ? 20 : (active.key === 'pertinenciaTiempo' ? 85 : 80);
+                  const threshold = isNspInd ? 20 : (active.key === 'pertinenciaTiempo' ? 85 : (active.key === 'contrareferencia' ? 75 : 80));
                   const alertFn = isNspInd ? v => v >= threshold : v => v < threshold;
                   if (!insightRows.length) return null;
                   return (
@@ -1289,7 +1335,9 @@ export default function ActividadesMedicinaDashboard({ onBack }) {
                             ? 'Especialidades con mayor tasa NSP (críticas)'
                             : (active.key === 'pertinenciaTiempo'
                                 ? 'Especialidades con menor oportunidad en tiempo (bajo umbral)'
-                                : 'Especialidades con menor pertinencia (bajo umbral)')}
+                                : (active.key === 'contrareferencia'
+                                    ? 'Especialidades con menor tasa de contrarreferencia (bajo umbral)'
+                                    : 'Especialidades con menor pertinencia (bajo umbral)'))}
                         </span>
                         <span style={{ fontSize: '0.72rem', color: '#94a3b8', fontStyle: 'italic' }}>· Top 5 · evaluadas</span>
                       </div>
@@ -1309,7 +1357,7 @@ export default function ActividadesMedicinaDashboard({ onBack }) {
                                 </div>
                               </div>
                               <span style={{ fontSize: '0.72rem', color: '#64748b', whiteSpace: 'nowrap' }}>
-                                {isNspInd ? `${row.nsp} NSP de ${row.total}` : `${row.pertS} a tiempo de ${row.total}`}
+                                {isNspInd ? `${row.nsp} NSP de ${row.total}` : `${row.pertS} contrarreferidos de ${row.total}`}
                               </span>
                               <span style={{ fontSize: '1rem', fontWeight: 900, color: barColor, minWidth: 48, textAlign: 'right' }}>
                                 {row.pct}%
