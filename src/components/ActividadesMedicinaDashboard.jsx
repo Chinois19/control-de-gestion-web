@@ -199,7 +199,7 @@ export default function ActividadesMedicinaDashboard({ onBack }) {
   const loadData = () => {
     setLoading(true);
     setError(null);
-    fetch('/data/actividades_medicina_cached.json?' + Date.now())
+    fetch('data/actividades_medicina_cached.json?' + Date.now())
       .then(r => {
         if (!r.ok) throw new Error('Archivo de cache no disponible');
         return r.json();
