@@ -6,7 +6,7 @@ import {
 import {
   ArrowLeft, RefreshCw, AlertTriangle, Users, Clock, Stethoscope, Filter,
   Download, ChevronDown, TrendingUp, Activity, Layers, BarChart2, FileText,
-  PieChart as PieIcon, Video, UserCheck, Calendar, Search, ChevronRight, CheckCircle2, XCircle, ChevronUp
+  PieChart as PieIcon, Video, UserCheck, Calendar, Search, ChevronRight, CheckCircle2, XCircle, ChevronUp, Timer
 } from 'lucide-react';
 
 const COLORS_PIE = ['#6366f1', '#0ea5e9', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#14b8a6', '#f97316'];
@@ -481,6 +481,20 @@ export default function ActividadesMedicinaDashboard({ onBack }) {
       return { label: `${monthNames[mn - 1]} ${yr}`, value: recs.length ? parseFloat(((s / recs.length) * 100).toFixed(1)) : 0, pertS: s, total: recs.length };
     });
 
+    // ── Pertinencia Tiempo ───────────────────────────────────────────────────
+    // Evaluates adherence to establishing time frame for interconsultations
+    const withPertTiempo = source.filter(r => r.tiempo_establecido_pertinencia && (r.tiempo_establecido_pertinencia.toUpperCase() === 'S' || r.tiempo_establecido_pertinencia.toUpperCase() === 'N'));
+    const pertTiempoS = withPertTiempo.filter(r => r.tiempo_establecido_pertinencia.toUpperCase() === 'S').length;
+    const pctPertTiempo = withPertTiempo.length ? parseFloat(((pertTiempoS / withPertTiempo.length) * 100).toFixed(1)) : 0;
+
+    const pertTiempoTrend = months.map(ym => {
+      const mn = parseInt(ym.substring(5, 7), 10);
+      const yr = ym.substring(0, 4);
+      const recs = withPertTiempo.filter(r => String(r.fecha_atencion).substring(0, 7) === ym);
+      const s = recs.filter(r => r.tiempo_establecido_pertinencia.toUpperCase() === 'S').length;
+      return { label: `${monthNames[mn - 1]} ${yr}`, value: recs.length ? parseFloat(((s / recs.length) * 100).toFixed(1)) : 0, pertS: s, total: recs.length };
+    });
+
     // ── Insights: Per-specialty NSP ranking ──────────────────────────────────
     const espNspMap = {};
     source.forEach(r => {
@@ -507,9 +521,23 @@ export default function ActividadesMedicinaDashboard({ onBack }) {
       .map(e => ({ ...e, pct: parseFloat(((e.pertS / e.total) * 100).toFixed(1)) }))
       .sort((a, b) => a.pct - b.pct); // lowest pertinencia first (worst)
 
+    // ── Insights: Per-specialty Pertinencia Tiempo ranking ───────────────────
+    const espPertTiempoMap = {};
+    withPertTiempo.forEach(r => {
+      const esp = r.especialidad || 'Sin especialidad';
+      if (!espPertTiempoMap[esp]) espPertTiempoMap[esp] = { esp, total: 0, pertS: 0 };
+      espPertTiempoMap[esp].total++;
+      if (r.tiempo_establecido_pertinencia.toUpperCase() === 'S') espPertTiempoMap[esp].pertS++;
+    });
+    const pertTiempoByEsp = Object.values(espPertTiempoMap)
+      .filter(e => e.total >= 5)
+      .map(e => ({ ...e, pct: parseFloat(((e.pertS / e.total) * 100).toFixed(1)) }))
+      .sort((a, b) => a.pct - b.pct); // lowest first
+
     return {
       nsp: { pct: pctNSP, total: totalCitados, n: totalNSP, trend: nspTrend, byEsp: nspByEsp },
-      pertinencia: { pct: pctPert, total: withPert.length, n: pertS, trend: pertTrend, byEsp: pertByEsp }
+      pertinencia: { pct: pctPert, total: withPert.length, n: pertS, trend: pertTrend, byEsp: pertByEsp },
+      pertinenciaTiempo: { pct: pctPertTiempo, total: withPertTiempo.length, n: pertTiempoS, trend: pertTiempoTrend, byEsp: pertTiempoByEsp }
     };
   }, [baseRecords]);
 
@@ -1084,6 +1112,22 @@ export default function ActividadesMedicinaDashboard({ onBack }) {
             trend: indicadoresData.pertinencia.trend,
             metaLabel: 'Meta: ≥ 80%',
             isGood: (v) => v >= 80
+          },
+          {
+            key: 'pertinenciaTiempo',
+            title: '% Pertinencia Oportuna (Tiempo)',
+            shortTitle: '% Oportunidad Tiempo',
+            icon: Timer,
+            color: '#0284c7',
+            colorBg: '#f0f9ff',
+            borderColor: '#38bdf8',
+            definition: 'Porcentaje de interconsultas atendidas dentro del marco temporal metodológico establecido por la norma técnica MINSAL (campo Tiempo Establecido Pertinencia = S).',
+            formula: 'N° En Tiempo (S) / Total Evaluados × 100',
+            value: `${indicadoresData.pertinenciaTiempo.pct}%`,
+            sub: `${indicadoresData.pertinenciaTiempo.n.toLocaleString('es-CL')} a tiempo de ${indicadoresData.pertinenciaTiempo.total.toLocaleString('es-CL')} evaluados`,
+            trend: indicadoresData.pertinenciaTiempo.trend,
+            metaLabel: 'Meta: ≥ 85%',
+            isGood: (v) => v >= 85
           }
         ];
 
@@ -1186,10 +1230,10 @@ export default function ActividadesMedicinaDashboard({ onBack }) {
                       <XAxis dataKey="label" tick={{ fontSize: 10, fill: '#64748b' }} angle={-35} textAnchor="end" height={55} interval={0} />
                       <YAxis tickFormatter={v => `${v}%`} tick={{ fontSize: 11, fill: '#64748b' }} domain={[dataMin => Math.max(0, Math.floor(dataMin - 5)), dataMax => Math.min(100, Math.ceil(dataMax + 5))]} />
                       <ReferenceLine
-                        y={active.key === 'nsp' ? 20 : 80}
-                        stroke={active.key === 'nsp' ? '#ef444488' : '#10b98188'}
+                        y={active.key === 'nsp' ? 20 : (active.key === 'pertinenciaTiempo' ? 85 : 80)}
+                        stroke={active.key === 'nsp' ? '#ef444488' : (active.key === 'pertinenciaTiempo' ? '#0284c788' : '#10b98188')}
                         strokeDasharray="6 3"
-                        label={{ value: active.key === 'nsp' ? 'Umbral 20%' : 'Meta 80%', position: 'right', fontSize: 10, fill: active.color, fontWeight: 700 }}
+                        label={{ value: active.key === 'nsp' ? 'Umbral 20%' : (active.key === 'pertinenciaTiempo' ? 'Meta 85%' : 'Meta 80%'), position: 'right', fontSize: 10, fill: active.color, fontWeight: 700 }}
                       />
                       <Tooltip
                         formatter={(v) => [`${v}%`, active.shortTitle]}
@@ -1229,9 +1273,11 @@ export default function ActividadesMedicinaDashboard({ onBack }) {
                 {(() => {
                   const insightRows = active.key === 'nsp'
                     ? (indicadoresData.nsp.byEsp || []).slice(0, 5)
-                    : (indicadoresData.pertinencia.byEsp || []).slice(0, 5);
+                    : (active.key === 'pertinenciaTiempo'
+                        ? (indicadoresData.pertinenciaTiempo.byEsp || []).slice(0, 5)
+                        : (indicadoresData.pertinencia.byEsp || []).slice(0, 5));
                   const isNspInd = active.key === 'nsp';
-                  const threshold = isNspInd ? 20 : 80;
+                  const threshold = isNspInd ? 20 : (active.key === 'pertinenciaTiempo' ? 85 : 80);
                   const alertFn = isNspInd ? v => v >= threshold : v => v < threshold;
                   if (!insightRows.length) return null;
                   return (
@@ -1239,9 +1285,13 @@ export default function ActividadesMedicinaDashboard({ onBack }) {
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
                         <AlertTriangle size={16} color="#f59e0b" />
                         <span style={{ fontWeight: 800, fontSize: '0.85rem', color: '#1e293b' }}>
-                          {isNspInd ? 'Especialidades con mayor tasa NSP (críticas)' : 'Especialidades con menor pertinencia (bajo umbral)'}
+                          {isNspInd
+                            ? 'Especialidades con mayor tasa NSP (críticas)'
+                            : (active.key === 'pertinenciaTiempo'
+                                ? 'Especialidades con menor oportunidad en tiempo (bajo umbral)'
+                                : 'Especialidades con menor pertinencia (bajo umbral)')}
                         </span>
-                        <span style={{ fontSize: '0.72rem', color: '#94a3b8', fontStyle: 'italic' }}>· Top 5 · mín. 20 citas evaluadas</span>
+                        <span style={{ fontSize: '0.72rem', color: '#94a3b8', fontStyle: 'italic' }}>· Top 5 · evaluadas</span>
                       </div>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                         {insightRows.map((row, i) => {
@@ -1259,7 +1309,7 @@ export default function ActividadesMedicinaDashboard({ onBack }) {
                                 </div>
                               </div>
                               <span style={{ fontSize: '0.72rem', color: '#64748b', whiteSpace: 'nowrap' }}>
-                                {isNspInd ? `${row.nsp} NSP de ${row.total}` : `${row.pertS} de ${row.total}`}
+                                {isNspInd ? `${row.nsp} NSP de ${row.total}` : `${row.pertS} a tiempo de ${row.total}`}
                               </span>
                               <span style={{ fontSize: '1rem', fontWeight: 900, color: barColor, minWidth: 48, textAlign: 'right' }}>
                                 {row.pct}%

@@ -145,6 +145,7 @@ async function run() {
       if (row.ESTADO_HORA) obj.estado_hora = row.ESTADO_HORA;
       if (row.FECHA_ATENCION) obj.fecha_atencion = String(row.FECHA_ATENCION).substring(0, 10);
       if (row.PERTINENCIA) obj.pertinencia = row.PERTINENCIA;
+      if (row.TIEMPO_ESTABLECIDO_PERTINENCIA) obj.tiempo_establecido_pertinencia = row.TIEMPO_ESTABLECIDO_PERTINENCIA;
       if (row.SOBRECUPO) obj.sobrecupo = row.SOBRECUPO;
       if (row.VIDEOCONSULTA) obj.videoconsulta = row.VIDEOCONSULTA;
       if (row.AUGE_1 || row.PROBLEMA_SALUD || row.ESTADO_AUGE) obj.auge_1 = row.AUGE_1 || row.PROBLEMA_SALUD || row.ESTADO_AUGE;
