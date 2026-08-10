@@ -434,83 +434,108 @@ export default function ActividadesMedicinaDashboard({ onBack }) {
     return { espRows, months, monthLabels, columns, years, grandTotal, maxMonthVal };
   }, [productionRecords, startDateFilter]);
 
-  const byEspecialidad = useMemo(() => {
-    const m = {};
-    records.forEach(r => {
-      const e = r.especialidad || 'Sin dato';
-      m[e] = (m[e] || 0) + 1;
+  // ─── NSP Analysis Data ───────────────────────────────────────────────────
+  const nspData = useMemo(() => {
+    const monthNames = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+    // All records from 2025 onwards (no production filter — we need ALL states)
+    const source = baseRecords.filter(r => {
+      const ym = r.fecha_atencion ? String(r.fecha_atencion).substring(0, 7) : null;
+      return ym && ym >= '2025-01';
     });
-    return Object.entries(m)
-      .sort((a, b) => b[1] - a[1])
-      .map(([name, value], i) => ({
-        name: name.length > 35 ? name.substring(0, 33) + '…' : name,
-        fullName: name,
-        value,
-        pct: kpis.total ? ((value / kpis.total) * 100).toFixed(1) : 0,
-        fill: COLORS_PIE[i % COLORS_PIE.length]
-      }));
-  }, [records, kpis.total]);
 
-  const byProfesional = useMemo(() => {
-    const m = {};
-    records.forEach(r => {
-      const p = r.profesional_nombre || 'Sin profesional';
-      if (!m[p]) {
-        m[p] = { nombre: p, especialidad: r.especialidad || 'General', atenciones: 0, sobrecupos: 0, video: 0 };
-      }
-      m[p].atenciones++;
-      if ((r.sobrecupo || '').toUpperCase() === 'SI' || r.sobrecupo === '1') m[p].sobrecupos++;
-      if ((r.videoconsulta || '').toUpperCase() === 'SI' || r.videoconsulta === '1') m[p].video++;
-    });
-    return Object.values(m).sort((a, b) => b.atenciones - a.atenciones);
-  }, [records]);
+    const isNSP = r => {
+      const ea = (r.estado_atencion || '').toUpperCase();
+      const eh = (r.estado_hora || '').toUpperCase();
+      return ea.includes('NO SE PRESENTO') || ea.includes('NO SE PRESENTÓ') || eh.includes('NO SE PRESENTO') || eh.includes('NO SE PRESENTÓ');
+    };
+    const isSP = r => {
+      const ea = (r.estado_atencion || '').toUpperCase();
+      const eh = (r.estado_hora || '').toUpperCase();
+      return ea === 'SE PRESENTO' || ea === 'SE PRESENTÓ' || eh === 'EJECUTADA';
+    };
 
-  const byTipoConsulta = useMemo(() => {
-    const m = {};
-    records.forEach(r => {
-      const t = r.tipo_consulta || 'No especificado';
-      m[t] = (m[t] || 0) + 1;
-    });
-    return Object.entries(m).map(([name, value], i) => ({
-      name, value, fill: COLORS_PIE[i % COLORS_PIE.length]
-    }));
-  }, [records]);
+    // Global KPIs
+    const totalCitados = source.length;
+    const totalNSP = source.filter(isNSP).length;
+    const totalSP = source.filter(isSP).length;
+    const pctNSP = totalCitados ? ((totalNSP / totalCitados) * 100).toFixed(1) : '0.0';
+    const citasRecuperables = totalNSP;
 
-  const byDiagnostico = useMemo(() => {
-    const m = {};
-    records.forEach(r => {
-      const d = r.diagnostico_1 || r.hip_diagnostica || 'Sin diagnóstico';
-      m[d] = (m[d] || 0) + 1;
+    // Monthly evolution: NSP% per month (all specialties combined)
+    const months = [...new Set(source.map(r => String(r.fecha_atencion).substring(0, 7)))].sort();
+    const monthlyTrend = months.map(ym => {
+      const mn = parseInt(ym.substring(5, 7), 10);
+      const yr = ym.substring(0, 4);
+      const recs = source.filter(r => String(r.fecha_atencion).substring(0, 7) === ym);
+      const nsp = recs.filter(isNSP).length;
+      const sp = recs.filter(isSP).length;
+      const total = recs.length;
+      return {
+        ym,
+        label: `${monthNames[mn - 1]} ${yr}`,
+        nsp,
+        sp,
+        total,
+        pctNSP: total ? parseFloat(((nsp / total) * 100).toFixed(1)) : 0
+      };
     });
-    return Object.entries(m).sort((a, b) => b[1] - a[1]).slice(0, 15);
-  }, [records]);
+
+    // Per-specialty NSP ranking
+    const espMap = {};
+    source.forEach(r => {
+      const esp = r.especialidad || 'Sin especialidad';
+      if (!espMap[esp]) espMap[esp] = { esp, total: 0, nsp: 0, sp: 0 };
+      espMap[esp].total++;
+      if (isNSP(r)) espMap[esp].nsp++;
+      if (isSP(r)) espMap[esp].sp++;
+    });
+    const espRanking = Object.values(espMap)
+      .filter(e => e.total >= 20)
+      .map(e => ({ ...e, pctNSP: parseFloat(((e.nsp / e.total) * 100).toFixed(1)) }))
+      .sort((a, b) => b.pctNSP - a.pctNSP);
+
+    // Top 8 especialidades by volume for evolution lines
+    const topEsps = [...espRanking].sort((a, b) => b.total - a.total).slice(0, 8).map(e => e.esp);
+
+    // Monthly NSP% per specialty (for line chart)
+    const espTrendMap = {};
+    topEsps.forEach(esp => { espTrendMap[esp] = {}; });
+    source.forEach(r => {
+      const esp = r.especialidad || 'Sin especialidad';
+      if (!topEsps.includes(esp)) return;
+      const ym = String(r.fecha_atencion).substring(0, 7);
+      if (!espTrendMap[esp][ym]) espTrendMap[esp][ym] = { total: 0, nsp: 0 };
+      espTrendMap[esp][ym].total++;
+      if (isNSP(r)) espTrendMap[esp][ym].nsp++;
+    });
+    const espTrendData = months.map(ym => {
+      const mn = parseInt(ym.substring(5, 7), 10);
+      const yr = ym.substring(0, 4);
+      const row = { ym, label: `${monthNames[mn - 1]} ${yr}` };
+      topEsps.forEach(esp => {
+        const d = espTrendMap[esp][ym];
+        row[esp] = d && d.total >= 3 ? parseFloat(((d.nsp / d.total) * 100).toFixed(1)) : null;
+      });
+      return row;
+    });
+
+    return { totalCitados, totalNSP, totalSP, pctNSP, citasRecuperables, monthlyTrend, espRanking, espTrendData, topEsps, months };
+  }, [baseRecords]);
 
   const exportCSV = () => {
-    const headers = [
-      'Fecha Atención', 'Especialidad', 'Profesional', 'Policlínico', 'Tipo Consulta',
-      'Diagnóstico 1', 'Prestación 1', 'Pertinencia', 'Sobrecupo', 'Videoconsulta', 'Estado Hora'
-    ];
-    const rows = records.map(r => [
+    const headers = ['Fecha Atención','Especialidad','Profesional','Tipo Consulta','Actividad','Diagnóstico 1','Estado Atención','Estado Hora','Sobrecupo','Videoconsulta'];
+    const rows = baseRecords.map(r => [
       r.fecha_atencion ? String(r.fecha_atencion).substring(0, 10) : '',
-      r.especialidad, r.profesional_nombre, r.policlinico, r.tipo_consulta,
-      r.diagnostico_1, r.prestacion_1, r.pertinencia, r.sobrecupo, r.videoconsulta, r.estado_hora
+      r.especialidad, r.profesional_nombre, r.tipo_consulta, r.actividad,
+      r.diagnostico_1, r.estado_atencion, r.estado_hora, r.sobrecupo, r.videoconsulta
     ]);
     const csv = [headers, ...rows].map(row => row.map(v => `"${String(v ?? '').replace(/"/g, '""')}"`).join(',')).join('\n');
     const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
+    const a = document.createElement('a'); a.href = url;
     a.download = `actividades_medicina_${new Date().toISOString().slice(0, 10)}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
+    a.click(); URL.revokeObjectURL(url);
   };
-
-  const paginatedRecords = useMemo(() => {
-    const start = (currentPage - 1) * rowsPerPage;
-    return records.slice(start, start + rowsPerPage);
-  }, [records, currentPage]);
-
-  const totalPages = Math.ceil(records.length / rowsPerPage) || 1;
 
   if (loading) return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '60vh', gap: 16, color: '#64748b' }}>
@@ -623,10 +648,7 @@ export default function ActividadesMedicinaDashboard({ onBack }) {
         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
           {[
             ['resumen', 'Resumen General', <PieIcon size={14} />],
-            ['especialidades', 'Por Especialidad', <BarChart2 size={14} />],
-            ['profesionales', 'Por Profesional Médicos', <Users size={14} />],
-            ['diagnosticos', 'Diagnósticos Frecuentes', <FileText size={14} />],
-            ['registro_clinico', 'Nómina de Registros', <Search size={14} />]
+            ['nsp', 'Análisis NSP', <AlertTriangle size={14} />]
           ].map(([id, label, icon]) => {
             const isActive = activeTab === id;
             return (
@@ -1034,170 +1056,135 @@ export default function ActividadesMedicinaDashboard({ onBack }) {
           </div>
         </div>
       )}
+    </div>
+  );
+}
 
-      {/* Tab: Especialidades */}
-      {activeTab === 'especialidades' && (
-        <div style={{ background: 'white', borderRadius: 16, padding: 24, boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
-          <h3 style={{ fontWeight: 800, color: '#1e293b', marginBottom: 16, fontSize: '1.05rem' }}>Desglose por Especialidad Médica</h3>
-          <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.83rem', textAlign: 'left' }}>
-              <thead>
-                <tr style={{ borderBottom: '2px solid #e2e8f0', background: '#f8fafc', color: '#475569' }}>
-                  <th style={{ padding: '12px 16px', fontWeight: 700 }}>Especialidad</th>
-                  <th style={{ padding: '12px 16px', fontWeight: 700, textAlign: 'right' }}>Atenciones</th>
-                  <th style={{ padding: '12px 16px', fontWeight: 700, textAlign: 'right' }}>% del Total</th>
-                  <th style={{ padding: '12px 16px', fontWeight: 700 }}>Barra de Rendimiento</th>
-                </tr>
-              </thead>
-              <tbody>
-                {byEspecialidad.map((esp, i) => (
-                  <tr key={i} style={{ borderBottom: '1px solid #f1f5f9', cursor: 'pointer' }}
-                    onMouseEnter={e => e.currentTarget.style.background = '#f8fafc'}
-                    onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
-                    <td style={{ padding: '12px 16px', fontWeight: 700, color: '#1e293b' }}>{esp.fullName}</td>
-                    <td style={{ padding: '12px 16px', textAlign: 'right', fontWeight: 800, color: '#6366f1' }}>{esp.value.toLocaleString('es-CL')}</td>
-                    <td style={{ padding: '12px 16px', textAlign: 'right', fontWeight: 700, color: '#64748b' }}>{esp.pct}%</td>
-                    <td style={{ padding: '12px 16px' }}>
-                      <div style={{ background: '#f1f5f9', borderRadius: 8, height: 8, width: '100%', overflow: 'hidden' }}>
-                        <div style={{ width: `${esp.pct}%`, height: '100%', background: esp.fill, borderRadius: 8 }} />
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
 
-      {/* Tab: Profesionales */}
-      {activeTab === 'profesionales' && (
-        <div style={{ background: 'white', borderRadius: 16, padding: 24, boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
-          <h3 style={{ fontWeight: 800, color: '#1e293b', marginBottom: 16, fontSize: '1.05rem' }}>Rendimiento de Profesionales Médicos</h3>
-          <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.83rem', textAlign: 'left' }}>
-              <thead>
-                <tr style={{ borderBottom: '2px solid #e2e8f0', background: '#f8fafc', color: '#475569' }}>
-                  <th style={{ padding: '12px 16px', fontWeight: 700 }}>Profesional</th>
-                  <th style={{ padding: '12px 16px', fontWeight: 700 }}>Especialidad</th>
-                  <th style={{ padding: '12px 16px', fontWeight: 700, textAlign: 'right' }}>Total Atenciones</th>
-                  <th style={{ padding: '12px 16px', fontWeight: 700, textAlign: 'right' }}>Sobrecupos</th>
-                  <th style={{ padding: '12px 16px', fontWeight: 700, textAlign: 'right' }}>Videoconsultas</th>
-                </tr>
-              </thead>
-              <tbody>
-                {byProfesional.slice(0, 30).map((p, i) => (
-                  <tr key={i} style={{ borderBottom: '1px solid #f1f5f9' }}
-                    onMouseEnter={e => e.currentTarget.style.background = '#f8fafc'}
-                    onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
-                    <td style={{ padding: '12px 16px', fontWeight: 700, color: '#1e293b' }}>{p.nombre}</td>
-                    <td style={{ padding: '12px 16px', color: '#64748b' }}>{p.especialidad}</td>
-                    <td style={{ padding: '12px 16px', textAlign: 'right', fontWeight: 800, color: '#10b981' }}>{p.atenciones.toLocaleString('es-CL')}</td>
-                    <td style={{ padding: '12px 16px', textAlign: 'right', fontWeight: 700, color: p.sobrecupos > 0 ? '#ef4444' : '#94a3b8' }}>{p.sobrecupos}</td>
-                    <td style={{ padding: '12px 16px', textAlign: 'right', fontWeight: 700, color: p.video > 0 ? '#0ea5e9' : '#94a3b8' }}>{p.video}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
-
-      {/* Tab: Diagnósticos */}
-      {activeTab === 'diagnosticos' && (
-        <div style={{ background: 'white', borderRadius: 16, padding: 24, boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
-          <h3 style={{ fontWeight: 800, color: '#1e293b', marginBottom: 16, fontSize: '1.05rem' }}>Top Diagnósticos Frecuentes</h3>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 12 }}>
-            {byDiagnostico.map(([diag, count], i) => (
-              <div key={i} style={{ border: '1px solid #e2e8f0', borderRadius: 12, padding: '14px 18px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#f8fafc' }}>
-                <span style={{ fontWeight: 600, color: '#334155', fontSize: '0.85rem', maxWidth: '80%' }}>{diag}</span>
-                <span style={{ fontWeight: 800, color: '#6366f1', background: '#ede9fe', padding: '4px 12px', borderRadius: 20, fontSize: '0.85rem' }}>{count.toLocaleString('es-CL')}</span>
+          {/* NSP KPI Cards */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16 }}>
+            {[
+              { label: 'Citas Citadas', value: nspData.totalCitados.toLocaleString('es-CL'), sub: 'Total agendadas 2025–hoy', color: '#6366f1', icon: <Calendar size={18}/> },
+              { label: 'No Se Presentaron', value: nspData.totalNSP.toLocaleString('es-CL'), sub: `${nspData.pctNSP}% de las citas`, color: '#ef4444', icon: <XCircle size={18}/> },
+              { label: 'Se Presentaron', value: nspData.totalSP.toLocaleString('es-CL'), sub: `${(100 - parseFloat(nspData.pctNSP)).toFixed(1)}% de asistencia`, color: '#10b981', icon: <CheckCircle2 size={18}/> },
+              { label: '% NSP Global', value: `${nspData.pctNSP}%`, sub: parseFloat(nspData.pctNSP) > 20 ? '⚠️ Por encima del umbral' : '✅ Dentro del umbral', color: parseFloat(nspData.pctNSP) > 20 ? '#ef4444' : '#10b981', icon: <AlertTriangle size={18}/> }
+            ].map((k, i) => (
+              <div key={i} style={{ background: 'white', borderRadius: 16, padding: '20px 24px', boxShadow: '0 2px 12px rgba(0,0,0,0.07)', borderLeft: `4px solid ${k.color}` }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, color: k.color, marginBottom: 6 }}>
+                  {k.icon}
+                  <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: 0.5 }}>{k.label}</span>
+                </div>
+                <div style={{ fontSize: '2rem', fontWeight: 800, color: '#1e293b', lineHeight: 1.1 }}>{k.value}</div>
+                <div style={{ fontSize: '0.78rem', color: '#94a3b8', marginTop: 3 }}>{k.sub}</div>
               </div>
             ))}
           </div>
-        </div>
-      )}
 
-      {/* Tab: Registro Clínico */}
-      {activeTab === 'registro_clinico' && (
-        <div style={{ background: 'white', borderRadius: 16, padding: 24, boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, flexWrap: 'wrap', gap: 12 }}>
-            <div style={{ position: 'relative', width: 320 }}>
-              <Search size={16} color="#94a3b8" style={{ position: 'absolute', left: 12, top: 10 }} />
-              <input
-                type="text"
-                placeholder="Buscar por médico, especialidad, diag..."
-                value={searchTerm}
-                onChange={e => { setSearchTerm(e.target.value); setCurrentPage(1); }}
-                style={{ width: '100%', padding: '8px 12px 8px 36px', borderRadius: 10, border: '1px solid #e2e8f0', fontSize: '0.83rem', outline: 'none' }}
-              />
-            </div>
-            <div style={{ fontSize: '0.8rem', color: '#64748b', fontWeight: 600 }}>
-              Mostrando {records.length.toLocaleString('es-CL')} registros
-            </div>
+          {/* Evolución mensual NSP absoluto + % */}
+          <div style={{ background: 'white', borderRadius: 16, padding: 24, boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
+            <h3 style={{ fontWeight: 800, color: '#1e293b', margin: '0 0 4px', fontSize: '1.05rem', display: 'flex', alignItems: 'center', gap: 8 }}>
+              <TrendingUp size={18} color="#ef4444" /> Evolución Mensual de NSP — Volumen y Tasa %
+            </h3>
+            <p style={{ fontSize: '0.78rem', color: '#94a3b8', margin: '0 0 18px' }}>
+              Barras = N° de inasistencias · Línea roja = % NSP sobre total citado · Umbral crítico: 20%
+            </p>
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={nspData.monthlyTrend} margin={{ top: 10, right: 40, left: 10, bottom: 30 }} barCategoryGap="3%">
+                <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+                <XAxis dataKey="label" tick={{ fontSize: 10, fill: '#64748b' }} angle={-30} textAnchor="end" height={50} />
+                <YAxis yAxisId="left" tick={{ fontSize: 11, fill: '#64748b' }} />
+                <YAxis yAxisId="right" orientation="right" tickFormatter={v => `${v}%`} tick={{ fontSize: 11, fill: '#ef4444' }} domain={[0, 'dataMax + 5']} />
+                <Tooltip
+                  formatter={(value, name) => name === '% NSP' ? [`${value}%`, name] : [value.toLocaleString('es-CL'), name]}
+                  contentStyle={{ background: 'rgba(15,23,42,0.95)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 12, color: 'white', fontSize: '0.82rem' }}
+                />
+                <Legend wrapperStyle={{ paddingTop: 10, fontSize: 11 }} />
+                <Bar yAxisId="left" dataKey="nsp" name="NSP (N°)" fill="#fca5a5" radius={[4,4,0,0]}>
+                  <LabelList dataKey="nsp" position="top" style={{ fontSize: 9, fill: '#dc2626', fontWeight: 700 }} formatter={v => v > 0 ? v : ''} />
+                </Bar>
+                <Bar yAxisId="left" dataKey="sp" name="Se Presentó (N°)" fill="#6ee7b7" radius={[4,4,0,0]} />
+              </BarChart>
+            </ResponsiveContainer>
           </div>
 
-          <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8rem', textAlign: 'left' }}>
-              <thead>
-                <tr style={{ borderBottom: '2px solid #e2e8f0', background: '#f8fafc', color: '#475569' }}>
-                  <th style={{ padding: '10px 12px', fontWeight: 700 }}>Especialidad</th>
-                  <th style={{ padding: '10px 12px', fontWeight: 700 }}>Profesional</th>
-                  <th style={{ padding: '10px 12px', fontWeight: 700 }}>Policlínico</th>
-                  <th style={{ padding: '10px 12px', fontWeight: 700 }}>Tipo Consulta</th>
-                  <th style={{ padding: '10px 12px', fontWeight: 700 }}>Diagnóstico 1</th>
-                  <th style={{ padding: '10px 12px', fontWeight: 700 }}>Prestación 1</th>
-                  <th style={{ padding: '10px 12px', fontWeight: 700 }}>Estado</th>
-                  <th style={{ padding: '10px 12px', fontWeight: 700 }}>Modalidad</th>
-                </tr>
-              </thead>
-              <tbody>
-                {paginatedRecords.map((r, i) => (
-                  <tr key={i} style={{ borderBottom: '1px solid #f1f5f9' }}
-                    onMouseEnter={e => e.currentTarget.style.background = '#f8fafc'}
-                    onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
-                    <td style={{ padding: '10px 12px', fontWeight: 700, color: '#1e293b' }}>{r.especialidad}</td>
-                    <td style={{ padding: '10px 12px', color: '#475569' }}>{r.profesional_nombre}</td>
-                    <td style={{ padding: '10px 12px', color: '#64748b' }}>{r.policlinico}</td>
-                    <td style={{ padding: '10px 12px', color: '#64748b' }}>{r.tipo_consulta}</td>
-                    <td style={{ padding: '10px 12px', color: '#334155', maxWidth: 200, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{r.diagnostico_1}</td>
-                    <td style={{ padding: '10px 12px', color: '#334155', maxWidth: 200, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{r.prestacion_1}</td>
-                    <td style={{ padding: '10px 12px' }}>
-                      <span style={{ padding: '2px 8px', borderRadius: 12, fontSize: '0.72rem', fontWeight: 800, background: '#e0f2fe', color: '#0369a1' }}>
-                        {r.estado_atencion || r.estado_hora || 'Atendido'}
-                      </span>
-                    </td>
-                    <td style={{ padding: '10px 12px' }}>
-                      {((r.videoconsulta || '').toUpperCase() === 'SI' || r.videoconsulta === '1') ? (
-                        <span style={{ padding: '2px 8px', borderRadius: 12, fontSize: '0.72rem', fontWeight: 800, background: '#e0f2fe', color: '#0284c7' }}>Videoconsulta</span>
-                      ) : (
-                        <span style={{ padding: '2px 8px', borderRadius: 12, fontSize: '0.72rem', fontWeight: 800, background: '#f1f5f9', color: '#64748b' }}>Presencial</span>
-                      )}
-                    </td>
-                  </tr>
+          {/* Curva NSP% por Especialidad */}
+          <div style={{ background: 'white', borderRadius: 16, padding: 24, boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
+            <h3 style={{ fontWeight: 800, color: '#1e293b', margin: '0 0 4px', fontSize: '1.05rem', display: 'flex', alignItems: 'center', gap: 8 }}>
+              <Activity size={18} color="#6366f1" /> Curva Evolutiva % NSP por Especialidad
+            </h3>
+            <p style={{ fontSize: '0.78rem', color: '#94a3b8', margin: '0 0 18px' }}>
+              Top 8 especialidades por volumen · Valores solo cuando N ≥ 3 · Línea punteada roja = umbral 20%
+            </p>
+            <ResponsiveContainer width="100%" height={340}>
+              <BarChart data={nspData.espTrendData} margin={{ top: 10, right: 20, left: 10, bottom: 30 }} barCategoryGap="3%">
+                <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+                <XAxis dataKey="label" tick={{ fontSize: 10, fill: '#64748b' }} angle={-30} textAnchor="end" height={50} />
+                <YAxis tickFormatter={v => `${v}%`} tick={{ fontSize: 11, fill: '#64748b' }} domain={[0, 'dataMax + 5']} />
+                <Tooltip
+                  formatter={(v, name) => v != null ? [`${v}%`, name.length > 35 ? name.substring(0,33)+'…' : name] : ['—', name]}
+                  contentStyle={{ background: 'rgba(15,23,42,0.95)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 12, color: 'white', fontSize: '0.78rem' }}
+                />
+                <Legend wrapperStyle={{ paddingTop: 10, fontSize: 10 }} formatter={v => v.length > 30 ? v.substring(0,28)+'…' : v} />
+                {nspData.topEsps.map((esp, i) => (
+                  <Bar key={esp} dataKey={esp} fill={COLORS_PIE[i % COLORS_PIE.length]} radius={[3,3,0,0]} stackId={undefined} />
                 ))}
-              </tbody>
-            </table>
+              </BarChart>
+            </ResponsiveContainer>
           </div>
 
-          {/* Pagination Controls */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 16 }}>
-            <span style={{ fontSize: '0.8rem', color: '#64748b' }}>Página {currentPage} de {totalPages}</span>
-            <div style={{ display: 'flex', gap: 6 }}>
-              <button
-                disabled={currentPage === 1}
-                onClick={() => setCurrentPage(p => p - 1)}
-                style={{ padding: '6px 14px', borderRadius: 8, border: '1px solid #e2e8f0', background: 'white', cursor: currentPage === 1 ? 'not-allowed' : 'pointer', fontSize: '0.8rem', opacity: currentPage === 1 ? 0.5 : 1 }}
-              >
-                Anterior
-              </button>
-              <button
-                disabled={currentPage === totalPages}
-                onClick={() => setCurrentPage(p => p + 1)}
-                style={{ padding: '6px 14px', borderRadius: 8, border: '1px solid #e2e8f0', background: 'white', cursor: currentPage === totalPages ? 'not-allowed' : 'pointer', fontSize: '0.8rem', opacity: currentPage === totalPages ? 0.5 : 1 }}
-              >
-                Siguiente
-              </button>
+          {/* Ranking de Especialidades por NSP */}
+          <div style={{ background: 'white', borderRadius: 16, padding: 24, boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
+            <h3 style={{ fontWeight: 800, color: '#1e293b', margin: '0 0 4px', fontSize: '1.05rem', display: 'flex', alignItems: 'center', gap: 8 }}>
+              <BarChart2 size={18} color="#f59e0b" /> Ranking de Especialidades por Tasa NSP
+            </h3>
+            <p style={{ fontSize: '0.78rem', color: '#94a3b8', margin: '0 0 18px' }}>
+              Ordenado de mayor a menor % NSP · Solo especialidades con ≥ 20 citas · 🔴 &gt;20% crítico · 🟡 10–20% alerta · 🟢 &lt;10% óptimo
+            </p>
+            <div style={{ overflowX: 'auto', borderRadius: 12, border: '1px solid #e2e8f0' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.82rem' }}>
+                <thead>
+                  <tr style={{ background: '#0f172a', color: 'white' }}>
+                    <th style={{ padding: '10px 16px', fontWeight: 700, textAlign: 'left', minWidth: 280 }}>Especialidad</th>
+                    <th style={{ padding: '10px 12px', fontWeight: 700, textAlign: 'right' }}>Citados</th>
+                    <th style={{ padding: '10px 12px', fontWeight: 700, textAlign: 'right', color: '#fca5a5' }}>NSP (N°)</th>
+                    <th style={{ padding: '10px 12px', fontWeight: 700, textAlign: 'right', color: '#6ee7b7' }}>SP (N°)</th>
+                    <th style={{ padding: '10px 16px', fontWeight: 700, textAlign: 'right', color: '#fbbf24' }}>% NSP</th>
+                    <th style={{ padding: '10px 16px', fontWeight: 700, textAlign: 'left', minWidth: 180 }}>Barra NSP</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {nspData.espRanking.map((e, i) => {
+                    const pct = e.pctNSP;
+                    const alertColor = pct >= 20 ? '#ef4444' : pct >= 10 ? '#f59e0b' : '#10b981';
+                    const alertBg = pct >= 20 ? '#fef2f2' : pct >= 10 ? '#fffbeb' : '#f0fdf4';
+                    const badge = pct >= 20 ? '🔴' : pct >= 10 ? '🟡' : '🟢';
+                    return (
+                      <tr key={i} style={{ borderBottom: '1px solid #f1f5f9', background: i % 2 === 0 ? '#f8fafc' : 'white' }}
+                        onMouseEnter={ev => ev.currentTarget.style.background = '#f0f7ff'}
+                        onMouseLeave={ev => ev.currentTarget.style.background = i % 2 === 0 ? '#f8fafc' : 'white'}
+                      >
+                        <td style={{ padding: '10px 16px', fontWeight: 700, color: '#1e293b' }}>
+                          {badge} {e.esp.length > 50 ? e.esp.substring(0,48)+'…' : e.esp}
+                        </td>
+                        <td style={{ padding: '10px 12px', textAlign: 'right', color: '#64748b', fontWeight: 600 }}>{e.total.toLocaleString('es-CL')}</td>
+                        <td style={{ padding: '10px 12px', textAlign: 'right', fontWeight: 800, color: '#dc2626' }}>{e.nsp.toLocaleString('es-CL')}</td>
+                        <td style={{ padding: '10px 12px', textAlign: 'right', fontWeight: 700, color: '#059669' }}>{e.sp.toLocaleString('es-CL')}</td>
+                        <td style={{ padding: '10px 16px', textAlign: 'right', fontWeight: 900, color: alertColor, background: alertBg }}>
+                          {pct}%
+                        </td>
+                        <td style={{ padding: '10px 16px' }}>
+                          <div style={{ background: '#f1f5f9', borderRadius: 8, height: 10, width: '100%', overflow: 'hidden', position: 'relative' }}>
+                            <div style={{ width: `${Math.min(pct, 100)}%`, height: '100%', background: alertColor, borderRadius: 8, transition: 'width 0.4s' }} />
+                            {/* 20% threshold marker */}
+                            <div style={{ position: 'absolute', left: '20%', top: 0, height: '100%', width: 2, background: '#1e293b', opacity: 0.3 }} />
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
             </div>
           </div>
         </div>
