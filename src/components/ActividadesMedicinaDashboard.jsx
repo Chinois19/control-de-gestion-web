@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-  PieChart, Pie, Cell, Legend, LabelList
+  PieChart, Pie, Cell, Legend, LabelList, LineChart, Line, ReferenceLine, Dot
 } from 'recharts';
 import {
   ArrowLeft, RefreshCw, AlertTriangle, Users, Clock, Stethoscope, Filter,
@@ -481,9 +481,35 @@ export default function ActividadesMedicinaDashboard({ onBack }) {
       return { label: `${monthNames[mn - 1]} ${yr}`, value: recs.length ? parseFloat(((s / recs.length) * 100).toFixed(1)) : 0, pertS: s, total: recs.length };
     });
 
+    // ── Insights: Per-specialty NSP ranking ──────────────────────────────────
+    const espNspMap = {};
+    source.forEach(r => {
+      const esp = r.especialidad || 'Sin especialidad';
+      if (!espNspMap[esp]) espNspMap[esp] = { esp, total: 0, nsp: 0 };
+      espNspMap[esp].total++;
+      if (isNSP(r)) espNspMap[esp].nsp++;
+    });
+    const nspByEsp = Object.values(espNspMap)
+      .filter(e => e.total >= 20)
+      .map(e => ({ ...e, pct: parseFloat(((e.nsp / e.total) * 100).toFixed(1)) }))
+      .sort((a, b) => b.pct - a.pct);
+
+    // ── Insights: Per-specialty Pertinencia ranking ────────────────────────────
+    const espPertMap = {};
+    withPert.forEach(r => {
+      const esp = r.especialidad || 'Sin especialidad';
+      if (!espPertMap[esp]) espPertMap[esp] = { esp, total: 0, pertS: 0 };
+      espPertMap[esp].total++;
+      if (r.pertinencia.toUpperCase() === 'S') espPertMap[esp].pertS++;
+    });
+    const pertByEsp = Object.values(espPertMap)
+      .filter(e => e.total >= 10)
+      .map(e => ({ ...e, pct: parseFloat(((e.pertS / e.total) * 100).toFixed(1)) }))
+      .sort((a, b) => a.pct - b.pct); // lowest pertinencia first (worst)
+
     return {
-      nsp: { pct: pctNSP, total: totalCitados, n: totalNSP, trend: nspTrend },
-      pertinencia: { pct: pctPert, total: withPert.length, n: pertS, trend: pertTrend }
+      nsp: { pct: pctNSP, total: totalCitados, n: totalNSP, trend: nspTrend, byEsp: nspByEsp },
+      pertinencia: { pct: pctPert, total: withPert.length, n: pertS, trend: pertTrend, byEsp: pertByEsp }
     };
   }, [baseRecords]);
 
@@ -1152,24 +1178,40 @@ export default function ActividadesMedicinaDashboard({ onBack }) {
                   </div>
                 </div>
 
-                <div style={{ flex: 1, minHeight: 300 }}>
+                {/* Line Chart */}
+                <div style={{ minHeight: 300 }}>
                   <ResponsiveContainer width="100%" height={300}>
-                    <BarChart data={trendData} margin={{ top: 14, right: 20, left: 0, bottom: 40 }} barCategoryGap="8%">
+                    <LineChart data={trendData} margin={{ top: 20, right: 24, left: 0, bottom: 40 }}>
                       <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
                       <XAxis dataKey="label" tick={{ fontSize: 10, fill: '#64748b' }} angle={-35} textAnchor="end" height={55} interval={0} />
                       <YAxis tickFormatter={v => `${v}%`} tick={{ fontSize: 11, fill: '#64748b' }} domain={[0, 100]} />
+                      <ReferenceLine
+                        y={active.key === 'nsp' ? 20 : 80}
+                        stroke={active.key === 'nsp' ? '#ef444488' : '#10b98188'}
+                        strokeDasharray="6 3"
+                        label={{ value: active.key === 'nsp' ? 'Umbral 20%' : 'Meta 80%', position: 'right', fontSize: 10, fill: active.color, fontWeight: 700 }}
+                      />
                       <Tooltip
                         formatter={(v) => [`${v}%`, active.shortTitle]}
-                        contentStyle={{ background: 'rgba(15,23,42,0.95)', border: `1px solid ${active.color}44`, borderRadius: 12, color: 'white', fontSize: '0.82rem' }}
-                        cursor={{ fill: `${active.color}11` }}
+                        contentStyle={{ background: 'rgba(15,23,42,0.95)', border: `1px solid ${active.color}55`, borderRadius: 12, color: 'white', fontSize: '0.82rem' }}
                       />
-                      <Bar dataKey="value" name={active.shortTitle} fill={active.colorBg} stroke={active.color} strokeWidth={2} radius={[5,5,0,0]}>
-                        <LabelList dataKey="value" position="top" style={{ fontSize: 9, fill: active.color, fontWeight: 700 }} formatter={v => `${v}%`} />
-                      </Bar>
-                    </BarChart>
+                      <Line
+                        type="monotone"
+                        dataKey="value"
+                        name={active.shortTitle}
+                        stroke={active.color}
+                        strokeWidth={3}
+                        dot={{ fill: active.color, r: 5, strokeWidth: 2, stroke: 'white' }}
+                        activeDot={{ r: 7, stroke: active.color, strokeWidth: 2, fill: 'white' }}
+                        label={({ x, y, value }) => (
+                          <text x={x} y={y - 10} textAnchor="middle" fill={active.color} fontSize={9} fontWeight={700}>{`${value}%`}</text>
+                        )}
+                      />
+                    </LineChart>
                   </ResponsiveContainer>
                 </div>
 
+                {/* Stats summary */}
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginTop: 16, borderTop: '1px solid #f1f5f9', paddingTop: 16 }}>
                   {[
                     { label: 'Valor Actual', val: active.value, color: active.color },
@@ -1182,6 +1224,53 @@ export default function ActividadesMedicinaDashboard({ onBack }) {
                     </div>
                   ))}
                 </div>
+
+                {/* INSIGHTS: Specialties most off-target */}
+                {(() => {
+                  const insightRows = active.key === 'nsp'
+                    ? (indicadoresData.nsp.byEsp || []).slice(0, 5)
+                    : (indicadoresData.pertinencia.byEsp || []).slice(0, 5);
+                  const isNspInd = active.key === 'nsp';
+                  const threshold = isNspInd ? 20 : 80;
+                  const alertFn = isNspInd ? v => v >= threshold : v => v < threshold;
+                  if (!insightRows.length) return null;
+                  return (
+                    <div style={{ marginTop: 20, borderTop: '1px solid #f1f5f9', paddingTop: 18 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+                        <AlertTriangle size={16} color="#f59e0b" />
+                        <span style={{ fontWeight: 800, fontSize: '0.85rem', color: '#1e293b' }}>
+                          {isNspInd ? 'Especialidades con mayor tasa NSP (críticas)' : 'Especialidades con menor pertinencia (bajo umbral)'}
+                        </span>
+                        <span style={{ fontSize: '0.72rem', color: '#94a3b8', fontStyle: 'italic' }}>· Top 5 · mín. 20 citas evaluadas</span>
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                        {insightRows.map((row, i) => {
+                          const isAlert = alertFn(row.pct);
+                          const barWidth = isNspInd ? Math.min(row.pct / 50 * 100, 100) : Math.min(row.pct, 100);
+                          const barColor = isAlert ? (isNspInd ? '#ef4444' : '#f59e0b') : '#10b981';
+                          return (
+                            <div key={i} style={{ display: 'grid', gridTemplateColumns: '1fr auto auto', gap: 10, alignItems: 'center', padding: '8px 12px', borderRadius: 10, background: isAlert ? (isNspInd ? '#fef2f2' : '#fffbeb') : '#f0fdf4', border: `1px solid ${barColor}33` }}>
+                              <div>
+                                <span style={{ fontSize: '0.78rem', fontWeight: 700, color: '#1e293b' }}>
+                                  {i + 1}. {row.esp.length > 48 ? row.esp.substring(0, 46) + '…' : row.esp}
+                                </span>
+                                <div style={{ marginTop: 4, height: 5, borderRadius: 4, background: '#e2e8f0', overflow: 'hidden' }}>
+                                  <div style={{ width: `${barWidth}%`, height: '100%', background: barColor, borderRadius: 4, transition: 'width 0.4s' }} />
+                                </div>
+                              </div>
+                              <span style={{ fontSize: '0.72rem', color: '#64748b', whiteSpace: 'nowrap' }}>
+                                {isNspInd ? `${row.nsp} NSP de ${row.total}` : `${row.pertS} de ${row.total}`}
+                              </span>
+                              <span style={{ fontSize: '1rem', fontWeight: 900, color: barColor, minWidth: 48, textAlign: 'right' }}>
+                                {row.pct}%
+                              </span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })()}
               </div>
             </div>
           </div>
