@@ -1,0 +1,32 @@
+{
+  "name": "control-de-gestion-web",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "lint": "eslint .",
+    "preview": "vite preview",
+    "compile-sigcom": "node compile-sigcom.js",
+    "update-lista-espera": "node fetch-lista-espera.cjs"
+  },
+  "dependencies": {
+    "exceljs": "^3.4.0",
+    "framer-motion": "^11.0.0",
+    "leaflet": "^1.9.4",
+    "lucide-react": "^0.469.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-is": "^19.2.6",
+    "react-leaflet": "^4.2.1",
+    "react-select": "^5.10.2",
+    "recharts": "^3.8.1",
+    "xlsx": "^0.18.5"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.3.4",
+    "odbc": "^2.5.0",
+    "vite": "^7.3.6"
+  }
+}

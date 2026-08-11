@@ -1,0 +1,995 @@
+[
+  {
+    "Procedimiento principal": "13.41 - FACOEMULSIFICACION Y ASPIRACION CATARATA",
+    "Peso Medio GRD": 0.438841275797375,
+    " Valorización unitaria promedio FONASA ": 1302393.13831145,
+    "__EMPTY": 1202164
+  },
+  {
+    "Procedimiento principal": "51.23 - COLECISTECTOMIA LAPAROSCOPICA",
+    "Peso Medio GRD": 0.692611913357399,
+    " Valorización unitaria promedio FONASA ": 2055533.63646209,
+    "__EMPTY": 1802081
+  },
+  {
+    "Procedimiento principal": "47.01 - APENDICECTOMIA.LAPAROSCOPICA",
+    "Peso Medio GRD": 0.8209,
+    " Valorización unitaria promedio FONASA ": 2436267.02
+  },
+  {
+    "Procedimiento principal": "66.51 - SALPINGECTOMIA BILATERAL EN UNA INTERVENCION",
+    "Peso Medio GRD": 0.953800000000001,
+    " Valorización unitaria promedio FONASA ": 2830687.64,
+    "__EMPTY": 2003005
+  },
+  {
+    "Procedimiento principal": "64.0 - CIRCUNCISION",
+    "Peso Medio GRD": 0.369442857142857,
+    " Valorización unitaria promedio FONASA ": 1096432.51142857
+  },
+  {
+    "Procedimiento principal": "79.36 - REDUCCION ABIERTA FRACTURA TIBIA Y PERONE CON FIJACION INTERNA",
+    "Peso Medio GRD": 0.6584,
+    " Valorización unitaria promedio FONASA ": 1953999.52
+  },
+  {
+    "Procedimiento principal": "28.3 - AMIGDALECTOMIA CON ADENOIDECTOMIA",
+    "Peso Medio GRD": 0.3387,
+    " Valorización unitaria promedio FONASA ": 1005193.86,
+    "__EMPTY": 1302029
+  },
+  {
+    "Procedimiento principal": "79.32 - REDUCCION ABIERTA FRACTURA RADIO Y CUBITO CON FIJACION INTERNA",
+    "Peso Medio GRD": 0.946300000000001,
+    " Valorización unitaria promedio FONASA ": 2808429.14
+  },
+  {
+    "Procedimiento principal": "56.0 - DESOBSTRUCCION TRANSURETRAL URETER Y PELVIS RIÑON",
+    "Peso Medio GRD": 0.5655,
+    " Valorización unitaria promedio FONASA ": 1678290.9
+  },
+  {
+    "Procedimiento principal": "85.21 - ESCISION MAMA LOCAL",
+    "Peso Medio GRD": 0.5729,
+    " Valorización unitaria promedio FONASA ": 1700252.62
+  },
+  {
+    "Procedimiento principal": "11.39 - ESCISION PTERIGION.OTRA",
+    "Peso Medio GRD": 0.4919,
+    " Valorización unitaria promedio FONASA ": 1459860.82
+  },
+  {
+    "Procedimiento principal": "85.23 - MASTECTOMIA SUBTOTAL",
+    "Peso Medio GRD": 1.2665,
+    " Valorización unitaria promedio FONASA ": 3758718.7
+  },
+  {
+    "Procedimiento principal": "67.32 - ESCISION CERVIX LOCAL POR CAUTERIZACION",
+    "Peso Medio GRD": 0.1761,
+    " Valorización unitaria promedio FONASA ": 522629.58
+  },
+  {
+    "Procedimiento principal": "79.39 - REDUCCION ABIERTA FRACTURA OTRO HUESO CON FIJACION INTERNA",
+    "Peso Medio GRD": 0.7041,
+    " Valorización unitaria promedio FONASA ": 2089627.98
+  },
+  {
+    "Procedimiento principal": "86.07 - INSERCION DISPOSITIVO ACCESO VASCULAR TOTALMENTE IMPLANTABLE",
+    "Peso Medio GRD": 0.2737,
+    " Valorización unitaria promedio FONASA ": 812286.86
+  },
+  {
+    "Procedimiento principal": "63.73 - VASECTOMIA",
+    "Peso Medio GRD": 0.328276923076923,
+    " Valorización unitaria promedio FONASA ": 974260.252307693
+  },
+  {
+    "Procedimiento principal": "83.64 - SUTURA TENDON OTRA",
+    "Peso Medio GRD": 0.477876923076923,
+    " Valorización unitaria promedio FONASA ": 1418243.13230769
+  },
+  {
+    "Procedimiento principal": "19.4 - TIMPANOPLASTIA TIPO I Y NEOM",
+    "Peso Medio GRD": 0.6998,
+    " Valorización unitaria promedio FONASA ": 2076866.44
+  },
+  {
+    "Procedimiento principal": "81.45 - REPARACION LIGAMENTO CRUZADO RODILLA OTRA",
+    "Peso Medio GRD": 0.675383333333333,
+    " Valorización unitaria promedio FONASA ": 2004402.65666667,
+    "__EMPTY": 2104153
+  },
+  {
+    "Procedimiento principal": "81.47 - REPARACION RODILLA OTRA",
+    "Peso Medio GRD": 0.6584,
+    " Valorización unitaria promedio FONASA ": 1953999.52,
+    "__EMPTY": 2104153
+  },
+  {
+    "Procedimiento principal": "86.21 - ESCISION QUISTE O SENO PILONIDAL",
+    "Peso Medio GRD": 0.286383333333333,
+    " Valorización unitaria promedio FONASA ": 849928.456666666,
+    "__EMPTY": 1803031
+  },
+  {
+    "Procedimiento principal": "21.88 - SEPTOPLASTIA OTRA",
+    "Peso Medio GRD": 0.5856,
+    " Valorización unitaria promedio FONASA ": 1737943.68
+  },
+  {
+    "Procedimiento principal": "28.2 - AMIGDALECTOMIA SIN ADENOIDECTOMIA",
+    "Peso Medio GRD": 0.3387,
+    " Valorización unitaria promedio FONASA ": 1005193.86,
+    "__EMPTY": 1302029
+  },
+  {
+    "Procedimiento principal": "79.16 - REDUCCION CERRADA FRACTURA TIBIA Y PERONE CON FIJACION INTERNA",
+    "Peso Medio GRD": 0.6518,
+    " Valorización unitaria promedio FONASA ": 1934412.04
+  },
+  {
+    "Procedimiento principal": "49.46 - HEMORROIDECTOMIA",
+    "Peso Medio GRD": 0.383,
+    " Valorización unitaria promedio FONASA ": 1136667.4
+  },
+  {
+    "Procedimiento principal": "28.6 - ADENOIDECTOMIA SIN AMIGDALECTOMIA",
+    "Peso Medio GRD": 0.340122222222222,
+    " Valorización unitaria promedio FONASA ": 1009414.73111111
+  },
+  {
+    "Procedimiento principal": "79.31 - REDUCCION ABIERTA FRACTURA HUMERO CON FIJACION INTERNA",
+    "Peso Medio GRD": 0.9463,
+    " Valorización unitaria promedio FONASA ": 2808429.14
+  },
+  {
+    "Procedimiento principal": "80.6 - ESCISION MENISCO RODILLA",
+    "Peso Medio GRD": 0.6584,
+    " Valorización unitaria promedio FONASA ": 1953999.52,
+    "__EMPTY": 2003005
+  },
+  {
+    "Procedimiento principal": "08.33 - REPARACION BLEFAROPTOSIS CON RESECCION MUSCULO ELEVADOR",
+    "Peso Medio GRD": 0.4919,
+    " Valorización unitaria promedio FONASA ": 1459860.82,
+    "__EMPTY": 1202021
+  },
+  {
+    "Procedimiento principal": "24.4 - ESCISION MAXILAR DENTARIA LOCAL",
+    "Peso Medio GRD": 0.3041,
+    " Valorización unitaria promedio FONASA ": 902507.98
+  },
+  {
+    "Procedimiento principal": "62.3 - ORQUIECTOMIA UNILATERAL",
+    "Peso Medio GRD": 0.5075,
+    " Valorización unitaria promedio FONASA ": 1506158.5
+  },
+  {
+    "Procedimiento principal": "53.03 - REPARACION HERNIA INGUINAL DIRECTA CON INJERTO ABIERTA Y OTRA",
+    "Peso Medio GRD": 0.6255,
+    " Valorización unitaria promedio FONASA ": 1856358.9,
+    "__EMPTY": 1802101
+  },
+  {
+    "Procedimiento principal": "53.05 - REPARACION HERNIA INGUINAL CON INJERTO NEOM",
+    "Peso Medio GRD": 0.6255,
+    " Valorización unitaria promedio FONASA ": 1856358.9,
+    "__EMPTY": 1802101
+  },
+  {
+    "Procedimiento principal": "65.25 - ESCISION OVARIO LOCAL LAPAROSCOPICA OTRA",
+    "Peso Medio GRD": 0.445328571428571,
+    " Valorización unitaria promedio FONASA ": 1321646.13428571,
+    "__EMPTY": 2003031
+  },
+  {
+    "Procedimiento principal": "83.63 - REPARACION MANGUITO ROTADORES",
+    "Peso Medio GRD": 0.9463,
+    " Valorización unitaria promedio FONASA ": 2808429.14
+  },
+  {
+    "Procedimiento principal": "65.41 - SALPINGOOFORECTOMIA UNILATERAL.LAPAROSCOPICA",
+    "Peso Medio GRD": 0.417366666666667,
+    " Valorización unitaria promedio FONASA ": 1238660.79333333,
+    "__EMPTY": 2003005
+  },
+  {
+    "Procedimiento principal": "67.2 - CONIZACION CERVIX",
+    "Peso Medio GRD": 0.3301,
+    " Valorización unitaria promedio FONASA ": 979670.78
+  },
+  {
+    "Procedimiento principal": "82.45 - SUTURA TENDON MANO OTRA",
+    "Peso Medio GRD": 0.516616666666667,
+    " Valorización unitaria promedio FONASA ": 1533214.94333333
+  },
+  {
+    "Procedimiento principal": "85.36 - MASTECTOMIA SUBCUTANEA BILATERAL OTRA",
+    "Peso Medio GRD": 1.2665,
+    " Valorización unitaria promedio FONASA ": 3758718.7
+  },
+  {
+    "Procedimiento principal": "08.20 - ESCISION PARPADO LOCAL NEOM",
+    "Peso Medio GRD": 0.249,
+    " Valorización unitaria promedio FONASA ": 738982.2
+  },
+  {
+    "Procedimiento principal": "08.87 - RITIDECTOMIA PARPADO SUPERIOR",
+    "Peso Medio GRD": 0.4919,
+    " Valorización unitaria promedio FONASA ": 1459860.82
+  },
+  {
+    "Procedimiento principal": "53.41 - REPARACION HERNIA UMBILICAL CON INJERTO ABIERTA Y OTRA",
+    "Peso Medio GRD": 0.6253,
+    " Valorización unitaria promedio FONASA ": 1855765.34,
+    "__EMPTY": 1802101
+  },
+  {
+    "Procedimiento principal": "62.5 - ORQUIDOPEXIA",
+    "Peso Medio GRD": 0.511,
+    " Valorización unitaria promedio FONASA ": 1516545.8
+  },
+  {
+    "Procedimiento principal": "68.29 - ESCISION UTERO LOCAL.OTRA",
+    "Peso Medio GRD": 0.5107,
+    " Valorización unitaria promedio FONASA ": 1515655.46
+  },
+  {
+    "Procedimiento principal": "77.51 - BUNIONECTOMIA CON CORRECCION DE TEJIDO BLANDO Y OSTEOTOMIA DEL PRIMER METATARSIANO",
+    "Peso Medio GRD": 0.66778,
+    " Valorización unitaria promedio FONASA ": 1981837.484,
+    "__EMPTY": 2106003
+  },
+  {
+    "Procedimiento principal": "78.67 - EXTRACCION DISPOSITIVO IMPLANTADO EN HUESO.TIBIA Y PERONE",
+    "Peso Medio GRD": 0.4757,
+    " Valorización unitaria promedio FONASA ": 1411782.46
+  },
+  {
+    "Procedimiento principal": "21.5 - RESECCION TABIQUE NARIZ SUBMUCOSA",
+    "Peso Medio GRD": 0.5856,
+    " Valorización unitaria promedio FONASA ": 1737943.68
+  },
+  {
+    "Procedimiento principal": "53.04 - REPARACION HERNIA INGUINAL INDIRECTA CON INJERTO ABIERTA Y OTRA",
+    "Peso Medio GRD": 0.6255,
+    " Valorización unitaria promedio FONASA ": 1856358.9,
+    "__EMPTY": 1802101
+  },
+  {
+    "Procedimiento principal": "53.49 - REPARACION HERNIA UMBILICAL ABIERTA OTRA",
+    "Peso Medio GRD": 0.6253,
+    " Valorización unitaria promedio FONASA ": 1855765.34,
+    "__EMPTY": 1802101
+  },
+  {
+    "Procedimiento principal": "53.61 - REPARACION HERNIA INCISIONAL CON INJERTO ABIERTA Y OTRA",
+    "Peso Medio GRD": 0.6253,
+    " Valorización unitaria promedio FONASA ": 1855765.34,
+    "__EMPTY": 1802101
+  },
+  {
+    "Procedimiento principal": "54.21 - LAPAROSCOPIA",
+    "Peso Medio GRD": 0.29475,
+    " Valorización unitaria promedio FONASA ": 874759.05,
+    "__EMPTY": 2003031
+  },
+  {
+    "Procedimiento principal": "78.61 - EXTRACCION DISPOSITIVO IMPLANTADO EN HUESO.CLAVICULA Y TORAX",
+    "Peso Medio GRD": 0.7233,
+    " Valorización unitaria promedio FONASA ": 2146609.74
+  },
+  {
+    "Procedimiento principal": "78.68 - EXTRACCION DISPOSITIVO IMPLANTADO EN HUESO.TARSO Y METATARSO",
+    "Peso Medio GRD": 0.4186,
+    " Valorización unitaria promedio FONASA ": 1242321.08
+  },
+  {
+    "Procedimiento principal": "79.12 - REDUCCION CERRADA FRACTURA RADIO Y CUBITO CON FIJACION INTERNA",
+    "Peso Medio GRD": 0.6022,
+    " Valorización unitaria promedio FONASA ": 1787209.16
+  },
+  {
+    "Procedimiento principal": "79.89 - REDUCCION ABIERTA LUXACION.OTRA",
+    "Peso Medio GRD": 0.7041,
+    " Valorización unitaria promedio FONASA ": 2089627.98
+  },
+  {
+    "Procedimiento principal": "82.35 - FASCIECTOMIA MANO OTRA",
+    "Peso Medio GRD": 0.3766,
+    " Valorización unitaria promedio FONASA ": 1117673.48
+  },
+  {
+    "Procedimiento principal": "84.11 - AMPUTACION DEDO PIE",
+    "Peso Medio GRD": 0.668,
+    " Valorización unitaria promedio FONASA ": 1982490.4,
+    "__EMPTY": 2104185
+  },
+  {
+    "Procedimiento principal": "04.43 - LIBERACION TUNEL CARPIANO",
+    "Peso Medio GRD": 0.608566666666667,
+    " Valorización unitaria promedio FONASA ": 1806104.15333333
+  },
+  {
+    "Procedimiento principal": "08.35 - REPARACION BLEFAROPTOSIS CON TARSO",
+    "Peso Medio GRD": 0.4919,
+    " Valorización unitaria promedio FONASA ": 1459860.82,
+    "__EMPTY": 1202021
+  },
+  {
+    "Procedimiento principal": "08.36 - REPARACION BLEFAROPTOSIS OTRA",
+    "Peso Medio GRD": 0.4919,
+    " Valorización unitaria promedio FONASA ": 1459860.82,
+    "__EMPTY": 1202021
+  },
+  {
+    "Procedimiento principal": "19.52 - TIMPANOPLASTIA TIPO II",
+    "Peso Medio GRD": 0.6998,
+    " Valorización unitaria promedio FONASA ": 2076866.44
+  },
+  {
+    "Procedimiento principal": "21.69 - TURBINECTOMIA.OTRA",
+    "Peso Medio GRD": 0.429533333333333,
+    " Valorización unitaria promedio FONASA ": 1274769.02666667
+  },
+  {
+    "Procedimiento principal": "22.63 - ETMOIDECTOMIA",
+    "Peso Medio GRD": 0.8171,
+    " Valorización unitaria promedio FONASA ": 2424989.38
+  },
+  {
+    "Procedimiento principal": "43.11 - GASTROSTOMIA PERCUTANEA ENDOSCOPICA [PEG]",
+    "Peso Medio GRD": 0.3249,
+    " Valorización unitaria promedio FONASA ": 964238.22
+  },
+  {
+    "Procedimiento principal": "49.01 - DRENAJE ABSCESO PERIANAL",
+    "Peso Medio GRD": 0.2844,
+    " Valorización unitaria promedio FONASA ": 844042.32
+  },
+  {
+    "Procedimiento principal": "49.11 - FISTULOTOMIA ANO",
+    "Peso Medio GRD": 0.3731,
+    " Valorización unitaria promedio FONASA ": 1107286.18
+  },
+  {
+    "Procedimiento principal": "49.51 - ESFINTEROTOMIA ANO.LATERAL INTERNA",
+    "Peso Medio GRD": 0.2844,
+    " Valorización unitaria promedio FONASA ": 844042.32
+  },
+  {
+    "Procedimiento principal": "50.14 - BIOPSIA HIGADO LAPAROSCOPICA",
+    "Peso Medio GRD": 0.6623,
+    " Valorización unitaria promedio FONASA ": 1965573.94
+  },
+  {
+    "Procedimiento principal": "53.00 - REPARACION HERNIA INGUINAL UNILATERAL.NEOM",
+    "Peso Medio GRD": 0.6255,
+    " Valorización unitaria promedio FONASA ": 1856358.9,
+    "__EMPTY": 1802101
+  },
+  {
+    "Procedimiento principal": "53.69 - REPARACION HERNIA PARED ABDOMEN ANTERIOR CON INJERTO OTRA",
+    "Peso Medio GRD": 0.6253,
+    " Valorización unitaria promedio FONASA ": 1855765.34,
+    "__EMPTY": 1802101
+  },
+  {
+    "Procedimiento principal": "54.51 - LISIS ADHERENCIA PERITONEO.LAPAROSCOPICA",
+    "Peso Medio GRD": 0.7531,
+    " Valorización unitaria promedio FONASA ": 2235050.18,
+    "__EMPTY": 2003031
+  },
+  {
+    "Procedimiento principal": "56.2 - URETEROTOMIA",
+    "Peso Medio GRD": 0.9293,
+    " Valorización unitaria promedio FONASA ": 2757976.54
+  },
+  {
+    "Procedimiento principal": "57.0 - DRENAJE TRANSURETRAL VEJIGA",
+    "Peso Medio GRD": 0.3345,
+    " Valorización unitaria promedio FONASA ": 992729.1
+  },
+  {
+    "Procedimiento principal": "63.1 - ESCISION VARICOCELE E HIDROCELE CORDON ESPERMATICO",
+    "Peso Medio GRD": 0.511,
+    " Valorización unitaria promedio FONASA ": 1516545.8
+  },
+  {
+    "Procedimiento principal": "77.52 - BURSECTOMIA PRIMER METATARSIANO CON ARTRODESIS",
+    "Peso Medio GRD": 0.6587,
+    " Valorización unitaria promedio FONASA ": 1954889.86
+  },
+  {
+    "Procedimiento principal": "77.57 - REPARACION DEDO PIE EN CLAVA",
+    "Peso Medio GRD": 0.6587,
+    " Valorización unitaria promedio FONASA ": 1954889.86
+  },
+  {
+    "Procedimiento principal": "78.63 - EXTRACCION DISPOSITIVO IMPLANTADO EN HUESO.RADIO Y CUBITO",
+    "Peso Medio GRD": 0.4186,
+    " Valorización unitaria promedio FONASA ": 1242321.08
+  },
+  {
+    "Procedimiento principal": "78.65 - EXTRACCION DISPOSITIVO IMPLANTADO EN HUESO.FEMUR",
+    "Peso Medio GRD": 0.4186,
+    " Valorización unitaria promedio FONASA ": 1242321.08
+  },
+  {
+    "Procedimiento principal": "78.69 - EXTRACCION DISPOSITIVO IMPLANTADO EN HUESO.OTRO",
+    "Peso Medio GRD": 0.4186,
+    " Valorización unitaria promedio FONASA ": 1242321.08
+  },
+  {
+    "Procedimiento principal": "79.33 - REDUCCION ABIERTA FRACTURA CARPO Y METACARPO CON FIJACION INTERNA",
+    "Peso Medio GRD": 0.859433333333333,
+    " Valorización unitaria promedio FONASA ": 2550626.24666667
+  },
+  {
+    "Procedimiento principal": "79.37 - REDUCCION ABIERTA FRACTURA TARSO Y METATARSO CON FIJACION INTERNA",
+    "Peso Medio GRD": 0.668,
+    " Valorización unitaria promedio FONASA ": 1982490.4
+  },
+  {
+    "Procedimiento principal": "81.11 - ARTRODESIS TOBILLO",
+    "Peso Medio GRD": 0.6584,
+    " Valorización unitaria promedio FONASA ": 1953999.52
+  },
+  {
+    "Procedimiento principal": "81.44 - ESTABILIZACION ROTULA",
+    "Peso Medio GRD": 0.673633333333333,
+    " Valorización unitaria promedio FONASA ": 1999209.00666667
+  },
+  {
+    "Procedimiento principal": "04.3 - SUTURA NERVIO CRANEAL Y PERIFERICO",
+    "Peso Medio GRD": 1.2167,
+    " Valorización unitaria promedio FONASA ": 3610922.26
+  },
+  {
+    "Procedimiento principal": "04.49 - DESCOMPRESION ADHERENCIA NERVIO O GANGLIO PERIFERICO OTRA",
+    "Peso Medio GRD": 0.8199,
+    " Valorización unitaria promedio FONASA ": 2433299.22
+  },
+  {
+    "Procedimiento principal": "08.24 - ESCISION PARPADO IMPORTANTE LOCAL ESPESOR TOTAL",
+    "Peso Medio GRD": 0.4919,
+    " Valorización unitaria promedio FONASA ": 1459860.82
+  },
+  {
+    "Procedimiento principal": "14.73 - VITRECTOMIA MECANICA VIA ANTERIOR",
+    "Peso Medio GRD": 0.5168,
+    " Valorización unitaria promedio FONASA ": 1533759.04
+  },
+  {
+    "Procedimiento principal": "19.3 - OPERACION CADENA OSICULAR OTRA",
+    "Peso Medio GRD": 0.6998,
+    " Valorización unitaria promedio FONASA ": 2076866.44
+  },
+  {
+    "Procedimiento principal": "20.01 - MIRINGOTOMIA CON INSERCION TUBO",
+    "Peso Medio GRD": 0.1589,
+    " Valorización unitaria promedio FONASA ": 471583.42
+  },
+  {
+    "Procedimiento principal": "34.4 - ESCISION PARED TORAX LOCAL",
+    "Peso Medio GRD": 0.4846,
+    " Valorización unitaria promedio FONASA ": 1438195.88
+  },
+  {
+    "Procedimiento principal": "49.45 - LIGADURA HEMORROIDES",
+    "Peso Medio GRD": 0.383,
+    " Valorización unitaria promedio FONASA ": 1136667.4
+  },
+  {
+    "Procedimiento principal": "49.93 - INCISION ANO OTRA",
+    "Peso Medio GRD": 0.2844,
+    " Valorización unitaria promedio FONASA ": 844042.32
+  },
+  {
+    "Procedimiento principal": "53.51 - REPARACION HERNIA INCISIONAL SIN INJERTO",
+    "Peso Medio GRD": 0.6253,
+    " Valorización unitaria promedio FONASA ": 1855765.34,
+    "__EMPTY": 1802101
+  },
+  {
+    "Procedimiento principal": "61.2 - REPARACION HIDROCELE (TUNICA VAGINAL)",
+    "Peso Medio GRD": 0.511,
+    " Valorización unitaria promedio FONASA ": 1516545.8
+  },
+  {
+    "Procedimiento principal": "71.3 - ESCISION VULVA Y PERINEO LOCAL OTRA",
+    "Peso Medio GRD": 0.1761,
+    " Valorización unitaria promedio FONASA ": 522629.58
+  },
+  {
+    "Procedimiento principal": "77.38 - SECCION HUESO.TARSO Y METATARSO",
+    "Peso Medio GRD": 0.7651,
+    " Valorización unitaria promedio FONASA ": 2270663.78
+  },
+  {
+    "Procedimiento principal": "77.88 - OSTECTOMIA PARCIAL.TARSO Y METATARSO",
+    "Peso Medio GRD": 0.668,
+    " Valorización unitaria promedio FONASA ": 1982490.4,
+    "__EMPTY": 2106003
+  },
+  {
+    "Procedimiento principal": "78.64 - EXTRACCION DISPOSITIVO IMPLANTADO EN HUESO.CARPO Y METACARPO",
+    "Peso Medio GRD": 0.4186,
+    " Valorización unitaria promedio FONASA ": 1242321.08
+  },
+  {
+    "Procedimiento principal": "79.17 - REDUCCION CERRADA FRACTURA TARSO Y METATARSO CON FIJACION INTERNA",
+    "Peso Medio GRD": 0.668,
+    " Valorización unitaria promedio FONASA ": 1982490.4
+  },
+  {
+    "Procedimiento principal": "79.38 - REDUCCION ABIERTA FRACTURA FALANGE PIE CON FIJACION INTERNA",
+    "Peso Medio GRD": 0.668,
+    " Valorización unitaria promedio FONASA ": 1982490.4
+  },
+  {
+    "Procedimiento principal": "80.76 - SINOVECTOMIA.RODILLA",
+    "Peso Medio GRD": 0.6584,
+    " Valorización unitaria promedio FONASA ": 1953999.52
+  },
+  {
+    "Procedimiento principal": "81.49 - REPARACION TOBILLO OTRA",
+    "Peso Medio GRD": 0.6584,
+    " Valorización unitaria promedio FONASA ": 1953999.52
+  },
+  {
+    "Procedimiento principal": "85.24 - ESCISION TEJIDO MAMARIO ECTOPICO",
+    "Peso Medio GRD": 0.5729,
+    " Valorización unitaria promedio FONASA ": 1700252.62
+  },
+  {
+    "Procedimiento principal": "85.55 - INJERTO GRASA EN MAMA",
+    "Peso Medio GRD": 0.5729,
+    " Valorización unitaria promedio FONASA ": 1700252.62
+  },
+  {
+    "Procedimiento principal": "86.3 - ESCISION PIEL Y TEJIDO SUBCUTANEO LOCAL OTRA",
+    "Peso Medio GRD": 0.2737,
+    " Valorización unitaria promedio FONASA ": 812286.86
+  },
+  {
+    "Procedimiento principal": "10.1 - INCISION CONJUNTIVA OTRA",
+    "Peso Medio GRD": 0.249,
+    " Valorización unitaria promedio FONASA ": 738982.2
+  },
+  {
+    "Procedimiento principal": "13.72 - INSERCION CRISTALINO PROTESICO SECUNDARIA",
+    "Peso Medio GRD": 0.4384,
+    " Valorización unitaria promedio FONASA ": 1301083.52
+  },
+  {
+    "Procedimiento principal": "16.09 - ORBITOTOMIA.OTRA",
+    "Peso Medio GRD": 0.4919,
+    " Valorización unitaria promedio FONASA ": 1459860.82
+  },
+  {
+    "Procedimiento principal": "16.31 - EVISCERACION GLOBO CON IMPLANTACION ESCLEROTICA",
+    "Peso Medio GRD": 0.4919,
+    " Valorización unitaria promedio FONASA ": 1459860.82
+  },
+  {
+    "Procedimiento principal": "19.11 - ESTAPEDECTOMIA CON REPOSICION YUNQUE",
+    "Peso Medio GRD": 0.6998,
+    " Valorización unitaria promedio FONASA ": 2076866.44
+  },
+  {
+    "Procedimiento principal": "19.19 - ESTAPEDECTOMIA.OTRA",
+    "Peso Medio GRD": 0.6998,
+    " Valorización unitaria promedio FONASA ": 2076866.44
+  },
+  {
+    "Procedimiento principal": "19.53 - TIMPANOPLASTIA TIPO III",
+    "Peso Medio GRD": 0.6998,
+    " Valorización unitaria promedio FONASA ": 2076866.44
+  },
+  {
+    "Procedimiento principal": "19.54 - TIMPANOPLASTIA TIPO IV",
+    "Peso Medio GRD": 0.6998,
+    " Valorización unitaria promedio FONASA ": 2076866.44
+  },
+  {
+    "Procedimiento principal": "21.61 - TURBINECTOMIA POR DIATERMIA O CRIOCIRUGIA",
+    "Peso Medio GRD": 0.3515,
+    " Valorización unitaria promedio FONASA ": 1043181.7
+  },
+  {
+    "Procedimiento principal": "21.84 - RINOPLASTIA SECUNDARIA",
+    "Peso Medio GRD": 0.5856,
+    " Valorización unitaria promedio FONASA ": 1737943.68,
+    "__EMPTY": 1302052
+  },
+  {
+    "Procedimiento principal": "21.87 - RINOPLASTIA OTRA",
+    "Peso Medio GRD": 0.5856,
+    " Valorización unitaria promedio FONASA ": 1737943.68,
+    "__EMPTY": 1302052
+  },
+  {
+    "Procedimiento principal": "22.39 - ANTROTOMIA MAXILAR EXTERNA.OTRA",
+    "Peso Medio GRD": 0,
+    " Valorización unitaria promedio FONASA ": 0
+  },
+  {
+    "Procedimiento principal": "22.52 - ESFENOIDOTOMIA",
+    "Peso Medio GRD": 0.8171,
+    " Valorización unitaria promedio FONASA ": 2424989.38
+  },
+  {
+    "Procedimiento principal": "22.64 - ESFENOIDECTOMIA",
+    "Peso Medio GRD": 0.8171,
+    " Valorización unitaria promedio FONASA ": 2424989.38
+  },
+  {
+    "Procedimiento principal": "24.0 - INCISION ENCIA Y HUESO ALVEOLAR",
+    "Peso Medio GRD": 0.6527,
+    " Valorización unitaria promedio FONASA ": 1937083.06
+  },
+  {
+    "Procedimiento principal": "24.2 - GINGIVOPLASTIA",
+    "Peso Medio GRD": 0.6527,
+    " Valorización unitaria promedio FONASA ": 1937083.06
+  },
+  {
+    "Procedimiento principal": "24.91 - PROFUNDIZACION SURCO BUCOLABIAL O LINGUAL",
+    "Peso Medio GRD": 0.1017,
+    " Valorización unitaria promedio FONASA ": 301825.26
+  },
+  {
+    "Procedimiento principal": "38.89 - OCLUSION QUIRURGICA VENA MIEMBRO INFERIOR OTRA",
+    "Peso Medio GRD": 0.5791,
+    " Valorización unitaria promedio FONASA ": 1718652.98
+  },
+  {
+    "Procedimiento principal": "40.23 - ESCISION GANGLIO LINFATICO AXILAR",
+    "Peso Medio GRD": 0.5176,
+    " Valorización unitaria promedio FONASA ": 1536133.28
+  },
+  {
+    "Procedimiento principal": "47.09 - APENDICECTOMIA.OTRA",
+    "Peso Medio GRD": 0.8209,
+    " Valorización unitaria promedio FONASA ": 2436267.02
+  },
+  {
+    "Procedimiento principal": "48.35 - ESCISION RECTO LOCAL",
+    "Peso Medio GRD": 0.3731,
+    " Valorización unitaria promedio FONASA ": 1107286.18
+  },
+  {
+    "Procedimiento principal": "48.49 - RESECCION RECTO CON RECONSTRUCCION PULL-THROUGH OTRA",
+    "Peso Medio GRD": 0,
+    " Valorización unitaria promedio FONASA ": 0
+  },
+  {
+    "Procedimiento principal": "49.12 - FISTULECTOMIA ANO",
+    "Peso Medio GRD": 0.383,
+    " Valorización unitaria promedio FONASA ": 1136667.4
+  },
+  {
+    "Procedimiento principal": "49.39 - ESCISION ANO LOCAL.OTRA",
+    "Peso Medio GRD": 0.2844,
+    " Valorización unitaria promedio FONASA ": 844042.32
+  },
+  {
+    "Procedimiento principal": "49.42 - ESCLEROSIS HEMORROIDES",
+    "Peso Medio GRD": 0.1818,
+    " Valorización unitaria promedio FONASA ": 539546.04
+  },
+  {
+    "Procedimiento principal": "49.43 - CAUTERIZACION HEMORROIDES",
+    "Peso Medio GRD": 0.383,
+    " Valorización unitaria promedio FONASA ": 1136667.4
+  },
+  {
+    "Procedimiento principal": "49.52 - ESFINTEROTOMIA ANO.POSTERIOR",
+    "Peso Medio GRD": 0.2844,
+    " Valorización unitaria promedio FONASA ": 844042.32,
+    "__EMPTY": 2106003
+  },
+  {
+    "Procedimiento principal": "53.12 - REPARACION HERNIA INGUINAL BILATERAL INDIRECTA ABIERTA Y OTRA",
+    "Peso Medio GRD": 0.6255,
+    " Valorización unitaria promedio FONASA ": 1856358.9,
+    "__EMPTY": 1802101
+  },
+  {
+    "Procedimiento principal": "53.14 - REPARACION HERNIA INGUINAL BILATERAL DIRECTA CON INJERTO ABIERTA Y OTRA",
+    "Peso Medio GRD": 0.6255,
+    " Valorización unitaria promedio FONASA ": 1856358.9,
+    "__EMPTY": 1802101
+  },
+  {
+    "Procedimiento principal": "53.43 - REPARACION HERNIA UMBILICAL LAPAROSCOPICA OTRA",
+    "Peso Medio GRD": 0.6253,
+    " Valorización unitaria promedio FONASA ": 1855765.34,
+    "__EMPTY": 1802101
+  },
+  {
+    "Procedimiento principal": "53.59 - REPARACION HERNIA PARED ABDOMEN SIN INJERTO.OTRA",
+    "Peso Medio GRD": 0.6253,
+    " Valorización unitaria promedio FONASA ": 1855765.34,
+    "__EMPTY": 1802101
+  },
+  {
+    "Procedimiento principal": "54.11 - LAPAROTOMIA EXPLORATORIA",
+    "Peso Medio GRD": 0.5227,
+    " Valorización unitaria promedio FONASA ": 1551269.06,
+    "__EMPTY": 2003031
+  },
+  {
+    "Procedimiento principal": "54.23 - BIOPSIA PERITONEO",
+    "Peso Medio GRD": 0.5227,
+    " Valorización unitaria promedio FONASA ": 1551269.06
+  },
+  {
+    "Procedimiento principal": "55.03 - NEFROSTOMIA PERCUTANEA SIN FRAGMENTACION",
+    "Peso Medio GRD": 0.419,
+    " Valorización unitaria promedio FONASA ": 1243508.2
+  },
+  {
+    "Procedimiento principal": "57.17 - CISTOSTOMIA PERCUTANEA",
+    "Peso Medio GRD": 0.5655,
+    " Valorización unitaria promedio FONASA ": 1678290.9
+  },
+  {
+    "Procedimiento principal": "61.0 - INCISION ESCROTO Y TUNICA VAGINAL Y DRENAJE",
+    "Peso Medio GRD": 0.507,
+    " Valorización unitaria promedio FONASA ": 1504674.6
+  },
+  {
+    "Procedimiento principal": "62.42 - ESCISION TESTICULO UNICO",
+    "Peso Medio GRD": 0.507,
+    " Valorización unitaria promedio FONASA ": 1504674.6
+  },
+  {
+    "Procedimiento principal": "63.2 - ESCISION QUISTE EPIDIDIMO",
+    "Peso Medio GRD": 0.511,
+    " Valorización unitaria promedio FONASA ": 1516545.8
+  },
+  {
+    "Procedimiento principal": "65.53 - OOFORECTOMIA BILATERAL EN UNA INTERVENCION LAPAROSCOPICA",
+    "Peso Medio GRD": 0.3707,
+    " Valorización unitaria promedio FONASA ": 1100163.46,
+    "__EMPTY": 2003031
+  },
+  {
+    "Procedimiento principal": "66.4 - SALPINGECTOMIA UNILATERAL TOTAL",
+    "Peso Medio GRD": 0.5107,
+    " Valorización unitaria promedio FONASA ": 1515655.46,
+    "__EMPTY": 2003005
+  },
+  {
+    "Procedimiento principal": "66.52 - SALPINGECTOMIA TROMPA DE FALOPIO UNICA",
+    "Peso Medio GRD": 0.5107,
+    " Valorización unitaria promedio FONASA ": 1515655.46,
+    "__EMPTY": 2003005
+  },
+  {
+    "Procedimiento principal": "66.61 - ESCISION TROMPA DE FALOPIO LOCAL",
+    "Peso Medio GRD": 0.9538,
+    " Valorización unitaria promedio FONASA ": 2830687.64
+  },
+  {
+    "Procedimiento principal": "71.23 - MARSUPIALIZACION GLANDULA DE BARTHOLINO (QUISTE)",
+    "Peso Medio GRD": 0.3301,
+    " Valorización unitaria promedio FONASA ": 979670.78
+  },
+  {
+    "Procedimiento principal": "71.24 - ESCISION GLANDULA DE BARTHOLINO (QUISTE)",
+    "Peso Medio GRD": 0.3301,
+    " Valorización unitaria promedio FONASA ": 979670.78
+  },
+  {
+    "Procedimiento principal": "76.2 - ESCISION HUESO CARA LOCAL",
+    "Peso Medio GRD": 1.0587,
+    " Valorización unitaria promedio FONASA ": 3142009.86
+  },
+  {
+    "Procedimiento principal": "77.28 - OSTEOTOMIA EN CUÑA.TARSO Y METATARSO",
+    "Peso Medio GRD": 0.668,
+    " Valorización unitaria promedio FONASA ": 1982490.4,
+    "__EMPTY": 2106003
+  },
+  {
+    "Procedimiento principal": "77.39 - SECCION HUESO.OTRA",
+    "Peso Medio GRD": 0.7041,
+    " Valorización unitaria promedio FONASA ": 2089627.98
+  },
+  {
+    "Procedimiento principal": "77.54 - ESCISION O CORRECCIÓN DE JUANETE O JUANETILLO DE SASTRE",
+    "Peso Medio GRD": 0.6587,
+    " Valorización unitaria promedio FONASA ": 1954889.86
+  },
+  {
+    "Procedimiento principal": "77.58 - ESCISION, FUSION Y REPARACION DEDO PIE OTRA",
+    "Peso Medio GRD": 0.6587,
+    " Valorización unitaria promedio FONASA ": 1954889.86
+  },
+  {
+    "Procedimiento principal": "77.62 - ESCISION HUESO LOCAL.HUMERO",
+    "Peso Medio GRD": 0.5953,
+    " Valorización unitaria promedio FONASA ": 1766731.34
+  },
+  {
+    "Procedimiento principal": "77.67 - ESCISION HUESO LOCAL.TIBIA Y PERONE",
+    "Peso Medio GRD": 0.6584,
+    " Valorización unitaria promedio FONASA ": 1953999.52
+  },
+  {
+    "Procedimiento principal": "77.69 - ESCISION HUESO LOCAL.OTRA",
+    "Peso Medio GRD": 0.5953,
+    " Valorización unitaria promedio FONASA ": 1766731.34
+  },
+  {
+    "Procedimiento principal": "77.85 - OSTECTOMIA PARCIAL.FEMUR",
+    "Peso Medio GRD": 0.8723,
+    " Valorización unitaria promedio FONASA ": 2588811.94,
+    "__EMPTY": 2106003
+  },
+  {
+    "Procedimiento principal": "77.86 - OSTECTOMIA PARCIAL.ROTULA",
+    "Peso Medio GRD": 0.8622,
+    " Valorización unitaria promedio FONASA ": 2558837.16,
+    "__EMPTY": 2106003
+  },
+  {
+    "Procedimiento principal": "78.04 - INJERTO HUESO.CARPO Y METACARPO",
+    "Peso Medio GRD": 1.2167,
+    " Valorización unitaria promedio FONASA ": 3610922.26
+  },
+  {
+    "Procedimiento principal": "78.27 - ACORTAMIENTO MIEMBRO.TIBIA Y PERONE",
+    "Peso Medio GRD": 0.6584,
+    " Valorización unitaria promedio FONASA ": 1953999.52
+  },
+  {
+    "Procedimiento principal": "78.51 - FIJACION INTERNA SIN REDUCCION FRACTURA.CLAVICULA Y TORAX",
+    "Peso Medio GRD": 0.7233,
+    " Valorización unitaria promedio FONASA ": 2146609.74
+  },
+  {
+    "Procedimiento principal": "78.53 - FIJACION INTERNA SIN REDUCCION FRACTURA.RADIO Y CUBITO",
+    "Peso Medio GRD": 0.9463,
+    " Valorización unitaria promedio FONASA ": 2808429.14
+  },
+  {
+    "Procedimiento principal": "78.55 - FIJACION INTERNA SIN REDUCCION FRACTURA.FEMUR",
+    "Peso Medio GRD": 1.1141,
+    " Valorización unitaria promedio FONASA ": 3306425.98
+  },
+  {
+    "Procedimiento principal": "78.62 - EXTRACCION DISPOSITIVO IMPLANTADO EN HUESO.HUMERO",
+    "Peso Medio GRD": 0.4186,
+    " Valorización unitaria promedio FONASA ": 1242321.08
+  },
+  {
+    "Procedimiento principal": "78.66 - EXTRACCION DISPOSITIVO IMPLANTADO EN HUESO.ROTULA",
+    "Peso Medio GRD": 0.4186,
+    " Valorización unitaria promedio FONASA ": 1242321.08
+  },
+  {
+    "Procedimiento principal": "79.11 - REDUCCION CERRADA FRACTURA HUMERO CON FIJACION INTERNA",
+    "Peso Medio GRD": 0.6022,
+    " Valorización unitaria promedio FONASA ": 1787209.16
+  },
+  {
+    "Procedimiento principal": "79.13 - REDUCCION CERRADA FRACTURA CARPO Y METACARPO CON FIJACION INTERNA",
+    "Peso Medio GRD": 0.3766,
+    " Valorización unitaria promedio FONASA ": 1117673.48
+  },
+  {
+    "Procedimiento principal": "79.14 - REDUCCION CERRADA FRACTURA FALANGE MANO CON FIJACION INTERNA",
+    "Peso Medio GRD": 0.3766,
+    " Valorización unitaria promedio FONASA ": 1117673.48
+  },
+  {
+    "Procedimiento principal": "79.22 - REDUCCION ABIERTA FRACTURA RADIO Y CUBITO SIN FIJACION INTERNA",
+    "Peso Medio GRD": 0.9463,
+    " Valorización unitaria promedio FONASA ": 2808429.14
+  },
+  {
+    "Procedimiento principal": "80.42 - SECCION ARTICULACION.CODO",
+    "Peso Medio GRD": 0.6022,
+    " Valorización unitaria promedio FONASA ": 1787209.16
+  },
+  {
+    "Procedimiento principal": "81.12 - ARTRODESIS TRIPLE PIE",
+    "Peso Medio GRD": 0.6584,
+    " Valorización unitaria promedio FONASA ": 1953999.52
+  },
+  {
+    "Procedimiento principal": "81.13 - ARTRODESIS SUBASTRAGALINA",
+    "Peso Medio GRD": 0.8622,
+    " Valorización unitaria promedio FONASA ": 2558837.16
+  },
+  {
+    "Procedimiento principal": "81.83 - REPARACION HOMBRO OTRA",
+    "Peso Medio GRD": 0.9463,
+    " Valorización unitaria promedio FONASA ": 2808429.14
+  },
+  {
+    "Procedimiento principal": "81.96 - REPARACION ARTICULACION OTRA",
+    "Peso Medio GRD": 0.7041,
+    " Valorización unitaria promedio FONASA ": 2089627.98
+  },
+  {
+    "Procedimiento principal": "82.44 - SUTURA TENDON FLEXOR MANO OTRA",
+    "Peso Medio GRD": 0.6808,
+    " Valorización unitaria promedio FONASA ": 2020478.24
+  },
+  {
+    "Procedimiento principal": "83.75 - TRANSFERENCIA O TRASPLANTE TENDON",
+    "Peso Medio GRD": 0.8622,
+    " Valorización unitaria promedio FONASA ": 2558837.16
+  },
+  {
+    "Procedimiento principal": "83.88 - OPERACION TENDON PLASTICA OTRA",
+    "Peso Medio GRD": 0.8622,
+    " Valorización unitaria promedio FONASA ": 2558837.16
+  },
+  {
+    "Procedimiento principal": "84.01 - AMPUTACION DEDO MANO",
+    "Peso Medio GRD": 0.6808,
+    " Valorización unitaria promedio FONASA ": 2020478.24,
+    "__EMPTY": 2104185
+  },
+  {
+    "Procedimiento principal": "85.32 - MAMOPLASTIA REDUCCION BILATERAL",
+    "Peso Medio GRD": 0.9206,
+    " Valorización unitaria promedio FONASA ": 2732156.68
+  },
+  {
+    "Procedimiento principal": "85.34 - MASTECTOMIA SUBCUTANEA UNILATERAL OTRA",
+    "Peso Medio GRD": 1.2665,
+    " Valorización unitaria promedio FONASA ": 3758718.7
+  },
+  {
+    "Procedimiento principal": "85.79 - RECONSTRUCCION TOTAL MAMA.OTRA",
+    "Peso Medio GRD": 0.9206,
+    " Valorización unitaria promedio FONASA ": 2732156.68
+  },
+  {
+    "Procedimiento principal": "85.84 - INJERTO PEDICULADO MAMA",
+    "Peso Medio GRD": 0.5176,
+    " Valorización unitaria promedio FONASA ": 1536133.28
+  },
+  {
+    "Procedimiento principal": "85.89 - MAMOPLASTIA OTRA",
+    "Peso Medio GRD": 0.9206,
+    " Valorización unitaria promedio FONASA ": 2732156.68
+  },
+  {
+    "Procedimiento principal": "86.26 - LIGADURA APENDICE PIEL",
+    "Peso Medio GRD": 0.0787,
+    " Valorización unitaria promedio FONASA ": 233565.86
+  },
+  {
+    "Procedimiento principal": "86.70 - INJERTO PIEL PEDICULADO.NEOM",
+    "Peso Medio GRD": 0.5345,
+    " Valorización unitaria promedio FONASA ": 1586289.1
+  },
+  {
+    "Procedimiento principal": "86.72 - AVANCE INJERTO PIEL PEDICULADO",
+    "Peso Medio GRD": 0.4259,
+    " Valorización unitaria promedio FONASA ": 1263986.02
+  },
+  {
+    "Procedimiento principal": "86.85 - CORRECCION SINDACTILIA",
+    "Peso Medio GRD": 0.6808,
+    " Valorización unitaria promedio FONASA ": 2020478.24
+  },
+  {
+    "Procedimiento principal": "96.25 - DISTENSION TERAPEUTICA VEJIGA",
+    "Peso Medio GRD": 0.1868,
+    " Valorización unitaria promedio FONASA ": 554385.04
+  },
+  {
+    "Procedimiento principal": "Suma Total",
+    "Peso Medio GRD": 0.579488006482983,
+    " Valorización unitaria promedio FONASA ": 1719804.5056402
+  }
+]

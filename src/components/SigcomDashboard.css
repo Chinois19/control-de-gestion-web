@@ -1,0 +1,179 @@
+/* SigcomDashboard.css */
+
+.sigcom-dashboard {
+  display: flex;
+  height: 100%;
+  min-height: 90vh;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: 'Inter', sans-serif;
+  overflow: hidden;
+}
+
+/* Sidebar Filters */
+.sigcom-sidebar {
+  width: 320px;
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(20px);
+  border-right: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  box-shadow: 10px 0 30px rgba(0, 0, 0, 0.05);
+  z-index: 10;
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.sigcom-sidebar.collapsed {
+  width: 0;
+  padding: 2rem 0;
+  opacity: 0;
+  overflow: hidden;
+}
+
+.filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+}
+
+.filter-label {
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--text-secondary);
+  font-weight: 700;
+}
+
+.filter-btn {
+  background: rgba(255, 255, 255, 0.8);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  padding: 12px 16px;
+  border-radius: 12px;
+  cursor: pointer;
+  text-align: left;
+  font-weight: 600;
+  color: #334155;
+  transition: all 0.3s ease;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.02);
+}
+
+.filter-btn:hover {
+  background: white;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  transform: translateY(-1px);
+}
+
+.filter-btn.active {
+  background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+  color: #ffffff;
+  border-color: transparent;
+  box-shadow: 0 8px 20px rgba(59, 130, 246, 0.4);
+}
+
+/* Main Content Area */
+.sigcom-main {
+  flex: 1;
+  padding: 2rem 3rem;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.sigcom-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+/* Neumorphic / Glass Cards */
+.glass-panel {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  border-radius: 24px;
+  padding: 1.5rem;
+  box-shadow: 
+    0 20px 40px -10px rgba(0,0,0,0.05),
+    inset 0 2px 4px rgba(255,255,255,0.8);
+}
+
+/* Insights Panel */
+.insights-panel {
+  background: linear-gradient(135deg, #1a2942 0%, #0f172a 100%);
+  color: white;
+  border-radius: 24px;
+  padding: 2rem;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 20px 40px rgba(15, 23, 42, 0.3);
+}
+
+.insights-panel::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 60%);
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.insight-item {
+  display: flex;
+  gap: 15px;
+  margin-bottom: 1rem;
+  align-items: flex-start;
+}
+
+.insight-icon {
+  background: rgba(255,255,255,0.1);
+  padding: 10px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Recharts Customization */
+.recharts-tooltip-wrapper {
+  outline: none !important;
+}
+.custom-recharts-tooltip {
+  background: rgba(255, 255, 255, 0.95) !important;
+  backdrop-filter: blur(10px) !important;
+  border: 1px solid rgba(0,0,0,0.05) !important;
+  border-radius: 16px !important;
+  padding: 16px !important;
+  box-shadow: 0 15px 35px rgba(0,0,0,0.1) !important;
+  color: #1e293b !important;
+}
+
+.insumos-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.insumo-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: rgba(248, 250, 252, 0.8);
+  border-radius: 12px;
+  border: 1px solid rgba(0,0,0,0.02);
+  transition: all 0.2s ease;
+}
+
+.insumo-row:hover {
+  background: white;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+  transform: translateX(4px);
+}

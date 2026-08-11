@@ -1,0 +1,6 @@
+src/data/
+public/data/actividades_medicina_cached.json
+public/data/laboratory_cached.json
+*.xlsx
+*.zip
+*.json.gz
