@@ -480,7 +480,88 @@ export default function ActividadesMedicinaDashboard({ onBack }) {
       const s = recs.filter(r => r.pertinencia.toUpperCase() === 'S').length;
       return { label: `${monthNames[mn - 1]} ${yr}`, value: recs.length ? parseFloat(((s / recs.length) * 100).toFixed(1)) : 0, pertS: s, total: recs.length };
     });
-    // Specialty breakdowns for NSP and Pertinencia Insights
+    // ── Pertinencia según Tiempo (MINSAL) ────────────────────────────────────
+    // MINSAL: % de derivaciones pertinentes (S) atendidas dentro del tiempo
+    // establecido según clasificación de urgencia (TIEMPO_ESTABLECIDO_PERTINENCIA).
+    // Meta: ≥ 80% de pertinentes deben tener tiempo establecido registrado.
+    const withPertTiempo = withPert.filter(r =>
+      r.pertinencia.toUpperCase() === 'S' && r.tiempo_establecido_pertinencia
+    );
+    const pctPertTiempo = withPert.length ? parseFloat(((withPertTiempo.length / withPert.length) * 100).toFixed(1)) : 0;
+    const tiempoMap = {};
+    withPert.forEach(r => {
+      const t = (r.tiempo_establecido_pertinencia || 'Sin categoría').toUpperCase().trim() || 'Sin categoría';
+      if (!tiempoMap[t]) tiempoMap[t] = { total: 0, pertS: 0 };
+      tiempoMap[t].total += 1;
+      if (r.pertinencia.toUpperCase() === 'S') tiempoMap[t].pertS += 1;
+    });
+    const pertTiempoByCategoria = Object.entries(tiempoMap)
+      .map(([cat, d]) => ({ cat, total: d.total, pertS: d.pertS, pct: d.total ? parseFloat(((d.pertS / d.total) * 100).toFixed(1)) : 0 }))
+      .sort((a, b) => b.total - a.total);
+    const pertTiempoTrend = months.map(ym => {
+      const mn = parseInt(ym.substring(5, 7), 10); const yr = ym.substring(0, 4);
+      const recs = withPert.filter(r => String(r.fecha_atencion).substring(0, 7) === ym);
+      const n = recs.filter(r => r.pertinencia.toUpperCase() === 'S' && r.tiempo_establecido_pertinencia).length;
+      return { label: `${monthNames[mn - 1]} ${yr}`, value: recs.length ? parseFloat(((n / recs.length) * 100).toFixed(1)) : 0, n, total: recs.length };
+    });
+
+    // ── Altas (MINSAL) ───────────────────────────────────────────────────────
+    // MINSAL: % de pacientes atendidos en especialidad que reciben alta médica
+    // (resolución del problema, sin seguimiento en especialidad).
+    // Campo fuente: accion_a_tomar contiene "ALTA" / total atenciones ejecutadas.
+    // Meta MINSAL referencial: ≥ 30% (varía por especialidad, Circular MINSAL A15/17).
+    const ejecutados = source.filter(r =>
+      (r.estado_atencion || '').toUpperCase().trim() === 'SE PRESENTO' ||
+      (r.estado_hora || '').toUpperCase().trim() === 'EJECUTADA'
+    );
+    const conAlta = ejecutados.filter(r => (r.accion_a_tomar || '').toUpperCase().includes('ALTA'));
+    const pctAltas = ejecutados.length ? parseFloat(((conAlta.length / ejecutados.length) * 100).toFixed(1)) : 0;
+    const altasTrend = months.map(ym => {
+      const mn = parseInt(ym.substring(5, 7), 10); const yr = ym.substring(0, 4);
+      const ejec = ejecutados.filter(r => String(r.fecha_atencion).substring(0, 7) === ym);
+      const n = ejec.filter(r => (r.accion_a_tomar || '').toUpperCase().includes('ALTA')).length;
+      return { label: `${monthNames[mn - 1]} ${yr}`, value: ejec.length ? parseFloat(((n / ejec.length) * 100).toFixed(1)) : 0, n, total: ejec.length };
+    });
+    const espAltaMap = {};
+    ejecutados.forEach(r => {
+      const esp = r.especialidad || 'Sin especialidad';
+      if (!espAltaMap[esp]) espAltaMap[esp] = { total: 0, altas: 0 };
+      espAltaMap[esp].total += 1;
+      if ((r.accion_a_tomar || '').toUpperCase().includes('ALTA')) espAltaMap[esp].altas += 1;
+    });
+    const altasByEsp = Object.entries(espAltaMap)
+      .map(([esp, d]) => ({ esp, total: d.total, altas: d.altas, pct: d.total ? parseFloat(((d.altas / d.total) * 100).toFixed(1)) : 0 }))
+      .filter(x => x.total >= 10).sort((a, b) => b.pct - a.pct);
+
+    // ── Contrarreferencia (MINSAL) ───────────────────────────────────────────
+    // MINSAL: % de pacientes en especialidad que son contrarreferidos al nivel
+    // primario (APS), indicando resolución en secundario y continuidad en APS.
+    // Campo: contrareferir = 'S' / total ejecutados.
+    // Meta MINSAL referencial: ≥ 20% (Circular N°A15/17 MINSAL).
+    const isContraref = r => {
+      const v = (r.contrareferir || '').toUpperCase().trim();
+      return v === 'S' || v === 'SI' || v === '1';
+    };
+    const conContraref = ejecutados.filter(isContraref);
+    const pctContraref = ejecutados.length ? parseFloat(((conContraref.length / ejecutados.length) * 100).toFixed(1)) : 0;
+    const contrarefTrend = months.map(ym => {
+      const mn = parseInt(ym.substring(5, 7), 10); const yr = ym.substring(0, 4);
+      const ejec = ejecutados.filter(r => String(r.fecha_atencion).substring(0, 7) === ym);
+      const n = ejec.filter(isContraref).length;
+      return { label: `${monthNames[mn - 1]} ${yr}`, value: ejec.length ? parseFloat(((n / ejec.length) * 100).toFixed(1)) : 0, n, total: ejec.length };
+    });
+    const espContrarefMap = {};
+    ejecutados.forEach(r => {
+      const esp = r.especialidad || 'Sin especialidad';
+      if (!espContrarefMap[esp]) espContrarefMap[esp] = { total: 0, cr: 0 };
+      espContrarefMap[esp].total += 1;
+      if (isContraref(r)) espContrarefMap[esp].cr += 1;
+    });
+    const contrarefByEsp = Object.entries(espContrarefMap)
+      .map(([esp, d]) => ({ esp, total: d.total, cr: d.cr, pct: d.total ? parseFloat(((d.cr / d.total) * 100).toFixed(1)) : 0 }))
+      .filter(x => x.total >= 10).sort((a, b) => b.pct - a.pct);
+
+    // ── Insights por especialidad NSP / Pertinencia ──────────────────────────
     const espNspMap = {};
     source.forEach(r => {
       const esp = r.especialidad || 'Sin especialidad';
@@ -489,14 +570,8 @@ export default function ActividadesMedicinaDashboard({ onBack }) {
       if (isNSP(r)) espNspMap[esp].nsp += 1;
     });
     const nspByEsp = Object.entries(espNspMap)
-      .map(([esp, d]) => ({
-        esp,
-        total: d.total,
-        nsp: d.nsp,
-        pct: d.total ? parseFloat(((d.nsp / d.total) * 100).toFixed(1)) : 0
-      }))
-      .filter(x => x.total >= 10)
-      .sort((a, b) => b.pct - a.pct);
+      .map(([esp, d]) => ({ esp, total: d.total, nsp: d.nsp, pct: d.total ? parseFloat(((d.nsp / d.total) * 100).toFixed(1)) : 0 }))
+      .filter(x => x.total >= 10).sort((a, b) => b.pct - a.pct);
 
     const espPertMap = {};
     withPert.forEach(r => {
@@ -506,18 +581,15 @@ export default function ActividadesMedicinaDashboard({ onBack }) {
       if (r.pertinencia.toUpperCase() === 'S') espPertMap[esp].pertS += 1;
     });
     const pertByEsp = Object.entries(espPertMap)
-      .map(([esp, d]) => ({
-        esp,
-        total: d.total,
-        pertS: d.pertS,
-        pct: d.total ? parseFloat(((d.pertS / d.total) * 100).toFixed(1)) : 0
-      }))
-      .filter(x => x.total >= 5)
-      .sort((a, b) => a.pct - b.pct);
+      .map(([esp, d]) => ({ esp, total: d.total, pertS: d.pertS, pct: d.total ? parseFloat(((d.pertS / d.total) * 100).toFixed(1)) : 0 }))
+      .filter(x => x.total >= 5).sort((a, b) => a.pct - b.pct);
 
     return {
       nsp: { pct: pctNSP, total: totalCitados, n: totalNSP, trend: nspTrend, byEsp: nspByEsp },
-      pertinencia: { pct: pctPert, total: withPert.length, n: pertS, trend: pertTrend, byEsp: pertByEsp }
+      pertinencia: { pct: pctPert, total: withPert.length, n: pertS, trend: pertTrend, byEsp: pertByEsp },
+      pertinenciaTiempo: { pct: pctPertTiempo, total: withPert.length, n: withPertTiempo.length, trend: pertTiempoTrend, byCategoria: pertTiempoByCategoria },
+      altas: { pct: pctAltas, total: ejecutados.length, n: conAlta.length, trend: altasTrend, byEsp: altasByEsp },
+      contrarreferencia: { pct: pctContraref, total: ejecutados.length, n: conContraref.length, trend: contrarefTrend, byEsp: contrarefByEsp }
     };
   }, [baseRecords]);
 
@@ -1092,6 +1164,57 @@ export default function ActividadesMedicinaDashboard({ onBack }) {
             trend: indicadoresData.pertinencia.trend,
             metaLabel: 'Meta: ≥ 80%',
             isGood: (v) => v >= 80
+          },
+          {
+            key: 'pertinenciaTiempo',
+            title: '% Pertinencia según Tiempo Establecido',
+            shortTitle: '% Pert. Tiempo',
+            icon: Timer,
+            color: '#f59e0b',
+            colorBg: '#fffbeb',
+            borderColor: '#fde68a',
+            definition: 'MINSAL: Porcentaje de derivaciones pertinentes (S) que tienen registrado el tiempo establecido de atención según clasificación de urgencia (TIEMPO_ESTABLECIDO_PERTINENCIA). Evalúa el cumplimiento del proceso de triage y clasificación de la derivación.',
+            formula: 'N° Pertinentes con Tiempo Establecido / Total Evaluados × 100',
+            value: `${indicadoresData.pertinenciaTiempo.pct}%`,
+            sub: `${indicadoresData.pertinenciaTiempo.n.toLocaleString('es-CL')} con tiempo de ${indicadoresData.pertinenciaTiempo.total.toLocaleString('es-CL')} evaluados`,
+            trend: indicadoresData.pertinenciaTiempo.trend,
+            metaLabel: 'Meta: ≥ 80% con tiempo establecido',
+            isGood: (v) => v >= 80,
+            extraData: indicadoresData.pertinenciaTiempo.byCategoria
+          },
+          {
+            key: 'altas',
+            title: '% Altas Médicas de Especialidad',
+            shortTitle: '% Altas',
+            icon: ArrowLeftRight,
+            color: '#6366f1',
+            colorBg: '#f0f0ff',
+            borderColor: '#a5b4fc',
+            definition: 'MINSAL (Circular A15/17): Porcentaje de pacientes atendidos en especialidad que reciben alta médica, indicando resolución del problema sin necesidad de seguimiento continuo en el nivel secundario. Fuente: campo ACCION_A_TOMAR.',
+            formula: 'N° Altas / Total Atenciones Ejecutadas × 100',
+            value: `${indicadoresData.altas.pct}%`,
+            sub: `${indicadoresData.altas.n.toLocaleString('es-CL')} altas de ${indicadoresData.altas.total.toLocaleString('es-CL')} ejecutados`,
+            trend: indicadoresData.altas.trend,
+            metaLabel: 'Meta MINSAL referencial: ≥ 30%',
+            isGood: (v) => v >= 30,
+            byEsp: indicadoresData.altas.byEsp
+          },
+          {
+            key: 'contrarreferencia',
+            title: '% Contrarreferencia a APS',
+            shortTitle: '% Contrarreferencia',
+            icon: ChevronRight,
+            color: '#0ea5e9',
+            colorBg: '#f0f9ff',
+            borderColor: '#7dd3fc',
+            definition: 'MINSAL (Circular N°A15/17): Porcentaje de pacientes atendidos en especialidad que son contrarreferidos al nivel primario de atención (APS), indicando resolución del problema en el nivel secundario y continuidad del cuidado en APS. Fuente: campo CONTRAREFERIR.',
+            formula: 'N° Contrarreferidos (S) / Total Atenciones Ejecutadas × 100',
+            value: `${indicadoresData.contrarreferencia.pct}%`,
+            sub: `${indicadoresData.contrarreferencia.n.toLocaleString('es-CL')} contrarreferidos de ${indicadoresData.contrarreferencia.total.toLocaleString('es-CL')} ejecutados`,
+            trend: indicadoresData.contrarreferencia.trend,
+            metaLabel: 'Meta MINSAL referencial: ≥ 20%',
+            isGood: (v) => v >= 20,
+            byEsp: indicadoresData.contrarreferencia.byEsp
           }
         ];
 
@@ -1193,12 +1316,11 @@ export default function ActividadesMedicinaDashboard({ onBack }) {
                       <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
                       <XAxis dataKey="label" tick={{ fontSize: 10, fill: '#64748b' }} angle={-35} textAnchor="end" height={55} interval={0} />
                       <YAxis tickFormatter={v => `${v}%`} tick={{ fontSize: 11, fill: '#64748b' }} domain={[dataMin => Math.max(0, Math.floor(dataMin - 5)), dataMax => Math.min(100, Math.ceil(dataMax + 5))]} />
-                      <ReferenceLine
-                        y={active.key === 'nsp' ? 20 : 80}
-                        stroke={active.key === 'nsp' ? '#ef444488' : '#10b98188'}
-                        strokeDasharray="6 3"
-                        label={{ value: active.key === 'nsp' ? 'Umbral 20%' : 'Meta 80%', position: 'right', fontSize: 10, fill: active.color, fontWeight: 700 }}
-                      />
+                      {active.key === 'nsp' && <ReferenceLine y={20} stroke="#ef444488" strokeDasharray="6 3" label={{ value: 'Umbral 20%', position: 'right', fontSize: 10, fill: '#ef4444', fontWeight: 700 }} />}
+                      {active.key === 'pertinencia' && <ReferenceLine y={80} stroke="#10b98188" strokeDasharray="6 3" label={{ value: 'Meta 80%', position: 'right', fontSize: 10, fill: '#10b981', fontWeight: 700 }} />}
+                      {active.key === 'pertinenciaTiempo' && <ReferenceLine y={80} stroke="#f59e0b88" strokeDasharray="6 3" label={{ value: 'Meta 80%', position: 'right', fontSize: 10, fill: '#f59e0b', fontWeight: 700 }} />}
+                      {active.key === 'altas' && <ReferenceLine y={30} stroke="#6366f188" strokeDasharray="6 3" label={{ value: 'Meta 30%', position: 'right', fontSize: 10, fill: '#6366f1', fontWeight: 700 }} />}
+                      {active.key === 'contrarreferencia' && <ReferenceLine y={20} stroke="#0ea5e988" strokeDasharray="6 3" label={{ value: 'Meta 20%', position: 'right', fontSize: 10, fill: '#0ea5e9', fontWeight: 700 }} />}
                       <Tooltip
                         formatter={(v) => [`${v}%`, active.shortTitle]}
                         contentStyle={{ background: 'rgba(15,23,42,0.95)', border: `1px solid ${active.color}55`, borderRadius: 12, color: 'white', fontSize: '0.82rem' }}
@@ -1233,47 +1355,68 @@ export default function ActividadesMedicinaDashboard({ onBack }) {
                   ))}
                 </div>
 
-                {/* INSIGHTS: Specialties most off-target */}
+                {/* INSIGHTS: Por especialidad o por categoría según indicador */}
                 {(() => {
-                  const insightRows = active.key === 'nsp'
-                    ? (indicadoresData.nsp.byEsp || []).slice(0, 5)
-                    : (indicadoresData.pertinencia.byEsp || []).slice(0, 5);
-                  const isNspInd = active.key === 'nsp';
-                  const threshold = isNspInd ? 20 : 80;
-                  const alertFn = isNspInd ? v => v >= threshold : v => v < threshold;
+                  // Determine insight rows and labels per indicator
+                  let insightRows = [];
+                  let insightTitle = '';
+                  let labelFn = () => '';
+                  let alertFn = () => false;
+                  let barMaxRef = 100;
+
+                  if (active.key === 'nsp') {
+                    insightRows = (indicadoresData.nsp.byEsp || []).slice(0, 5);
+                    insightTitle = 'Especialidades con mayor tasa NSP (críticas)';
+                    labelFn = row => `${row.nsp} NSP de ${row.total}`;
+                    alertFn = v => v >= 20;
+                    barMaxRef = 50;
+                  } else if (active.key === 'pertinencia') {
+                    insightRows = (indicadoresData.pertinencia.byEsp || []).slice(0, 5);
+                    insightTitle = 'Especialidades con menor pertinencia (bajo umbral)';
+                    labelFn = row => `${row.pertS} pertinentes de ${row.total}`;
+                    alertFn = v => v < 80;
+                  } else if (active.key === 'pertinenciaTiempo') {
+                    insightRows = (indicadoresData.pertinenciaTiempo.byCategoria || []).slice(0, 6).map(r => ({ ...r, esp: r.cat }));
+                    insightTitle = 'Distribución por Tiempo Establecido de Pertinencia';
+                    labelFn = row => `${row.pertS} pertinentes de ${row.total}`;
+                    alertFn = v => v < 80;
+                  } else if (active.key === 'altas') {
+                    insightRows = (indicadoresData.altas.byEsp || []).slice(0, 5);
+                    insightTitle = 'Especialidades con mayor % de Altas';
+                    labelFn = row => `${row.altas} altas de ${row.total}`;
+                    alertFn = v => v < 30;
+                    barMaxRef = 100;
+                  } else if (active.key === 'contrarreferencia') {
+                    insightRows = (indicadoresData.contrarreferencia.byEsp || []).slice(0, 5);
+                    insightTitle = 'Especialidades con mayor % Contrarreferencia a APS';
+                    labelFn = row => `${row.cr} contrarreferidos de ${row.total}`;
+                    alertFn = v => v < 20;
+                  }
+
                   if (!insightRows.length) return null;
                   return (
                     <div style={{ marginTop: 20, borderTop: '1px solid #f1f5f9', paddingTop: 18 }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
                         <AlertTriangle size={16} color="#f59e0b" />
-                        <span style={{ fontWeight: 800, fontSize: '0.85rem', color: '#1e293b' }}>
-                          {isNspInd
-                            ? 'Especialidades con mayor tasa NSP (críticas)'
-                            : 'Especialidades con menor pertinencia (bajo umbral)'}
-                        </span>
-                        <span style={{ fontSize: '0.72rem', color: '#94a3b8', fontStyle: 'italic' }}>· Top 5 · evaluadas</span>
+                        <span style={{ fontWeight: 800, fontSize: '0.85rem', color: '#1e293b' }}>{insightTitle}</span>
+                        <span style={{ fontSize: '0.72rem', color: '#94a3b8', fontStyle: 'italic' }}>· Top 5</span>
                       </div>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                         {insightRows.map((row, i) => {
                           const isAlert = alertFn(row.pct);
-                          const barWidth = isNspInd ? Math.min(row.pct / 50 * 100, 100) : Math.min(row.pct, 100);
-                          const barColor = isAlert ? (isNspInd ? '#ef4444' : '#f59e0b') : '#10b981';
+                          const barWidth = Math.min(row.pct / barMaxRef * 100, 100);
+                          const barColor = isAlert ? '#f59e0b' : active.color;
+                          const label = row.esp ? (row.esp.length > 48 ? row.esp.substring(0, 46) + '…' : row.esp) : '';
                           return (
-                            <div key={i} style={{ display: 'grid', gridTemplateColumns: '1fr auto auto', gap: 10, alignItems: 'center', padding: '8px 12px', borderRadius: 10, background: isAlert ? (isNspInd ? '#fef2f2' : '#fffbeb') : '#f0fdf4', border: `1px solid ${barColor}33` }}>
+                            <div key={i} style={{ display: 'grid', gridTemplateColumns: '1fr auto auto', gap: 10, alignItems: 'center', padding: '8px 12px', borderRadius: 10, background: isAlert ? '#fffbeb' : `${active.color}08`, border: `1px solid ${barColor}33` }}>
                               <div>
-                                <span style={{ fontSize: '0.78rem', fontWeight: 700, color: '#1e293b' }}>
-                                  {i + 1}. {row.esp.length > 48 ? row.esp.substring(0, 46) + '…' : row.esp}
-                                </span>
+                                <span style={{ fontSize: '0.78rem', fontWeight: 700, color: '#1e293b' }}>{i + 1}. {label}</span>
                                 <div style={{ marginTop: 4, height: 5, borderRadius: 4, background: '#e2e8f0', overflow: 'hidden' }}>
                                   <div style={{ width: `${barWidth}%`, height: '100%', background: barColor, borderRadius: 4, transition: 'width 0.4s' }} />
                                 </div>
                               </div>
-                              <span style={{ fontSize: '0.72rem', color: '#64748b', whiteSpace: 'nowrap' }}>
-                                {isNspInd ? `${row.nsp} NSP de ${row.total}` : `${row.pertS} evaluados de ${row.total}`}
-                              </span>
-                              <span style={{ fontSize: '1rem', fontWeight: 900, color: barColor, minWidth: 48, textAlign: 'right' }}>
-                                {row.pct}%
-                              </span>
+                              <span style={{ fontSize: '0.72rem', color: '#64748b', whiteSpace: 'nowrap' }}>{labelFn(row)}</span>
+                              <span style={{ fontSize: '1rem', fontWeight: 900, color: barColor, minWidth: 48, textAlign: 'right' }}>{row.pct}%</span>
                             </div>
                           );
                         })}
