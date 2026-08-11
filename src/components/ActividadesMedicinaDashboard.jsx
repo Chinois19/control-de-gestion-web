@@ -480,6 +480,40 @@ export default function ActividadesMedicinaDashboard({ onBack }) {
       const s = recs.filter(r => r.pertinencia.toUpperCase() === 'S').length;
       return { label: `${monthNames[mn - 1]} ${yr}`, value: recs.length ? parseFloat(((s / recs.length) * 100).toFixed(1)) : 0, pertS: s, total: recs.length };
     });
+    // Specialty breakdowns for NSP and Pertinencia Insights
+    const espNspMap = {};
+    source.forEach(r => {
+      const esp = r.especialidad || 'Sin especialidad';
+      if (!espNspMap[esp]) espNspMap[esp] = { total: 0, nsp: 0 };
+      espNspMap[esp].total += 1;
+      if (isNSP(r)) espNspMap[esp].nsp += 1;
+    });
+    const nspByEsp = Object.entries(espNspMap)
+      .map(([esp, d]) => ({
+        esp,
+        total: d.total,
+        nsp: d.nsp,
+        pct: d.total ? parseFloat(((d.nsp / d.total) * 100).toFixed(1)) : 0
+      }))
+      .filter(x => x.total >= 10)
+      .sort((a, b) => b.pct - a.pct);
+
+    const espPertMap = {};
+    withPert.forEach(r => {
+      const esp = r.especialidad || 'Sin especialidad';
+      if (!espPertMap[esp]) espPertMap[esp] = { total: 0, pertS: 0 };
+      espPertMap[esp].total += 1;
+      if (r.pertinencia.toUpperCase() === 'S') espPertMap[esp].pertS += 1;
+    });
+    const pertByEsp = Object.entries(espPertMap)
+      .map(([esp, d]) => ({
+        esp,
+        total: d.total,
+        pertS: d.pertS,
+        pct: d.total ? parseFloat(((d.pertS / d.total) * 100).toFixed(1)) : 0
+      }))
+      .filter(x => x.total >= 5)
+      .sort((a, b) => a.pct - b.pct);
 
     return {
       nsp: { pct: pctNSP, total: totalCitados, n: totalNSP, trend: nspTrend, byEsp: nspByEsp },
