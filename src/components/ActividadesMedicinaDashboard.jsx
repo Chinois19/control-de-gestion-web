@@ -574,9 +574,9 @@ export default function ActividadesMedicinaDashboard({ onBack }) {
       .filter(x => x.total >= 10).sort((a, b) => b.pct - a.pct);
 
     // ── Contrarreferencia (MINSAL) ───────────────────────────────────────────
-    // MINSAL: % de pacientes en especialidad contrarreferidos a APS.
+    // MINSAL: % de pacientes en especialidad contrarreferidos a APS sobre el total de altas del período.
     // Fuente principal: contrareferir = 'S' | 'SI' | '1'.
-    // Fallback: actividad, diagnostico o hipotesis que mencione APS / CONTRARREFERENCIA / DERIVADO A APS.
+    // Denominador N: Total de Altas Médicas (conAlta.length).
     const isContraref = r => {
       const v = (r.contrareferir || '').toUpperCase().trim();
       if (v) return v === 'S' || v === 'SI' || v === '1';
@@ -587,16 +587,16 @@ export default function ActividadesMedicinaDashboard({ onBack }) {
              diag.includes('APS') || diag.includes('CONTRAREFER') ||
              hip.includes('APS') || hip.includes('CONTRAREFER');
     };
-    const conContraref = ejecutadosBase.filter(isContraref);
-    const pctContraref = ejecutadosBase.length ? parseFloat(((conContraref.length / ejecutadosBase.length) * 100).toFixed(1)) : 0;
+    const conContraref = conAlta.filter(isContraref);
+    const pctContraref = conAlta.length ? parseFloat(((conContraref.length / conAlta.length) * 100).toFixed(1)) : 0;
     const contrarefTrend = months.map(ym => {
       const mn = parseInt(ym.substring(5, 7), 10); const yr = ym.substring(0, 4);
-      const ejec = ejecutadosBase.filter(r => String(r.fecha_atencion).substring(0, 7) === ym);
-      const n = ejec.filter(isContraref).length;
-      return { label: `${monthNames[mn - 1]} ${yr}`, value: ejec.length ? parseFloat(((n / ejec.length) * 100).toFixed(1)) : 0, n, total: ejec.length };
+      const altasMes = conAlta.filter(r => String(r.fecha_atencion).substring(0, 7) === ym);
+      const n = altasMes.filter(isContraref).length;
+      return { label: `${monthNames[mn - 1]} ${yr}`, value: altasMes.length ? parseFloat(((n / altasMes.length) * 100).toFixed(1)) : 0, n, total: altasMes.length };
     });
     const espContrarefMap = {};
-    ejecutadosBase.forEach(r => {
+    conAlta.forEach(r => {
       const esp = r.especialidad || 'Sin especialidad';
       if (!espContrarefMap[esp]) espContrarefMap[esp] = { total: 0, cr: 0 };
       espContrarefMap[esp].total += 1;
@@ -604,7 +604,7 @@ export default function ActividadesMedicinaDashboard({ onBack }) {
     });
     const contrarefByEsp = Object.entries(espContrarefMap)
       .map(([esp, d]) => ({ esp, total: d.total, cr: d.cr, pct: d.total ? parseFloat(((d.cr / d.total) * 100).toFixed(1)) : 0 }))
-      .filter(x => x.total >= 10).sort((a, b) => b.pct - a.pct);
+      .filter(x => x.total >= 5).sort((a, b) => b.pct - a.pct);
 
     // ── Insights por especialidad NSP / Pertinencia ──────────────────────────
     const espNspMap = {};
@@ -634,7 +634,7 @@ export default function ActividadesMedicinaDashboard({ onBack }) {
       pertinencia: { pct: pctPert, total: withPert.length, n: pertS, trend: pertTrend, byEsp: pertByEsp },
       pertinenciaTiempo: { pct: pctPertTiempo, total: withPert.length, n: withPertTiempo.length, trend: pertTiempoTrend, byCategoria: pertTiempoByCategoria },
       altas: { pct: pctAltas, total: ejecutadosAltas.length, n: conAlta.length, trend: altasTrend, byEsp: altasByEsp },
-      contrarreferencia: { pct: pctContraref, total: ejecutadosBase.length, n: conContraref.length, trend: contrarefTrend, byEsp: contrarefByEsp }
+      contrarreferencia: { pct: pctContraref, total: conAlta.length, n: conContraref.length, trend: contrarefTrend, byEsp: contrarefByEsp }
     };
   }, [baseRecords]);
 
@@ -1252,10 +1252,10 @@ export default function ActividadesMedicinaDashboard({ onBack }) {
             color: '#0ea5e9',
             colorBg: '#f0f9ff',
             borderColor: '#7dd3fc',
-            definition: 'MINSAL (Circular N°A15/17): % de pacientes contrarreferidos al nivel primario (APS) indicando resolución en secundario y continuidad en APS. Fuente: campo CONTRAREFERIR.',
-            formula: 'N° Contrarreferidos (S) / Total Ejecutados × 100',
+            definition: 'MINSAL (Circular N°A15/17): % de pacientes contrarreferidos a APS calculado sobre el total de altas médicas del período.',
+            formula: 'N° Contrarreferidos / Total de Altas × 100',
             value: `${indicadoresData.contrarreferencia?.pct ?? 0}%`,
-            sub: `${(indicadoresData.contrarreferencia?.n ?? 0).toLocaleString('es-CL')} contrarreferidos de ${(indicadoresData.contrarreferencia?.total ?? 0).toLocaleString('es-CL')} ejecutados`,
+            sub: `${(indicadoresData.contrarreferencia?.n ?? 0).toLocaleString('es-CL')} contrarreferidos de ${(indicadoresData.contrarreferencia?.total ?? 0).toLocaleString('es-CL')} altas`,
             trend: indicadoresData.contrarreferencia?.trend ?? [],
             metaLabel: 'Meta MINSAL referencial: ≥ 20%',
             isGood: (v) => v >= 20,
