@@ -534,11 +534,13 @@ export default function ActividadesMedicinaDashboard({ onBack }) {
 
     // ── Altas (MINSAL) ───────────────────────────────────────────────────────
     // MINSAL: % de pacientes atendidos en especialidad que reciben alta médica.
-    // Fuente principal: accion_a_tomar contiene "ALTA".
-    // Fallback: registros donde actividad, tipo_consulta, diagnostico u hipotesis indiquen ALTA/EGRESO/RESUELTO.
-    const ejecutados = source.filter(r =>
+    // Universo N: Atenciones ejecutadas filtradas exclusivamente por Tipo Consulta = 'CONSULTA Y CONTROL'.
+    const ejecutadosBase = source.filter(r =>
       (r.estado_atencion || '').toUpperCase().trim() === 'SE PRESENTO' ||
       (r.estado_hora || '').toUpperCase().trim() === 'EJECUTADA'
+    );
+    const ejecutadosAltas = ejecutadosBase.filter(r =>
+      (r.tipo_consulta || '').toUpperCase().trim() === 'CONSULTA Y CONTROL'
     );
     const isAlta = r => {
       const acc = (r.accion_a_tomar || '').toUpperCase();
@@ -552,16 +554,16 @@ export default function ActividadesMedicinaDashboard({ onBack }) {
              hip.includes('ALTA') || hip.includes('EGRESO') ||
              tipo.includes('ALTA');
     };
-    const conAlta = ejecutados.filter(isAlta);
-    const pctAltas = ejecutados.length ? parseFloat(((conAlta.length / ejecutados.length) * 100).toFixed(1)) : 0;
+    const conAlta = ejecutadosAltas.filter(isAlta);
+    const pctAltas = ejecutadosAltas.length ? parseFloat(((conAlta.length / ejecutadosAltas.length) * 100).toFixed(1)) : 0;
     const altasTrend = months.map(ym => {
       const mn = parseInt(ym.substring(5, 7), 10); const yr = ym.substring(0, 4);
-      const ejec = ejecutados.filter(r => String(r.fecha_atencion).substring(0, 7) === ym);
+      const ejec = ejecutadosAltas.filter(r => String(r.fecha_atencion).substring(0, 7) === ym);
       const n = ejec.filter(isAlta).length;
       return { label: `${monthNames[mn - 1]} ${yr}`, value: ejec.length ? parseFloat(((n / ejec.length) * 100).toFixed(1)) : 0, n, total: ejec.length };
     });
     const espAltaMap = {};
-    ejecutados.forEach(r => {
+    ejecutadosAltas.forEach(r => {
       const esp = r.especialidad || 'Sin especialidad';
       if (!espAltaMap[esp]) espAltaMap[esp] = { total: 0, altas: 0 };
       espAltaMap[esp].total += 1;
@@ -1233,10 +1235,10 @@ export default function ActividadesMedicinaDashboard({ onBack }) {
             color: '#6366f1',
             colorBg: '#f0f0ff',
             borderColor: '#a5b4fc',
-            definition: 'MINSAL (Circular A15/17): % de pacientes atendidos en especialidad que reciben alta médica (resolución sin seguimiento en secundario). Fuente: campo ACCION_A_TOMAR.',
-            formula: 'N° Altas / Total Ejecutados × 100',
+            definition: 'MINSAL (Circular A15/17): % de pacientes atendidos en especialidad que reciben alta médica (resolución sin seguimiento en secundario) sobre atenciones de CONSULTA Y CONTROL.',
+            formula: 'N° Altas / Total Ejecutados (Consulta y Control) × 100',
             value: `${indicadoresData.altas?.pct ?? 0}%`,
-            sub: `${(indicadoresData.altas?.n ?? 0).toLocaleString('es-CL')} altas de ${(indicadoresData.altas?.total ?? 0).toLocaleString('es-CL')} ejecutados`,
+            sub: `${(indicadoresData.altas?.n ?? 0).toLocaleString('es-CL')} altas de ${(indicadoresData.altas?.total ?? 0).toLocaleString('es-CL')} (Consulta y Control)`,
             trend: indicadoresData.altas?.trend ?? [],
             metaLabel: 'Meta MINSAL referencial: ≥ 30%',
             isGood: (v) => v >= 30,
