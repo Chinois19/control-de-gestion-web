@@ -1173,14 +1173,14 @@ export default function ActividadesMedicinaDashboard({ onBack }) {
             color: '#f59e0b',
             colorBg: '#fffbeb',
             borderColor: '#fde68a',
-            definition: 'MINSAL: Porcentaje de derivaciones pertinentes (S) que tienen registrado el tiempo establecido de atención según clasificación de urgencia (TIEMPO_ESTABLECIDO_PERTINENCIA). Evalúa el cumplimiento del proceso de triage y clasificación de la derivación.',
-            formula: 'N° Pertinentes con Tiempo Establecido / Total Evaluados × 100',
-            value: `${indicadoresData.pertinenciaTiempo.pct}%`,
-            sub: `${indicadoresData.pertinenciaTiempo.n.toLocaleString('es-CL')} con tiempo de ${indicadoresData.pertinenciaTiempo.total.toLocaleString('es-CL')} evaluados`,
-            trend: indicadoresData.pertinenciaTiempo.trend,
+            definition: 'MINSAL: % de derivaciones pertinentes (S) con tiempo establecido de atención registrado según urgencia (TIEMPO_ESTABLECIDO_PERTINENCIA).',
+            formula: 'N° Pertinentes con Tiempo / Total Evaluados × 100',
+            value: `${indicadoresData.pertinenciaTiempo?.pct ?? 0}%`,
+            sub: `${(indicadoresData.pertinenciaTiempo?.n ?? 0).toLocaleString('es-CL')} con tiempo de ${(indicadoresData.pertinenciaTiempo?.total ?? 0).toLocaleString('es-CL')} evaluados`,
+            trend: indicadoresData.pertinenciaTiempo?.trend ?? [],
             metaLabel: 'Meta: ≥ 80% con tiempo establecido',
             isGood: (v) => v >= 80,
-            extraData: indicadoresData.pertinenciaTiempo.byCategoria
+            extraData: indicadoresData.pertinenciaTiempo?.byCategoria ?? []
           },
           {
             key: 'altas',
@@ -1190,14 +1190,14 @@ export default function ActividadesMedicinaDashboard({ onBack }) {
             color: '#6366f1',
             colorBg: '#f0f0ff',
             borderColor: '#a5b4fc',
-            definition: 'MINSAL (Circular A15/17): Porcentaje de pacientes atendidos en especialidad que reciben alta médica, indicando resolución del problema sin necesidad de seguimiento continuo en el nivel secundario. Fuente: campo ACCION_A_TOMAR.',
-            formula: 'N° Altas / Total Atenciones Ejecutadas × 100',
-            value: `${indicadoresData.altas.pct}%`,
-            sub: `${indicadoresData.altas.n.toLocaleString('es-CL')} altas de ${indicadoresData.altas.total.toLocaleString('es-CL')} ejecutados`,
-            trend: indicadoresData.altas.trend,
+            definition: 'MINSAL (Circular A15/17): % de pacientes atendidos en especialidad que reciben alta médica (resolución sin seguimiento en secundario). Fuente: campo ACCION_A_TOMAR.',
+            formula: 'N° Altas / Total Ejecutados × 100',
+            value: `${indicadoresData.altas?.pct ?? 0}%`,
+            sub: `${(indicadoresData.altas?.n ?? 0).toLocaleString('es-CL')} altas de ${(indicadoresData.altas?.total ?? 0).toLocaleString('es-CL')} ejecutados`,
+            trend: indicadoresData.altas?.trend ?? [],
             metaLabel: 'Meta MINSAL referencial: ≥ 30%',
             isGood: (v) => v >= 30,
-            byEsp: indicadoresData.altas.byEsp
+            byEsp: indicadoresData.altas?.byEsp ?? []
           },
           {
             key: 'contrarreferencia',
@@ -1207,14 +1207,14 @@ export default function ActividadesMedicinaDashboard({ onBack }) {
             color: '#0ea5e9',
             colorBg: '#f0f9ff',
             borderColor: '#7dd3fc',
-            definition: 'MINSAL (Circular N°A15/17): Porcentaje de pacientes atendidos en especialidad que son contrarreferidos al nivel primario de atención (APS), indicando resolución del problema en el nivel secundario y continuidad del cuidado en APS. Fuente: campo CONTRAREFERIR.',
-            formula: 'N° Contrarreferidos (S) / Total Atenciones Ejecutadas × 100',
-            value: `${indicadoresData.contrarreferencia.pct}%`,
-            sub: `${indicadoresData.contrarreferencia.n.toLocaleString('es-CL')} contrarreferidos de ${indicadoresData.contrarreferencia.total.toLocaleString('es-CL')} ejecutados`,
-            trend: indicadoresData.contrarreferencia.trend,
+            definition: 'MINSAL (Circular N°A15/17): % de pacientes contrarreferidos al nivel primario (APS) indicando resolución en secundario y continuidad en APS. Fuente: campo CONTRAREFERIR.',
+            formula: 'N° Contrarreferidos (S) / Total Ejecutados × 100',
+            value: `${indicadoresData.contrarreferencia?.pct ?? 0}%`,
+            sub: `${(indicadoresData.contrarreferencia?.n ?? 0).toLocaleString('es-CL')} contrarreferidos de ${(indicadoresData.contrarreferencia?.total ?? 0).toLocaleString('es-CL')} ejecutados`,
+            trend: indicadoresData.contrarreferencia?.trend ?? [],
             metaLabel: 'Meta MINSAL referencial: ≥ 20%',
             isGood: (v) => v >= 20,
-            byEsp: indicadoresData.contrarreferencia.byEsp
+            byEsp: indicadoresData.contrarreferencia?.byEsp ?? []
           }
         ];
 
@@ -1237,10 +1237,10 @@ export default function ActividadesMedicinaDashboard({ onBack }) {
               </div>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '300px 1fr', gap: 24, alignItems: 'stretch' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '260px 1fr', gap: 20, alignItems: 'start' }}>
 
               {/* LEFT: Indicator cards */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                 {indicators.map(ind => {
                   const IndIcon = ind.icon;
                   const isActive = ind.key === selectedIndicator;
@@ -1254,12 +1254,12 @@ export default function ActividadesMedicinaDashboard({ onBack }) {
                         background: isActive ? ind.colorBg : '#ffffff',
                         border: isActive ? `2.5px solid ${ind.color}` : '1.5px solid #e2e8f0',
                         borderLeft: `5px solid ${ind.color}`,
-                        borderRadius: 16,
-                        padding: '16px 18px',
+                        borderRadius: 12,
+                        padding: '12px 14px',
                         cursor: 'pointer',
                         transition: 'all 0.2s ease',
-                        boxShadow: isActive ? `0 8px 24px ${ind.color}22` : '0 1px 4px rgba(0,0,0,0.04)',
-                        transform: isActive ? 'scale(1.02)' : 'scale(1)'
+                        boxShadow: isActive ? `0 4px 16px ${ind.color}22` : '0 1px 4px rgba(0,0,0,0.04)',
+                        transform: isActive ? 'scale(1.01)' : 'scale(1)'
                       }}
                     >
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
