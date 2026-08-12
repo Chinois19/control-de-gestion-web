@@ -587,16 +587,16 @@ export default function ActividadesMedicinaDashboard({ onBack }) {
              diag.includes('APS') || diag.includes('CONTRAREFER') ||
              hip.includes('APS') || hip.includes('CONTRAREFER');
     };
-    const conContraref = ejecutados.filter(isContraref);
-    const pctContraref = ejecutados.length ? parseFloat(((conContraref.length / ejecutados.length) * 100).toFixed(1)) : 0;
+    const conContraref = ejecutadosBase.filter(isContraref);
+    const pctContraref = ejecutadosBase.length ? parseFloat(((conContraref.length / ejecutadosBase.length) * 100).toFixed(1)) : 0;
     const contrarefTrend = months.map(ym => {
       const mn = parseInt(ym.substring(5, 7), 10); const yr = ym.substring(0, 4);
-      const ejec = ejecutados.filter(r => String(r.fecha_atencion).substring(0, 7) === ym);
+      const ejec = ejecutadosBase.filter(r => String(r.fecha_atencion).substring(0, 7) === ym);
       const n = ejec.filter(isContraref).length;
       return { label: `${monthNames[mn - 1]} ${yr}`, value: ejec.length ? parseFloat(((n / ejec.length) * 100).toFixed(1)) : 0, n, total: ejec.length };
     });
     const espContrarefMap = {};
-    ejecutados.forEach(r => {
+    ejecutadosBase.forEach(r => {
       const esp = r.especialidad || 'Sin especialidad';
       if (!espContrarefMap[esp]) espContrarefMap[esp] = { total: 0, cr: 0 };
       espContrarefMap[esp].total += 1;
@@ -633,8 +633,8 @@ export default function ActividadesMedicinaDashboard({ onBack }) {
       nsp: { pct: pctNSP, total: totalCitados, n: totalNSP, trend: nspTrend, byEsp: nspByEsp },
       pertinencia: { pct: pctPert, total: withPert.length, n: pertS, trend: pertTrend, byEsp: pertByEsp },
       pertinenciaTiempo: { pct: pctPertTiempo, total: withPert.length, n: withPertTiempo.length, trend: pertTiempoTrend, byCategoria: pertTiempoByCategoria },
-      altas: { pct: pctAltas, total: ejecutados.length, n: conAlta.length, trend: altasTrend, byEsp: altasByEsp },
-      contrarreferencia: { pct: pctContraref, total: ejecutados.length, n: conContraref.length, trend: contrarefTrend, byEsp: contrarefByEsp }
+      altas: { pct: pctAltas, total: ejecutadosAltas.length, n: conAlta.length, trend: altasTrend, byEsp: altasByEsp },
+      contrarreferencia: { pct: pctContraref, total: ejecutadosBase.length, n: conContraref.length, trend: contrarefTrend, byEsp: contrarefByEsp }
     };
   }, [baseRecords]);
 
