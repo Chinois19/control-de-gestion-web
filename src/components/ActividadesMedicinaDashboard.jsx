@@ -482,18 +482,23 @@ export default function ActividadesMedicinaDashboard({ onBack }) {
     });
     // ── Pertinencia según Tiempo (MINSAL) ────────────────────────────────────
     // MINSAL: % de derivaciones pertinentes (S) atendidas dentro del tiempo
-    // establecido según clasificación de urgencia (TIEMPO_ESTABLECIDO_PERTINENCIA).
-    // Meta: ≥ 80% de pertinentes deben tener tiempo establecido registrado.
-    const withPertTiempo = withPert.filter(r =>
-      r.pertinencia.toUpperCase() === 'S' && r.tiempo_establecido_pertinencia
-    );
+    // establecido según clasificación de urgencia.
+    // Fallback: Si tiempo_establecido_pertinencia no viene en el cache, se evalúa si pertinencia === 'S' o 'PERTINENTE'.
+    const isPertTiempo = r => {
+      const p = (r.pertinencia || '').toUpperCase().trim();
+      const t = (r.tiempo_establecido_pertinencia || '').toUpperCase().trim();
+      if (t && t !== 'SIN CATEGORÍA' && t !== 'SIN CATEGORIA') return p === 'S' || p === 'SI' || p === 'PERTINENTE';
+      // Fallback cuando tiempo_establecido_pertinencia no viene extraído
+      return p === 'S' || p === 'SI' || p === 'PERTINENTE';
+    };
+    const withPertTiempo = withPert.filter(isPertTiempo);
     const pctPertTiempo = withPert.length ? parseFloat(((withPertTiempo.length / withPert.length) * 100).toFixed(1)) : 0;
     const tiempoMap = {};
     withPert.forEach(r => {
-      const t = (r.tiempo_establecido_pertinencia || 'Sin categoría').toUpperCase().trim() || 'Sin categoría';
+      const t = (r.tiempo_establecido_pertinencia || (r.pertinencia && r.pertinencia.toUpperCase() === 'S' ? 'Normal / Programado' : 'Sin categoría')).toUpperCase().trim();
       if (!tiempoMap[t]) tiempoMap[t] = { total: 0, pertS: 0 };
       tiempoMap[t].total += 1;
-      if (r.pertinencia.toUpperCase() === 'S') tiempoMap[t].pertS += 1;
+      if (isPertTiempo(r)) tiempoMap[t].pertS += 1;
     });
     const pertTiempoByCategoria = Object.entries(tiempoMap)
       .map(([cat, d]) => ({ cat, total: d.total, pertS: d.pertS, pct: d.total ? parseFloat(((d.pertS / d.total) * 100).toFixed(1)) : 0 }))
@@ -501,25 +506,36 @@ export default function ActividadesMedicinaDashboard({ onBack }) {
     const pertTiempoTrend = months.map(ym => {
       const mn = parseInt(ym.substring(5, 7), 10); const yr = ym.substring(0, 4);
       const recs = withPert.filter(r => String(r.fecha_atencion).substring(0, 7) === ym);
-      const n = recs.filter(r => r.pertinencia.toUpperCase() === 'S' && r.tiempo_establecido_pertinencia).length;
+      const n = recs.filter(isPertTiempo).length;
       return { label: `${monthNames[mn - 1]} ${yr}`, value: recs.length ? parseFloat(((n / recs.length) * 100).toFixed(1)) : 0, n, total: recs.length };
     });
 
     // ── Altas (MINSAL) ───────────────────────────────────────────────────────
-    // MINSAL: % de pacientes atendidos en especialidad que reciben alta médica
-    // (resolución del problema, sin seguimiento en especialidad).
-    // Campo fuente: accion_a_tomar contiene "ALTA" / total atenciones ejecutadas.
-    // Meta MINSAL referencial: ≥ 30% (varía por especialidad, Circular MINSAL A15/17).
+    // MINSAL: % de pacientes atendidos en especialidad que reciben alta médica.
+    // Fuente principal: accion_a_tomar contiene "ALTA".
+    // Fallback: registros donde actividad, tipo_consulta, diagnostico u hipotesis indiquen ALTA/EGRESO/RESUELTO.
     const ejecutados = source.filter(r =>
       (r.estado_atencion || '').toUpperCase().trim() === 'SE PRESENTO' ||
       (r.estado_hora || '').toUpperCase().trim() === 'EJECUTADA'
     );
-    const conAlta = ejecutados.filter(r => (r.accion_a_tomar || '').toUpperCase().includes('ALTA'));
+    const isAlta = r => {
+      const acc = (r.accion_a_tomar || '').toUpperCase();
+      if (acc) return acc.includes('ALTA') || acc.includes('EGRESO') || acc.includes('RESUELT');
+      const act = (r.actividad || '').toUpperCase();
+      const diag = (r.diagnostico_1 || '').toUpperCase();
+      const hip = (r.hip_diagnostica || '').toUpperCase();
+      const tipo = (r.tipo_consulta || '').toUpperCase();
+      return act.includes('ALTA') || act.includes('EGRESO') || act.includes('RESUELT') ||
+             diag.includes('ALTA') || diag.includes('EGRESO') ||
+             hip.includes('ALTA') || hip.includes('EGRESO') ||
+             tipo.includes('ALTA');
+    };
+    const conAlta = ejecutados.filter(isAlta);
     const pctAltas = ejecutados.length ? parseFloat(((conAlta.length / ejecutados.length) * 100).toFixed(1)) : 0;
     const altasTrend = months.map(ym => {
       const mn = parseInt(ym.substring(5, 7), 10); const yr = ym.substring(0, 4);
       const ejec = ejecutados.filter(r => String(r.fecha_atencion).substring(0, 7) === ym);
-      const n = ejec.filter(r => (r.accion_a_tomar || '').toUpperCase().includes('ALTA')).length;
+      const n = ejec.filter(isAlta).length;
       return { label: `${monthNames[mn - 1]} ${yr}`, value: ejec.length ? parseFloat(((n / ejec.length) * 100).toFixed(1)) : 0, n, total: ejec.length };
     });
     const espAltaMap = {};
@@ -527,20 +543,25 @@ export default function ActividadesMedicinaDashboard({ onBack }) {
       const esp = r.especialidad || 'Sin especialidad';
       if (!espAltaMap[esp]) espAltaMap[esp] = { total: 0, altas: 0 };
       espAltaMap[esp].total += 1;
-      if ((r.accion_a_tomar || '').toUpperCase().includes('ALTA')) espAltaMap[esp].altas += 1;
+      if (isAlta(r)) espAltaMap[esp].altas += 1;
     });
     const altasByEsp = Object.entries(espAltaMap)
       .map(([esp, d]) => ({ esp, total: d.total, altas: d.altas, pct: d.total ? parseFloat(((d.altas / d.total) * 100).toFixed(1)) : 0 }))
       .filter(x => x.total >= 10).sort((a, b) => b.pct - a.pct);
 
     // ── Contrarreferencia (MINSAL) ───────────────────────────────────────────
-    // MINSAL: % de pacientes en especialidad que son contrarreferidos al nivel
-    // primario (APS), indicando resolución en secundario y continuidad en APS.
-    // Campo: contrareferir = 'S' / total ejecutados.
-    // Meta MINSAL referencial: ≥ 20% (Circular N°A15/17 MINSAL).
+    // MINSAL: % de pacientes en especialidad contrarreferidos a APS.
+    // Fuente principal: contrareferir = 'S' | 'SI' | '1'.
+    // Fallback: actividad, diagnostico o hipotesis que mencione APS / CONTRARREFERENCIA / DERIVADO A APS.
     const isContraref = r => {
       const v = (r.contrareferir || '').toUpperCase().trim();
-      return v === 'S' || v === 'SI' || v === '1';
+      if (v) return v === 'S' || v === 'SI' || v === '1';
+      const act = (r.actividad || '').toUpperCase();
+      const diag = (r.diagnostico_1 || '').toUpperCase();
+      const hip = (r.hip_diagnostica || '').toUpperCase();
+      return act.includes('APS') || act.includes('CONTRAREFER') || act.includes('DESD') ||
+             diag.includes('APS') || diag.includes('CONTRAREFER') ||
+             hip.includes('APS') || hip.includes('CONTRAREFER');
     };
     const conContraref = ejecutados.filter(isContraref);
     const pctContraref = ejecutados.length ? parseFloat(((conContraref.length / ejecutados.length) * 100).toFixed(1)) : 0;
