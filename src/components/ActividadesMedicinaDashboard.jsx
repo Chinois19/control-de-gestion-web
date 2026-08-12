@@ -451,18 +451,40 @@ export default function ActividadesMedicinaDashboard({ onBack }) {
       return ea.includes('NO SE PRESENTO') || ea.includes('NO SE PRESENT\u00d3') || eh.includes('NO SE PRESENTO') || eh.includes('NO SE PRESENT\u00d3');
     };
 
+    // Tipos de consulta válidos para el cálculo de NSP
+    const validNSPTiposConsulta = new Set([
+      'ACCIONES GRUPALES',
+      'ACTIVIDADES DE ATENCION DE SALUD REMOTA',
+      'ATENCION A HOSPITALIZADOS',
+      'ATENCION TELEFONICA - CONTROL',
+      'CONSULTA ABREVIADA POR ATENCION REMOTA',
+      'CONSULTA HOSPITAL DIGITAL',
+      'CONSULTORIA',
+      'CONSULTORIAS DE MEDICOS ESPECIALISTAS OTORGADAS',
+      'CONTROLES DE ESPECIALIDAD RESUELTAS POR VISITAS DOMICILIARIAS',
+      'SALUD MENTAL ESPECIALIDAD/ENLACE',
+      'TELEMEDICINA ASINCRONICA',
+      'TELEMEDICINA CONTROL',
+      'TELEMEDICINA NUEVA'
+    ]);
+
+    const nspSource = source.filter(r => {
+      const tc = (r.tipo_consulta || '').toUpperCase().trim();
+      return validNSPTiposConsulta.has(tc);
+    });
+
     // Months present in the dataset
     const months = [...new Set(source.map(r => String(r.fecha_atencion).substring(0, 7)))].sort();
 
     // ── NSP ──────────────────────────────────────────────────────────────────
-    const totalCitados = source.length;
-    const totalNSP = source.filter(isNSP).length;
+    const totalCitados = nspSource.length;
+    const totalNSP = nspSource.filter(isNSP).length;
     const pctNSP = totalCitados ? parseFloat(((totalNSP / totalCitados) * 100).toFixed(1)) : 0;
 
     const nspTrend = months.map(ym => {
       const mn = parseInt(ym.substring(5, 7), 10);
       const yr = ym.substring(0, 4);
-      const recs = source.filter(r => String(r.fecha_atencion).substring(0, 7) === ym);
+      const recs = nspSource.filter(r => String(r.fecha_atencion).substring(0, 7) === ym);
       const nsp = recs.filter(isNSP).length;
       return { label: `${monthNames[mn - 1]} ${yr}`, value: recs.length ? parseFloat(((nsp / recs.length) * 100).toFixed(1)) : 0, nsp, total: recs.length };
     });
@@ -584,7 +606,7 @@ export default function ActividadesMedicinaDashboard({ onBack }) {
 
     // ── Insights por especialidad NSP / Pertinencia ──────────────────────────
     const espNspMap = {};
-    source.forEach(r => {
+    nspSource.forEach(r => {
       const esp = r.especialidad || 'Sin especialidad';
       if (!espNspMap[esp]) espNspMap[esp] = { total: 0, nsp: 0 };
       espNspMap[esp].total += 1;
