@@ -73,7 +73,7 @@ export default function EmergencyDashboard({ onBack }) {
     setLoading(true);
     try {
       // Intentar primero con versión comprimida .json.gz (4.9 MB)
-      const resGz = await fetch('/data/urgencia_cached.json.gz');
+      const resGz = await fetch('data/urgencia_cached.json.gz?' + Date.now());
       if (resGz.ok && typeof DecompressionStream !== 'undefined') {
         const ds = new DecompressionStream('gzip');
         const decompressed = resGz.body.pipeThrough(ds);
@@ -88,7 +88,7 @@ export default function EmergencyDashboard({ onBack }) {
     }
 
     try {
-      const res = await fetch('/data/urgencia_cached.json');
+      const res = await fetch('data/urgencia_cached.json?' + Date.now());
       if (res.ok) {
         const json = await res.json();
         setData(json);
