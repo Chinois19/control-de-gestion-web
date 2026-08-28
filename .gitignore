@@ -4,5 +4,12 @@ dist
 dist-ssr
 *.local
 *.xlsx
+*.pbix
+temp_*.json
+scratch/
 public/data/laboratory_cached.json
+public/data/*-Gonzalo.json
+public/data/*-ASRVLLHOPWT8SF4.json
 src/data/Producción Laboratorio/
+src/data/Consultas de urgencia/Consultas de Urgencia 2.pbix
+src/data/Consultas de urgencia/pbix_extracted/

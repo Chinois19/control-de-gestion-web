@@ -14,6 +14,7 @@
 const odbc = require('odbc');
 const fs   = require('fs');
 const path = require('path');
+const zlib = require('zlib');
 
 const DSN      = 'dwh.dssasur.cl';
 const USER     = 'ghperez';
@@ -168,12 +169,18 @@ async function run() {
       records
     };
 
+    const jsonBuffer = Buffer.from(JSON.stringify(output), 'utf-8');
     const outPath = path.join(cacheDir, 'actividades_medicina_cached.json');
-    fs.writeFileSync(outPath, JSON.stringify(output), 'utf-8');
+    fs.writeFileSync(outPath, jsonBuffer);
 
-    const sizeKB = Math.round(fs.statSync(outPath).size / 1024);
-    console.log(`      ✓ Guardado en: ${outPath}`);
-    console.log(`      ✓ Tamaño: ${sizeKB.toLocaleString('es-CL')} KB`);
+    const outPathGz = path.join(cacheDir, 'actividades_medicina_cached.json.gz');
+    const gzipped = zlib.gzipSync(jsonBuffer, { level: 9 });
+    fs.writeFileSync(outPathGz, gzipped);
+
+    const sizeMB = (jsonBuffer.length / (1024 * 1024)).toFixed(2);
+    const sizeGzMB = (gzipped.length / (1024 * 1024)).toFixed(2);
+    console.log(`      ✓ Guardado en: ${outPath} (${sizeMB} MB)`);
+    console.log(`      ✓ Comprimido en: ${outPathGz} (${sizeGzMB} MB)`);
     console.log('\n═══════════════════════════════════════════════════════════\n');
 
   } catch (err) {

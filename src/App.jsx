@@ -52,6 +52,7 @@ import ProgramacionProfesionalesDashboard from './components/ProgramacionProfesi
 import ProgramacionOdontologiaDashboard from './components/ProgramacionOdontologiaDashboard';
 import ListaEsperaDashboard from './components/ListaEsperaDashboard';
 import ActividadesMedicinaDashboard from './components/ActividadesMedicinaDashboard';
+import EmergencyDashboard from './components/EmergencyDashboard';
 import './App.css';
 
 const SESSION_TIMEOUT_MS = 30 * 60 * 1000; // 30 minutes
@@ -1121,7 +1122,9 @@ function App() {
                   initialSubTab={closedAttentionInitialSubTab}
                 />
               )}
-              {activeView === 'urgencia' && <div style={{ color: 'var(--text-dark)' }}><h1>Panel de Urgencia</h1><button onClick={() => navigateToView('produccion_general')}>Volver</button></div>}
+              {activeView === 'urgencia' && (
+                <EmergencyDashboard onBack={() => navigateToView('produccion_general')} />
+              )}
               {(activeView === 'estadistica' || activeView === 'quirurgica') && <SurgicalDashboard onBack={() => navigateToView(activeView === 'estadistica' ? 'home' : 'produccion_general')} />}
               {(activeView === 'indicadores' || activeView === 'ley15707') && <HealthGoals onBack={() => navigateToView('home')} />}
               {activeView === 'ley18834' && <HealthGoalsLey18834 onBack={() => navigateToView('home')} />}

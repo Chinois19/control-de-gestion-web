@@ -1,6 +1,14 @@
 src/data/
-public/data/actividades_medicina_cached.json
-public/data/laboratory_cached.json
+scratch/
+temp_*.json
 *.xlsx
 *.zip
-*.json.gz
+*.pbix
+*.bat
+*.py
+public/data/*-Gonzalo.json
+public/data/*-ASRVLLHOPWT8SF4.json
+public/data/laboratory_cached.json
+public/data/actividades_medicina_cached.json
+public/data/urgencia_cached.json
+

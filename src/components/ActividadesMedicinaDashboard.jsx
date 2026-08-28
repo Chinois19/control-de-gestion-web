@@ -196,22 +196,34 @@ export default function ActividadesMedicinaDashboard({ onBack }) {
   // Pivot table: set of expanded tipo-consulta rows (key = 'esp|||tipo')
   const [pivotExpandedTipos, setPivotExpandedTipos] = useState(new Set());
 
-  const loadData = () => {
+  const loadData = async () => {
     setLoading(true);
     setError(null);
-    fetch('data/actividades_medicina_cached.json?' + Date.now())
-      .then(r => {
-        if (!r.ok) throw new Error('Archivo de cache no disponible');
-        return r.json();
-      })
-      .then(d => {
+    try {
+      // Intentar primero con versión comprimida .json.gz (4.2 MB)
+      const resGz = await fetch('data/actividades_medicina_cached.json.gz?' + Date.now());
+      if (resGz.ok && typeof DecompressionStream !== 'undefined') {
+        const ds = new DecompressionStream('gzip');
+        const decompressed = resGz.body.pipeThrough(ds);
+        const d = await new Response(decompressed).json();
         setData(d);
         setLoading(false);
-      })
-      .catch(e => {
-        setError(e.message);
-        setLoading(false);
-      });
+        return;
+      }
+    } catch (e) {
+      console.warn('Fallback a .json sin comprimir para Actividades Medicina:', e);
+    }
+
+    try {
+      const res = await fetch('data/actividades_medicina_cached.json?' + Date.now());
+      if (!res.ok) throw new Error('Archivo de cache no disponible');
+      const d = await res.json();
+      setData(d);
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => { loadData(); }, []);
