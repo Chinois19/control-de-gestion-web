@@ -654,17 +654,29 @@ export default function SurgicalDashboard({ onBack }) {
     async function loadData() {
       try {
         setLoading(true);
-        const [tablaRes, dispRes, libroRes, grdRes] = await Promise.all([
-          fetch('/data/pabellon_tabla_cached.json'),
-          fetch('/data/pabellon_disponibilidad_cached.json'),
-          fetch('/data/libro_pabellon_cached.json').catch(() => ({ json: () => ({ records: [] }) })),
-          fetch('/data/valorizacion_grd.json').catch(() => ({ json: () => ([]) }))
-        ]);
 
-        const tablaJson = await tablaRes.json();
-        const dispJson = await dispRes.json();
-        const libroJson = await libroRes.json();
-        const grdJson = await grdRes.json();
+        const fetchJsonWithGz = async (basePath) => {
+          try {
+            const resGz = await fetch(`${basePath}.gz?` + Date.now());
+            if (resGz.ok && typeof DecompressionStream !== 'undefined') {
+              const ds = new DecompressionStream('gzip');
+              const decompressed = resGz.body.pipeThrough(ds);
+              return await new Response(decompressed).json();
+            }
+          } catch (e) {
+            // fallback
+          }
+          const res = await fetch(basePath);
+          if (!res.ok) throw new Error(`No se pudo cargar ${basePath}`);
+          return await res.json();
+        };
+
+        const [tablaJson, dispJson, libroJson, grdJson] = await Promise.all([
+          fetchJsonWithGz('/data/pabellon_tabla_cached.json'),
+          fetchJsonWithGz('/data/pabellon_disponibilidad_cached.json'),
+          fetchJsonWithGz('/data/libro_pabellon_cached.json').catch(() => ({ records: [] })),
+          fetch('/data/valorizacion_grd.json').catch(() => ({ json: () => ([]) })).then(r => r.json ? r.json() : r)
+        ]);
 
         const normalizeDate = (dStr) => {
           if (!dStr) return null;

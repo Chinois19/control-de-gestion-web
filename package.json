@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "vite build && node scripts/clean-dist-data.cjs",
     "lint": "eslint .",
     "preview": "vite preview",
     "compile-sigcom": "node compile-sigcom.js",

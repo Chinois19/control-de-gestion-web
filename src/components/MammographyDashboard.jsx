@@ -84,12 +84,27 @@ export default function MammographyDashboard({ onBack, initialTab = 'summary', i
     setLoading(true);
     setError(null);
     try {
-      // Fetch from local weekly cache (public/data/mammography_cached.json)
-      const response = await fetch('/data/mammography_cached.json');
-      if (!response.ok) {
-        throw new Error('No se pudo encontrar el archivo de datos local.');
+      // Fetch from local weekly cache
+      let data;
+      try {
+        const resGz = await fetch('/data/mammography_cached.json.gz?' + Date.now());
+        if (resGz.ok && typeof DecompressionStream !== 'undefined') {
+          const ds = new DecompressionStream('gzip');
+          const decompressed = resGz.body.pipeThrough(ds);
+          data = await new Response(decompressed).json();
+        }
+      } catch (e) {
+        console.warn('Fallback a .json sin comprimir para Mamografías:', e);
       }
-      const data = await response.json();
+
+      if (!data) {
+        const response = await fetch('/data/mammography_cached.json');
+        if (!response.ok) {
+          throw new Error('No se pudo encontrar el archivo de datos local.');
+        }
+        data = await response.json();
+      }
+
       setRawData(data.records || []);
       
       if (data.lastUpdated) {

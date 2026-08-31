@@ -68,11 +68,25 @@ export default function RadiologyDashboard({ onBack, initialTab = 'summary', ini
     async function loadData() {
       try {
         setLoading(true);
-        const response = await fetch('/data/radiology_cached.json');
-        if (!response.ok) {
-          throw new Error('No se pudo cargar el caché de radiografías de REDCap.');
+        let data;
+        try {
+          const resGz = await fetch('/data/radiology_cached.json.gz?' + Date.now());
+          if (resGz.ok && typeof DecompressionStream !== 'undefined') {
+            const ds = new DecompressionStream('gzip');
+            const decompressed = resGz.body.pipeThrough(ds);
+            data = await new Response(decompressed).json();
+          }
+        } catch (e) {
+          console.warn('Fallback a .json sin comprimir para Radiología:', e);
         }
-        const data = await response.json();
+
+        if (!data) {
+          const response = await fetch('/data/radiology_cached.json');
+          if (!response.ok) {
+            throw new Error('No se pudo cargar el caché de radiografías de REDCap.');
+          }
+          data = await response.json();
+        }
         
         // Parse dates and clean numbers
         const cleaned = data.records.map((r, idx) => {
