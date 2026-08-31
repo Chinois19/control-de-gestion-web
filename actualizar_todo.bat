@@ -33,13 +33,17 @@ echo [7/8] Procesando datos de Laboratorio...
 node scripts/process_lab_excel.cjs
 if %errorlevel% neq 0 echo Error en process_lab_excel.cjs
 
-echo [8/9] Obteniendo Actividades Medicina de Especialidad desde ODBC...
+echo [8/10] Obteniendo Actividades Medicina de Especialidad desde ODBC...
 node fetch-actividades-medicina.cjs
 if %errorlevel% neq 0 echo Error en fetch-actividades-medicina.cjs
 
-echo [9/9] Obteniendo Consultas de Urgencia desde ODBC...
+echo [9/10] Obteniendo Consultas de Urgencia desde ODBC...
 node fetch-urgencia.cjs
 if %errorlevel% neq 0 echo Error en fetch-urgencia.cjs
+
+echo [10/10] Obteniendo Lista de Espera desde ODBC...
+node fetch-lista-espera.cjs
+if %errorlevel% neq 0 echo Error en fetch-lista-espera.cjs
 
 echo.
 echo ===================================================
