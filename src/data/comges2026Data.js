@@ -5,10 +5,10 @@ export const COMGES_META = {
   hospital: "Hospital de Villarrica",
   service: "Servicio de Salud Araucanía Sur",
   year: 2026,
-  version: "Versión Final Julio 2026 (MINSAL)",
-  lastUpdatedMonth: "Mayo 2026 (Ausentismo Ord 1934)",
-  totalIndicators: 12,
-  totalDomains: 6,
+  version: "Versión Final MINSAL (Corte a Agosto 2026)",
+  lastUpdatedMonth: "Agosto 2026",
+  totalIndicators: 21,
+  totalDomains: 7,
   sourceFiles: [
     "Minuta COMGES 2026 FINAL.pdf",
     "Orientaciones Técnicas COMGES 2026_Versión FINAL JULIO.pdf",
@@ -269,11 +269,11 @@ export const COMGES_INDICATORS = [
       },
       {
         "month": "Julio",
-        "numerator": 0,
-        "denominator": 0,
-        "result": null,
-        "resultFormatted": "-",
-        "status": "Pendiente Actualización"
+        "numerator": 30,
+        "denominator": 333,
+        "result": 9.01,
+        "resultFormatted": "9.01%",
+        "status": "No Cumple"
       },
       {
         "month": "Agosto",
@@ -317,12 +317,12 @@ export const COMGES_INDICATORS = [
       }
     ],
     "summaryYTD": {
-      "numerator": 131,
-      "denominator": 1853,
-      "result": 7.07,
-      "resultFormatted": "7.07%",
+      "numerator": 161,
+      "denominator": 2186,
+      "result": 7.37,
+      "resultFormatted": "7.37%",
       "status": "No Cumple",
-      "observation": "Acumulado a Junio 2026: 7.07% vs Meta ≤ 6.5%."
+      "observation": "Acumulado a Julio/Agosto 2026: 7.37% de suspensiones (161 de 2.186 programadas vs Meta ≤ 6.5%)."
     }
   },
   {
@@ -378,7 +378,7 @@ export const COMGES_INDICATORS = [
         "denominator": 2377,
         "result": 95.04,
         "resultFormatted": "95.04%",
-        "status": "En Riesgo"
+        "status": "No Cumple"
       },
       {
         "month": "Febrero",
@@ -422,19 +422,19 @@ export const COMGES_INDICATORS = [
       },
       {
         "month": "Julio",
-        "numerator": 0,
-        "denominator": 0,
-        "result": null,
-        "resultFormatted": "-",
-        "status": "Pendiente Actualización"
+        "numerator": 7628,
+        "denominator": 8345,
+        "result": 91.41,
+        "resultFormatted": "91.41%",
+        "status": "No Cumple"
       },
       {
         "month": "Agosto",
-        "numerator": 0,
-        "denominator": 0,
-        "result": null,
-        "resultFormatted": "-",
-        "status": "Pendiente Actualización"
+        "numerator": 8731,
+        "denominator": 9446,
+        "result": 92.43,
+        "resultFormatted": "92.43%",
+        "status": "No Cumple"
       },
       {
         "month": "Septiembre",
@@ -470,12 +470,12 @@ export const COMGES_INDICATORS = [
       }
     ],
     "summaryYTD": {
-      "numerator": 6399,
-      "denominator": 6979,
-      "result": 92.41,
-      "resultFormatted": "92.41%",
+      "numerator": 8731,
+      "denominator": 9446,
+      "result": 92.43,
+      "resultFormatted": "92.43%",
       "status": "No Cumple",
-      "observation": "Acumulado a Junio 2026: 92.41% vs Meta ≥ 99.5%."
+      "observation": "Acumulado a Agosto 2026: 92.43% de cumplimiento GES (8.731 cumplidas de 9.446 totales)."
     }
   },
   {
@@ -503,7 +503,7 @@ export const COMGES_INDICATORS = [
         "denominator": 0,
         "result": null,
         "resultFormatted": "-",
-        "status": "Sin Dato"
+        "status": "Pendiente Actualización"
       },
       {
         "month": "Febrero",
@@ -511,7 +511,7 @@ export const COMGES_INDICATORS = [
         "denominator": 0,
         "result": null,
         "resultFormatted": "-",
-        "status": "Sin Dato"
+        "status": "Pendiente Actualización"
       },
       {
         "month": "Marzo",
@@ -519,7 +519,7 @@ export const COMGES_INDICATORS = [
         "denominator": 0,
         "result": null,
         "resultFormatted": "-",
-        "status": "Sin Dato"
+        "status": "Pendiente Actualización"
       },
       {
         "month": "Abril",
@@ -527,7 +527,7 @@ export const COMGES_INDICATORS = [
         "denominator": 2048,
         "result": 23.88,
         "resultFormatted": "23.88%",
-        "status": "No Cumple"
+        "status": "En Avance"
       },
       {
         "month": "Mayo",
@@ -535,7 +535,7 @@ export const COMGES_INDICATORS = [
         "denominator": 2075,
         "result": 46.51,
         "resultFormatted": "46.51%",
-        "status": "No Cumple"
+        "status": "En Avance"
       },
       {
         "month": "Junio",
@@ -543,23 +543,23 @@ export const COMGES_INDICATORS = [
         "denominator": 2077,
         "result": 53.15,
         "resultFormatted": "53.15%",
-        "status": "No Cumple"
+        "status": "En Avance"
       },
       {
         "month": "Julio",
-        "numerator": 0,
-        "denominator": 0,
-        "result": null,
-        "resultFormatted": "-",
-        "status": "Sin Dato"
+        "numerator": 1375,
+        "denominator": 2063,
+        "result": 66.65,
+        "resultFormatted": "66.65%",
+        "status": "En Avance"
       },
       {
         "month": "Agosto",
-        "numerator": 0,
-        "denominator": 0,
-        "result": null,
-        "resultFormatted": "-",
-        "status": "Sin Dato"
+        "numerator": 1422,
+        "denominator": 1938,
+        "result": 73.37,
+        "resultFormatted": "73.37%",
+        "status": "En Avance"
       },
       {
         "month": "Septiembre",
@@ -567,7 +567,7 @@ export const COMGES_INDICATORS = [
         "denominator": 0,
         "result": null,
         "resultFormatted": "-",
-        "status": "Sin Dato"
+        "status": "Pendiente Actualización"
       },
       {
         "month": "Octubre",
@@ -575,7 +575,7 @@ export const COMGES_INDICATORS = [
         "denominator": 0,
         "result": null,
         "resultFormatted": "-",
-        "status": "Sin Dato"
+        "status": "Pendiente Actualización"
       },
       {
         "month": "Noviembre",
@@ -583,7 +583,7 @@ export const COMGES_INDICATORS = [
         "denominator": 0,
         "result": null,
         "resultFormatted": "-",
-        "status": "Sin Dato"
+        "status": "Pendiente Actualización"
       },
       {
         "month": "Diciembre",
@@ -591,16 +591,16 @@ export const COMGES_INDICATORS = [
         "denominator": 0,
         "result": null,
         "resultFormatted": "-",
-        "status": "Sin Dato"
+        "status": "Pendiente Actualización"
       }
     ],
     "summaryYTD": {
-      "numerator": 1104,
-      "denominator": 2077,
-      "result": 53.15,
-      "resultFormatted": "53.15%",
-      "status": "No Cumple",
-      "observation": "Acumulado a Junio 2026: 53.15% de avance en resolución P75 (Meta ≥ 95.0%)."
+      "numerator": 1422,
+      "denominator": 1938,
+      "result": 73.37,
+      "resultFormatted": "73.37%",
+      "status": "En Avance",
+      "observation": "Avance a Agosto 2026: 73.37% de egresos respecto de la línea base P75 médica (1.422 de 1.938 casos)."
     }
   },
   {
@@ -628,7 +628,7 @@ export const COMGES_INDICATORS = [
         "denominator": 0,
         "result": null,
         "resultFormatted": "-",
-        "status": "Sin Dato"
+        "status": "Pendiente Actualización"
       },
       {
         "month": "Febrero",
@@ -636,7 +636,7 @@ export const COMGES_INDICATORS = [
         "denominator": 0,
         "result": null,
         "resultFormatted": "-",
-        "status": "Sin Dato"
+        "status": "Pendiente Actualización"
       },
       {
         "month": "Marzo",
@@ -644,15 +644,15 @@ export const COMGES_INDICATORS = [
         "denominator": 0,
         "result": null,
         "resultFormatted": "-",
-        "status": "Sin Dato"
+        "status": "Pendiente Actualización"
       },
       {
         "month": "Abril",
-        "numerator": 562,
+        "numerator": 878,
         "denominator": 1353,
-        "result": 41.54,
-        "resultFormatted": "41.54%",
-        "status": "No Cumple"
+        "result": 64.89,
+        "resultFormatted": "64.89%",
+        "status": "En Avance"
       },
       {
         "month": "Mayo",
@@ -660,7 +660,7 @@ export const COMGES_INDICATORS = [
         "denominator": 1353,
         "result": 55.95,
         "resultFormatted": "55.95%",
-        "status": "No Cumple"
+        "status": "En Avance"
       },
       {
         "month": "Junio",
@@ -668,23 +668,23 @@ export const COMGES_INDICATORS = [
         "denominator": 1353,
         "result": 64.89,
         "resultFormatted": "64.89%",
-        "status": "No Cumple"
+        "status": "En Avance"
       },
       {
         "month": "Julio",
-        "numerator": 0,
-        "denominator": 0,
-        "result": null,
-        "resultFormatted": "-",
-        "status": "Sin Dato"
+        "numerator": 978,
+        "denominator": 1354,
+        "result": 72.23,
+        "resultFormatted": "72.23%",
+        "status": "En Avance"
       },
       {
         "month": "Agosto",
-        "numerator": 0,
-        "denominator": 0,
-        "result": null,
-        "resultFormatted": "-",
-        "status": "Sin Dato"
+        "numerator": 1099,
+        "denominator": 1354,
+        "result": 81.17,
+        "resultFormatted": "81.17%",
+        "status": "En Avance"
       },
       {
         "month": "Septiembre",
@@ -692,7 +692,7 @@ export const COMGES_INDICATORS = [
         "denominator": 0,
         "result": null,
         "resultFormatted": "-",
-        "status": "Sin Dato"
+        "status": "Pendiente Actualización"
       },
       {
         "month": "Octubre",
@@ -700,7 +700,7 @@ export const COMGES_INDICATORS = [
         "denominator": 0,
         "result": null,
         "resultFormatted": "-",
-        "status": "Sin Dato"
+        "status": "Pendiente Actualización"
       },
       {
         "month": "Noviembre",
@@ -708,7 +708,7 @@ export const COMGES_INDICATORS = [
         "denominator": 0,
         "result": null,
         "resultFormatted": "-",
-        "status": "Sin Dato"
+        "status": "Pendiente Actualización"
       },
       {
         "month": "Diciembre",
@@ -716,16 +716,16 @@ export const COMGES_INDICATORS = [
         "denominator": 0,
         "result": null,
         "resultFormatted": "-",
-        "status": "Sin Dato"
+        "status": "Pendiente Actualización"
       }
     ],
     "summaryYTD": {
-      "numerator": 878,
-      "denominator": 1353,
-      "result": 64.89,
-      "resultFormatted": "64.89%",
-      "status": "No Cumple",
-      "observation": "Acumulado a Junio 2026: 64.89% de avance en resolución P75 (Meta ≥ 95.0%)."
+      "numerator": 1099,
+      "denominator": 1354,
+      "result": 81.17,
+      "resultFormatted": "81.17%",
+      "status": "En Avance",
+      "observation": "Avance a Agosto 2026: 81.17% de egresos respecto de la línea base P75 Odontológica (1.099 de 1.354 casos)."
     }
   },
   {
@@ -753,7 +753,7 @@ export const COMGES_INDICATORS = [
         "denominator": 0,
         "result": null,
         "resultFormatted": "-",
-        "status": "Sin Dato"
+        "status": "Pendiente Actualización"
       },
       {
         "month": "Febrero",
@@ -761,7 +761,7 @@ export const COMGES_INDICATORS = [
         "denominator": 0,
         "result": null,
         "resultFormatted": "-",
-        "status": "Sin Dato"
+        "status": "Pendiente Actualización"
       },
       {
         "month": "Marzo",
@@ -769,7 +769,7 @@ export const COMGES_INDICATORS = [
         "denominator": 0,
         "result": null,
         "resultFormatted": "-",
-        "status": "Sin Dato"
+        "status": "Pendiente Actualización"
       },
       {
         "month": "Abril",
@@ -777,7 +777,7 @@ export const COMGES_INDICATORS = [
         "denominator": 610,
         "result": 8.36,
         "resultFormatted": "8.36%",
-        "status": "No Cumple"
+        "status": "En Avance"
       },
       {
         "month": "Mayo",
@@ -785,7 +785,7 @@ export const COMGES_INDICATORS = [
         "denominator": 611,
         "result": 20.29,
         "resultFormatted": "20.29%",
-        "status": "No Cumple"
+        "status": "En Avance"
       },
       {
         "month": "Junio",
@@ -793,23 +793,23 @@ export const COMGES_INDICATORS = [
         "denominator": 611,
         "result": 31.1,
         "resultFormatted": "31.10%",
-        "status": "No Cumple"
+        "status": "En Avance"
       },
       {
         "month": "Julio",
-        "numerator": 0,
-        "denominator": 0,
-        "result": null,
-        "resultFormatted": "-",
-        "status": "Sin Dato"
+        "numerator": 215,
+        "denominator": 611,
+        "result": 35.19,
+        "resultFormatted": "35.19%",
+        "status": "En Avance"
       },
       {
         "month": "Agosto",
-        "numerator": 0,
-        "denominator": 0,
-        "result": null,
-        "resultFormatted": "-",
-        "status": "Sin Dato"
+        "numerator": 253,
+        "denominator": 611,
+        "result": 41.41,
+        "resultFormatted": "41.41%",
+        "status": "En Avance"
       },
       {
         "month": "Septiembre",
@@ -817,7 +817,7 @@ export const COMGES_INDICATORS = [
         "denominator": 0,
         "result": null,
         "resultFormatted": "-",
-        "status": "Sin Dato"
+        "status": "Pendiente Actualización"
       },
       {
         "month": "Octubre",
@@ -825,7 +825,7 @@ export const COMGES_INDICATORS = [
         "denominator": 0,
         "result": null,
         "resultFormatted": "-",
-        "status": "Sin Dato"
+        "status": "Pendiente Actualización"
       },
       {
         "month": "Noviembre",
@@ -833,7 +833,7 @@ export const COMGES_INDICATORS = [
         "denominator": 0,
         "result": null,
         "resultFormatted": "-",
-        "status": "Sin Dato"
+        "status": "Pendiente Actualización"
       },
       {
         "month": "Diciembre",
@@ -841,16 +841,16 @@ export const COMGES_INDICATORS = [
         "denominator": 0,
         "result": null,
         "resultFormatted": "-",
-        "status": "Sin Dato"
+        "status": "Pendiente Actualización"
       }
     ],
     "summaryYTD": {
-      "numerator": 190,
+      "numerator": 253,
       "denominator": 611,
-      "result": 31.1,
-      "resultFormatted": "31.10%",
-      "status": "No Cumple",
-      "observation": "Acumulado a Junio 2026: 31.10% de avance en resolución P75 (Meta ≥ 95.0%)."
+      "result": 41.41,
+      "resultFormatted": "41.41%",
+      "status": "En Avance",
+      "observation": "Avance a Agosto 2026: 41.41% de egresos respecto de la línea base P75 Ortodoncia (253 de 611 casos)."
     }
   },
   {
@@ -878,7 +878,7 @@ export const COMGES_INDICATORS = [
         "denominator": 0,
         "result": null,
         "resultFormatted": "-",
-        "status": "Sin Dato"
+        "status": "Pendiente Actualización"
       },
       {
         "month": "Febrero",
@@ -886,7 +886,7 @@ export const COMGES_INDICATORS = [
         "denominator": 0,
         "result": null,
         "resultFormatted": "-",
-        "status": "Sin Dato"
+        "status": "Pendiente Actualización"
       },
       {
         "month": "Marzo",
@@ -894,7 +894,7 @@ export const COMGES_INDICATORS = [
         "denominator": 367,
         "result": 21.25,
         "resultFormatted": "21.25%",
-        "status": "No Cumple"
+        "status": "En Avance"
       },
       {
         "month": "Abril",
@@ -902,7 +902,7 @@ export const COMGES_INDICATORS = [
         "denominator": 368,
         "result": 29.08,
         "resultFormatted": "29.08%",
-        "status": "No Cumple"
+        "status": "En Avance"
       },
       {
         "month": "Mayo",
@@ -910,7 +910,7 @@ export const COMGES_INDICATORS = [
         "denominator": 376,
         "result": 40.69,
         "resultFormatted": "40.69%",
-        "status": "No Cumple"
+        "status": "En Avance"
       },
       {
         "month": "Junio",
@@ -918,23 +918,23 @@ export const COMGES_INDICATORS = [
         "denominator": 381,
         "result": 51.44,
         "resultFormatted": "51.44%",
-        "status": "No Cumple"
+        "status": "En Avance"
       },
       {
         "month": "Julio",
-        "numerator": 0,
-        "denominator": 0,
-        "result": null,
-        "resultFormatted": "-",
-        "status": "Sin Dato"
+        "numerator": 219,
+        "denominator": 381,
+        "result": 57.48,
+        "resultFormatted": "57.48%",
+        "status": "En Avance"
       },
       {
         "month": "Agosto",
-        "numerator": 0,
-        "denominator": 0,
-        "result": null,
-        "resultFormatted": "-",
-        "status": "Sin Dato"
+        "numerator": 236,
+        "denominator": 382,
+        "result": 61.78,
+        "resultFormatted": "61.78%",
+        "status": "En Avance"
       },
       {
         "month": "Septiembre",
@@ -942,7 +942,7 @@ export const COMGES_INDICATORS = [
         "denominator": 0,
         "result": null,
         "resultFormatted": "-",
-        "status": "Sin Dato"
+        "status": "Pendiente Actualización"
       },
       {
         "month": "Octubre",
@@ -950,7 +950,7 @@ export const COMGES_INDICATORS = [
         "denominator": 0,
         "result": null,
         "resultFormatted": "-",
-        "status": "Sin Dato"
+        "status": "Pendiente Actualización"
       },
       {
         "month": "Noviembre",
@@ -958,7 +958,7 @@ export const COMGES_INDICATORS = [
         "denominator": 0,
         "result": null,
         "resultFormatted": "-",
-        "status": "Sin Dato"
+        "status": "Pendiente Actualización"
       },
       {
         "month": "Diciembre",
@@ -966,16 +966,16 @@ export const COMGES_INDICATORS = [
         "denominator": 0,
         "result": null,
         "resultFormatted": "-",
-        "status": "Sin Dato"
+        "status": "Pendiente Actualización"
       }
     ],
     "summaryYTD": {
-      "numerator": 196,
-      "denominator": 381,
-      "result": 51.44,
-      "resultFormatted": "51.44%",
-      "status": "No Cumple",
-      "observation": "Acumulado a Junio 2026: 51.44% de avance en resolución P75 (Meta ≥ 95.0%)."
+      "numerator": 236,
+      "denominator": 382,
+      "result": 61.78,
+      "resultFormatted": "61.78%",
+      "status": "En Avance",
+      "observation": "Avance a Agosto 2026: 61.78% de egresos respecto de la línea base P75 quirúrgica (236 de 382 casos)."
     }
   },
   {
@@ -1154,9 +1154,9 @@ export const COMGES_INDICATORS = [
         "month": "Enero",
         "numerator": 152,
         "denominator": 160,
-        "result": 95.0,
+        "result": 95,
         "resultFormatted": "95.00%",
-        "status": "En Riesgo"
+        "status": "No Cumple"
       },
       {
         "month": "Febrero",
@@ -1164,7 +1164,7 @@ export const COMGES_INDICATORS = [
         "denominator": 199,
         "result": 93.97,
         "resultFormatted": "93.97%",
-        "status": "En Riesgo"
+        "status": "No Cumple"
       },
       {
         "month": "Marzo",
@@ -1200,19 +1200,19 @@ export const COMGES_INDICATORS = [
       },
       {
         "month": "Julio",
-        "numerator": 0,
-        "denominator": 0,
-        "result": null,
-        "resultFormatted": "-",
-        "status": "Sin Dato"
+        "numerator": 499,
+        "denominator": 644,
+        "result": 77.48,
+        "resultFormatted": "77.48%",
+        "status": "No Cumple"
       },
       {
         "month": "Agosto",
-        "numerator": 0,
-        "denominator": 0,
-        "result": null,
-        "resultFormatted": "-",
-        "status": "Sin Dato"
+        "numerator": 601,
+        "denominator": 746,
+        "result": 80.56,
+        "resultFormatted": "80.56%",
+        "status": "No Cumple"
       },
       {
         "month": "Septiembre",
@@ -1220,7 +1220,7 @@ export const COMGES_INDICATORS = [
         "denominator": 0,
         "result": null,
         "resultFormatted": "-",
-        "status": "Sin Dato"
+        "status": "Pendiente Actualización"
       },
       {
         "month": "Octubre",
@@ -1228,7 +1228,7 @@ export const COMGES_INDICATORS = [
         "denominator": 0,
         "result": null,
         "resultFormatted": "-",
-        "status": "Sin Dato"
+        "status": "Pendiente Actualización"
       },
       {
         "month": "Noviembre",
@@ -1236,7 +1236,7 @@ export const COMGES_INDICATORS = [
         "denominator": 0,
         "result": null,
         "resultFormatted": "-",
-        "status": "Sin Dato"
+        "status": "Pendiente Actualización"
       },
       {
         "month": "Diciembre",
@@ -1244,16 +1244,16 @@ export const COMGES_INDICATORS = [
         "denominator": 0,
         "result": null,
         "resultFormatted": "-",
-        "status": "Sin Dato"
+        "status": "Pendiente Actualización"
       }
     ],
     "summaryYTD": {
-      "numerator": 354,
-      "denominator": 452,
-      "result": 78.32,
-      "resultFormatted": "78.32%",
+      "numerator": 601,
+      "denominator": 746,
+      "result": 80.56,
+      "resultFormatted": "80.56%",
       "status": "No Cumple",
-      "observation": "Acumulado a Junio 2026: 78.32% vs Meta ≥ 99.5%."
+      "observation": "Acumulado a Agosto 2026: 80.56% de cumplimiento efectivo en GES oncológico (601 de 746 garantías)."
     }
   },
   {
@@ -1381,11 +1381,11 @@ export const COMGES_INDICATORS = [
       },
       {
         "month": "Julio",
-        "numerator": 0,
-        "denominator": 0,
-        "result": null,
-        "resultFormatted": "-",
-        "status": "Pendiente Actualización"
+        "numerator": 353,
+        "denominator": 491,
+        "result": 71.89,
+        "resultFormatted": "71.89%",
+        "status": "Cumple"
       },
       {
         "month": "Agosto",
@@ -1429,12 +1429,12 @@ export const COMGES_INDICATORS = [
       }
     ],
     "summaryYTD": {
-      "numerator": 1974,
-      "denominator": 2833,
-      "result": 69.68,
-      "resultFormatted": "69.68%",
+      "numerator": 2343,
+      "denominator": 3338,
+      "result": 70.19,
+      "resultFormatted": "70.19%",
       "status": "Cumple",
-      "observation": "Excelente desempeño a Junio 2026: 69.68% de ambulatorización (Meta ≥ 50%)."
+      "observation": "Acumulado a Julio 2026: 70.19% de ambulatorización en cirugías mayores electivas (2.343 CMA de 3.338 CM totales)."
     }
   },
   {
@@ -1506,11 +1506,11 @@ export const COMGES_INDICATORS = [
       },
       {
         "month": "Julio",
-        "numerator": 0,
-        "denominator": 0,
-        "result": null,
-        "resultFormatted": "-",
-        "status": "Pendiente Actualización"
+        "numerator": 721,
+        "denominator": 3717,
+        "result": 19.4,
+        "resultFormatted": "19.40%",
+        "status": "No Cumple"
       },
       {
         "month": "Agosto",
@@ -1861,7 +1861,7 @@ export const COMGES_INDICATORS = [
         "month": "Febrero",
         "numerator": 9,
         "denominator": 30,
-        "result": 30.0,
+        "result": 30,
         "resultFormatted": "30.00%",
         "status": "Cumple"
       },
@@ -2369,7 +2369,7 @@ export const COMGES_INDICATORS = [
         "month": "Marzo",
         "numerator": 1,
         "denominator": 1,
-        "result": 100.0,
+        "result": 100,
         "resultFormatted": "100.0%",
         "status": "Cumple"
       },
@@ -2449,9 +2449,9 @@ export const COMGES_INDICATORS = [
     "summaryYTD": {
       "numerator": 1,
       "denominator": 1,
-      "result": 100.0,
+      "result": 100,
       "resultFormatted": "100.0%",
-      "compliance": 100.0,
+      "compliance": 100,
       "status": "Cumple",
       "statusLabel": "Cumple",
       "observation": "1 ECPRI reportado y supervisado al 100% en marzo 2026 (Cumplimiento de meta > 80%)."

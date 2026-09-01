@@ -8,6 +8,7 @@ export const LEY19664_META = {
   service: "Servicio de Salud Araucanía Sur",
   year: 2026,
   sourceFile: "RESULTADO METAS 19664 2026 formativo.xlsx (resumen gonzalo)",
+  lastUpdatedMonth: "Julio / Agosto",
   totalIndicators: 6
 };
 
@@ -23,10 +24,10 @@ export const LEY19664_INDICATORS = [
     "target": "≥ 95.0%",
     "targetVal": 0.95,
     "summaryYTD": {
-      "numerator": 1085,
-      "denominator": 1307,
-      "result": 83.01,
-      "resultFormatted": "83.01%",
+      "numerator": 1253,
+      "denominator": 1470,
+      "result": 85.24,
+      "resultFormatted": "85.24%",
       "status": "No Cumple"
     },
     "monthlyData": [
@@ -34,8 +35,8 @@ export const LEY19664_INDICATORS = [
         "month": "Enero",
         "numerator": 253,
         "denominator": 232,
-        "result": 1.09,
-        "resultFormatted": "1.09",
+        "result": 109.05,
+        "resultFormatted": "109.05%",
         "status": "Cumple"
       },
       {
@@ -58,8 +59,8 @@ export const LEY19664_INDICATORS = [
         "month": "Abril",
         "numerator": 220,
         "denominator": 173,
-        "result": 1.27,
-        "resultFormatted": "1.27",
+        "result": 127.17,
+        "resultFormatted": "127.17%",
         "status": "Cumple"
       },
       {
@@ -80,11 +81,11 @@ export const LEY19664_INDICATORS = [
       },
       {
         "month": "Julio",
-        "numerator": null,
-        "denominator": null,
-        "result": null,
-        "resultFormatted": "-",
-        "status": "Sin Dato"
+        "numerator": 168,
+        "denominator": 163,
+        "result": 103.07,
+        "resultFormatted": "103.07%",
+        "status": "Cumple"
       },
       {
         "month": "Agosto",
@@ -133,16 +134,16 @@ export const LEY19664_INDICATORS = [
     "code": "Meta 5",
     "metaId": "5",
     "name": "Porcentaje de pacientes con indicación de hospitalización desde UEH, que acceden a cama de dotación en menos de 12 horas. C96/C96+C97+C98+C102",
-    "formula": "[(N° total de pacientes con indicación de hospitalización que espera en UEH T´< 12 horas para acceder a cama de dotación en año t / N° total de pacientes con indicación de hospitalización en UEH en año t) x 100]",
-    "weight": "6%",
-    "weightVal": 0.06,
+    "formula": "(Número total de pacientes con indicación de hospitalización que espera en UEH en un tiempo menor a 12 horas para acceder a cama de dotación / Número total de pacientes con indicación de hospitalización en UEH) x 100",
+    "weight": "10%",
+    "weightVal": 0.1,
     "target": "≥ 85.0%",
     "targetVal": 0.85,
     "summaryYTD": {
-      "numerator": 874,
-      "denominator": 1852,
-      "result": 47.19,
-      "resultFormatted": "47.19%",
+      "numerator": 955,
+      "denominator": 2154,
+      "result": 44.34,
+      "resultFormatted": "44.34%",
       "status": "No Cumple"
     },
     "monthlyData": [
@@ -189,18 +190,18 @@ export const LEY19664_INDICATORS = [
       {
         "month": "Junio",
         "numerator": 118,
-        "denominator": 342,
-        "result": 34.5,
-        "resultFormatted": "34.50%",
+        "denominator": 343,
+        "result": 34.4,
+        "resultFormatted": "34.40%",
         "status": "No Cumple"
       },
       {
         "month": "Julio",
-        "numerator": 0,
-        "denominator": 0,
-        "result": null,
-        "resultFormatted": "-",
-        "status": "Sin Dato"
+        "numerator": 81,
+        "denominator": 301,
+        "result": 26.91,
+        "resultFormatted": "26.91%",
+        "status": "No Cumple"
       },
       {
         "month": "Agosto",
@@ -249,111 +250,111 @@ export const LEY19664_INDICATORS = [
     "code": "Meta 6",
     "metaId": "6",
     "name": "Reducción del porcentaje global de cesárea en relación la línea base",
-    "formula": "(Número de cesáreas del periodo t / Número total de partos del periodo t)*112",
-    "weight": "6%",
-    "weightVal": 0.06,
-    "target": "≤ 37.9%",
-    "targetVal": 0.379,
+    "formula": "((Número total de partos por cesárea en el establecimiento año t / Número total de partos en el establecimiento año t) / (Número total de partos por cesárea en el establecimiento año t-1 / Número total de partos en el establecimiento año t-1)) * 100",
+    "weight": "35%",
+    "weightVal": 0.35,
+    "target": "≤ 30.0%",
+    "targetVal": 0.3,
     "summaryYTD": {
-      "numerator": 231,
-      "denominator": 493,
-      "result": 46.86,
-      "resultFormatted": "46.86%",
+      "numerator": 219,
+      "denominator": 381,
+      "result": 57.48,
+      "resultFormatted": "57.48%",
       "status": "No Cumple"
     },
     "monthlyData": [
       {
         "month": "Enero",
-        "numerator": 26,
-        "denominator": 68,
-        "result": 38.24,
-        "resultFormatted": "38.24%",
+        "numerator": 219,
+        "denominator": 381,
+        "result": 57.48,
+        "resultFormatted": "57.48%",
         "status": "No Cumple"
       },
       {
         "month": "Febrero",
-        "numerator": 37,
-        "denominator": 75,
-        "result": 49.33,
-        "resultFormatted": "49.33%",
-        "status": "No Cumple"
-      },
-      {
-        "month": "Marzo",
-        "numerator": 39,
-        "denominator": 84,
-        "result": 46.43,
-        "resultFormatted": "46.43%",
-        "status": "No Cumple"
-      },
-      {
-        "month": "Abril",
-        "numerator": 39,
-        "denominator": 93,
-        "result": 41.94,
-        "resultFormatted": "41.94%",
-        "status": "No Cumple"
-      },
-      {
-        "month": "Mayo",
-        "numerator": 35,
-        "denominator": 77,
-        "result": 45.45,
-        "resultFormatted": "45.45%",
-        "status": "No Cumple"
-      },
-      {
-        "month": "Junio",
-        "numerator": 55,
-        "denominator": 96,
-        "result": 57.29,
-        "resultFormatted": "57.29%",
-        "status": "No Cumple"
-      },
-      {
-        "month": "Julio",
-        "numerator": 0,
-        "denominator": 0,
+        "numerator": null,
+        "denominator": null,
         "result": null,
         "resultFormatted": "-",
         "status": "Sin Dato"
       },
       {
+        "month": "Marzo",
+        "numerator": null,
+        "denominator": null,
+        "result": null,
+        "resultFormatted": "-",
+        "status": "Sin Dato"
+      },
+      {
+        "month": "Abril",
+        "numerator": null,
+        "denominator": null,
+        "result": null,
+        "resultFormatted": "-",
+        "status": "Sin Dato"
+      },
+      {
+        "month": "Mayo",
+        "numerator": null,
+        "denominator": null,
+        "result": null,
+        "resultFormatted": "-",
+        "status": "Sin Dato"
+      },
+      {
+        "month": "Junio",
+        "numerator": null,
+        "denominator": null,
+        "result": null,
+        "resultFormatted": "-",
+        "status": "Sin Dato"
+      },
+      {
+        "month": "Julio",
+        "numerator": 219,
+        "denominator": 381,
+        "result": 57.48,
+        "resultFormatted": "57.48%",
+        "status": "No Cumple"
+      },
+      {
         "month": "Agosto",
-        "numerator": 0,
-        "denominator": 0,
+        "numerator": null,
+        "denominator": null,
         "result": null,
         "resultFormatted": "-",
         "status": "Sin Dato"
       },
       {
         "month": "Septiembre",
-        "numerator": 0,
-        "denominator": 0,
+        "numerator": null,
+        "denominator": null,
         "result": null,
         "resultFormatted": "-",
         "status": "Sin Dato"
       },
       {
         "month": "Octubre",
-        "numerator": 0,
-        "denominator": 0,
+        "numerator": null,
+        "denominator": null,
         "result": null,
         "resultFormatted": "-",
         "status": "Sin Dato"
       },
       {
         "month": "Noviembre",
-        "numerator": 0,
-        "denominator": 0,
+        "numerator": null,
+        "denominator": null,
         "result": null,
         "resultFormatted": "-",
         "status": "Sin Dato"
       },
       {
         "month": "Diciembre",
-        "numerator": 0,
-        "denominator": 0,
+        "numerator": null,
+        "denominator": null,
         "result": null,
         "resultFormatted": "-",
         "status": "Sin Dato"
@@ -365,74 +366,74 @@ export const LEY19664_INDICATORS = [
     "code": "Meta 7",
     "metaId": "7",
     "name": "Porcentaje de egresos con estadía prolongada (Outliers Superiores)",
-    "formula": "(Número de egresos con estadías prolongadas (outliers superiores) en el periodo/ Número total de egresos codificados en el periodo) *112",
-    "weight": "43%",
-    "weightVal": 0.43,
-    "target": "≤ 5.0% Exceso",
-    "targetVal": 0.05,
+    "formula": "(Número de egresos con estadía prolongada (outliers superiores) en el año t / Número total de egresos en el año t) * 100",
+    "weight": "20%",
+    "weightVal": 0.2,
+    "target": "≤ 3.0%",
+    "targetVal": 0.03,
     "summaryYTD": {
-      "numerator": 77,
-      "denominator": 3268,
-      "result": 2.36,
-      "resultFormatted": "2.36%",
-      "status": "Cumple"
+      "numerator": 1422,
+      "denominator": 1938,
+      "result": 73.37,
+      "resultFormatted": "73.37%",
+      "status": "No Cumple"
     },
     "monthlyData": [
       {
         "month": "Enero",
-        "numerator": 11,
-        "denominator": 534,
-        "result": 2.06,
-        "resultFormatted": "2.06%",
-        "status": "Cumple"
+        "numerator": 1422,
+        "denominator": 1938,
+        "result": 73.37,
+        "resultFormatted": "73.37%",
+        "status": "No Cumple"
       },
       {
         "month": "Febrero",
-        "numerator": 14,
-        "denominator": 511,
-        "result": 2.74,
-        "resultFormatted": "2.74%",
-        "status": "Cumple"
-      },
-      {
-        "month": "Marzo",
-        "numerator": 12,
-        "denominator": 603,
-        "result": 1.99,
-        "resultFormatted": "1.99%",
-        "status": "Cumple"
-      },
-      {
-        "month": "Abril",
-        "numerator": 13,
-        "denominator": 565,
-        "result": 2.3,
-        "resultFormatted": "2.30%",
-        "status": "Cumple"
-      },
-      {
-        "month": "Mayo",
-        "numerator": 13,
-        "denominator": 528,
-        "result": 2.46,
-        "resultFormatted": "2.46%",
-        "status": "Cumple"
-      },
-      {
-        "month": "Junio",
-        "numerator": 14,
-        "denominator": 527,
-        "result": 2.66,
-        "resultFormatted": "2.66%",
-        "status": "Cumple"
-      },
-      {
-        "month": "Julio",
         "numerator": null,
         "denominator": null,
         "result": null,
         "resultFormatted": "-",
         "status": "Sin Dato"
+      },
+      {
+        "month": "Marzo",
+        "numerator": null,
+        "denominator": null,
+        "result": null,
+        "resultFormatted": "-",
+        "status": "Sin Dato"
+      },
+      {
+        "month": "Abril",
+        "numerator": null,
+        "denominator": null,
+        "result": null,
+        "resultFormatted": "-",
+        "status": "Sin Dato"
+      },
+      {
+        "month": "Mayo",
+        "numerator": null,
+        "denominator": null,
+        "result": null,
+        "resultFormatted": "-",
+        "status": "Sin Dato"
+      },
+      {
+        "month": "Junio",
+        "numerator": null,
+        "denominator": null,
+        "result": null,
+        "resultFormatted": "-",
+        "status": "Sin Dato"
+      },
+      {
+        "month": "Julio",
+        "numerator": 1422,
+        "denominator": 1938,
+        "result": 73.37,
+        "resultFormatted": "73.37%",
+        "status": "No Cumple"
       },
       {
         "month": "Agosto",
@@ -479,17 +480,17 @@ export const LEY19664_INDICATORS = [
   {
     "id": "ley19664-8",
     "code": "Meta 8",
-    "metaId": "8",
+    "metaId": "11",
     "name": "Garantías oncológicas exceptuadas transitorias acumuladas sin prestación resueltas",
-    "formula": "(Número de garantías oncológicas exceptuadas transitorias acumuladas sin prestación de años 2015 al 2024 resueltas / Número total de garantías\noncológicas exceptuadas transitorias acumuladas sin prestación del período 2015 al 2024) *100.",
-    "weight": "10%",
-    "weightVal": 0.1,
-    "target": "≥ 80.0%",
-    "targetVal": 0.8,
+    "formula": "(Número de garantías oncológicas exceptuadas transitorias acumuladas sin prestación de años 2015 al 2024 resueltas / Número total de garantías oncológicas exceptuadas transitorias acumuladas sin prestación del período 2015 al 2024) *100",
+    "weight": "20%",
+    "weightVal": 0.2,
+    "target": "≥ 100.0%",
+    "targetVal": 1,
     "summaryYTD": {
       "numerator": null,
       "denominator": null,
-      "result": 100.0,
+      "result": 100,
       "resultFormatted": "100.00%",
       "status": "Cumple"
     },
@@ -595,18 +596,18 @@ export const LEY19664_INDICATORS = [
   {
     "id": "ley19664-9",
     "code": "Meta 9",
-    "metaId": "9",
+    "metaId": "12",
     "name": "Porcentaje de Gestión Efectiva para el cumplimiento Ges en la Red",
-    "formula": "((Garantías Cumplidas + Garantías Exceptuadas + Garantías Incumplidas Atendidas) en el año t / (Garantías Cumplidas + Garantías Exceptuadas + Garantías Incumplidas Atendidas + Garantías Incumplidas No Atendidas) en el año t + Garantías Retrasadas acumuladas)) x 112",
-    "weight": "6%",
-    "weightVal": 0.06,
-    "target": "100.0%",
-    "targetVal": 1.0,
+    "formula": "((Garantías Cumplidas + Garantías Exceptuadas + Garantías Incumplidas Atendidas) en el año t / (Garantías Cumplidas + Garantías Exceptuadas + Garantías Incumplidas Atendidas + Garantías Incumplidas No Atendidas) en el año t + Garantías Retrasadas acumuladas)) x 100",
+    "weight": "10%",
+    "weightVal": 0.1,
+    "target": "≥ 99.5%",
+    "targetVal": 0.995,
     "summaryYTD": {
-      "numerator": 6399,
-      "denominator": 6979,
-      "result": 91.69,
-      "resultFormatted": "91.69%",
+      "numerator": 7628,
+      "denominator": 8345,
+      "result": 91.41,
+      "resultFormatted": "91.41%",
       "status": "No Cumple"
     },
     "monthlyData": [
@@ -660,11 +661,11 @@ export const LEY19664_INDICATORS = [
       },
       {
         "month": "Julio",
-        "numerator": 0,
-        "denominator": 0,
-        "result": null,
-        "resultFormatted": "-",
-        "status": "Sin Dato"
+        "numerator": 7628,
+        "denominator": 8345,
+        "result": 91.41,
+        "resultFormatted": "91.41%",
+        "status": "No Cumple"
       },
       {
         "month": "Agosto",
