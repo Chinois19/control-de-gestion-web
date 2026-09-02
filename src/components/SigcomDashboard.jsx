@@ -247,7 +247,7 @@ function CostDrilldownChart({ chartData, globalRrhhBreakdown, globalGgBreakdown,
         <div style={{ padding: '1.25rem 1rem 1rem' }}>
           {enrichedData.length > 0 && chartSeries.length > 0 ? (
             <ResponsiveContainer width="100%" height={430}>
-              <ComposedChart data={enrichedData} margin={{ top: 10, right: 20, left: 10, bottom: 5 }}>
+              <ComposedChart data={enrichedData} margin={{ top: 32, right: 24, left: 10, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
                 <XAxis dataKey="name" tick={{ fontSize: 11, fill: '#64748b' }} />
                 <YAxis tickFormatter={fmtM} tick={{ fontSize: 11, fill: '#64748b' }} width={72} />
@@ -258,9 +258,22 @@ function CostDrilldownChart({ chartData, globalRrhhBreakdown, globalGgBreakdown,
                 <Legend formatter={(value) => chartSeries.find(s=>s.id===value)?.label || value} wrapperStyle={{ fontSize: '11px' }} />
                 {chartSeries.map((s, i) => (
                   <Line key={s.id} type="monotone" dataKey={s.id} name={s.id}
-                    stroke={s.color} strokeWidth={2.5} dot={{ r: 3, fill: s.color }}
-                    activeDot={{ r: 5 }} connectNulls animationDuration={400}
-                  />
+                    stroke={s.color} strokeWidth={2.5} dot={{ r: 3.5, fill: s.color }}
+                    activeDot={{ r: 6 }} connectNulls animationDuration={400}
+                  >
+                    <LabelList
+                      dataKey={s.id}
+                      position="top"
+                      offset={8}
+                      formatter={(v) => {
+                        if (!v || v === 0) return '';
+                        if (Math.abs(v) >= 1e9) return `$${(v/1e9).toFixed(1).replace('.',',')}B`;
+                        if (Math.abs(v) >= 1e6) return `$${(v/1e6).toFixed(1).replace('.',',')}M`;
+                        return `$${Math.round(v).toLocaleString('es-CL')}`;
+                      }}
+                      style={{ fontSize: '9.5px', fill: s.color, fontWeight: 600, opacity: 0.8 }}
+                    />
+                  </Line>
                 ))}
               </ComposedChart>
             </ResponsiveContainer>
