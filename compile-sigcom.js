@@ -132,18 +132,31 @@ const compileData = () => {
           const f4Workbook = readFile(f4Path);
           const f4Data = utils.sheet_to_json(f4Workbook.Sheets[f4Workbook.SheetNames[0]], { header: 1 });
           
-          for (let i = 2; i < f4Data.length; i++) {
+          // Auto-detect column layout:
+          // Formato_4 (.xlsx): fila 1=header, datos desde fila 2: col2=CC, col4=unidad, col5=valor
+          // Planilla_4 (.xls): sin header, datos desde fila 0:  col1=CC, col3=unidad, col4=valor
+          const isPlanilla4 = formato4File.startsWith('Planilla_4');
+          const startRow = isPlanilla4 ? 0 : 2;
+          const ccCol    = isPlanilla4 ? 1 : 2;
+          const unitCol  = isPlanilla4 ? 3 : 4;
+          const valCol   = isPlanilla4 ? 4 : 5;
+
+          if (isPlanilla4) {
+            console.log(`  → Planilla_4 layout detectado (startRow=${startRow}, cc=col${ccCol}, unit=col${unitCol}, val=col${valCol})`);
+          }
+
+          for (let i = startRow; i < f4Data.length; i++) {
             const row = f4Data[i];
-            const cc = row[2];
-            const unit = row[4];
-            const val = parseFloat(row[5]);
-            if (cc && unit && !isNaN(val)) {
+            const cc = row[ccCol];
+            const unit = row[unitCol];
+            const val = parseFloat(row[valCol]);
+            if (cc && unit && !isNaN(val) && val > 0) {
               if (!productionMap[cc]) productionMap[cc] = {};
-              productionMap[cc][unit] = val;
+              productionMap[cc][unit] = (productionMap[cc][unit] || 0) + val;
             }
           }
         } catch (e) {
-          console.error(`Error reading Formato 4 for ${year}-${month}`);
+          console.error(`Error reading Formato 4 for ${year}-${month}:`, e.message);
         }
       }
 
