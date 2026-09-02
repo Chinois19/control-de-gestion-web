@@ -23,6 +23,259 @@ const GROUP_TO_BAND_MAP = {
   "Cirugía Mayor Ambulatoria": "Cirugia Mayor Ambulatoria"
 };
 
+// ─────────────────────────────────────────────────────────────────────────────
+// DRILL-DOWN LINE CHART COMPONENT
+// ─────────────────────────────────────────────────────────────────────────────
+const LINE_PALETTE = [
+  '#0ea5e9','#10b981','#f59e0b','#e63956','#8b5cf6','#ec4899','#14b8a6',
+  '#f97316','#6366f1','#84cc16','#06b6d4','#a855f7','#ef4444','#22c55e'
+];
+
+const HIERARCHY_DEF = [
+  { id: 'total',     label: 'Costo Total CC',          key: 'totalCost',  color: '#0f172a', bdKey: null,
+    children: [
+      { id: 'directos',   label: 'Gasto Directo',       key: 'directos',   color: '#0ea5e9', bdKey: null,
+        children: [
+          { id: 'rrhh',    label: 'Recursos Humanos',    key: 'rrhh',       color: '#00c4cc', bdKey: 'rrhhBreakdown' },
+          { id: 'insumos', label: 'Insumos Médicos',     key: 'insumos',    color: '#ff9f00', bdKey: 'insumosBreakdown' },
+          { id: 'gg',      label: 'Gastos Generales',    key: 'gg',         color: '#e63956', bdKey: 'ggBreakdown' },
+        ]
+      },
+      { id: 'indirectos', label: 'Gasto Indirecto',    key: 'indirectos', color: '#a855f7', bdKey: null, children: [] },
+    ]
+  }
+];
+
+function flattenHierarchy(nodes, level = 0) {
+  const result = [];
+  nodes.forEach(n => {
+    result.push({ ...n, level });
+    if (n._open && n.children && n.children.length) {
+      result.push(...flattenHierarchy(n.children, level + 1));
+    }
+  });
+  return result;
+}
+
+function CostDrilldownChart({ chartData, globalRrhhBreakdown, globalGgBreakdown, globalInsumosBreakdown }) {
+  const fmtCLP = v => new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP', maximumFractionDigits: 0 }).format(v);
+  const fmtM   = v => {
+    if (Math.abs(v) >= 1e9) return `$${(v/1e9).toFixed(1)}B`;
+    if (Math.abs(v) >= 1e6) return `$${(v/1e6).toFixed(1)}M`;
+    if (Math.abs(v) >= 1e3) return `$${(v/1e3).toFixed(0)}k`;
+    return `$${v.toFixed(0)}`;
+  };
+
+  // openIds: set of node ids that are expanded
+  const [openIds, setOpenIds] = React.useState(new Set(['total']));
+  // activeLines: set of leaf/branch node ids shown as lines
+  const [activeLines, setActiveLines] = React.useState(new Set(['total']));
+
+  // Build the breakdown keys universe from global breakdowns
+  const bdSources = { rrhhBreakdown: globalRrhhBreakdown, insumosBreakdown: globalInsumosBreakdown, ggBreakdown: globalGgBreakdown };
+
+  // Recursively build node tree with _open flag
+  function buildTree(defs) {
+    return defs.map(d => ({
+      ...d,
+      _open: openIds.has(d.id),
+      children: d.children ? buildTree(d.children) : []
+    }));
+  }
+
+  // Build sub-items for breakdown categories dynamically
+  function getSubItems(node) {
+    if (!node.bdKey) return [];
+    const src = bdSources[node.bdKey] || {};
+    return Object.entries(src)
+      .filter(([,v]) => v > 0)
+      .sort((a,b) => b[1]-a[1])
+      .map(([name], i) => ({
+        id: `${node.id}__${name}`,
+        label: name.length > 32 ? name.substring(0,32)+'…' : name,
+        labelFull: name,
+        key: null,
+        bdKey: null,
+        bdParent: node.bdKey,
+        bdName: name,
+        color: LINE_PALETTE[(i+4) % LINE_PALETTE.length],
+        children: []
+      }));
+  }
+
+  // Toggle open/close of a node
+  const toggleOpen = (node) => {
+    const subs = node.children && node.children.length ? node.children : (node.bdKey ? getSubItems(node) : []);
+    if (subs.length === 0) return; // leaf with no children
+
+    setOpenIds(prev => {
+      const next = new Set(prev);
+      if (next.has(node.id)) {
+        // Close: remove node and all its descendants from openIds and activeLines
+        const removeIds = new Set();
+        const collect = (n) => { removeIds.add(n.id); (n.children||[]).forEach(collect); getSubItems(n).forEach(collect); };
+        collect(node);
+        removeIds.forEach(id => next.delete(id));
+        setActiveLines(al => { const n2 = new Set(al); removeIds.forEach(id => n2.delete(id)); if(n2.size===0) n2.add('total'); return n2; });
+      } else {
+        next.add(node.id);
+      }
+      return next;
+    });
+  };
+
+  // Toggle a line active/inactive
+  const toggleLine = (id) => {
+    setActiveLines(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) { next.delete(id); if (next.size === 0) next.add('total'); }
+      else next.add(id);
+      return next;
+    });
+  };
+
+  // Collect all visible flat nodes
+  const tree = buildTree(HIERARCHY_DEF);
+  const buildVisible = (nodes, level=0) => {
+    const result = [];
+    nodes.forEach(node => {
+      const subs = node.children && node.children.length ? node.children : (node.bdKey ? getSubItems(node) : []);
+      const hasChildren = subs.length > 0;
+      result.push({ ...node, level, hasChildren, _subItems: subs });
+      if (openIds.has(node.id)) {
+        result.push(...buildVisible(subs, level+1));
+      }
+    });
+    return result;
+  };
+  const visibleNodes = buildVisible(tree);
+
+  // Build chart series: for each active line, map chartData months
+  const lineColorMap = {};
+  visibleNodes.forEach((n,i) => { lineColorMap[n.id] = n.color || LINE_PALETTE[i % LINE_PALETTE.length]; });
+
+  const chartSeries = [...activeLines].map(id => {
+    const node = visibleNodes.find(n => n.id === id);
+    if (!node) return null;
+    return { id, label: node.label, color: lineColorMap[id] || '#888', node };
+  }).filter(Boolean);
+
+  // Build chart data points
+  const enrichedData = chartData.map(d => {
+    const point = { name: d.name };
+    chartSeries.forEach(s => {
+      const { node } = s;
+      if (node.key) {
+        // direct field
+        point[s.id] = d[node.key] || 0;
+      } else if (node.bdParent && node.bdName) {
+        // sub-breakdown item
+        const bd = d[node.bdParent] || {};
+        point[s.id] = bd[node.bdName] || 0;
+      }
+    });
+    return point;
+  });
+
+  const totalForNode = (node) => {
+    if (node.key) return chartData.reduce((a,d) => a+(d[node.key]||0), 0);
+    if (node.bdParent && node.bdName) {
+      const src = bdSources[node.bdParent] || {};
+      return src[node.bdName] || 0;
+    }
+    return 0;
+  };
+
+  return (
+    <div style={{ background: 'white', borderRadius: '14px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.04)', overflow: 'hidden' }}>
+      <div style={{ padding: '1.25rem 1.5rem', borderBottom: '1px solid #f1f5f9' }}>
+        <h3 style={{ margin: 0, fontSize: '0.95rem', fontWeight: 800, color: '#0f172a' }}>Explorador de Tendencias de Costos</h3>
+        <p style={{ margin: '2px 0 0', fontSize: '0.78rem', color: '#64748b' }}>
+          Navegue por la jerarquía de costos — haga clic en ▶ para expandir categorías y ver su evolución temporal como líneas independientes.
+        </p>
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: '280px 1fr', minHeight: '420px' }}>
+
+        {/* LEFT: Hierarchy tree */}
+        <div style={{ borderRight: '1px solid #f1f5f9', padding: '1rem 0', overflowY: 'auto', maxHeight: '520px' }}>
+          {visibleNodes.map(node => {
+            const isActive = activeLines.has(node.id);
+            const isOpen = openIds.has(node.id);
+            const total = totalForNode(node);
+            return (
+              <div
+                key={node.id}
+                style={{ paddingLeft: `${12 + node.level * 16}px`, paddingRight: '12px', paddingTop: '7px', paddingBottom: '7px',
+                  borderLeft: isActive ? `3px solid ${node.color || '#888'}` : '3px solid transparent',
+                  background: isActive ? `${(node.color||'#888')}12` : 'transparent',
+                  cursor: 'pointer', transition: 'all 0.15s ease' }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  {/* Expand toggle */}
+                  <span
+                    onClick={(e) => { e.stopPropagation(); toggleOpen(node); }}
+                    style={{ fontSize: '0.65rem', color: node.hasChildren ? '#64748b' : 'transparent',
+                      cursor: node.hasChildren ? 'pointer' : 'default', minWidth: '14px', userSelect: 'none',
+                      transition: 'transform 0.2s', display: 'inline-block', transform: isOpen ? 'rotate(90deg)' : 'none' }}
+                  >▶</span>
+                  {/* Color dot + label */}
+                  <div
+                    style={{ display: 'flex', alignItems: 'center', gap: '6px', flex: 1 }}
+                    onClick={() => toggleLine(node.id)}
+                  >
+                    <div style={{ width: '10px', height: '10px', borderRadius: '50%',
+                      background: isActive ? (node.color||'#888') : '#cbd5e1', flexShrink: 0 }} />
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontSize: '0.76rem', fontWeight: isActive ? 700 : 500,
+                        color: isActive ? '#0f172a' : '#475569', lineHeight: 1.2 }}>
+                        {node.label}
+                      </div>
+                      {total > 0 && (
+                        <div style={{ fontSize: '0.67rem', color: '#94a3b8', marginTop: '1px' }}>
+                          {fmtM(total)}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* RIGHT: Line chart */}
+        <div style={{ padding: '1.25rem 1rem 1rem' }}>
+          {enrichedData.length > 0 && chartSeries.length > 0 ? (
+            <ResponsiveContainer width="100%" height={430}>
+              <ComposedChart data={enrichedData} margin={{ top: 10, right: 20, left: 10, bottom: 5 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                <XAxis dataKey="name" tick={{ fontSize: 11, fill: '#64748b' }} />
+                <YAxis tickFormatter={fmtM} tick={{ fontSize: 11, fill: '#64748b' }} width={72} />
+                <Tooltip
+                  formatter={(value, name) => [fmtCLP(value), chartSeries.find(s=>s.id===name)?.label || name]}
+                  contentStyle={{ fontSize: '12px', borderRadius: '10px', border: '1px solid #e2e8f0', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
+                />
+                <Legend formatter={(value) => chartSeries.find(s=>s.id===value)?.label || value} wrapperStyle={{ fontSize: '11px' }} />
+                {chartSeries.map((s, i) => (
+                  <Line key={s.id} type="monotone" dataKey={s.id} name={s.id}
+                    stroke={s.color} strokeWidth={2.5} dot={{ r: 3, fill: s.color }}
+                    activeDot={{ r: 5 }} connectNulls animationDuration={400}
+                  />
+                ))}
+              </ComposedChart>
+            </ResponsiveContainer>
+          ) : (
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: '#94a3b8', fontSize: '0.85rem' }}>
+              Seleccione conceptos en la jerarquía de la izquierda para ver su evolución
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 export default function SigcomDashboard({ onBack }) {
   const groupings = useMemo(() => sigcomJson.groupings || {}, []);
   const bands = useMemo(() => sigcomJson.bands || {}, []);
@@ -146,7 +399,7 @@ export default function SigcomDashboard({ onBack }) {
   const formatCompact = (val) => new Intl.NumberFormat('es-CL', { notation: 'compact', maximumFractionDigits: 1 }).format(val);
 
   // Core Data calculations
-  const { chartData, kpis, insights, tableData, activeBandaObj, globalInsumosBreakdown, ccStatusList, activeBandName } = useMemo(() => {
+  const { chartData, kpis, insights, tableData, activeBandaObj, globalInsumosBreakdown, globalRrhhBreakdown, globalGgBreakdown, ccStatusList, activeBandName } = useMemo(() => {
     // 1. Determine active cost centers
     let activeCCNames = [];
     if (analysisMode === 'agrupacion') {
@@ -167,6 +420,13 @@ export default function SigcomDashboard({ onBack }) {
     
     const ccMap = {};
     const globalInsumosBreakdown = {};
+    const globalRrhhBreakdown = {};
+    const globalGgBreakdown = {};
+
+    const mergeBreakdown = (target, src) => {
+      if (!src) return;
+      Object.entries(src).forEach(([k, v]) => { target[k] = (target[k] || 0) + v; });
+    };
 
     filtered.forEach(item => {
       // Monthly aggregation
@@ -174,7 +434,8 @@ export default function SigcomDashboard({ onBack }) {
       if (!monthlyMap[timeKey]) {
         monthlyMap[timeKey] = {
           timeKey, year: item.year, month: item.month, name: `${monthsNames[item.month - 1]} ${item.year.toString().slice(2)}`,
-          insumos: 0, rrhh: 0, gg: 0, directos: 0, indirectos: 0, totalCost: 0, totalProd: 0
+          insumos: 0, rrhh: 0, gg: 0, directos: 0, indirectos: 0, totalCost: 0, totalProd: 0,
+          insumosBreakdown: {}, rrhhBreakdown: {}, ggBreakdown: {}
         };
       }
       monthlyMap[timeKey].insumos += item.insumos || 0;
@@ -184,6 +445,9 @@ export default function SigcomDashboard({ onBack }) {
       monthlyMap[timeKey].indirectos += item.indirectos || 0;
       monthlyMap[timeKey].totalCost += item.total || 0;
       monthlyMap[timeKey].totalProd += item.productionTotal || 0;
+      mergeBreakdown(monthlyMap[timeKey].insumosBreakdown, item.insumosBreakdown);
+      mergeBreakdown(monthlyMap[timeKey].rrhhBreakdown, item.rrhhBreakdown);
+      mergeBreakdown(monthlyMap[timeKey].ggBreakdown, item.ggBreakdown);
 
       // Globals
       totalInsumos += item.insumos || 0;
@@ -193,15 +457,16 @@ export default function SigcomDashboard({ onBack }) {
       totalIndirectos += item.indirectos || 0;
       totalCost += item.total || 0;
       totalProd += item.productionTotal || 0;
+      mergeBreakdown(globalInsumosBreakdown, item.insumosBreakdown);
+      mergeBreakdown(globalRrhhBreakdown, item.rrhhBreakdown);
+      mergeBreakdown(globalGgBreakdown, item.ggBreakdown);
 
       // CC Aggregation
       if (!ccMap[item.costCenter]) {
         ccMap[item.costCenter] = {
-          id: item.costCenter,
-          label: item.costCenter,
-          type: 'cc',
+          id: item.costCenter, label: item.costCenter, type: 'cc',
           total: 0, rrhh: 0, gg: 0, insumos: 0, directos: 0, indirectos: 0, prod: 0,
-          insumosBreakdown: {}
+          insumosBreakdown: {}, rrhhBreakdown: {}, ggBreakdown: {}
         };
       }
       ccMap[item.costCenter].total += item.total || 0;
@@ -211,13 +476,9 @@ export default function SigcomDashboard({ onBack }) {
       ccMap[item.costCenter].directos += item.directos || ((item.rrhh || 0) + (item.insumos || 0) + (item.gastosGenerales || 0));
       ccMap[item.costCenter].indirectos += item.indirectos || 0;
       ccMap[item.costCenter].prod += item.productionTotal || 0;
-
-      if (item.insumosBreakdown) {
-        Object.entries(item.insumosBreakdown).forEach(([k, v]) => {
-          globalInsumosBreakdown[k] = (globalInsumosBreakdown[k] || 0) + v;
-          ccMap[item.costCenter].insumosBreakdown[k] = (ccMap[item.costCenter].insumosBreakdown[k] || 0) + v;
-        });
-      }
+      mergeBreakdown(ccMap[item.costCenter].insumosBreakdown, item.insumosBreakdown);
+      mergeBreakdown(ccMap[item.costCenter].rrhhBreakdown, item.rrhhBreakdown);
+      mergeBreakdown(ccMap[item.costCenter].ggBreakdown, item.ggBreakdown);
     });
 
     const cData = Object.values(monthlyMap).sort((a, b) => {
@@ -328,7 +589,7 @@ export default function SigcomDashboard({ onBack }) {
       insights: genInsights, 
       tableData: tData, 
       activeBandaObj: selectedCostType === 'directos' ? bandasObj : null, 
-      globalInsumosBreakdown,
+      globalInsumosBreakdown, globalRrhhBreakdown, globalGgBreakdown,
       ccStatusList,
       activeBandName: selectedCostType === 'directos' ? (activeBandKey || 'Cálculo Automático') : 'No aplicable (solo costo directo)'
     };
@@ -920,8 +1181,9 @@ export default function SigcomDashboard({ onBack }) {
           </div>
         </div>
 
-        {/* 3.- INTERACTIVE DRILL-DOWN LAYERS & TREEMAP OF INSUMOS (Requirement 7 & 8) */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+        {/* 3.- DRILL-DOWN LINE CHART */}
+        <CostDrilldownChart chartData={chartData} globalRrhhBreakdown={globalRrhhBreakdown} globalGgBreakdown={globalGgBreakdown} globalInsumosBreakdown={globalInsumosBreakdown} />
+        <div style={{ display: 'none' }}>
           
           {/* Left: Cost Layer Explorer */}
           <div style={{ background: 'white', borderRadius: '12px', border: '1px solid #e2e8f0', padding: '1.5rem', display: 'flex', flexDirection: 'column', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.02)' }}>

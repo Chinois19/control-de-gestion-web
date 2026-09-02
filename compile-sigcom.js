@@ -168,26 +168,35 @@ const compileData = () => {
 
         const ccNames = data[1] || [];
         
-        let rrhhRow = data.find(row => row[1] === 'RECURSO HUMANO');
-        let ggRow = data.find(row => row[1] === 'Bienes y Servicios de Consumo' || row[1] === 'GASTOS GENERALES' || row[1] === 'BIENES Y SERVICIOS DE CONSUMO');
-        
+        let rrhhIndex    = data.findIndex(row => row[1] === 'RECURSO HUMANO');
+        let ggIndex      = data.findIndex(row => row[1] === 'GASTOS GENERALES' || row[1] === 'Bienes y Servicios de Consumo' || row[1] === 'BIENES Y SERVICIOS DE CONSUMO');
         let insumosIndex = data.findIndex(row => row[1] === 'INSUMOS');
-        let directosIndex = data.findIndex(row => row[1] === 'DIRECTOS');
+        let directosIndex= data.findIndex(row => row[1] === 'DIRECTOS');
         
-        const insumosRow = data[insumosIndex];
-        const directosRow = data[directosIndex];
+        const rrhhRow       = data[rrhhIndex];
+        const ggRow         = data[ggIndex];
+        const insumosRow    = data[insumosIndex];
+        const directosRow   = data[directosIndex];
         const indirectosRow = data.find(row => row[1] === 'INDIRECTOS');
         const totalGeneralRow = data.find(row => row[1] === 'TOTAL GENERAL');
         
-        // Extract sub-insumos
-        const detailedInsumosRows = [];
-        if (insumosIndex > -1 && directosIndex > insumosIndex) {
-          for (let i = insumosIndex + 1; i < directosIndex; i++) {
-            if (data[i] && data[i][1]) {
-              detailedInsumosRows.push(data[i]);
+        // Extract sub-rows between two parent rows
+        const extractSubRows = (startIdx, endIdx) => {
+          const rows = [];
+          if (startIdx > -1 && endIdx > startIdx) {
+            for (let i = startIdx + 1; i < endIdx; i++) {
+              if (data[i] && data[i][1]) rows.push(data[i]);
             }
           }
-        }
+          return rows;
+        };
+
+        // RRHH sub-rows: between RECURSO HUMANO and GASTOS GENERALES
+        const rrhhSubRows = extractSubRows(rrhhIndex, ggIndex > -1 ? ggIndex : insumosIndex);
+        // GG sub-rows: between GASTOS GENERALES and INSUMOS
+        const ggSubRows = extractSubRows(ggIndex, insumosIndex);
+        // Insumos sub-rows: between INSUMOS and DIRECTOS
+        const insumosSubRows = extractSubRows(insumosIndex, directosIndex);
 
         const getVal = (row, colIdx) => row ? (parseFloat(row[colIdx]) || 0) : 0;
 
@@ -195,33 +204,38 @@ const compileData = () => {
           const cc = ccNames[col];
           if (!cc) continue;
 
-          const rrhhVal = getVal(rrhhRow, col);
-          const ggVal = getVal(ggRow, col);
-          const insumosVal = getVal(insumosRow, col);
+          const rrhhVal     = getVal(rrhhRow, col);
+          const ggVal       = getVal(ggRow, col);
+          const insumosVal  = getVal(insumosRow, col);
           const directosVal = getVal(directosRow, col) || (rrhhVal + ggVal + insumosVal);
           const indirectosVal = getVal(indirectosRow, col);
-          const totalVal = getVal(totalGeneralRow, col) || (directosVal + indirectosVal);
+          const totalVal    = getVal(totalGeneralRow, col) || (directosVal + indirectosVal);
 
           if (totalVal > 0 || (productionMap[cc] && Object.keys(productionMap[cc]).length > 0)) {
             
-            const insumosBreakdown = {};
-            detailedInsumosRows.forEach(r => {
-              const val = getVal(r, col);
-              if (val > 0) insumosBreakdown[r[1]] = val;
-            });
+            // Build breakdowns (only include items with value > 0)
+            const buildBreakdown = (subRows) => {
+              const bd = {};
+              subRows.forEach(r => {
+                const val = getVal(r, col);
+                if (val > 0) bd[r[1]] = val;
+              });
+              return bd;
+            };
+
+            const insumosBreakdown = buildBreakdown(insumosSubRows);
+            const rrhhBreakdown    = buildBreakdown(rrhhSubRows);
+            const ggBreakdown      = buildBreakdown(ggSubRows);
 
             // Find the primary production metric (Egreso, Intervencion, Consulta)
             const prodObj = productionMap[cc] || {};
             let prodTotal = 0;
-            // Common primary metrics for MINSAL bands:
             if (prodObj['Egreso']) prodTotal = prodObj['Egreso'];
             else if (prodObj['DCO']) prodTotal = prodObj['DCO'];
-            else if (prodObj['Intervenciones Quirurgicas'] || prodObj['Intervención Quirúrgica']) prodTotal = prodObj['Intervenciones Quirurgicas'] || prodObj['Intervención Quirúrgica'];
+            else if (prodObj['Intervenciones Quirurgicas'] || prodObj['Intervención Quirúrgica'] || prodObj['Intervencion quirurgica']) 
+              prodTotal = prodObj['Intervenciones Quirurgicas'] || prodObj['Intervención Quirúrgica'] || prodObj['Intervencion quirurgica'];
             else if (prodObj['Consulta']) prodTotal = prodObj['Consulta'];
-            else {
-              // fallback: sum of whatever is there
-              prodTotal = Object.values(prodObj).reduce((a, b) => a + b, 0);
-            }
+            else prodTotal = Object.values(prodObj).reduce((a, b) => a + b, 0);
 
             existingData.push({
               id: `${year}-${month}-${col}`,
@@ -236,7 +250,9 @@ const compileData = () => {
               total: totalVal,
               productionDetails: prodObj,
               productionTotal: prodTotal,
-              insumosBreakdown
+              insumosBreakdown,
+              rrhhBreakdown,
+              ggBreakdown
             });
           }
         }
