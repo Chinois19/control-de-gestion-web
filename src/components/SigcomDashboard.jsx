@@ -57,19 +57,25 @@ function flattenHierarchy(nodes, level = 0) {
   return result;
 }
 
-function CostDrilldownChart({ chartData, globalRrhhBreakdown, globalGgBreakdown, globalInsumosBreakdown }) {
+function CostDrilldownChart({ chartData, globalRrhhBreakdown, globalGgBreakdown, globalInsumosBreakdown, totalProd = 0 }) {
   const fmtCLP = v => new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP', maximumFractionDigits: 0 }).format(v);
-  const fmtM   = v => {
+  const fmtM = v => {
+    if (!v && v !== 0) return '$0';
     if (Math.abs(v) >= 1e9) return `$${(v/1e9).toFixed(1)}B`;
     if (Math.abs(v) >= 1e6) return `$${(v/1e6).toFixed(1)}M`;
     if (Math.abs(v) >= 1e3) return `$${(v/1e3).toFixed(0)}k`;
     return `$${v.toFixed(0)}`;
   };
+  const fmtDec = v => new Intl.NumberFormat('es-CL', { maximumFractionDigits: 1 }).format(v);
 
-  // openIds: set of node ids that are expanded
-  const [openIds, setOpenIds] = React.useState(new Set(['total']));
+  // openIds: set of node ids that are expanded in tree
+  const [openIds, setOpenIds] = React.useState(new Set(['total', 'directos', 'insumos']));
   // activeLines: set of leaf/branch node ids shown as lines
   const [activeLines, setActiveLines] = React.useState(new Set(['total']));
+  // Mode: 'gasto' ($ total) vs 'unitario' ($ / prod)
+  const [metricMode, setMetricMode] = React.useState('gasto');
+  // Show combined sum line
+  const [showCombinedSum, setShowCombinedSum] = React.useState(true);
 
   // Build the breakdown keys universe from global breakdowns
   const bdSources = { rrhhBreakdown: globalRrhhBreakdown, insumosBreakdown: globalInsumosBreakdown, ggBreakdown: globalGgBreakdown };
@@ -88,17 +94,17 @@ function CostDrilldownChart({ chartData, globalRrhhBreakdown, globalGgBreakdown,
     if (!node.bdKey) return [];
     const src = bdSources[node.bdKey] || {};
     return Object.entries(src)
-      .filter(([,v]) => v > 0)
-      .sort((a,b) => b[1]-a[1])
+      .filter(([, v]) => v > 0)
+      .sort((a, b) => b[1] - a[1])
       .map(([name], i) => ({
         id: `${node.id}__${name}`,
-        label: name.length > 32 ? name.substring(0,32)+'…' : name,
+        label: name.length > 32 ? name.substring(0, 32) + '…' : name,
         labelFull: name,
         key: null,
         bdKey: null,
         bdParent: node.bdKey,
         bdName: name,
-        color: LINE_PALETTE[(i+4) % LINE_PALETTE.length],
+        color: LINE_PALETTE[(i + 4) % LINE_PALETTE.length],
         children: []
       }));
   }
@@ -106,17 +112,19 @@ function CostDrilldownChart({ chartData, globalRrhhBreakdown, globalGgBreakdown,
   // Toggle open/close of a node
   const toggleOpen = (node) => {
     const subs = node.children && node.children.length ? node.children : (node.bdKey ? getSubItems(node) : []);
-    if (subs.length === 0) return; // leaf with no children
+    if (subs.length === 0) return;
 
     setOpenIds(prev => {
       const next = new Set(prev);
       if (next.has(node.id)) {
-        // Close: remove node and all its descendants from openIds and activeLines
         const removeIds = new Set();
-        const collect = (n) => { removeIds.add(n.id); (n.children||[]).forEach(collect); getSubItems(n).forEach(collect); };
+        const collect = (n) => { 
+          removeIds.add(n.id); 
+          (n.children || []).forEach(collect); 
+          getSubItems(n).forEach(collect); 
+        };
         collect(node);
         removeIds.forEach(id => next.delete(id));
-        setActiveLines(al => { const n2 = new Set(al); removeIds.forEach(id => n2.delete(id)); if(n2.size===0) n2.add('total'); return n2; });
       } else {
         next.add(node.id);
       }
@@ -128,111 +136,332 @@ function CostDrilldownChart({ chartData, globalRrhhBreakdown, globalGgBreakdown,
   const toggleLine = (id) => {
     setActiveLines(prev => {
       const next = new Set(prev);
-      if (next.has(id)) { next.delete(id); if (next.size === 0) next.add('total'); }
-      else next.add(id);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
       return next;
     });
   };
 
+  // Select all or clear
+  const selectAll = (nodeList) => {
+    setActiveLines(new Set(nodeList.map(n => n.id)));
+  };
+  const clearAll = () => {
+    setActiveLines(new Set());
+  };
+
   // Collect all visible flat nodes
   const tree = buildTree(HIERARCHY_DEF);
-  const buildVisible = (nodes, level=0) => {
+  const buildVisible = (nodes, level = 0) => {
     const result = [];
     nodes.forEach(node => {
       const subs = node.children && node.children.length ? node.children : (node.bdKey ? getSubItems(node) : []);
       const hasChildren = subs.length > 0;
       result.push({ ...node, level, hasChildren, _subItems: subs });
       if (openIds.has(node.id)) {
-        result.push(...buildVisible(subs, level+1));
+        result.push(...buildVisible(subs, level + 1));
       }
     });
     return result;
   };
   const visibleNodes = buildVisible(tree);
 
-  // Build chart series: for each active line, map chartData months
+  // Build chart series
   const lineColorMap = {};
-  visibleNodes.forEach((n,i) => { lineColorMap[n.id] = n.color || LINE_PALETTE[i % LINE_PALETTE.length]; });
+  visibleNodes.forEach((n, i) => { lineColorMap[n.id] = n.color || LINE_PALETTE[i % LINE_PALETTE.length]; });
 
   const chartSeries = [...activeLines].map(id => {
     const node = visibleNodes.find(n => n.id === id);
     if (!node) return null;
-    return { id, label: node.label, color: lineColorMap[id] || '#888', node };
+    return { id, label: node.label, labelFull: node.labelFull || node.label, color: lineColorMap[id] || '#888', node };
   }).filter(Boolean);
 
-  // Build chart data points
+  // Calculate value for a single node in a month record
+  const getNodeValueInMonth = (node, monthRecord, isUnitario = false) => {
+    let val = 0;
+    if (node.key) {
+      val = monthRecord[node.key] || 0;
+    } else if (node.bdParent && node.bdName) {
+      const bd = monthRecord[node.bdParent] || {};
+      val = bd[node.bdName] || 0;
+    }
+    if (isUnitario) {
+      const prod = monthRecord.totalProd || 0;
+      return prod > 0 ? (val / prod) : 0;
+    }
+    return val;
+  };
+
+  // Build chart data points with dynamic sum curve
   const enrichedData = chartData.map(d => {
-    const point = { name: d.name };
+    const point = { name: d.name, totalProd: d.totalProd || 0 };
+    let sumGastoThisMonth = 0;
+    let sumUnitarioThisMonth = 0;
+
     chartSeries.forEach(s => {
-      const { node } = s;
-      if (node.key) {
-        // direct field
-        point[s.id] = d[node.key] || 0;
-      } else if (node.bdParent && node.bdName) {
-        // sub-breakdown item
-        const bd = d[node.bdParent] || {};
-        point[s.id] = bd[node.bdName] || 0;
-      }
+      const rawGasto = getNodeValueInMonth(s.node, d, false);
+      const rawUnitario = getNodeValueInMonth(s.node, d, true);
+
+      point[`${s.id}_gasto`] = rawGasto;
+      point[`${s.id}_unitario`] = rawUnitario;
+      point[s.id] = metricMode === 'unitario' ? rawUnitario : rawGasto;
+
+      sumGastoThisMonth += rawGasto;
+      sumUnitarioThisMonth += rawUnitario;
     });
+
+    point.__combined_sum__ = metricMode === 'unitario' ? sumUnitarioThisMonth : sumGastoThisMonth;
+    point.__combined_gasto__ = sumGastoThisMonth;
+    point.__combined_unitario__ = sumUnitarioThisMonth;
+
     return point;
   });
 
+  // Calculate Global Summary Stats for Active Selection
+  const totalProductionOverall = chartData.reduce((acc, d) => acc + (d.totalProd || 0), 0);
+  
+  let totalSelectedGasto = 0;
+  chartSeries.forEach(s => {
+    chartData.forEach(d => {
+      totalSelectedGasto += getNodeValueInMonth(s.node, d, false);
+    });
+  });
+
+  const avgMonthlyGasto = chartData.length > 0 ? (totalSelectedGasto / chartData.length) : 0;
+  const overallUnitCost = totalProductionOverall > 0 ? (totalSelectedGasto / totalProductionOverall) : 0;
+  
+  const peakMonthlyValue = enrichedData.reduce((max, pt) => {
+    const val = showCombinedSum && chartSeries.length > 1 ? pt.__combined_sum__ : (chartSeries.length === 1 ? pt[chartSeries[0].id] : pt.__combined_sum__);
+    return Math.max(max, val || 0);
+  }, 0);
+
   const totalForNode = (node) => {
-    if (node.key) return chartData.reduce((a,d) => a+(d[node.key]||0), 0);
+    if (node.key) return chartData.reduce((a, d) => a + (d[node.key] || 0), 0);
     if (node.bdParent && node.bdName) {
-      const src = bdSources[node.bdParent] || {};
-      return src[node.bdName] || 0;
+      return chartData.reduce((a, d) => {
+        const bd = d[node.bdParent] || {};
+        return a + (bd[node.bdName] || 0);
+      }, 0);
     }
     return 0;
   };
 
   return (
-    <div style={{ background: 'white', borderRadius: '14px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.04)', overflow: 'hidden' }}>
-      <div style={{ padding: '1.25rem 1.5rem', borderBottom: '1px solid #f1f5f9' }}>
-        <h3 style={{ margin: 0, fontSize: '0.95rem', fontWeight: 800, color: '#0f172a' }}>Explorador de Tendencias de Costos</h3>
-        <p style={{ margin: '2px 0 0', fontSize: '0.78rem', color: '#64748b' }}>
-          Navegue por la jerarquía de costos — haga clic en ▶ para expandir categorías y ver su evolución temporal como líneas independientes.
-        </p>
-      </div>
-      <div style={{ display: 'grid', gridTemplateColumns: '280px 1fr', minHeight: '420px' }}>
+    <div style={{ background: 'white', borderRadius: '16px', border: '1px solid #e2e8f0', boxShadow: '0 4px 12px -2px rgba(0,0,0,0.05)', overflow: 'hidden', marginBottom: '1.5rem' }}>
+      
+      {/* HEADER WITH CONTROLS */}
+      <div style={{ padding: '1.25rem 1.5rem', borderBottom: '1px solid #f1f5f9', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
+        <div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 800, color: '#0f172a' }}>
+              Explorador Multivariable de Costos y Tendencias
+            </h3>
+            <span style={{ fontSize: '0.7rem', padding: '2px 8px', borderRadius: '12px', background: '#ecfdf5', color: '#059669', fontWeight: 700, border: '1px solid #a7f3d0' }}>
+              Interactiva Multi-Selección
+            </span>
+          </div>
+          <p style={{ margin: '3px 0 0', fontSize: '0.8rem', color: '#64748b' }}>
+            Seleccione casillas (checkboxes) para cruzar y sumar ítems simultáneamente (ej: Medicamentos + Equipos Menores + Horas Extras).
+          </p>
+        </div>
 
-        {/* LEFT: Hierarchy tree */}
-        <div style={{ borderRight: '1px solid #f1f5f9', padding: '1rem 0', overflowY: 'auto', maxHeight: '520px' }}>
+        {/* CONTROLS (Gasto vs Costo Unitario & Curva Sumatoria) */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+          {/* Switch Mode */}
+          <div style={{ display: 'flex', background: '#f1f5f9', padding: '3px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+            <button
+              onClick={() => setMetricMode('gasto')}
+              style={{
+                border: 'none',
+                padding: '5px 12px',
+                borderRadius: '6px',
+                fontSize: '0.75rem',
+                fontWeight: 700,
+                cursor: 'pointer',
+                background: metricMode === 'gasto' ? 'white' : 'transparent',
+                color: metricMode === 'gasto' ? '#0f172a' : '#64748b',
+                boxShadow: metricMode === 'gasto' ? '0 1px 3px rgba(0,0,0,0.08)' : 'none',
+                transition: 'all 0.15s'
+              }}
+            >
+              $ Gasto Total
+            </button>
+            <button
+              onClick={() => setMetricMode('unitario')}
+              style={{
+                border: 'none',
+                padding: '5px 12px',
+                borderRadius: '6px',
+                fontSize: '0.75rem',
+                fontWeight: 700,
+                cursor: 'pointer',
+                background: metricMode === 'unitario' ? 'white' : 'transparent',
+                color: metricMode === 'unitario' ? '#0f172a' : '#64748b',
+                boxShadow: metricMode === 'unitario' ? '0 1px 3px rgba(0,0,0,0.08)' : 'none',
+                transition: 'all 0.15s'
+              }}
+            >
+              $ Costo Unitario
+            </button>
+          </div>
+
+          {/* Toggle Combined Curve */}
+          {chartSeries.length > 1 && (
+            <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.75rem', fontWeight: 600, color: '#334155', cursor: 'pointer', background: '#f8fafc', padding: '5px 10px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+              <input
+                type="checkbox"
+                checked={showCombinedSum}
+                onChange={(e) => setShowCombinedSum(e.target.checked)}
+                style={{ accentColor: '#4338ca', cursor: 'pointer' }}
+              />
+              Ver Curva Sumatoria Total
+            </label>
+          )}
+        </div>
+      </div>
+
+      {/* KPI METRIC CARDS FOR ACTIVE SELECTION */}
+      {chartSeries.length > 0 && (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', padding: '1rem 1.5rem', background: '#f8fafc', borderBottom: '1px solid #f1f5f9' }}>
+          
+          <div style={{ background: 'white', padding: '0.75rem 1rem', borderRadius: '10px', border: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column' }}>
+            <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>
+              {chartSeries.length > 1 ? `Gasto Sumado (${chartSeries.length} Ítems)` : 'Gasto Total Ítem'}
+            </span>
+            <span style={{ fontSize: '1.25rem', fontWeight: 800, color: '#0f172a', marginTop: '3px' }}>
+              {fmtCLP(totalSelectedGasto)}
+            </span>
+            <span style={{ fontSize: '0.68rem', color: '#94a3b8', marginTop: '2px' }}>
+              Acumulado en el periodo seleccionado
+            </span>
+          </div>
+
+          <div style={{ background: 'white', padding: '0.75rem 1rem', borderRadius: '10px', border: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column' }}>
+            <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>
+              Costo Unitario Promedio
+            </span>
+            <span style={{ fontSize: '1.25rem', fontWeight: 800, color: '#0284c7', marginTop: '3px' }}>
+              {fmtCLP(overallUnitCost)}
+            </span>
+            <span style={{ fontSize: '0.68rem', color: '#64748b', marginTop: '2px' }}>
+              Gasto sumado / {totalProductionOverall.toLocaleString('es-CL')} producciones
+            </span>
+          </div>
+
+          <div style={{ background: 'white', padding: '0.75rem 1rem', borderRadius: '10px', border: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column' }}>
+            <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>
+              Promedio Mensual
+            </span>
+            <span style={{ fontSize: '1.25rem', fontWeight: 800, color: '#16a34a', marginTop: '3px' }}>
+              {fmtCLP(avgMonthlyGasto)}
+            </span>
+            <span style={{ fontSize: '0.68rem', color: '#94a3b8', marginTop: '2px' }}>
+              Gasto mensual ponderado
+            </span>
+          </div>
+
+          <div style={{ background: 'white', padding: '0.75rem 1rem', borderRadius: '10px', border: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column' }}>
+            <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>
+              Pico Máximo Mensual
+            </span>
+            <span style={{ fontSize: '1.25rem', fontWeight: 800, color: '#d97706', marginTop: '3px' }}>
+              {metricMode === 'unitario' ? fmtCLP(peakMonthlyValue) : fmtCLP(peakMonthlyValue)}
+            </span>
+            <span style={{ fontSize: '0.68rem', color: '#94a3b8', marginTop: '2px' }}>
+              Mes de mayor concentración
+            </span>
+          </div>
+
+        </div>
+      )}
+
+      {/* MAIN BODY: TREE ON LEFT, CHART ON RIGHT */}
+      <div style={{ display: 'grid', gridTemplateColumns: '320px 1fr', minHeight: '460px' }}>
+
+        {/* LEFT: Hierarchy tree with multi-select checkboxes */}
+        <div style={{ borderRight: '1px solid #f1f5f9', padding: '0.75rem 0', overflowY: 'auto', maxHeight: '560px', background: '#fafbfc' }}>
+          
+          <div style={{ padding: '0 1rem 0.5rem 1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #f1f5f9' }}>
+            <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#475569' }}>
+              CONCEPTOS & DESGLOSES
+            </span>
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <button
+                onClick={clearAll}
+                style={{ border: 'none', background: 'transparent', color: '#64748b', fontSize: '0.7rem', cursor: 'pointer', fontWeight: 600, textDecoration: 'underline' }}
+              >
+                Desmarcar todo
+              </button>
+            </div>
+          </div>
+
           {visibleNodes.map(node => {
-            const isActive = activeLines.has(node.id);
+            const isChecked = activeLines.has(node.id);
             const isOpen = openIds.has(node.id);
             const total = totalForNode(node);
+            const unitCost = totalProductionOverall > 0 ? (total / totalProductionOverall) : 0;
+
             return (
               <div
                 key={node.id}
-                style={{ paddingLeft: `${12 + node.level * 16}px`, paddingRight: '12px', paddingTop: '7px', paddingBottom: '7px',
-                  borderLeft: isActive ? `3px solid ${node.color || '#888'}` : '3px solid transparent',
-                  background: isActive ? `${(node.color||'#888')}12` : 'transparent',
-                  cursor: 'pointer', transition: 'all 0.15s ease' }}
+                style={{
+                  paddingLeft: `${10 + node.level * 16}px`,
+                  paddingRight: '12px',
+                  paddingTop: '6px',
+                  paddingBottom: '6px',
+                  background: isChecked ? `${(node.color || '#888')}14` : 'transparent',
+                  borderLeft: isChecked ? `3px solid ${node.color || '#888'}` : '3px solid transparent',
+                  transition: 'all 0.15s ease'
+                }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                   {/* Expand toggle */}
                   <span
                     onClick={(e) => { e.stopPropagation(); toggleOpen(node); }}
-                    style={{ fontSize: '0.65rem', color: node.hasChildren ? '#64748b' : 'transparent',
-                      cursor: node.hasChildren ? 'pointer' : 'default', minWidth: '14px', userSelect: 'none',
-                      transition: 'transform 0.2s', display: 'inline-block', transform: isOpen ? 'rotate(90deg)' : 'none' }}
-                  >▶</span>
-                  {/* Color dot + label */}
+                    style={{
+                      fontSize: '0.65rem',
+                      color: node.hasChildren ? '#64748b' : 'transparent',
+                      cursor: node.hasChildren ? 'pointer' : 'default',
+                      minWidth: '14px',
+                      userSelect: 'none',
+                      transition: 'transform 0.2s',
+                      display: 'inline-block',
+                      transform: isOpen ? 'rotate(90deg)' : 'none'
+                    }}
+                  >
+                    ▶
+                  </span>
+
+                  {/* Checkbox for Multi-selection */}
+                  <input
+                    type="checkbox"
+                    checked={isChecked}
+                    onChange={() => toggleLine(node.id)}
+                    style={{
+                      cursor: 'pointer',
+                      accentColor: node.color || '#0ea5e9',
+                      width: '14px',
+                      height: '14px',
+                      flexShrink: 0
+                    }}
+                  />
+
+                  {/* Color pill + label + quick stats */}
                   <div
-                    style={{ display: 'flex', alignItems: 'center', gap: '6px', flex: 1 }}
+                    style={{ display: 'flex', alignItems: 'center', gap: '6px', flex: 1, cursor: 'pointer' }}
                     onClick={() => toggleLine(node.id)}
                   >
-                    <div style={{ width: '10px', height: '10px', borderRadius: '50%',
-                      background: isActive ? (node.color||'#888') : '#cbd5e1', flexShrink: 0 }} />
-                    <div style={{ flex: 1 }}>
-                      <div style={{ fontSize: '0.76rem', fontWeight: isActive ? 700 : 500,
-                        color: isActive ? '#0f172a' : '#475569', lineHeight: 1.2 }}>
+                    <div style={{ flex: 1, overflow: 'hidden' }}>
+                      <div style={{ fontSize: '0.76rem', fontWeight: isChecked ? 700 : 500, color: isChecked ? '#0f172a' : '#475569', lineHeight: 1.2, whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden' }} title={node.labelFull || node.label}>
                         {node.label}
                       </div>
                       {total > 0 && (
-                        <div style={{ fontSize: '0.67rem', color: '#94a3b8', marginTop: '1px' }}>
-                          {fmtM(total)}
+                        <div style={{ fontSize: '0.66rem', color: '#94a3b8', marginTop: '1px', display: 'flex', gap: '8px' }}>
+                          <span>{fmtM(total)}</span>
+                          {unitCost > 0 && <span style={{ color: '#0284c7' }}>CU: {fmtM(unitCost)}</span>}
                         </div>
                       )}
                     </div>
@@ -244,42 +473,106 @@ function CostDrilldownChart({ chartData, globalRrhhBreakdown, globalGgBreakdown,
         </div>
 
         {/* RIGHT: Line chart */}
-        <div style={{ padding: '1.25rem 1rem 1rem' }}>
-          {enrichedData.length > 0 && chartSeries.length > 0 ? (
-            <ResponsiveContainer width="100%" height={430}>
-              <ComposedChart data={enrichedData} margin={{ top: 32, right: 24, left: 10, bottom: 5 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                <XAxis dataKey="name" tick={{ fontSize: 11, fill: '#64748b' }} />
-                <YAxis tickFormatter={fmtM} tick={{ fontSize: 11, fill: '#64748b' }} width={72} />
-                <Tooltip
-                  formatter={(value, name) => [fmtCLP(value), chartSeries.find(s=>s.id===name)?.label || name]}
-                  contentStyle={{ fontSize: '12px', borderRadius: '10px', border: '1px solid #e2e8f0', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
-                />
-                <Legend formatter={(value) => chartSeries.find(s=>s.id===value)?.label || value} wrapperStyle={{ fontSize: '11px' }} />
-                {chartSeries.map((s, i) => (
-                  <Line key={s.id} type="monotone" dataKey={s.id} name={s.id}
-                    stroke={s.color} strokeWidth={2.5} dot={{ r: 3.5, fill: s.color }}
-                    activeDot={{ r: 6 }} connectNulls animationDuration={400}
-                  >
-                    <LabelList
+        <div style={{ padding: '1.25rem 1.25rem 1rem', display: 'flex', flexDirection: 'column' }}>
+          
+          {enrichedData.length > 0 && (chartSeries.length > 0) ? (
+            <div style={{ flex: 1, minHeight: '440px' }}>
+              <ResponsiveContainer width="100%" height={440}>
+                <ComposedChart data={enrichedData} margin={{ top: 32, right: 30, left: 15, bottom: 10 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                  <XAxis dataKey="name" tick={{ fontSize: 11, fill: '#64748b' }} />
+                  <YAxis 
+                    tickFormatter={fmtM} 
+                    tick={{ fontSize: 11, fill: '#64748b' }} 
+                    width={76} 
+                    label={{ value: metricMode === 'unitario' ? 'Costo Unitario ($ / prod)' : 'Gasto Total ($)', angle: -90, position: 'insideLeft', fill: '#94a3b8', fontSize: 10, dy: 60 }}
+                  />
+                  <Tooltip
+                    formatter={(value, name) => {
+                      if (name === '__combined_sum__') {
+                        return [fmtCLP(value), `SUMA COMBINADA (${chartSeries.length} ÍTEMS)`];
+                      }
+                      const s = chartSeries.find(item => item.id === name);
+                      return [fmtCLP(value), s ? (s.labelFull || s.label) : name];
+                    }}
+                    contentStyle={{ fontSize: '12px', borderRadius: '10px', border: '1px solid #e2e8f0', boxShadow: '0 4px 14px rgba(0,0,0,0.1)' }}
+                  />
+                  <Legend 
+                    formatter={(value) => {
+                      if (value === '__combined_sum__') return `SUMA COMBINADA SELECCIONADA`;
+                      const s = chartSeries.find(item => item.id === value);
+                      return s ? (s.labelFull || s.label) : value;
+                    }} 
+                    wrapperStyle={{ fontSize: '11px', paddingTop: '10px' }} 
+                  />
+
+                  {/* Individual Lines for each selected node */}
+                  {chartSeries.map((s) => (
+                    <Line
+                      key={s.id}
+                      type="monotone"
                       dataKey={s.id}
-                      position="top"
-                      offset={8}
-                      formatter={(v) => {
-                        if (!v || v === 0) return '';
-                        if (Math.abs(v) >= 1e9) return `$${(v/1e9).toFixed(1).replace('.',',')}B`;
-                        if (Math.abs(v) >= 1e6) return `$${(v/1e6).toFixed(1).replace('.',',')}M`;
-                        return `$${Math.round(v).toLocaleString('es-CL')}`;
-                      }}
-                      style={{ fontSize: '9.5px', fill: s.color, fontWeight: 600, opacity: 0.8 }}
-                    />
-                  </Line>
-                ))}
-              </ComposedChart>
-            </ResponsiveContainer>
+                      name={s.id}
+                      stroke={s.color}
+                      strokeWidth={2.5}
+                      dot={{ r: 3.5, fill: s.color }}
+                      activeDot={{ r: 6 }}
+                      connectNulls
+                      animationDuration={400}
+                    >
+                      <LabelList
+                        dataKey={s.id}
+                        position="top"
+                        offset={8}
+                        formatter={(v) => {
+                          if (!v || v === 0) return '';
+                          if (Math.abs(v) >= 1e9) return `$${(v/1e9).toFixed(1).replace('.', ',')}B`;
+                          if (Math.abs(v) >= 1e6) return `$${(v/1e6).toFixed(1).replace('.', ',')}M`;
+                          return `$${Math.round(v).toLocaleString('es-CL')}`;
+                        }}
+                        style={{ fontSize: '9px', fill: s.color, fontWeight: 700, opacity: 0.85 }}
+                      />
+                    </Line>
+                  ))}
+
+                  {/* Combined Sum Curve (Strong highlighted line when > 1 item) */}
+                  {chartSeries.length > 1 && showCombinedSum && (
+                    <Line
+                      key="__combined_sum__"
+                      type="monotone"
+                      dataKey="__combined_sum__"
+                      name="__combined_sum__"
+                      stroke="#4338ca"
+                      strokeWidth={4}
+                      strokeDasharray="4 2"
+                      dot={{ r: 5, fill: '#4338ca', stroke: '#fff', strokeWidth: 2 }}
+                      activeDot={{ r: 8 }}
+                      connectNulls
+                      animationDuration={400}
+                    >
+                      <LabelList
+                        dataKey="__combined_sum__"
+                        position="top"
+                        offset={10}
+                        formatter={(v) => {
+                          if (!v || v === 0) return '';
+                          if (Math.abs(v) >= 1e9) return `Σ $${(v/1e9).toFixed(1).replace('.', ',')}B`;
+                          if (Math.abs(v) >= 1e6) return `Σ $${(v/1e6).toFixed(1).replace('.', ',')}M`;
+                          return `Σ $${Math.round(v).toLocaleString('es-CL')}`;
+                        }}
+                        style={{ fontSize: '10px', fill: '#4338ca', fontWeight: 800 }}
+                      />
+                    </Line>
+                  )}
+
+                </ComposedChart>
+              </ResponsiveContainer>
+            </div>
           ) : (
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: '#94a3b8', fontSize: '0.85rem' }}>
-              Seleccione conceptos en la jerarquía de la izquierda para ver su evolución
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '400px', color: '#94a3b8', gap: '8px' }}>
+              <Activity size={32} color="#cbd5e1" />
+              <span style={{ fontSize: '0.9rem', fontWeight: 600 }}>Seleccione uno o más casilleros a la izquierda</span>
+              <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>Puede combinar múltiples ítems de Insumos, RRHH y Gastos Generales.</span>
             </div>
           )}
         </div>
@@ -1195,7 +1488,13 @@ export default function SigcomDashboard({ onBack }) {
         </div>
 
         {/* 3.- DRILL-DOWN LINE CHART */}
-        <CostDrilldownChart chartData={chartData} globalRrhhBreakdown={globalRrhhBreakdown} globalGgBreakdown={globalGgBreakdown} globalInsumosBreakdown={globalInsumosBreakdown} />
+        <CostDrilldownChart 
+          chartData={chartData} 
+          globalRrhhBreakdown={globalRrhhBreakdown} 
+          globalGgBreakdown={globalGgBreakdown} 
+          globalInsumosBreakdown={globalInsumosBreakdown} 
+          totalProd={kpis.totalProd || 0}
+        />
         <div style={{ display: 'none' }}>
           
           {/* Left: Cost Layer Explorer */}
