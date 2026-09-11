@@ -1,20 +1,20 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  ArrowLeft, Calendar, Search, Users, Activity, Clock, CheckCircle,
-  XCircle, AlertCircle, Filter, PieChart, BarChart2, ChevronRight, ChevronLeft, ChevronDown, TrendingUp
+  ArrowLeft, Calendar, Search, Users, Activity, Clock, CheckCircle, FileText,
+  XCircle, AlertCircle, Filter, PieChart, BarChart2, ChevronRight, ChevronLeft, ChevronDown, TrendingUp, RotateCcw, Pin
 } from 'lucide-react';
 import {
   ComposedChart, Line, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer,
   PieChart as RechartsPieChart, Pie, Cell, LabelList, Label, ReferenceLine
 } from 'recharts';
 
-const COLORS = ['#295A64', '#DF6D05', '#F2A400', '#94BCC1', '#EAE6E1', '#1f434a', '#a65103', '#b37800', '#6e8f93'];
+const COLORS = ['#1e40af', '#DF6D05', '#F2A400', '#38bdf8', '#EAE6E1', '#1e3a8a', '#a65103', '#b37800', '#60a5fa'];
 const PIE_COLORS = {
-  'Cirugía Mayor': '#295A64',
+  'Cirugía Mayor': '#1e40af',
   'Cirugía Mayor Ambulatoria': '#DF6D05',
   'Cirugía Menor': '#F2A400',
-  'Procedimientos': '#94BCC1'
+  'Procedimientos': '#38bdf8'
 };
 
 const MultiSearchableSelect = ({ value = [], options = [], onChange }) => {
@@ -154,7 +154,7 @@ const PivotTable = ({ data, totalCirugias }) => {
   const getCellColor = (val, max) => {
     if (!val || val === 0 || !max || max === 0) return 'transparent';
     const intensity = val / max;
-    return `rgba(41, 90, 100, ${intensity * 0.50})`; // Stronger gradient so low values look white
+    return `rgba(30, 64, 175, ${intensity * 0.50})`; // Stronger gradient so low values look white
   };
 
   const renderRow = (node, name, level) => {
@@ -216,25 +216,25 @@ const PivotTable = ({ data, totalCirugias }) => {
   return (
     <div style={{ overflow: 'auto', maxHeight: '600px', border: '1px solid #e2e8f0', borderRadius: '12px', boxShadow: '0 4px 6px rgba(0,0,0,0.05)', background: 'white' }}>
       <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
-        <thead style={{ position: 'sticky', top: 0, zIndex: 20, background: '#295A64', color: 'white' }}>
+        <thead style={{ position: 'sticky', top: 0, zIndex: 20, background: '#1e40af', color: 'white' }}>
           {/* Year Header Row */}
           <tr>
-            <th rowSpan={2} style={{ padding: '12px', position: 'sticky', left: 0, zIndex: 30, background: '#295A64', borderRight: '1px solid rgba(255,255,255,0.2)', borderBottom: '1px solid rgba(255,255,255,0.2)' }}>Familia / Intervención / Cirujano</th>
+            <th rowSpan={2} style={{ padding: '12px', position: 'sticky', left: 0, zIndex: 30, background: '#1e40af', borderRight: '1px solid rgba(255,255,255,0.2)', borderBottom: '1px solid rgba(255,255,255,0.2)' }}>Familia / Intervención / Cirujano</th>
             {years.map(y => (
               <th key={y} colSpan={monthsByYear[y].length + 2} style={{ padding: '8px', textAlign: 'center', borderRight: '1px solid rgba(255,255,255,0.2)', borderBottom: '1px solid rgba(255,255,255,0.2)', fontWeight: 800 }}>{y}</th>
             ))}
-            <th rowSpan={2} style={{ padding: '12px', textAlign: 'right', background: '#1f434a', borderBottom: '1px solid rgba(255,255,255,0.2)' }}>Total General</th>
-            <th rowSpan={2} style={{ padding: '12px', textAlign: 'right', background: '#18363d', borderBottom: '1px solid rgba(255,255,255,0.2)' }}>% del Total</th>
+            <th rowSpan={2} style={{ padding: '12px', textAlign: 'right', background: '#1e3a8a', borderBottom: '1px solid rgba(255,255,255,0.2)' }}>Total General</th>
+            <th rowSpan={2} style={{ padding: '12px', textAlign: 'right', background: '#172554', borderBottom: '1px solid rgba(255,255,255,0.2)' }}>% del Total</th>
           </tr>
           {/* Month Header Row */}
           <tr>
             {years.map(y => (
               <React.Fragment key={y}>
                 {monthsByYear[y].map(m => (
-                  <th key={m} style={{ padding: '8px 12px', textAlign: 'right', whiteSpace: 'nowrap', fontSize: '0.85rem', background: '#366d78', borderBottom: '1px solid rgba(255,255,255,0.2)' }}>{formatMonth(m).split(' ')[0]}</th>
+                  <th key={m} style={{ padding: '8px 12px', textAlign: 'right', whiteSpace: 'nowrap', fontSize: '0.85rem', background: '#2563eb', borderBottom: '1px solid rgba(255,255,255,0.2)' }}>{formatMonth(m).split(' ')[0]}</th>
                 ))}
-                <th style={{ padding: '8px 12px', textAlign: 'right', whiteSpace: 'nowrap', fontSize: '0.85rem', background: '#1f434a', borderRight: '1px solid rgba(255,255,255,0.2)', borderBottom: '1px solid rgba(255,255,255,0.2)' }}>Total {y}</th>
-                <th style={{ padding: '8px 12px', textAlign: 'right', whiteSpace: 'nowrap', fontSize: '0.85rem', background: '#18363d', borderRight: '1px solid rgba(255,255,255,0.2)', borderBottom: '1px solid rgba(255,255,255,0.2)' }}>% {y}</th>
+                <th style={{ padding: '8px 12px', textAlign: 'right', whiteSpace: 'nowrap', fontSize: '0.85rem', background: '#1e3a8a', borderRight: '1px solid rgba(255,255,255,0.2)', borderBottom: '1px solid rgba(255,255,255,0.2)' }}>Total {y}</th>
+                <th style={{ padding: '8px 12px', textAlign: 'right', whiteSpace: 'nowrap', fontSize: '0.85rem', background: '#172554', borderRight: '1px solid rgba(255,255,255,0.2)', borderBottom: '1px solid rgba(255,255,255,0.2)' }}>% {y}</th>
               </React.Fragment>
             ))}
           </tr>
@@ -385,11 +385,11 @@ const PivotTableTabla = ({ data }) => {
           <React.Fragment key={y}>
             {monthsByYear[y].map(m => {
               const d = tree.months[m];
-              if (!d || d.total === 0) return <React.Fragment key={m}><td style={{ background: '#5d826a', borderRight: '1px solid rgba(255,255,255,0.2)' }}></td><td style={{ background: '#5d826a', borderRight: '1px solid rgba(255,255,255,0.2)' }}></td></React.Fragment>;
+              if (!d || d.total === 0) return <React.Fragment key={m}><td style={{ background: '#1d4ed8', borderRight: '1px solid rgba(255,255,255,0.2)' }}></td><td style={{ background: '#1d4ed8', borderRight: '1px solid rgba(255,255,255,0.2)' }}></td></React.Fragment>;
               return (
                 <React.Fragment key={m}>
-                  <td style={{ background: '#5d826a', color: 'white', padding: '8px', textAlign: 'center', fontWeight: 700, borderRight: '1px solid rgba(255,255,255,0.2)' }}>{d.total}</td>
-                  <td style={{ background: '#5d826a', color: 'white', padding: '8px', textAlign: 'center', fontWeight: 700, borderRight: '1px solid rgba(255,255,255,0.2)' }}>{(d.sumDur/d.total).toFixed(2)}</td>
+                  <td style={{ background: '#1d4ed8', color: 'white', padding: '8px', textAlign: 'center', fontWeight: 700, borderRight: '1px solid rgba(255,255,255,0.2)' }}>{d.total}</td>
+                  <td style={{ background: '#1d4ed8', color: 'white', padding: '8px', textAlign: 'center', fontWeight: 700, borderRight: '1px solid rgba(255,255,255,0.2)' }}>{(d.sumDur/d.total).toFixed(2)}</td>
                 </React.Fragment>
               );
             })}
@@ -398,16 +398,16 @@ const PivotTableTabla = ({ data }) => {
               const yt = getYearlyTotal(tree, y);
               return (
                 <React.Fragment key={`ft-yt-${y}`}>
-                  <td style={{ background: '#366d78', color: 'white', padding: '8px', textAlign: 'center', fontWeight: 800, borderRight: '1px solid rgba(255,255,255,0.2)' }}>{yt.total}</td>
-                  <td style={{ background: '#366d78', color: 'white', padding: '8px', textAlign: 'center', fontWeight: 800, borderRight: '1px solid rgba(255,255,255,0.2)' }}>{yt.total > 0 ? (yt.sumDur/yt.total).toFixed(2) : '-'}</td>
+                  <td style={{ background: '#2563eb', color: 'white', padding: '8px', textAlign: 'center', fontWeight: 800, borderRight: '1px solid rgba(255,255,255,0.2)' }}>{yt.total}</td>
+                  <td style={{ background: '#2563eb', color: 'white', padding: '8px', textAlign: 'center', fontWeight: 800, borderRight: '1px solid rgba(255,255,255,0.2)' }}>{yt.total > 0 ? (yt.sumDur/yt.total).toFixed(2) : '-'}</td>
                 </React.Fragment>
               );
             })()}
           </React.Fragment>
         ))}
         {/* Grand Total for TFoot */}
-        <td style={{ background: '#1f434a', color: 'white', padding: '8px', textAlign: 'center', fontWeight: 900, borderRight: '1px solid rgba(255,255,255,0.2)' }}>{tree.total}</td>
-        <td style={{ background: '#1f434a', color: 'white', padding: '8px', textAlign: 'center', fontWeight: 900, borderRight: '1px solid rgba(255,255,255,0.2)' }}>{(tree.sumDur/tree.total).toFixed(2)}</td>
+        <td style={{ background: '#1e3a8a', color: 'white', padding: '8px', textAlign: 'center', fontWeight: 900, borderRight: '1px solid rgba(255,255,255,0.2)' }}>{tree.total}</td>
+        <td style={{ background: '#1e3a8a', color: 'white', padding: '8px', textAlign: 'center', fontWeight: 900, borderRight: '1px solid rgba(255,255,255,0.2)' }}>{(tree.sumDur/tree.total).toFixed(2)}</td>
       </React.Fragment>
     );
   };
@@ -417,39 +417,39 @@ const PivotTableTabla = ({ data }) => {
       <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: 0, fontSize: '0.75rem' }}>
         <thead style={{ position: 'sticky', top: 0, zIndex: 30 }}>
           <tr>
-            <th style={{ position: 'sticky', left: 0, zIndex: 40, background: '#5d826a', color: 'white', padding: '8px', textAlign: 'center', borderBottom: '1px solid rgba(255,255,255,0.2)', borderRight: '1px solid rgba(255,255,255,0.2)', minWidth: '300px' }}>Year</th>
+            <th style={{ position: 'sticky', left: 0, zIndex: 40, background: '#1d4ed8', color: 'white', padding: '8px', textAlign: 'center', borderBottom: '1px solid rgba(255,255,255,0.2)', borderRight: '1px solid rgba(255,255,255,0.2)', minWidth: '300px' }}>Year</th>
             {years.map(y => (
-              <th key={y} colSpan={(monthsByYear[y].length * 2) + 2} style={{ background: '#5d826a', color: 'white', padding: '8px', textAlign: 'center', borderBottom: '1px solid rgba(255,255,255,0.2)', borderRight: '1px solid rgba(255,255,255,0.2)' }}>{y}</th>
+              <th key={y} colSpan={(monthsByYear[y].length * 2) + 2} style={{ background: '#1d4ed8', color: 'white', padding: '8px', textAlign: 'center', borderBottom: '1px solid rgba(255,255,255,0.2)', borderRight: '1px solid rgba(255,255,255,0.2)' }}>{y}</th>
             ))}
-            <th colSpan="2" rowSpan="2" style={{ background: '#366d78', color: 'white', padding: '8px', textAlign: 'center', borderBottom: '1px solid rgba(255,255,255,0.2)', borderRight: '1px solid rgba(255,255,255,0.2)' }}>Total General</th>
+            <th colSpan="2" rowSpan="2" style={{ background: '#2563eb', color: 'white', padding: '8px', textAlign: 'center', borderBottom: '1px solid rgba(255,255,255,0.2)', borderRight: '1px solid rgba(255,255,255,0.2)' }}>Total General</th>
           </tr>
           <tr>
-            <th style={{ position: 'sticky', left: 0, zIndex: 40, background: '#5d826a', color: 'white', padding: '8px', textAlign: 'center', borderBottom: '1px solid rgba(255,255,255,0.2)', borderRight: '1px solid rgba(255,255,255,0.2)' }}>Month</th>
+            <th style={{ position: 'sticky', left: 0, zIndex: 40, background: '#1d4ed8', color: 'white', padding: '8px', textAlign: 'center', borderBottom: '1px solid rgba(255,255,255,0.2)', borderRight: '1px solid rgba(255,255,255,0.2)' }}>Month</th>
             {years.map(y => (
               <React.Fragment key={`m-hdr-${y}`}>
                 {monthsByYear[y].map(m => (
-                  <th key={m} colSpan="2" style={{ background: '#84a28f', color: 'white', padding: '8px', textAlign: 'center', borderBottom: '1px solid rgba(255,255,255,0.2)', borderRight: '1px solid rgba(255,255,255,0.2)' }}>{formatMonth(m)}</th>
+                  <th key={m} colSpan="2" style={{ background: '#3b82f6', color: 'white', padding: '8px', textAlign: 'center', borderBottom: '1px solid rgba(255,255,255,0.2)', borderRight: '1px solid rgba(255,255,255,0.2)' }}>{formatMonth(m)}</th>
                 ))}
-                <th colSpan="2" style={{ background: '#366d78', color: 'white', padding: '8px', textAlign: 'center', borderBottom: '1px solid rgba(255,255,255,0.2)', borderRight: '1px solid rgba(255,255,255,0.2)' }}>Total {y}</th>
+                <th colSpan="2" style={{ background: '#2563eb', color: 'white', padding: '8px', textAlign: 'center', borderBottom: '1px solid rgba(255,255,255,0.2)', borderRight: '1px solid rgba(255,255,255,0.2)' }}>Total {y}</th>
               </React.Fragment>
             ))}
           </tr>
           <tr>
-            <th style={{ position: 'sticky', left: 0, zIndex: 40, background: '#5d826a', color: 'white', padding: '8px', textAlign: 'center', borderBottom: '1px solid rgba(255,255,255,0.2)', borderRight: '1px solid rgba(255,255,255,0.2)', boxShadow: '2px 0 5px rgba(0,0,0,0.1)' }}>codigo_iq</th>
+            <th style={{ position: 'sticky', left: 0, zIndex: 40, background: '#1d4ed8', color: 'white', padding: '8px', textAlign: 'center', borderBottom: '1px solid rgba(255,255,255,0.2)', borderRight: '1px solid rgba(255,255,255,0.2)', boxShadow: '2px 0 5px rgba(0,0,0,0.1)' }}>codigo_iq</th>
             {years.map(y => (
               <React.Fragment key={`col-hdr-${y}`}>
                 {monthsByYear[y].map(m => (
                   <React.Fragment key={`hdr-${m}`}>
-                    <th style={{ background: '#84a28f', color: 'white', padding: '8px', textAlign: 'center', borderBottom: '1px solid rgba(255,255,255,0.2)', borderRight: '1px solid rgba(255,255,255,0.2)', minWidth: '40px' }}>N°</th>
-                    <th style={{ background: '#84a28f', color: 'white', padding: '8px', textAlign: 'center', borderBottom: '1px solid rgba(255,255,255,0.2)', borderRight: '1px solid rgba(255,255,255,0.2)', minWidth: '50px' }}>t Prom</th>
+                    <th style={{ background: '#3b82f6', color: 'white', padding: '8px', textAlign: 'center', borderBottom: '1px solid rgba(255,255,255,0.2)', borderRight: '1px solid rgba(255,255,255,0.2)', minWidth: '40px' }}>N°</th>
+                    <th style={{ background: '#3b82f6', color: 'white', padding: '8px', textAlign: 'center', borderBottom: '1px solid rgba(255,255,255,0.2)', borderRight: '1px solid rgba(255,255,255,0.2)', minWidth: '50px' }}>t Prom</th>
                   </React.Fragment>
                 ))}
-                <th style={{ background: '#366d78', color: 'white', padding: '8px', textAlign: 'center', borderBottom: '1px solid rgba(255,255,255,0.2)', borderRight: '1px solid rgba(255,255,255,0.2)', minWidth: '40px' }}>N°</th>
-                <th style={{ background: '#366d78', color: 'white', padding: '8px', textAlign: 'center', borderBottom: '1px solid rgba(255,255,255,0.2)', borderRight: '1px solid rgba(255,255,255,0.2)', minWidth: '50px' }}>t Prom</th>
+                <th style={{ background: '#2563eb', color: 'white', padding: '8px', textAlign: 'center', borderBottom: '1px solid rgba(255,255,255,0.2)', borderRight: '1px solid rgba(255,255,255,0.2)', minWidth: '40px' }}>N°</th>
+                <th style={{ background: '#2563eb', color: 'white', padding: '8px', textAlign: 'center', borderBottom: '1px solid rgba(255,255,255,0.2)', borderRight: '1px solid rgba(255,255,255,0.2)', minWidth: '50px' }}>t Prom</th>
               </React.Fragment>
             ))}
-            <th style={{ background: '#1f434a', color: 'white', padding: '8px', textAlign: 'center', borderBottom: '1px solid rgba(255,255,255,0.2)', borderRight: '1px solid rgba(255,255,255,0.2)', minWidth: '40px' }}>N°</th>
-            <th style={{ background: '#1f434a', color: 'white', padding: '8px', textAlign: 'center', borderBottom: '1px solid rgba(255,255,255,0.2)', borderRight: '1px solid rgba(255,255,255,0.2)', minWidth: '50px' }}>t Prom</th>
+            <th style={{ background: '#1e3a8a', color: 'white', padding: '8px', textAlign: 'center', borderBottom: '1px solid rgba(255,255,255,0.2)', borderRight: '1px solid rgba(255,255,255,0.2)', minWidth: '40px' }}>N°</th>
+            <th style={{ background: '#1e3a8a', color: 'white', padding: '8px', textAlign: 'center', borderBottom: '1px solid rgba(255,255,255,0.2)', borderRight: '1px solid rgba(255,255,255,0.2)', minWidth: '50px' }}>t Prom</th>
           </tr>
         </thead>
         <tbody>
@@ -506,7 +506,7 @@ const PivotTableTabla = ({ data }) => {
         </tbody>
         <tfoot style={{ position: 'sticky', bottom: 0, zIndex: 30 }}>
           <tr>
-            <td style={{ position: 'sticky', left: 0, zIndex: 40, background: '#5d826a', color: 'white', padding: '8px', fontWeight: 700, borderRight: '1px solid rgba(255,255,255,0.2)', boxShadow: '2px 0 5px rgba(0,0,0,0.1)' }}>Total General</td>
+            <td style={{ position: 'sticky', left: 0, zIndex: 40, background: '#1d4ed8', color: 'white', padding: '8px', fontWeight: 700, borderRight: '1px solid rgba(255,255,255,0.2)', boxShadow: '2px 0 5px rgba(0,0,0,0.1)' }}>Total General</td>
             {renderTfootCells()}
           </tr>
         </tfoot>
@@ -617,8 +617,878 @@ const TopSuspensionesGRD = ({ data, grdData }) => {
   );
 };
 
+
+/* ==========================================================================
+   COMPONENTE: TABLA DINÁMICA DE SUSPENSIONES (Collapsible 4 Levels & Months)
+   ========================================================================== */
+const TablaDinamicaSuspensiones = ({ data = [] }) => {
+  const [expandedRows, setExpandedRows] = useState(new Set());
+  const [expandedYears, setExpandedYears] = useState({});
+  const [maxDepthLevel, setMaxDepthLevel] = useState(1);
+
+  const suspData = useMemo(() => {
+    return data.filter(r => r.estado === 'Suspendido');
+  }, [data]);
+
+  const { yearMonthsMap, monthNames, totalGeneralSusp } = useMemo(() => {
+    const map = {};
+    const mNames = {
+      '01': 'Ene', '02': 'Feb', '03': 'Mar', '04': 'Abr', '05': 'May', '06': 'Jun',
+      '07': 'Jul', '08': 'Ago', '09': 'Sep', '10': 'Oct', '11': 'Nov', '12': 'Dic'
+    };
+    let totalCount = 0;
+
+    suspData.forEach(r => {
+      totalCount++;
+      if (r.fecha_programacion) {
+        const d = r.fecha_programacion.substring(0, 10);
+        const parts = d.split('-');
+        if (parts.length >= 2) {
+          const yr = parts[0];
+          if (!map[yr]) map[yr] = new Set();
+          map[yr].add(d.substring(0, 7));
+        }
+      }
+    });
+
+    const sortedYears = Object.keys(map).sort();
+    const resultYrMap = {};
+    sortedYears.forEach(yr => {
+      resultYrMap[yr] = Array.from(map[yr]).sort();
+    });
+
+    return { yearMonthsMap: resultYrMap, monthNames: mNames, totalGeneralSusp: totalCount };
+  }, [suspData]);
+
+  const treeData = useMemo(() => {
+    const root = {};
+
+    suspData.forEach(r => {
+      const esp = r.especialidad || 'Sin Especialidad';
+      const cir = r.intervencion_propuesta || 'Sin Intervención Especificada';
+      const med = r.cirujano || 'Sin Médico Asignado';
+      const causaStr = `${r.causa_suspension || 'Sin Causa'} - ${r.motivo_suspension || 'Sin Motivo'}`;
+      const monthKey = r.fecha_programacion ? r.fecha_programacion.substring(0, 7) : '2025-01';
+
+      if (!root[esp]) root[esp] = { name: esp, level: 1, id: `esp:${esp}`, count: 0, months: {}, children: {} };
+      root[esp].count++;
+      root[esp].months[monthKey] = (root[esp].months[monthKey] || 0) + 1;
+
+      if (!root[esp].children[cir]) root[esp].children[cir] = { name: cir, level: 2, id: `esp:${esp}|cir:${cir}`, count: 0, months: {}, children: {} };
+      root[esp].children[cir].count++;
+      root[esp].children[cir].months[monthKey] = (root[esp].children[cir].months[monthKey] || 0) + 1;
+
+      if (!root[esp].children[cir].children[med]) root[esp].children[cir].children[med] = { name: med, level: 3, id: `esp:${esp}|cir:${cir}|med:${med}`, count: 0, months: {}, children: {} };
+      root[esp].children[cir].children[med].count++;
+      root[esp].children[cir].children[med].months[monthKey] = (root[esp].children[cir].children[med].months[monthKey] || 0) + 1;
+
+      if (!root[esp].children[cir].children[med].children[causaStr]) root[esp].children[cir].children[med].children[causaStr] = { name: causaStr, level: 4, id: `esp:${esp}|cir:${cir}|med:${med}|cau:${causaStr}`, count: 0, months: {}, children: null };
+      root[esp].children[cir].children[med].children[causaStr].count++;
+      root[esp].children[cir].children[med].children[causaStr].months[monthKey] = (root[esp].children[cir].children[med].children[causaStr].months[monthKey] || 0) + 1;
+    });
+
+    return root;
+  }, [suspData]);
+
+  const visibleRows = useMemo(() => {
+    const rows = [];
+    const sortedEsps = Object.values(treeData).sort((a, b) => b.count - a.count);
+
+    const traverse = (node, parentNode = null) => {
+      rows.push({
+        ...node,
+        parentCount: parentNode ? parentNode.count : totalGeneralSusp,
+        parentName: parentNode ? parentNode.name : 'Total General'
+      });
+      const isExpanded = expandedRows.has(node.id) || node.level < maxDepthLevel;
+      if (isExpanded && node.children) {
+        const childrenArr = Object.values(node.children).sort((a, b) => b.count - a.count);
+        childrenArr.forEach(child => traverse(child, node));
+      }
+    };
+
+    sortedEsps.forEach(espNode => traverse(espNode, null));
+    return rows;
+  }, [treeData, expandedRows, maxDepthLevel, totalGeneralSusp]);
+
+  const toggleRow = (id) => {
+    setExpandedRows(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const toggleYear = (yr) => {
+    setExpandedYears(prev => ({ ...prev, [yr]: prev[yr] === false ? true : false }));
+  };
+
+  const setLevelDepth = (level) => {
+    setMaxDepthLevel(level);
+    if (level === 1) {
+      setExpandedRows(new Set());
+    } else {
+      const newExpanded = new Set();
+      const addLevels = (obj, targetLevel) => {
+        Object.values(obj).forEach(node => {
+          if (node.level < targetLevel) {
+            newExpanded.add(node.id);
+            if (node.children) addLevels(node.children, targetLevel);
+          }
+        });
+      };
+      addLevels(treeData, level);
+      setExpandedRows(newExpanded);
+    }
+  };
+
+  const years = Object.keys(yearMonthsMap);
+
+  return (
+    <div style={{ background: 'white', borderRadius: '20px', border: '1px solid #e2e8f0', padding: '24px', boxShadow: '0 10px 30px rgba(0,0,0,0.04)', marginBottom: '32px' }}>
+      <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: '16px', marginBottom: '20px' }}>
+        <div>
+          <h3 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 800, color: '#0f172a', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <Users size={20} color="#1e40af" />
+            Tabla Dinámica Jerárquica de Suspensiones
+          </h3>
+          <p style={{ margin: '4px 0 0 0', fontSize: '0.8rem', color: '#64748b' }}>
+            Desglose colapsable: Especialidad → Cirugía Suspendida → Médico → Causa / Motivo
+          </p>
+        </div>
+
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', alignItems: 'center', background: '#f8fafc', padding: '6px', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
+          <span style={{ fontSize: '0.7rem', fontWeight: 800, color: '#64748b', padding: '0 6px', textTransform: 'uppercase' }}>Niveles:</span>
+          <button onClick={() => setLevelDepth(1)} style={{ padding: '6px 12px', fontSize: '0.75rem', fontWeight: maxDepthLevel === 1 ? 800 : 600, borderRadius: '8px', border: 'none', background: maxDepthLevel === 1 ? '#1e40af' : 'transparent', color: maxDepthLevel === 1 ? 'white' : '#475569', cursor: 'pointer', transition: 'all 0.2s' }}>1. Especialidad</button>
+          <button onClick={() => setLevelDepth(2)} style={{ padding: '6px 12px', fontSize: '0.75rem', fontWeight: maxDepthLevel === 2 ? 800 : 600, borderRadius: '8px', border: 'none', background: maxDepthLevel === 2 ? '#1e40af' : 'transparent', color: maxDepthLevel === 2 ? 'white' : '#475569', cursor: 'pointer', transition: 'all 0.2s' }}>2. Cirugía</button>
+          <button onClick={() => setLevelDepth(3)} style={{ padding: '6px 12px', fontSize: '0.75rem', fontWeight: maxDepthLevel === 3 ? 800 : 600, borderRadius: '8px', border: 'none', background: maxDepthLevel === 3 ? '#1e40af' : 'transparent', color: maxDepthLevel === 3 ? 'white' : '#475569', cursor: 'pointer', transition: 'all 0.2s' }}>3. Médico</button>
+          <button onClick={() => setLevelDepth(4)} style={{ padding: '6px 12px', fontSize: '0.75rem', fontWeight: maxDepthLevel === 4 ? 800 : 600, borderRadius: '8px', border: 'none', background: maxDepthLevel === 4 ? '#1e40af' : 'transparent', color: maxDepthLevel === 4 ? 'white' : '#475569', cursor: 'pointer', transition: 'all 0.2s' }}>4. Causa</button>
+        </div>
+      </div>
+
+      <div style={{ overflowX: 'auto', maxHeight: '550px', borderRadius: '14px', border: '1px solid #e2e8f0', boxShadow: '0 4px 15px rgba(0,0,0,0.02)' }}>
+        <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: 0, fontSize: '0.8rem' }}>
+          <thead style={{ position: 'sticky', top: 0, zIndex: 30, background: '#1e40af', color: 'white' }}>
+            <tr>
+              <th rowSpan={2} style={{ padding: '12px 16px', textAlign: 'left', position: 'sticky', left: 0, zIndex: 40, background: '#1e40af', borderRight: '1px solid rgba(255,255,255,0.2)', borderBottom: '1px solid rgba(255,255,255,0.2)', minWidth: '320px' }}>
+                Categoría Jerárquica (Filas)
+              </th>
+              {years.map(yr => {
+                const months = yearMonthsMap[yr] || [];
+                const isExpanded = expandedYears[yr] !== false;
+                const colSpan = isExpanded ? months.length + 1 : 1;
+                return (
+                  <th key={yr} colSpan={colSpan} style={{ padding: '10px 14px', textAlign: 'center', background: '#1e3a8a', borderRight: '1px solid rgba(255,255,255,0.2)', borderBottom: '1px solid rgba(255,255,255,0.2)', fontWeight: 800 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', cursor: 'pointer' }} onClick={() => toggleYear(yr)}>
+                      <span>Año {yr}</span>
+                      <span style={{ fontSize: '0.7rem', background: 'rgba(255,255,255,0.2)', padding: '2px 6px', borderRadius: '6px' }}>
+                        {isExpanded ? 'Colapsar meses' : 'Ver meses (+)'}
+                      </span>
+                    </div>
+                  </th>
+                );
+              })}
+              <th rowSpan={2} style={{ padding: '12px', textAlign: 'right', background: '#172554', borderRight: '1px solid rgba(255,255,255,0.2)', borderBottom: '1px solid rgba(255,255,255,0.2)', minWidth: '90px' }}>Total Susp.</th>
+              <th rowSpan={2} style={{ padding: '12px', textAlign: 'right', background: '#172554', borderBottom: '1px solid rgba(255,255,255,0.2)', minWidth: '100px' }}>% Total / Subt.</th>
+            </tr>
+            <tr>
+              {years.map(yr => {
+                const months = yearMonthsMap[yr] || [];
+                const isExpanded = expandedYears[yr] !== false;
+                if (isExpanded) {
+                  return (
+                    <React.Fragment key={`hdr-m-${yr}`}>
+                      {months.map(mKey => {
+                        const mNum = mKey.split('-')[1];
+                        return (
+                          <th key={mKey} style={{ padding: '8px 10px', textAlign: 'right', background: '#2563eb', borderRight: '1px solid rgba(255,255,255,0.15)', borderBottom: '1px solid rgba(255,255,255,0.2)', fontSize: '0.75rem', fontWeight: 600 }}>
+                            {monthNames[mNum] || mNum}
+                          </th>
+                        );
+                      })}
+                      <th style={{ padding: '8px 10px', textAlign: 'right', background: '#1d4ed8', borderRight: '1px solid rgba(255,255,255,0.2)', borderBottom: '1px solid rgba(255,255,255,0.2)', fontWeight: 800 }}>Total {yr}</th>
+                    </React.Fragment>
+                  );
+                } else {
+                  return (
+                    <th key={`hdr-tot-${yr}`} style={{ padding: '8px 10px', textAlign: 'right', background: '#1d4ed8', borderRight: '1px solid rgba(255,255,255,0.2)', borderBottom: '1px solid rgba(255,255,255,0.2)', fontWeight: 800 }}>Total {yr}</th>
+                  );
+                }
+              })}
+            </tr>
+          </thead>
+          <tbody>
+            {visibleRows.map(row => {
+              const hasChildren = row.children && Object.keys(row.children).length > 0;
+              const isRowExpanded = expandedRows.has(row.id) || row.level < maxDepthLevel;
+              const indent = (row.level - 1) * 22;
+              
+              const parentCount = row.parentCount || totalGeneralSusp;
+              const pctVal = parentCount > 0 ? ((row.count / parentCount) * 100).toFixed(1) : '0.0';
+              const pctOfTotal = totalGeneralSusp > 0 ? ((row.count / totalGeneralSusp) * 100).toFixed(1) : '0.0';
+              const isLevel1 = row.level === 1;
+
+              const levelBg = row.level === 1 ? '#f8fafc' : row.level === 2 ? '#ffffff' : row.level === 3 ? '#fafafa' : '#f1f5f9';
+              const levelFontWeight = row.level === 1 ? 800 : row.level === 2 ? 700 : row.level === 3 ? 600 : 500;
+              const levelColor = row.level === 1 ? '#0f172a' : row.level === 2 ? '#1e3a8a' : row.level === 3 ? '#334155' : '#64748b';
+
+              return (
+                <tr key={row.id} style={{ background: levelBg, borderBottom: '1px solid #f1f5f9' }}>
+                  <td style={{ padding: '10px 16px', position: 'sticky', left: 0, background: levelBg, zIndex: 20, borderRight: '1px solid #e2e8f0' }}>
+                    <div style={{ paddingLeft: `${indent}px`, display: 'flex', alignItems: 'center', gap: '8px', cursor: hasChildren ? 'pointer' : 'default' }} onClick={() => hasChildren && toggleRow(row.id)}>
+                      {hasChildren ? (
+                        <span style={{ fontSize: '0.75rem', width: '16px', height: '16px', borderRadius: '4px', background: '#e2e8f0', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', color: '#1e40af', fontWeight: 900 }}>
+                          {isRowExpanded ? '−' : '+'}
+                        </span>
+                      ) : (
+                        <span style={{ width: '16px' }} />
+                      )}
+                      <span style={{ fontWeight: levelFontWeight, color: levelColor, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '380px' }} title={row.name}>
+                        {row.name}
+                      </span>
+                    </div>
+                  </td>
+
+                  {years.map(yr => {
+                    const months = yearMonthsMap[yr] || [];
+                    const isExpanded = expandedYears[yr] !== false;
+                    
+                    let yrSum = 0;
+                    months.forEach(mKey => { yrSum += (row.months[mKey] || 0); });
+
+                    if (isExpanded) {
+                      return (
+                        <React.Fragment key={`cell-grp-${yr}-${row.id}`}>
+                          {months.map(mKey => {
+                            const val = row.months[mKey] || 0;
+                            return (
+                              <td key={`c-${mKey}`} style={{ padding: '8px 10px', textAlign: 'right', color: val > 0 ? '#0f172a' : '#cbd5e1', fontWeight: val > 0 ? 600 : 400, borderRight: '1px solid #f1f5f9' }}>
+                                {val > 0 ? val : '-'}
+                              </td>
+                            );
+                          })}
+                          <td style={{ padding: '8px 10px', textAlign: 'right', fontWeight: 800, color: '#1e40af', background: 'rgba(30,64,175,0.03)', borderRight: '1px solid #e2e8f0' }}>
+                            {yrSum > 0 ? yrSum : '-'}
+                          </td>
+                        </React.Fragment>
+                      );
+                    } else {
+                      return (
+                        <td key={`c-tot-${yr}`} style={{ padding: '8px 10px', textAlign: 'right', fontWeight: 800, color: '#1e40af', background: 'rgba(30,64,175,0.03)', borderRight: '1px solid #e2e8f0' }}>
+                          {yrSum > 0 ? yrSum : '-'}
+                        </td>
+                      );
+                    }
+                  })}
+
+                  <td style={{ padding: '8px 12px', textAlign: 'right', fontWeight: 900, color: '#0f172a', background: 'rgba(241,245,249,0.5)', borderRight: '1px solid #e2e8f0' }}>
+                    {row.count}
+                  </td>
+
+                  <td style={{ padding: '8px 12px', textAlign: 'right', fontWeight: 800 }}>
+                    <span 
+                      title={isLevel1 ? `${pctVal}% del total general` : `${pctVal}% del subtotal de ${row.parentName} (${pctOfTotal}% del total)`}
+                      style={{ 
+                        background: isLevel1 ? 'rgba(30,64,175,0.08)' : 'rgba(16,185,129,0.1)', 
+                        color: isLevel1 ? '#1e40af' : '#047857',
+                        padding: '2px 8px', 
+                        borderRadius: '10px', 
+                        fontSize: '0.75rem',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '4px'
+                      }}
+                    >
+                      {pctVal}% {!isLevel1 && <span style={{ fontSize: '0.65rem', opacity: 0.85, fontWeight: 700 }}>(subt.)</span>}
+                    </span>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+          <tfoot style={{ position: 'sticky', bottom: 0, zIndex: 30, background: '#1e3a8a', color: 'white' }}>
+            <tr>
+              <td style={{ padding: '12px 16px', position: 'sticky', left: 0, zIndex: 40, background: '#1e3a8a', fontWeight: 900, borderRight: '1px solid rgba(255,255,255,0.2)' }}>
+                TOTAL GENERAL DE SUSPENSIONES
+              </td>
+              {years.map(yr => {
+                const months = yearMonthsMap[yr] || [];
+                const isExpanded = expandedYears[yr] !== false;
+                
+                let yrTotal = 0;
+                suspData.forEach(r => {
+                  if (r.fecha_programacion && r.fecha_programacion.startsWith(yr)) yrTotal++;
+                });
+
+                if (isExpanded) {
+                  return (
+                    <React.Fragment key={`tf-${yr}`}>
+                      {months.map(mKey => {
+                        let mTotal = 0;
+                        suspData.forEach(r => {
+                          if (r.fecha_programacion && r.fecha_programacion.startsWith(mKey)) mTotal++;
+                        });
+                        return (
+                          <td key={`tf-${mKey}`} style={{ padding: '10px', textAlign: 'right', fontWeight: 800, borderRight: '1px solid rgba(255,255,255,0.15)' }}>
+                            {mTotal}
+                          </td>
+                        );
+                      })}
+                      <td style={{ padding: '10px', textAlign: 'right', fontWeight: 900, background: '#172554', borderRight: '1px solid rgba(255,255,255,0.2)' }}>
+                        {yrTotal}
+                      </td>
+                    </React.Fragment>
+                  );
+                } else {
+                  return (
+                    <td key={`tf-tot-${yr}`} style={{ padding: '10px', textAlign: 'right', fontWeight: 900, background: '#172554', borderRight: '1px solid rgba(255,255,255,0.2)' }}>
+                      {yrTotal}
+                    </td>
+                  );
+                }
+              })}
+              <td style={{ padding: '12px', textAlign: 'right', fontWeight: 900, fontSize: '0.95rem', background: '#0f172a', borderRight: '1px solid rgba(255,255,255,0.2)' }}>
+                {totalGeneralSusp}
+              </td>
+              <td style={{ padding: '12px', textAlign: 'right', fontWeight: 900, fontSize: '0.95rem', background: '#0f172a' }}>
+                100.0%
+              </td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </div>
+  );
+};
+
+/* ==========================================================================
+   COMPONENTE: PANEL DE ANÁLISIS DE HALLAZGOS ESTADÍSTICOS DEL PACIENTE SUSPENDIDO
+   ========================================================================== */
+const AnalisisHallazgosSuspensiones = ({ data = [] }) => {
+  const stats = useMemo(() => {
+    const susp = data.filter(r => r.estado === 'Suspendido');
+    const total = susp.length;
+    if (total === 0) return null;
+
+    const prioMap = {};
+    let infantiles = 0;
+    let adultos = 0;
+    let mayores = 0;
+    let sumEdad = 0;
+    let validEdadCount = 0;
+
+    let masculino = 0;
+    let femenino = 0;
+
+    const cirugiasMap = {};
+    let electiva = 0;
+    let urgencia = 0;
+    let ambulatoria = 0;
+    let hospitalizado = 0;
+
+    susp.forEach(r => {
+      const p = r.priorizacion || 'No Especificada';
+      prioMap[p] = (prioMap[p] || 0) + 1;
+
+      const age = parseInt(r.edad, 10);
+      if (!isNaN(age)) {
+        sumEdad += age;
+        validEdadCount++;
+        if (age < 18) infantiles++;
+        else if (age < 60) adultos++;
+        else mayores++;
+      }
+
+      const s = String(r.sexo || '').toUpperCase();
+      if (s.startsWith('M')) masculino++;
+      else if (s.startsWith('F')) femenino++;
+
+      const cir = r.intervencion_propuesta || 'Sin Nombre';
+      cirugiasMap[cir] = (cirugiasMap[cir] || 0) + 1;
+
+      const proc = (r.procedencia || '').toLowerCase();
+      if (proc.includes('urg')) urgencia++;
+      else electiva++;
+
+      const mod = (r.modalidad || r.tipo_cirugia || '').toLowerCase();
+      if (mod.includes('amb')) ambulatoria++;
+      else hospitalizado++;
+    });
+
+    const topPrio = Object.entries(prioMap)
+      .map(([name, count]) => ({ name, count, pct: ((count / total) * 100).toFixed(1) }))
+      .sort((a, b) => b.count - a.count);
+
+    const topCirugias = Object.entries(cirugiasMap)
+      .map(([name, count]) => ({ name, count, pct: ((count / total) * 100).toFixed(1) }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 5);
+
+    const avgAge = validEdadCount > 0 ? (sumEdad / validEdadCount).toFixed(1) : 0;
+
+    return {
+      total,
+      topPrio,
+      avgAge,
+      infantiles,
+      adultos,
+      mayores,
+      masculino,
+      femenino,
+      topCirugias,
+      electiva,
+      urgencia,
+      ambulatoria,
+      hospitalizado
+    };
+  }, [data]);
+
+  if (!stats) return null;
+
+  return (
+    <div style={{ background: 'linear-gradient(135deg, #1e3a8a, #0f172a)', borderRadius: '20px', padding: '24px', color: 'white', boxShadow: '0 10px 30px rgba(15, 23, 42, 0.2)', marginBottom: '32px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '14px' }}>
+        <TrendingUp size={24} color="#38bdf8" />
+        <div>
+          <h3 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 800, color: 'white' }}>
+            Análisis de Hallazgos Estadísticos del Paciente Suspendido
+          </h3>
+          <p style={{ margin: '2px 0 0 0', fontSize: '0.8rem', color: '#93c5fd' }}>
+            Perfil del paciente, origen de programación, prioridad clínica y cirugías de mayor impacto
+          </p>
+        </div>
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px' }}>
+        <div style={{ background: 'rgba(255,255,255,0.07)', padding: '18px', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.1)' }}>
+          <h4 style={{ margin: '0 0 12px 0', fontSize: '0.85rem', fontWeight: 800, color: '#38bdf8', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+            Origen y Prioridad Clínica
+          </h4>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            {stats.topPrio.map((p, idx) => (
+              <div key={idx}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.78rem', marginBottom: '4px' }}>
+                  <span style={{ fontWeight: 600 }}>{p.name}</span>
+                  <span style={{ fontWeight: 800, color: '#60a5fa' }}>{p.count} ({p.pct}%)</span>
+                </div>
+                <div style={{ background: 'rgba(255,255,255,0.15)', height: '6px', borderRadius: '3px', overflow: 'hidden' }}>
+                  <div style={{ background: '#38bdf8', height: '100%', width: `${p.pct}%`, borderRadius: '3px' }} />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div style={{ background: 'rgba(255,255,255,0.07)', padding: '18px', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.1)' }}>
+          <h4 style={{ margin: '0 0 12px 0', fontSize: '0.85rem', fontWeight: 800, color: '#60a5fa', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+            Perfil Sociodemográfico
+          </h4>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: '10px', marginBottom: '14px' }}>
+            <span style={{ fontSize: '2rem', fontWeight: 900, color: '#60a5fa' }}>{stats.avgAge}</span>
+            <span style={{ fontSize: '0.8rem', opacity: 0.8 }}>años edad promedio</span>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', marginBottom: '12px', textAlign: 'center' }}>
+            <div style={{ background: 'rgba(255,255,255,0.08)', padding: '8px', borderRadius: '10px' }}>
+              <span style={{ display: 'block', fontSize: '0.65rem', opacity: 0.7, textTransform: 'uppercase' }}>Mayor (60+)</span>
+              <strong style={{ fontSize: '1.1rem', color: '#fcd34d' }}>{stats.mayores}</strong>
+            </div>
+            <div style={{ background: 'rgba(255,255,255,0.08)', padding: '8px', borderRadius: '10px' }}>
+              <span style={{ display: 'block', fontSize: '0.65rem', opacity: 0.7, textTransform: 'uppercase' }}>Adulto (18-59)</span>
+              <strong style={{ fontSize: '1.1rem', color: '#60a5fa' }}>{stats.adultos}</strong>
+            </div>
+            <div style={{ background: 'rgba(255,255,255,0.08)', padding: '8px', borderRadius: '10px' }}>
+              <span style={{ display: 'block', fontSize: '0.65rem', opacity: 0.7, textTransform: 'uppercase' }}>Infantil (&lt;18)</span>
+              <strong style={{ fontSize: '1.1rem', color: '#f472b6' }}>{stats.infantiles}</strong>
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', justifyContent: 'space-around', fontSize: '0.8rem', opacity: 0.9, borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '10px' }}>
+            <span>Masculino: <strong>{stats.masculino}</strong></span>
+            <span>Femenino: <strong>{stats.femenino}</strong></span>
+          </div>
+        </div>
+
+        <div style={{ background: 'rgba(255,255,255,0.07)', padding: '18px', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.1)' }}>
+          <h4 style={{ margin: '0 0 12px 0', fontSize: '0.85rem', fontWeight: 800, color: '#fcd34d', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+            Top Intervenciones Suspendidas
+          </h4>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            {stats.topCirugias.map((c, idx) => (
+              <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.75rem', background: 'rgba(255,255,255,0.05)', padding: '6px 10px', borderRadius: '8px' }}>
+                <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '200px' }} title={c.name}>
+                  {idx + 1}. {c.name}
+                </span>
+                <span style={{ fontWeight: 800, color: '#fcd34d', whiteSpace: 'nowrap' }}>
+                  {c.count} ({c.pct}%)
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+/* ==========================================================================
+   COMPONENTE: ANÁLISIS AVANZADO DE CIRUJANOS, ANESTESIÓLOGOS Y CAUSAS
+   ========================================================================== */
+const AnalisisCirujanosYCausas = ({ data = [] }) => {
+  const [viewMode, setViewMode] = useState('cirujano');
+  const [selectedProf, setSelectedProf] = useState(null);
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const { totalGeneral, profList, causeList, paretoData, kpis } = useMemo(() => {
+    const susp = data.filter(r => r.estado === 'Suspendido');
+    const totalGeneral = susp.length;
+
+    const isGestionHospitalaria = (causaStr = '', motivoStr = '') => {
+      const c = (causaStr + ' ' + motivoStr).toLowerCase();
+      return c.includes('tabla') || c.includes('tiempo') || c.includes('examen') || 
+             c.includes('insumo') || c.includes('pabellon') || c.includes('cama') || 
+             c.includes('administrativ') || c.includes('personal') || c.includes('equipo') ||
+             c.includes('anestesi') || c.includes('cirujan');
+    };
+
+    let totalEvitable = 0;
+    const profMap = {};
+    const causaMap = {};
+
+    susp.forEach(r => {
+      const cir = r.cirujano || r.primer_cirujano || 'Sin Médico Asignado';
+      const ane = r.anestesiologo || 'Sin Anestesiólogo Especificado';
+      const causa = r.causa_suspension || 'Sin Causa Especificada';
+      const motivo = r.motivo_suspension || '';
+      const esp = r.especialidad || 'General';
+      const evitable = isGestionHospitalaria(causa, motivo);
+      if (evitable) totalEvitable++;
+
+      const targetProfKey = viewMode === 'anestesiologo' ? ane : cir;
+
+      if (!profMap[targetProfKey]) {
+        profMap[targetProfKey] = {
+          name: targetProfKey,
+          especialidad: esp,
+          total: 0,
+          evitableCount: 0,
+          causas: {},
+          intervenciones: {}
+        };
+      }
+      profMap[targetProfKey].total++;
+      if (evitable) profMap[targetProfKey].evitableCount++;
+      
+      profMap[targetProfKey].causas[causa] = (profMap[targetProfKey].causas[causa] || 0) + 1;
+
+      const int = r.intervencion_propuesta || 'No Especificada';
+      profMap[targetProfKey].intervenciones[int] = (profMap[targetProfKey].intervenciones[int] || 0) + 1;
+
+      if (!causaMap[causa]) {
+        causaMap[causa] = { name: causa, total: 0, isEvitable: evitable, profesionales: {}, especialidades: {} };
+      }
+      causaMap[causa].total++;
+      causaMap[causa].profesionales[targetProfKey] = (causaMap[causa].profesionales[targetProfKey] || 0) + 1;
+      causaMap[causa].especialidades[esp] = (causaMap[causa].especialidades[esp] || 0) + 1;
+    });
+
+    const profList = Object.values(profMap).sort((a, b) => b.total - a.total);
+    const causeList = Object.values(causaMap).sort((a, b) => b.total - a.total);
+
+    let accum = 0;
+    const paretoData = causeList.slice(0, 10).map(c => {
+      accum += c.total;
+      return {
+        name: c.name.length > 25 ? c.name.substring(0, 25) + '...' : c.name,
+        fullName: c.name,
+        total: c.total,
+        pct: totalGeneral > 0 ? parseFloat(((c.total / totalGeneral) * 100).toFixed(1)) : 0,
+        accumPct: totalGeneral > 0 ? parseFloat(((accum / totalGeneral) * 100).toFixed(1)) : 0
+      };
+    });
+
+    const pctEvitableGlobal = totalGeneral > 0 ? ((totalEvitable / totalGeneral) * 100).toFixed(1) : '0.0';
+    const topProf = profList[0] ? profList[0].name : 'N/A';
+    const topCausa = causeList[0] ? causeList[0].name : 'N/A';
+
+    return {
+      suspData: susp,
+      totalGeneral,
+      profList,
+      causeList,
+      paretoData,
+      kpis: { totalGeneral, totalEvitable, pctEvitableGlobal, topProf, topCausa }
+    };
+  }, [data, viewMode]);
+
+  const filteredProfList = useMemo(() => {
+    if (!searchQuery) return profList;
+    return profList.filter(p => 
+      p.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+      p.especialidad.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  }, [profList, searchQuery]);
+
+  if (totalGeneral === 0) return null;
+
+  return (
+    <div style={{ background: 'white', borderRadius: '24px', border: '1px solid #e2e8f0', padding: '28px', boxShadow: '0 10px 30px rgba(0,0,0,0.04)', marginBottom: '32px' }}>
+      <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: '16px', marginBottom: '24px', paddingBottom: '20px', borderBottom: '1px solid #f1f5f9' }}>
+        <div>
+          <h3 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 800, color: '#0f172a', display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <Users size={24} color="#1e40af" />
+            Análisis Impacto por Cirujano, Anestesiólogo & Causas
+          </h3>
+          <p style={{ margin: '4px 0 0 0', fontSize: '0.85rem', color: '#64748b' }}>
+            Evaluación de peso porcentual de suspensiones e indicadores de evitabilidad para toma de decisiones
+          </p>
+        </div>
+
+        <div style={{ display: 'flex', gap: '8px', background: '#f8fafc', padding: '6px', borderRadius: '14px', border: '1px solid #e2e8f0' }}>
+          <button
+            onClick={() => { setViewMode('cirujano'); setSelectedProf(null); }}
+            style={{
+              padding: '8px 16px', fontSize: '0.8rem', fontWeight: viewMode === 'cirujano' ? 800 : 600,
+              borderRadius: '10px', border: 'none',
+              background: viewMode === 'cirujano' ? 'linear-gradient(135deg, #1e40af, #1d4ed8)' : 'transparent',
+              color: viewMode === 'cirujano' ? 'white' : '#475569', cursor: 'pointer', transition: 'all 0.2s',
+              boxShadow: viewMode === 'cirujano' ? '0 4px 12px rgba(30, 64, 175, 0.25)' : 'none'
+            }}
+          >
+            👨‍⚕️ Por Cirujano
+          </button>
+          <button
+            onClick={() => { setViewMode('anestesiologo'); setSelectedProf(null); }}
+            style={{
+              padding: '8px 16px', fontSize: '0.8rem', fontWeight: viewMode === 'anestesiologo' ? 800 : 600,
+              borderRadius: '10px', border: 'none',
+              background: viewMode === 'anestesiologo' ? 'linear-gradient(135deg, #0d9488, #0f766e)' : 'transparent',
+              color: viewMode === 'anestesiologo' ? 'white' : '#475569', cursor: 'pointer', transition: 'all 0.2s',
+              boxShadow: viewMode === 'anestesiologo' ? '0 4px 12px rgba(13, 148, 136, 0.25)' : 'none'
+            }}
+          >
+            💉 Por Anestesiólogo
+          </button>
+          <button
+            onClick={() => { setViewMode('causa'); setSelectedProf(null); }}
+            style={{
+              padding: '8px 16px', fontSize: '0.8rem', fontWeight: viewMode === 'causa' ? 800 : 600,
+              borderRadius: '10px', border: 'none',
+              background: viewMode === 'causa' ? 'linear-gradient(135deg, #ea580c, #c2410c)' : 'transparent',
+              color: viewMode === 'causa' ? 'white' : '#475569', cursor: 'pointer', transition: 'all 0.2s',
+              boxShadow: viewMode === 'causa' ? '0 4px 12px rgba(234, 88, 12, 0.25)' : 'none'
+            }}
+          >
+            ⚠️ Matriz & Pareto de Causas
+          </button>
+        </div>
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginBottom: '24px' }}>
+        <div style={{ background: '#f8fafc', padding: '16px 20px', borderRadius: '16px', border: '1px solid #e2e8f0', borderLeft: '5px solid #1e40af' }}>
+          <p style={{ margin: 0, fontSize: '0.7rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase' }}>Total Suspensiones</p>
+          <h4 style={{ margin: '4px 0 0 0', fontSize: '1.8rem', fontWeight: 900, color: '#0f172a' }}>{kpis.totalGeneral}</h4>
+          <span style={{ fontSize: '0.72rem', color: '#64748b' }}>Registros analizados</span>
+        </div>
+        <div style={{ background: '#f8fafc', padding: '16px 20px', borderRadius: '16px', border: '1px solid #e2e8f0', borderLeft: '5px solid #ea580c' }}>
+          <p style={{ margin: 0, fontSize: '0.7rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase' }}>Causas de Gestión Evitables</p>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
+            <h4 style={{ margin: '4px 0 0 0', fontSize: '1.8rem', fontWeight: 900, color: '#ea580c' }}>{kpis.totalEvitable}</h4>
+            <span style={{ fontSize: '0.85rem', fontWeight: 800, color: '#ea580c' }}>({kpis.pctEvitableGlobal}%)</span>
+          </div>
+          <span style={{ fontSize: '0.72rem', color: '#64748b' }}>Atribuibles a gestión hospitalaria</span>
+        </div>
+        <div style={{ background: '#f8fafc', padding: '16px 20px', borderRadius: '16px', border: '1px solid #e2e8f0', borderLeft: '5px solid #0d9488' }}>
+          <p style={{ margin: 0, fontSize: '0.7rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase' }}>Top Profesional Afectado</p>
+          <h4 style={{ margin: '4px 0 0 0', fontSize: '1rem', fontWeight: 800, color: '#0f172a', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={kpis.topProf}>{kpis.topProf}</h4>
+          <span style={{ fontSize: '0.72rem', color: '#0d9488', fontWeight: 700 }}>Mayor volumen acumulado</span>
+        </div>
+        <div style={{ background: '#f8fafc', padding: '16px 20px', borderRadius: '16px', border: '1px solid #e2e8f0', borderLeft: '5px solid #8b5cf6' }}>
+          <p style={{ margin: 0, fontSize: '0.7rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase' }}>Causa Frecuente #1</p>
+          <h4 style={{ margin: '4px 0 0 0', fontSize: '0.95rem', fontWeight: 800, color: '#0f172a', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={kpis.topCausa}>{kpis.topCausa}</h4>
+          <span style={{ fontSize: '0.72rem', color: '#8b5cf6', fontWeight: 700 }}>Foco de gestión prioritario</span>
+        </div>
+      </div>
+
+      {(viewMode === 'cirujano' || viewMode === 'anestesiologo') && (
+        <div>
+          <div style={{ marginBottom: '20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px' }}>
+            <div style={{ position: 'relative', width: '320px' }}>
+              <Search size={16} color="#64748b" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)' }} />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+                placeholder={`Buscar ${viewMode === 'cirujano' ? 'cirujano' : 'anestesiólogo'}...`}
+                style={{ width: '100%', padding: '8px 12px 8px 36px', borderRadius: '10px', border: '1px solid #cbd5e1', fontSize: '0.85rem', outline: 'none' }}
+              />
+            </div>
+            <span style={{ fontSize: '0.8rem', color: '#64748b', fontWeight: 600 }}>
+              Mostrando {filteredProfList.length} profesionales
+            </span>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: '16px', maxHeight: '520px', overflowY: 'auto', paddingRight: '4px' }}>
+            {filteredProfList.map(prof => {
+              const pctOfAll = totalGeneral > 0 ? ((prof.total / totalGeneral) * 100).toFixed(1) : '0.0';
+              const pctEvit = prof.total > 0 ? ((prof.evitableCount / prof.total) * 100).toFixed(1) : '0.0';
+
+              const sortedCausas = Object.entries(prof.causas)
+                .map(([cName, cCount]) => ({ name: cName, count: cCount, pctOfProf: ((cCount / prof.total) * 100).toFixed(1) }))
+                .sort((a, b) => b.count - a.count);
+
+              const isSelected = selectedProf === prof.name;
+
+              return (
+                <motion.div
+                  key={prof.name}
+                  whileHover={{ y: -2 }}
+                  onClick={() => setSelectedProf(isSelected ? null : prof.name)}
+                  style={{
+                    background: isSelected ? '#f0f9ff' : '#ffffff',
+                    border: isSelected ? '2px solid #0284c7' : '1px solid #e2e8f0',
+                    borderRadius: '16px',
+                    padding: '18px',
+                    cursor: 'pointer',
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.03)',
+                    transition: 'all 0.2s'
+                  }}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
+                    <div style={{ flex: 1, paddingRight: '8px' }}>
+                      <h4 style={{ margin: 0, fontSize: '0.95rem', fontWeight: 800, color: '#0f172a' }}>{prof.name}</h4>
+                      <span style={{ fontSize: '0.72rem', color: '#64748b', fontWeight: 600 }}>{prof.especialidad}</span>
+                    </div>
+                    <div style={{ textAlign: 'right' }}>
+                      <span style={{ background: '#1e40af', color: 'white', padding: '4px 10px', borderRadius: '12px', fontSize: '0.8rem', fontWeight: 900 }}>
+                        {prof.total} cx
+                      </span>
+                      <p style={{ margin: '4px 0 0 0', fontSize: '0.7rem', color: '#64748b', fontWeight: 700 }}>
+                        {pctOfAll}% del total
+                      </p>
+                    </div>
+                  </div>
+
+                  <div style={{ marginBottom: '14px', background: '#f8fafc', padding: '8px 12px', borderRadius: '10px', border: '1px solid #f1f5f9' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.72rem', marginBottom: '4px' }}>
+                      <span style={{ color: '#475569', fontWeight: 700 }}>Causas de Gestión Evitables</span>
+                      <span style={{ color: '#ea580c', fontWeight: 800 }}>{pctEvit}%</span>
+                    </div>
+                    <div style={{ width: '100%', height: '6px', background: '#e2e8f0', borderRadius: '3px', overflow: 'hidden' }}>
+                      <div style={{ width: `${pctEvit}%`, height: '100%', background: 'linear-gradient(90deg, #f97316, #ea580c)', borderRadius: '3px' }} />
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    <p style={{ margin: 0, fontSize: '0.7rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase' }}>
+                      Peso Porcentual por Causa (Subtotal):
+                    </p>
+                    {sortedCausas.slice(0, 3).map(c => (
+                      <div key={c.name} style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem' }}>
+                          <span style={{ color: '#334155', fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '220px' }} title={c.name}>
+                            {c.name}
+                          </span>
+                          <span style={{ fontWeight: 800, color: '#0f172a' }}>
+                            {c.count} ({c.pctOfProf}%)
+                          </span>
+                        </div>
+                        <div style={{ width: '100%', height: '4px', background: '#f1f5f9', borderRadius: '2px', overflow: 'hidden' }}>
+                          <div style={{ width: `${c.pctOfProf}%`, height: '100%', background: '#3b82f6', borderRadius: '2px' }} />
+                        </div>
+                      </div>
+                    ))}
+                    {sortedCausas.length > 3 && (
+                      <span style={{ fontSize: '0.7rem', color: '#1e40af', fontWeight: 700, marginTop: '2px' }}>
+                        + {sortedCausas.length - 3} causas más...
+                      </span>
+                    )}
+                  </div>
+                </motion.div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {viewMode === 'causa' && (
+        <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '24px' }}>
+          <div style={{ background: '#f8fafc', padding: '20px', borderRadius: '16px', border: '1px solid #e2e8f0' }}>
+            <h4 style={{ margin: '0 0 4px 0', fontSize: '1rem', fontWeight: 800, color: '#0f172a' }}>
+              Gráfico de Pareto 80/20 de Causas de Suspensión
+            </h4>
+            <p style={{ margin: '0 0 16px 0', fontSize: '0.78rem', color: '#64748b' }}>
+              Barras: Volumen por Causa | Línea: % Acumulado para identificar las causas críticas
+            </p>
+            <div style={{ height: '380px' }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <ComposedChart data={paretoData} margin={{ top: 20, right: 20, left: -10, bottom: 40 }}>
+                  <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
+                  <XAxis dataKey="name" interval={0} angle={-25} textAnchor="end" tick={{ fontSize: 10, fill: '#475569' }} />
+                  <YAxis yAxisId="left" axisLine={false} tickLine={false} tick={{ fontSize: 11 }} />
+                  <YAxis yAxisId="right" orientation="right" domain={[0, 100]} unit="%" axisLine={false} tickLine={false} tick={{ fontSize: 11 }} />
+                  <RechartsTooltip formatter={(val, name) => [name === 'accumPct' ? `${val}%` : val, name === 'accumPct' ? '% Acumulado' : 'Total Suspensiones']} />
+                  <Bar yAxisId="left" dataKey="total" fill="#1e40af" radius={[4, 4, 0, 0]}>
+                    <LabelList dataKey="total" position="top" style={{ fontSize: '10px', fontWeight: 'bold', fill: '#1e40af' }} />
+                  </Bar>
+                  <Line yAxisId="right" type="monotone" dataKey="accumPct" stroke="#ea580c" strokeWidth={3} dot={{ r: 4, fill: '#ea580c' }} />
+                  <ReferenceLine yAxisId="right" y={80} stroke="#ef4444" strokeDasharray="3 3" label={{ value: 'Regla 80%', fill: '#ef4444', fontSize: 10, fontWeight: 800 }} />
+                </ComposedChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          <div style={{ background: '#f8fafc', padding: '20px', borderRadius: '16px', border: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column' }}>
+            <h4 style={{ margin: '0 0 4px 0', fontSize: '1rem', fontWeight: 800, color: '#0f172a' }}>
+              Matriz de Concentración y Evitabilidad
+            </h4>
+            <p style={{ margin: '0 0 16px 0', fontSize: '0.78rem', color: '#64748b' }}>
+              Desglose de causas y su distribución relativa
+            </p>
+            <div style={{ flex: 1, overflowY: 'auto', maxHeight: '380px' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8rem' }}>
+                <thead>
+                  <tr style={{ background: '#1e40af', color: 'white', textAlign: 'left' }}>
+                    <th style={{ padding: '8px 12px', borderRadius: '6px 0 0 6px' }}>Causa de Suspensión</th>
+                    <th style={{ padding: '8px 12px', textAlign: 'right' }}>Total</th>
+                    <th style={{ padding: '8px 12px', textAlign: 'right' }}>% Total</th>
+                    <th style={{ padding: '8px 12px', textAlign: 'center', borderRadius: '0 6px 6px 0' }}>Origen</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {causeList.map((c, i) => {
+                    const pct = totalGeneral > 0 ? ((c.total / totalGeneral) * 100).toFixed(1) : '0.0';
+                    return (
+                      <tr key={c.name} style={{ borderBottom: '1px solid #e2e8f0', background: i % 2 === 0 ? 'white' : '#f8fafc' }}>
+                        <td style={{ padding: '8px 12px', fontWeight: 700, color: '#0f172a' }}>{c.name}</td>
+                        <td style={{ padding: '8px 12px', textAlign: 'right', fontWeight: 800, color: '#1e40af' }}>{c.total}</td>
+                        <td style={{ padding: '8px 12px', textAlign: 'right', fontWeight: 800, color: '#475569' }}>{pct}%</td>
+                        <td style={{ padding: '8px 12px', textAlign: 'center' }}>
+                          <span style={{
+                            fontSize: '0.68rem', fontWeight: 800, padding: '2px 8px', borderRadius: '8px',
+                            background: c.isEvitable ? 'rgba(234, 88, 12, 0.1)' : 'rgba(59, 130, 246, 0.1)',
+                            color: c.isEvitable ? '#ea580c' : '#2563eb'
+                          }}>
+                            {c.isEvitable ? 'Gestión' : 'Paciente'}
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
 export default function SurgicalDashboard({ onBack }) {
-  const [activeTab, setActiveTab] = useState('libro'); // We start on 'libro' based on user request
+  const [activeTab, setActiveTab] = useState('libro');
+  const [tablaSubTab, setTablaSubTab] = useState('resumen');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [loading, setLoading] = useState(true);
 
@@ -649,6 +1519,32 @@ export default function SurgicalDashboard({ onBack }) {
   const [tablaCirujano, setTablaCirujano] = useState([]);
   const [tablaPabellon, setTablaPabellon] = useState([]);
   const [tablaModalidad, setTablaModalidad] = useState([]);
+
+  // Floating Sidebar state
+  const [sidebarHovered, setSidebarHovered] = useState(false);
+  const [sidebarPinned, setSidebarPinned] = useState(false);
+  const isExpanded = sidebarHovered || sidebarPinned;
+
+  const activeFilterCount = useMemo(() => {
+    if (activeTab === 'libro') {
+      return [tipoCirugia, procedencia, tipoGestor, formaPago, nombreIq, primerCirujano, segundoCirujano, reintervencion]
+        .filter(arr => Array.isArray(arr) && arr.length > 0).length;
+    } else if (activeTab === 'tabla') {
+      return [tablaFechaProg, tablaTipoCirugia, tablaPriorizacion, tablaPabellonCrr, tablaIntervencion, tablaCirujano, tablaPabellon, tablaModalidad]
+        .filter(arr => Array.isArray(arr) && arr.length > 0).length;
+    }
+    return 0;
+  }, [activeTab, tipoCirugia, procedencia, tipoGestor, formaPago, nombreIq, primerCirujano, segundoCirujano, reintervencion, tablaFechaProg, tablaTipoCirugia, tablaPriorizacion, tablaPabellonCrr, tablaIntervencion, tablaCirujano, tablaPabellon, tablaModalidad]);
+
+  const clearAllFilters = () => {
+    if (activeTab === 'libro') {
+      setTipoCirugia([]); setProcedencia([]); setTipoGestor([]); setFormaPago([]);
+      setNombreIq([]); setPrimerCirujano([]); setSegundoCirujano([]); setReintervencion([]);
+    } else if (activeTab === 'tabla') {
+      setTablaFechaProg([]); setTablaTipoCirugia([]); setTablaPriorizacion([]); setTablaPabellonCrr([]);
+      setTablaIntervencion([]); setTablaCirujano([]); setTablaPabellon([]); setTablaModalidad([]);
+    }
+  };
 
   useEffect(() => {
     async function loadData() {
@@ -1210,7 +2106,7 @@ export default function SurgicalDashboard({ onBack }) {
         <div style={{ display: 'flex', gap: '12px', background: '#2d334a', padding: '12px', borderRadius: '20px', border: '1px solid rgba(255,255,255,0.1)', boxShadow: '0 10px 25px rgba(0,0,0,0.1)', position: 'sticky', top: 0, zIndex: 10 }}>
           {[
             { id: 'libro', label: 'Estadística (Libro)', icon: <BarChart2 size={18} /> },
-            { id: 'tabla', label: 'Tabla de Programación', icon: <Calendar size={18} /> },
+            { id: 'tabla', label: 'Programación de tabla', icon: <Calendar size={18} /> },
             { id: 'disponibilidad', label: 'Disponibilidad (Infra)', icon: <Clock size={18} /> }
           ].map(tab => (
             <button
@@ -1235,65 +2131,153 @@ export default function SurgicalDashboard({ onBack }) {
         </div>
       </header>
 
-      {/* MAIN CONTENT AREA WITH SIDEBAR */}
+      {/* MAIN CONTENT AREA WITH FLOATING SIDEBAR */}
       {(activeTab === 'libro' || activeTab === 'tabla') && (
-        <div style={{ display: 'flex', flex: 1, alignItems: 'flex-start' }}>
-          {/* SIDEBAR */}
+        <div style={{ display: 'flex', flex: 1, alignItems: 'flex-start', position: 'relative' }}>
+          {/* FLOATING SIDEBAR */}
           <motion.div
-            animate={{ width: sidebarCollapsed ? '70px' : '300px' }}
+            onMouseEnter={() => setSidebarHovered(true)}
+            onMouseLeave={() => setSidebarHovered(false)}
+            initial={false}
+            animate={{ 
+              width: isExpanded ? 320 : 64,
+              boxShadow: isExpanded 
+                ? '0 25px 50px -12px rgba(15, 23, 42, 0.25), 0 0 0 1px rgba(30, 64, 175, 0.2)' 
+                : '0 10px 30px -5px rgba(15, 23, 42, 0.12)'
+            }}
+            transition={{ type: 'spring', stiffness: 350, damping: 28 }}
             style={{
-              background: 'white',
-              borderRight: '1px solid #e2e8f0',
-              height: '100vh',
-              overflowY: sidebarCollapsed ? 'hidden' : 'auto',
-              overflowX: 'hidden',
-              flexShrink: 0,
+              position: 'fixed',
+              top: '125px',
+              left: '20px',
+              height: 'calc(100vh - 150px)',
+              zIndex: 90,
+              background: 'rgba(255, 255, 255, 0.94)',
+              backdropFilter: 'blur(20px)',
+              WebkitBackdropFilter: 'blur(20px)',
+              borderRadius: '24px',
+              border: '1px solid rgba(226, 232, 240, 0.9)',
               display: 'flex',
               flexDirection: 'column',
-              boxShadow: '2px 0 10px rgba(0,0,0,0.02)',
-              position: 'sticky',
-              top: 0,
-              zIndex: 10
+              overflow: 'hidden'
             }}
           >
-            {/* Toggle Sidebar Button inside sidebar */}
-            <div style={{ display: 'flex', justifyContent: sidebarCollapsed ? 'center' : 'flex-end', padding: '16px', borderBottom: '1px solid #f1f5f9' }}>
-              <button
-                onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-                style={{
-                  width: '32px', height: '32px', borderRadius: '8px',
-                  background: '#f1f5f9', border: '1px solid #e2e8f0',
-                  color: '#64748b', cursor: 'pointer',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  transition: 'all 0.2s'
-                }}
-              >
-                {sidebarCollapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
-              </button>
+            {/* Header */}
+            <div style={{ 
+              padding: isExpanded ? '18px 20px' : '18px 0', 
+              borderBottom: '1px solid rgba(226, 232, 240, 0.7)', 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: isExpanded ? 'space-between' : 'center',
+              background: isExpanded ? 'linear-gradient(135deg, rgba(248, 250, 252, 0.9), rgba(241, 245, 249, 0.6))' : 'transparent',
+              transition: 'all 0.3s ease'
+            }}>
+              {isExpanded ? (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', width: '100%', justifyContent: 'space-between' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <div style={{ 
+                      width: '36px', height: '36px', borderRadius: '12px', 
+                      background: 'linear-gradient(135deg, #1e40af, #1e3a8a)', 
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      color: 'white', boxShadow: '0 4px 12px rgba(30, 64, 175, 0.3)'
+                    }}>
+                      <Filter size={18} />
+                    </div>
+                    <div>
+                      <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 800, color: '#0f172a' }}>Filtros</h3>
+                      {activeFilterCount > 0 ? (
+                        <span style={{ fontSize: '0.7rem', color: '#1e40af', fontWeight: 700 }}>
+                          {activeFilterCount} filtro{activeFilterCount > 1 ? 's' : ''} activo{activeFilterCount > 1 ? 's' : ''}
+                        </span>
+                      ) : (
+                        <span style={{ fontSize: '0.7rem', color: '#94a3b8', fontWeight: 500 }}>
+                          Pasa el mouse para desplegar
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    {activeFilterCount > 0 && (
+                      <button
+                        onClick={clearAllFilters}
+                        title="Limpiar filtros"
+                        style={{
+                          padding: '6px 10px', borderRadius: '10px',
+                          background: 'rgba(239, 68, 68, 0.1)', border: 'none',
+                          color: '#ef4444', fontSize: '0.75rem', fontWeight: 700,
+                          cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px',
+                          transition: 'all 0.2s'
+                        }}
+                      >
+                        <RotateCcw size={12} /> Limpiar
+                      </button>
+                    )}
+                    <button
+                      onClick={() => setSidebarPinned(!sidebarPinned)}
+                      title={sidebarPinned ? "Desfijar menú" : "Fijar menú abierto"}
+                      style={{
+                        width: '32px', height: '32px', borderRadius: '10px',
+                        background: sidebarPinned ? '#1e40af' : 'rgba(241, 245, 249, 0.8)',
+                        border: '1px solid #e2e8f0',
+                        color: sidebarPinned ? 'white' : '#64748b', cursor: 'pointer',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        transition: 'all 0.2s'
+                      }}
+                    >
+                      <Pin size={14} style={{ transform: sidebarPinned ? 'rotate(45deg)' : 'none', transition: 'transform 0.2s' }} />
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
+                  <div style={{ 
+                    width: '40px', height: '40px', borderRadius: '14px', 
+                    background: activeFilterCount > 0 ? 'linear-gradient(135deg, #1e40af, #1e3a8a)' : '#f1f5f9', 
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    color: activeFilterCount > 0 ? 'white' : '#64748b',
+                    boxShadow: activeFilterCount > 0 ? '0 4px 12px rgba(30, 64, 175, 0.3)' : 'none',
+                    transition: 'all 0.3s ease'
+                  }}>
+                    <Filter size={20} />
+                  </div>
+                  {activeFilterCount > 0 && (
+                    <span style={{ 
+                      position: 'absolute', top: '-4px', right: '-4px',
+                      background: '#ef4444', color: 'white', fontSize: '0.65rem',
+                      fontWeight: 900, borderRadius: '50%', width: '18px', height: '18px',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      border: '2px solid white', boxShadow: '0 2px 6px rgba(239, 68, 68, 0.4)'
+                    }}>
+                      {activeFilterCount}
+                    </span>
+                  )}
+                </div>
+              )}
             </div>
 
-            <div style={{ padding: sidebarCollapsed ? '24px 0' : '24px', display: 'flex', flexDirection: 'column', alignItems: sidebarCollapsed ? 'center' : 'stretch' }}>
-              <div style={{ display: 'flex', justifyContent: sidebarCollapsed ? 'center' : 'flex-start', alignItems: 'center', marginBottom: '24px' }}>
-                <Filter size={sidebarCollapsed ? 24 : 18} color="#0f172a" />
-                {!sidebarCollapsed && <h3 style={{ margin: '0 0 0 8px', fontSize: '1.1rem', fontWeight: 700, color: '#0f172a' }}>Filtros</h3>}
-              </div>
-
-              {/* Filters List */}
-              {!sidebarCollapsed && (
-                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-
-                  {/* Date Range applies to both Libro and Tabla */}
-                  <div>
-                    <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, marginBottom: '8px', color: '#64748b', textTransform: 'uppercase' }}>Periodo de Monitoreo</label>
+            {/* Scrollable Filters List */}
+            <div style={{ 
+              flex: 1, 
+              overflowY: isExpanded ? 'auto' : 'hidden', 
+              padding: isExpanded ? '20px' : '16px 8px',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '20px'
+            }}>
+              {isExpanded ? (
+                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.2 }} style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
+                  {/* Periodo de Monitoreo */}
+                  <div style={{ background: '#f8fafc', padding: '14px', borderRadius: '16px', border: '1px solid #f1f5f9' }}>
+                    <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 800, marginBottom: '10px', color: '#1e40af', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Periodo de Monitoreo</label>
                     <div style={{ display: 'flex', gap: '8px' }}>
-                      <input type="date" defaultValue={dateRange.start} onBlur={e => setDateRange(p => ({ ...p, start: e.target.value }))} style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #e2e8f0', background: '#f8fafc', color: '#1e293b', fontSize: '0.85rem', outline: 'none' }} />
-                      <input type="date" defaultValue={dateRange.end} onBlur={e => setDateRange(p => ({ ...p, end: e.target.value }))} style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #e2e8f0', background: '#f8fafc', color: '#1e293b', fontSize: '0.85rem', outline: 'none' }} />
+                      <input type="date" defaultValue={dateRange.start} onBlur={e => setDateRange(p => ({ ...p, start: e.target.value }))} style={{ width: '100%', padding: '8px 10px', borderRadius: '10px', border: '1px solid #e2e8f0', background: 'white', color: '#1e293b', fontSize: '0.8rem', outline: 'none', fontWeight: 600 }} />
+                      <input type="date" defaultValue={dateRange.end} onBlur={e => setDateRange(p => ({ ...p, end: e.target.value }))} style={{ width: '100%', padding: '8px 10px', borderRadius: '10px', border: '1px solid #e2e8f0', background: 'white', color: '#1e293b', fontSize: '0.8rem', outline: 'none', fontWeight: 600 }} />
                     </div>
                   </div>
 
                   {activeTab === 'libro' && (
                     <>
-
                       {[
                         { label: 'Tipo de Cirugía', val: tipoCirugia, set: setTipoCirugia, options: dropdowns.tipos },
                         { label: 'Procedencia', val: procedencia, set: setProcedencia, options: dropdowns.procedencias },
@@ -1305,7 +2289,7 @@ export default function SurgicalDashboard({ onBack }) {
                         { label: 'Reintervención', val: reintervencion, set: setReintervencion, options: dropdowns.reints }
                       ].map((f, i) => (
                         <div key={i}>
-                          <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, marginBottom: '8px', color: '#64748b', textTransform: 'uppercase' }}>{f.label}</label>
+                          <label style={{ display: 'block', fontSize: '0.72rem', fontWeight: 700, marginBottom: '6px', color: '#64748b', textTransform: 'uppercase' }}>{f.label}</label>
                           <MultiSearchableSelect value={f.val} options={f.options} onChange={f.set} />
                         </div>
                       ))}
@@ -1325,20 +2309,25 @@ export default function SurgicalDashboard({ onBack }) {
                         { label: 'Modalidad de atención', val: tablaModalidad, set: setTablaModalidad, options: tablaDropdowns.mods }
                       ].map((f, i) => (
                         <div key={i}>
-                          <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, marginBottom: '8px', color: '#64748b', textTransform: 'uppercase' }}>{f.label}</label>
+                          <label style={{ display: 'block', fontSize: '0.72rem', fontWeight: 700, marginBottom: '6px', color: '#64748b', textTransform: 'uppercase' }}>{f.label}</label>
                           <MultiSearchableSelect value={f.val} options={f.options} onChange={f.set} />
                         </div>
                       ))}
                     </>
                   )}
-
                 </motion.div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px', paddingTop: '10px' }}>
+                  <div title="Pasa el mouse para filtrar" style={{ fontSize: '0.65rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', writingMode: 'vertical-rl', transform: 'rotate(180deg)', letterSpacing: '2px', cursor: 'pointer' }}>
+                    FILTROS
+                  </div>
+                </div>
               )}
             </div>
           </motion.div>
 
           {/* RIGHT DASHBOARD CONTENT */}
-          <div style={{ flex: 1, padding: '32px', overflowY: 'auto' }}>
+          <div style={{ flex: 1, padding: '32px 32px 32px 100px', overflowY: 'auto' }}>
             {loading ? (
               <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
                 <p>Cargando datos...</p>
@@ -1350,11 +2339,11 @@ export default function SurgicalDashboard({ onBack }) {
                   <>
                     {/* KPI ROW */}
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px', marginBottom: '32px' }}>
-                      <div style={{ background: 'white', padding: '24px', borderRadius: '24px', border: '1px solid rgba(41, 90, 100, 0.2)', borderLeft: '6px solid #295A64', boxShadow: '0 10px 30px rgba(41, 90, 100, 0.05)' }}>
+                      <div style={{ background: 'white', padding: '24px', borderRadius: '24px', border: '1px solid rgba(30, 64, 175, 0.2)', borderLeft: '6px solid #1e40af', boxShadow: '0 10px 30px rgba(30, 64, 175, 0.05)' }}>
                         <p style={{ margin: 0, fontSize: '0.8rem', color: '#64748b', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Producción Total</p>
-                        <h2 style={{ margin: '8px 0', fontSize: '2.8rem', color: '#295A64', fontWeight: 900 }}>{totalKPI.val.toLocaleString()}</h2>
+                        <h2 style={{ margin: '8px 0', fontSize: '2.8rem', color: '#1e40af', fontWeight: 900 }}>{totalKPI.val.toLocaleString()}</h2>
                         <p style={{ margin: 0, fontSize: '0.85rem', color: '#64748b', fontWeight: 500 }}>Cirugías registradas</p>
-                        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '0.75rem', background: totalKPI.trend === 'positive' ? 'rgba(41, 90, 100, 0.1)' : 'rgba(239, 68, 68, 0.1)', color: totalKPI.trend === 'positive' ? '#295A64' : '#ef4444', padding: '4px 10px', borderRadius: '12px', fontWeight: 800, marginTop: '12px' }}>
+                        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '0.75rem', background: totalKPI.trend === 'positive' ? 'rgba(30, 64, 175, 0.1)' : 'rgba(239, 68, 68, 0.1)', color: totalKPI.trend === 'positive' ? '#1e40af' : '#ef4444', padding: '4px 10px', borderRadius: '12px', fontWeight: 800, marginTop: '12px' }}>
                           <Activity size={14} /> {totalKPI.text}
                         </div>
                       </div>
@@ -1424,8 +2413,8 @@ export default function SurgicalDashboard({ onBack }) {
 
                         <div style={{ background: 'white', padding: '24px', borderRadius: '16px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px rgba(0,0,0,0.02)', display: 'flex', flexDirection: 'column', flex: 1 }}>
                           <div style={{ display: 'flex', justifyContent: 'center', gap: '8px', marginBottom: '24px' }}>
-                            <button onClick={() => setPieMode('cirugia')} style={{ padding: '8px 16px', fontSize: '0.85rem', fontWeight: 800, borderRadius: '8px', border: 'none', background: pieMode === 'cirugia' ? '#295A64' : '#f1f5f9', color: pieMode === 'cirugia' ? 'white' : '#64748b', cursor: 'pointer' }}>Por Cirugía</button>
-                            <button onClick={() => setPieMode('familia')} style={{ padding: '8px 16px', fontSize: '0.85rem', fontWeight: 800, borderRadius: '8px', border: 'none', background: pieMode === 'familia' ? '#295A64' : '#f1f5f9', color: pieMode === 'familia' ? 'white' : '#64748b', cursor: 'pointer' }}>Por Familia</button>
+                            <button onClick={() => setPieMode('cirugia')} style={{ padding: '8px 16px', fontSize: '0.85rem', fontWeight: 800, borderRadius: '8px', border: 'none', background: pieMode === 'cirugia' ? '#1e40af' : '#f1f5f9', color: pieMode === 'cirugia' ? 'white' : '#64748b', cursor: 'pointer' }}>Por Cirugía</button>
+                            <button onClick={() => setPieMode('familia')} style={{ padding: '8px 16px', fontSize: '0.85rem', fontWeight: 800, borderRadius: '8px', border: 'none', background: pieMode === 'familia' ? '#1e40af' : '#f1f5f9', color: pieMode === 'familia' ? 'white' : '#64748b', cursor: 'pointer' }}>Por Familia</button>
                           </div>
 
                           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: '450px' }}>
@@ -1460,7 +2449,7 @@ export default function SurgicalDashboard({ onBack }) {
                     </div>
 
                     {/* FULL WIDTH INSIGHTS PANEL */}
-                    <div style={{ background: 'linear-gradient(135deg, #295A64, #1f434a)', padding: '24px', borderRadius: '16px', color: 'white', display: 'flex', flexDirection: 'column', boxShadow: '0 4px 6px rgba(0,0,0,0.05)' }}>
+                    <div style={{ background: 'linear-gradient(135deg, #1e40af, #1e3a8a)', padding: '24px', borderRadius: '16px', color: 'white', display: 'flex', flexDirection: 'column', boxShadow: '0 4px 6px rgba(0,0,0,0.05)' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '24px' }}>
                         <TrendingUp size={18} color="#F2A400" />
                         <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 700 }}>Insights Operativos y Procedencia</h3>
@@ -1504,9 +2493,9 @@ export default function SurgicalDashboard({ onBack }) {
                           </div>
                         </div>
                         <div style={{ background: 'rgba(255,255,255,0.08)', padding: '16px', borderRadius: '12px' }}>
-                          <p style={{ margin: '0 0 4px 0', fontSize: '0.65rem', opacity: 0.9, textTransform: 'uppercase', color: '#94BCC1', fontWeight: 800 }}>Cobertura GES & Espera</p>
+                          <p style={{ margin: '0 0 4px 0', fontSize: '0.65rem', opacity: 0.9, textTransform: 'uppercase', color: '#38bdf8', fontWeight: 800 }}>Cobertura GES & Espera</p>
                           <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
-                            <h4 style={{ margin: 0, fontSize: '1.8rem', fontWeight: 900, color: '#94BCC1' }}>{insights.porcentajeGES}%</h4>
+                            <h4 style={{ margin: 0, fontSize: '1.8rem', fontWeight: 900, color: '#38bdf8' }}>{insights.porcentajeGES}%</h4>
                             <span style={{ fontSize: '0.75rem', opacity: 0.7 }}>Garantizadas</span>
                           </div>
                           <p style={{ margin: '4px 0 0 0', fontSize: '0.75rem', opacity: 0.7 }}>T. Espera Promedio: <strong>{insights.promedioEspera} días</strong></p>
@@ -1522,7 +2511,7 @@ export default function SurgicalDashboard({ onBack }) {
                     {/* PIVOT TABLE ROW */}
                     <div style={{ marginTop: '32px' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
-                        <Users size={22} color="#295A64" />
+                        <Users size={22} color="#1e40af" />
                         <h3 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 700, color: '#0f172a' }}>Despliegue Detallado de Producción (Tabla Dinámica)</h3>
                       </div>
                       <PivotTable data={filteredLibro} totalCirugias={totalKPI.val} />
@@ -1530,141 +2519,215 @@ export default function SurgicalDashboard({ onBack }) {
 
                   </>
                 )}
-
                 {(activeTab === 'tabla' || activeTab === 'informe-crr') && (
                   <div>
-                    {/* KPI CARDS PARA TABLA */}
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginBottom: '24px' }}>
-                      
-                      <div style={{ background: '#f4f4f4', padding: '16px', borderRadius: '16px', border: '1px solid #e2e8f0', textAlign: 'center' }}>
-                        <p style={{ margin: '0 0 8px 0', fontSize: '0.75rem', color: '#1e293b', fontWeight: 700 }}>PACIENTES PROGRAMADOS</p>
-                        <h2 style={{ margin: 0, fontSize: '2rem', color: '#0f172a', fontWeight: 900 }}>{tablaProgKPI.val.toLocaleString()}</h2>
-                        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '0.7rem', color: tablaProgKPI.trend === 'positive' ? '#10b981' : '#ef4444', fontWeight: 800, marginTop: '8px' }}>
-                           {tablaProgKPI.text}
-                        </div>
-                      </div>
-
-                      <div style={{ background: '#f4f4f4', padding: '16px', borderRadius: '16px', border: '1px solid #e2e8f0', textAlign: 'center' }}>
-                        <p style={{ margin: '0 0 8px 0', fontSize: '0.75rem', color: '#1e293b', fontWeight: 700 }}>PACIENTES INTERVENIDOS</p>
-                        <h2 style={{ margin: 0, fontSize: '2rem', color: '#0f172a', fontWeight: 900 }}>{tablaIntKPI.val.toLocaleString()}</h2>
-                        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '0.7rem', color: tablaIntKPI.trend === 'positive' ? '#10b981' : '#ef4444', fontWeight: 800, marginTop: '8px' }}>
-                           {tablaIntKPI.text}
-                        </div>
-                      </div>
-
-                      <div style={{ background: '#f4f4f4', padding: '16px', borderRadius: '16px', border: '1px solid #e2e8f0', textAlign: 'center' }}>
-                        <p style={{ margin: '0 0 8px 0', fontSize: '0.75rem', color: '#1e293b', fontWeight: 700 }}>PACIENTES SUSPENDIDOS</p>
-                        <h2 style={{ margin: 0, fontSize: '2rem', color: '#0f172a', fontWeight: 900 }}>{tablaSuspKPI.val.toLocaleString()}</h2>
-                        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '0.7rem', color: tablaSuspKPI.trend === 'positive' ? '#10b981' : '#ef4444', fontWeight: 800, marginTop: '8px' }}>
-                           {tablaSuspKPI.text}
-                        </div>
-                      </div>
-
-                      <div style={{ background: '#f4f4f4', padding: '16px', borderRadius: '16px', border: '1px solid #e2e8f0', textAlign: 'center' }}>
-                        <p style={{ margin: '0 0 8px 0', fontSize: '0.75rem', color: '#1e293b', fontWeight: 700 }}>% SUSPENSIONES</p>
-                        <h2 style={{ margin: 0, fontSize: '2rem', color: '#0f172a', fontWeight: 900 }}>{currentSuspPct.toFixed(1)} %</h2>
-                        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '0.7rem', color: suspPctTrend === 'positive' ? '#10b981' : '#ef4444', fontWeight: 800, marginTop: '8px' }}>
-                           {suspPctText}
-                        </div>
-                      </div>
-
+                    {/* TÍTULO DEL TABLERO */}
+                    <div style={{ marginBottom: '24px' }}>
+                      <h2 style={{ fontSize: '1.6rem', fontWeight: 800, color: '#1e293b', margin: 0 }}>
+                        Programación de tabla quirúrgica y suspensiones quirúrgicas
+                      </h2>
                     </div>
 
-                    {/* BAR CHART */}
-                    <div style={{ background: 'white', padding: '24px', borderRadius: '16px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px rgba(0,0,0,0.02)', marginBottom: '24px' }}>
-                      <h3 style={{ margin: '0 0 24px 0', fontSize: '1.1rem', fontWeight: 700, color: '#0f172a' }}>Producción Quirúrgica y Suspensiones</h3>
-                      <div style={{ height: '400px' }}>
-                        <ResponsiveContainer width="100%" height="100%">
-                          <ComposedChart data={tablaChartData} margin={{ top: 20, right: 20, left: 0, bottom: 0 }}>
-                            <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.3} />
-                            <XAxis dataKey="label" axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12 }} />
-                            <YAxis yAxisId="left" axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12 }} />
-                            <YAxis yAxisId="right" orientation="right" axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12 }} tickFormatter={(val) => `${val}%`} />
-                            <RechartsTooltip cursor={{ fill: '#f1f5f9' }} contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 25px rgba(0,0,0,0.1)' }} />
-                            <Legend wrapperStyle={{ paddingTop: '10px' }} />
-                            
-                            <Bar yAxisId="left" dataKey="Pendientes" stackId="a" fill="#94a3b8" barSize={40} name="Pendientes">
-                              <LabelList dataKey="Pendientes" position="inside" fill="#fff" fontSize={11} fontWeight={600} formatter={v => v > 0 ? v : ''} />
-                            </Bar>
-                            <Bar yAxisId="left" dataKey="Intervenidos" stackId="a" fill="#295A64" barSize={40} name="Intervenidos">
-                              <LabelList dataKey="Intervenidos" position="inside" fill="#fff" fontSize={11} fontWeight={600} formatter={v => v > 0 ? v : ''} />
-                            </Bar>
-                            <Bar yAxisId="left" dataKey="Suspendidos" stackId="a" fill="#ef4444" radius={[4, 4, 0, 0]} barSize={40} name="Suspendidos">
-                              <LabelList dataKey="Suspendidos" position="inside" fill="#fff" fontSize={11} fontWeight={600} formatter={v => v > 0 ? v : ''} />
-                              <LabelList dataKey="Programados" position="top" fill="#0f172a" fontSize={12} fontWeight={800} formatter={v => v > 0 ? v : ''} />
-                            </Bar>
-                            
-                            <Line yAxisId="right" type="monotone" dataKey="pctSuspensiones" stroke="#f59e0b" strokeWidth={3} dot={{ r: 4, fill: '#f59e0b' }} activeDot={{ r: 6 }} name="% Suspensiones" />
-                            <ReferenceLine yAxisId="right" y={5} stroke="#ef4444" strokeDasharray="3 3" opacity={0.6} label={{ position: 'top', value: 'Meta 5%', fill: '#ef4444', fontSize: 11, fontWeight: 700 }} />
-                          </ComposedChart>
-                        </ResponsiveContainer>
-                      </div>
+                    {/* MENÚ DE PESTAÑAS EJECUTIVAS PARA TABLA */}
+                    <div style={{ display: 'flex', gap: '8px', background: '#f1f5f9', padding: '6px', borderRadius: '16px', border: '1px solid #e2e8f0', marginBottom: '24px', flexWrap: 'wrap' }}>
+                      {[
+                        { id: 'resumen', label: '📊 1. Resumen & Métricas Clave' },
+                        { id: 'profesionales', label: '👨‍⚕️ 2. Cirujanos, Anestesiólogos & Causas' },
+                        { id: 'tabla_jerarquica', label: '🌳 3. Tabla Jerárquica (4 Niveles)' },
+                        { id: 'pivot', label: '📋 4. Matriz Pivot Quirúrgica' }
+                      ].map(st => (
+                        <button
+                          key={st.id}
+                          onClick={() => setTablaSubTab(st.id)}
+                          style={{
+                            padding: '10px 18px',
+                            fontSize: '0.82rem',
+                            fontWeight: tablaSubTab === st.id ? 800 : 600,
+                            borderRadius: '12px',
+                            border: 'none',
+                            background: tablaSubTab === st.id ? 'linear-gradient(135deg, #1e40af, #1d4ed8)' : 'transparent',
+                            color: tablaSubTab === st.id ? 'white' : '#475569',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s ease',
+                            boxShadow: tablaSubTab === st.id ? '0 4px 12px rgba(30, 64, 175, 0.25)' : 'none'
+                          }}
+                        >
+                          {st.label}
+                        </button>
+                      ))}
                     </div>
 
-                    {/* INSIGHTS ROW WITH CHARTS */}
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', marginBottom: '24px' }}>
-                      
-                      {/* Sunburst Chart for Causas -> Motivos */}
-                      <div style={{ background: 'white', padding: '24px', borderRadius: '16px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px rgba(0,0,0,0.02)' }}>
-                        <h3 style={{ margin: '0 0 8px 0', fontSize: '1.1rem', fontWeight: 700, color: '#0f172a' }}>Desglose de Suspensiones</h3>
-                        <p style={{ margin: '0 0 24px 0', fontSize: '0.8rem', color: '#64748b' }}>Anillo interno: Causas / Anillo externo: Motivos</p>
-                        <div style={{ height: '350px' }}>
-                          <ResponsiveContainer width="100%" height="100%">
-                            <RechartsPieChart>
-                              <RechartsTooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 15px rgba(0,0,0,0.1)' }} />
-                              <Pie data={tablaInsights.sunburstCausas} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} fill="#295A64">
-                                {tablaInsights.sunburstCausas.map((entry, index) => (
-                                   <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                                ))}
-                              </Pie>
-                              <Pie data={tablaInsights.sunburstMotivos} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={90} outerRadius={130} fill="#DF6D05" label={({ name, percent }) => percent > 0.05 ? name.substring(0, 15) + (name.length > 15 ? '...' : '') : ''}>
-                                {tablaInsights.sunburstMotivos.map((entry, index) => {
-                                   const pIndex = tablaInsights.sunburstCausas.findIndex(c => c.name === entry.parent);
-                                   return <Cell key={`cell-${index}`} fill={COLORS[pIndex % COLORS.length]} opacity={0.7} />;
-                                })}
-                              </Pie>
-                            </RechartsPieChart>
-                          </ResponsiveContainer>
+                    {/* SUB-TAB 1: RESUMEN & MÉTRICAS CLAVE */}
+                    {tablaSubTab === 'resumen' && (
+                      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }}>
+                        {/* KPI CARDS PARA TABLA */}
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginBottom: '24px' }}>
+                          <div style={{ background: '#f4f4f4', padding: '16px', borderRadius: '16px', border: '1px solid #e2e8f0', textAlign: 'center' }}>
+                            <p style={{ margin: '0 0 8px 0', fontSize: '0.75rem', color: '#1e293b', fontWeight: 700 }}>PACIENTES PROGRAMADOS</p>
+                            <h2 style={{ margin: 0, fontSize: '2rem', color: '#0f172a', fontWeight: 900 }}>{tablaProgKPI.val.toLocaleString()}</h2>
+                            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '0.7rem', color: tablaProgKPI.trend === 'positive' ? '#10b981' : '#ef4444', fontWeight: 800, marginTop: '8px' }}>
+                               {tablaProgKPI.text}
+                            </div>
+                          </div>
+
+                          <div style={{ background: '#f4f4f4', padding: '16px', borderRadius: '16px', border: '1px solid #e2e8f0', textAlign: 'center' }}>
+                            <p style={{ margin: '0 0 8px 0', fontSize: '0.75rem', color: '#1e293b', fontWeight: 700 }}>PACIENTES INTERVENIDOS</p>
+                            <h2 style={{ margin: 0, fontSize: '2rem', color: '#0f172a', fontWeight: 900 }}>{tablaIntKPI.val.toLocaleString()}</h2>
+                            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '0.7rem', color: tablaIntKPI.trend === 'positive' ? '#10b981' : '#ef4444', fontWeight: 800, marginTop: '8px' }}>
+                               {tablaIntKPI.text}
+                            </div>
+                          </div>
+
+                          <div style={{ background: '#f4f4f4', padding: '16px', borderRadius: '16px', border: '1px solid #e2e8f0', textAlign: 'center' }}>
+                            <p style={{ margin: '0 0 8px 0', fontSize: '0.75rem', color: '#1e293b', fontWeight: 700 }}>PACIENTES SUSPENDIDOS</p>
+                            <h2 style={{ margin: 0, fontSize: '2rem', color: '#0f172a', fontWeight: 900 }}>{tablaSuspKPI.val.toLocaleString()}</h2>
+                            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '0.7rem', color: tablaSuspKPI.trend === 'positive' ? '#10b981' : '#ef4444', fontWeight: 800, marginTop: '8px' }}>
+                               {tablaSuspKPI.text}
+                            </div>
+                          </div>
+
+                          <div style={{ background: '#f4f4f4', padding: '16px', borderRadius: '16px', border: '1px solid #e2e8f0', textAlign: 'center' }}>
+                            <p style={{ margin: '0 0 8px 0', fontSize: '0.75rem', color: '#1e293b', fontWeight: 700 }}>% SUSPENSIONES</p>
+                            <h2 style={{ margin: 0, fontSize: '2rem', color: '#0f172a', fontWeight: 900 }}>{currentSuspPct.toFixed(1)} %</h2>
+                            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '0.7rem', color: suspPctTrend === 'positive' ? '#10b981' : '#ef4444', fontWeight: 800, marginTop: '8px' }}>
+                               {suspPctText}
+                            </div>
+                          </div>
                         </div>
-                      </div>
 
-                      {/* Horizontal Bar Chart for Especialidades */}
-                      <div style={{ background: 'white', padding: '24px', borderRadius: '16px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px rgba(0,0,0,0.02)' }}>
-                        <h3 style={{ margin: '0 0 8px 0', fontSize: '1.1rem', fontWeight: 700, color: '#0f172a' }}>Número de suspensiones según especialidad quirúrgica y porcentaje respecto de las suspensiones totales</h3>
-                        <p style={{ margin: '0 0 24px 0', fontSize: '0.8rem', color: '#64748b' }}>Porcentaje relativo de cada especialidad sobre el total de suspensiones</p>
-                        <div style={{ height: '350px' }}>
-                          <ResponsiveContainer width="100%" height="100%">
-                            <ComposedChart layout="vertical" data={tablaInsights.topEspProb} margin={{ top: 0, right: 30, left: 0, bottom: 0 }}>
-                              <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} opacity={0.3} />
-                              <XAxis type="number" hide domain={[0, 'dataMax']} />
-                              <YAxis dataKey="name" type="category" width={120} tick={{ fontSize: 11, fill: '#64748b' }} axisLine={false} tickLine={false} />
-                              <RechartsTooltip 
-                                contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }}
-                                formatter={(value, name, props) => {
-                                  if (name === 'prob') return [`${value}%`, '% Total Susp.'];
-                                  return [value, name];
-                                }}
-                              />
-                              <Bar dataKey="prob" fill="#ef4444" radius={[0, 4, 4, 0]} barSize={24}>
-                                <LabelList dataKey="prob" position="right" formatter={(val) => `${val}%`} style={{ fill: '#ef4444', fontSize: '11px', fontWeight: 600 }} />
-                              </Bar>
-                            </ComposedChart>
-                          </ResponsiveContainer>
+                        {/* BAR CHART PRODUCCIÓN */}
+                        <div style={{ background: 'white', padding: '24px', borderRadius: '16px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px rgba(0,0,0,0.02)', marginBottom: '24px' }}>
+                          <h3 style={{ margin: '0 0 24px 0', fontSize: '1.1rem', fontWeight: 700, color: '#0f172a' }}>Producción Quirúrgica y Suspensiones</h3>
+                          <div style={{ height: '360px' }}>
+                            <ResponsiveContainer width="100%" height="100%">
+                              <ComposedChart data={tablaChartData} margin={{ top: 20, right: 20, left: 0, bottom: 0 }}>
+                                <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.3} />
+                                <XAxis dataKey="label" axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12 }} />
+                                <YAxis yAxisId="left" axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12 }} />
+                                <YAxis yAxisId="right" orientation="right" axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12 }} tickFormatter={(val) => `${val}%`} />
+                                <RechartsTooltip cursor={{ fill: '#f1f5f9' }} contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 25px rgba(0,0,0,0.1)' }} />
+                                <Legend wrapperStyle={{ paddingTop: '10px' }} />
+                                
+                                <Bar yAxisId="left" dataKey="Pendientes" stackId="a" fill="#94a3b8" barSize={40} name="Pendientes">
+                                  <LabelList dataKey="Pendientes" position="inside" fill="#fff" fontSize={11} fontWeight={600} formatter={v => v > 0 ? v : ''} />
+                                </Bar>
+                                <Bar yAxisId="left" dataKey="Intervenidos" stackId="a" fill="#1e40af" barSize={40} name="Intervenidos">
+                                  <LabelList dataKey="Intervenidos" position="inside" fill="#fff" fontSize={11} fontWeight={600} formatter={v => v > 0 ? v : ''} />
+                                </Bar>
+                                <Bar yAxisId="left" dataKey="Suspendidos" stackId="a" fill="#ef4444" radius={[4, 4, 0, 0]} barSize={40} name="Suspendidos">
+                                  <LabelList dataKey="Suspendidos" position="inside" fill="#fff" fontSize={11} fontWeight={600} formatter={v => v > 0 ? v : ''} />
+                                  <LabelList dataKey="Programados" position="top" fill="#0f172a" fontSize={12} fontWeight={800} formatter={v => v > 0 ? v : ''} />
+                                </Bar>
+                                
+                                <Line yAxisId="right" type="monotone" dataKey="pctSuspensiones" stroke="#f59e0b" strokeWidth={3} dot={{ r: 4, fill: '#f59e0b' }} activeDot={{ r: 6 }} name="% Suspensiones" />
+                                <ReferenceLine yAxisId="right" y={5} stroke="#ef4444" strokeDasharray="3 3" opacity={0.6} label={{ position: 'top', value: 'Meta 5%', fill: '#ef4444', fontSize: 11, fontWeight: 700 }} />
+                              </ComposedChart>
+                            </ResponsiveContainer>
+                          </div>
                         </div>
-                      </div>
 
-                    </div>
-                    
-                    <TopSuspensionesGRD data={filteredTabla} grdData={grdData} />
+                        {/* INSIGHTS ROW WITH CHARTS */}
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', marginBottom: '24px' }}>
+                          <div style={{ background: 'white', padding: '24px', borderRadius: '16px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px rgba(0,0,0,0.02)' }}>
+                            <h3 style={{ margin: '0 0 8px 0', fontSize: '1.1rem', fontWeight: 700, color: '#0f172a' }}>Desglose de Suspensiones</h3>
+                            <p style={{ margin: '0 0 24px 0', fontSize: '0.8rem', color: '#64748b' }}>Anillo interno: Causas / Anillo externo: Motivos</p>
+                            <div style={{ height: '320px' }}>
+                              <ResponsiveContainer width="100%" height="100%">
+                                <RechartsPieChart>
+                                  <RechartsTooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 15px rgba(0,0,0,0.1)' }} />
+                                  <Pie data={tablaInsights.sunburstCausas} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={75} fill="#1e40af">
+                                    {tablaInsights.sunburstCausas.map((entry, index) => (
+                                       <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                    ))}
+                                  </Pie>
+                                  <Pie data={tablaInsights.sunburstMotivos} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={85} outerRadius={120} fill="#DF6D05" label={({ name, percent }) => percent > 0.05 ? name.substring(0, 15) + (name.length > 15 ? '...' : '') : ''}>
+                                    {tablaInsights.sunburstMotivos.map((entry, index) => {
+                                       const pIndex = tablaInsights.sunburstCausas.findIndex(c => c.name === entry.parent);
+                                       return <Cell key={`cell-${index}`} fill={COLORS[pIndex % COLORS.length]} opacity={0.7} />;
+                                    })}
+                                  </Pie>
+                                </RechartsPieChart>
+                              </ResponsiveContainer>
+                            </div>
+                          </div>
 
-                    {/* PIVOT TABLE TABLA */}
-                    <div style={{ marginTop: '32px' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
-                        <Users size={22} color="#295A64" />
-                        <h3 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 700, color: '#0f172a' }}>Despliegue Detallado de Pacientes Intervenidos (Tabla Dinámica)</h3>
-                      </div>
-                      <PivotTableTabla data={filteredTabla} />
-                    </div>
+                          <div style={{ background: 'white', padding: '24px', borderRadius: '16px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px rgba(0,0,0,0.02)' }}>
+                            <h3 style={{ margin: '0 0 8px 0', fontSize: '1.1rem', fontWeight: 700, color: '#0f172a' }}>Suspensiones por Especialidad Quirúrgica</h3>
+                            <p style={{ margin: '0 0 24px 0', fontSize: '0.8rem', color: '#64748b' }}>Porcentaje relativo de cada especialidad sobre el total de suspensiones</p>
+                            <div style={{ height: '320px' }}>
+                              <ResponsiveContainer width="100%" height="100%">
+                                <ComposedChart layout="vertical" data={tablaInsights.topEspProb} margin={{ top: 0, right: 30, left: 0, bottom: 0 }}>
+                                  <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} opacity={0.3} />
+                                  <XAxis type="number" hide domain={[0, 'dataMax']} />
+                                  <YAxis dataKey="name" type="category" width={120} tick={{ fontSize: 11, fill: '#64748b' }} axisLine={false} tickLine={false} />
+                                  <RechartsTooltip 
+                                    contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }}
+                                    formatter={(value, name) => {
+                                      if (name === 'prob') return [`${value}%`, '% Total Susp.'];
+                                      return [value, name];
+                                    }}
+                                  />
+                                  <Bar dataKey="prob" fill="#ef4444" radius={[0, 4, 4, 0]} barSize={24}>
+                                    <LabelList dataKey="prob" position="right" formatter={(val) => `${val}%`} style={{ fill: '#ef4444', fontSize: '11px', fontWeight: 600 }} />
+                                  </Bar>
+                                </ComposedChart>
+                              </ResponsiveContainer>
+                            </div>
+                          </div>
+                        </div>
+                      </motion.div>
+                    )}
+
+                    {/* SUB-TAB 2: CIRUJANOS, ANESTESIÓLOGOS & CAUSAS */}
+                    {tablaSubTab === 'profesionales' && (
+                      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }}>
+                        <AnalisisCirujanosYCausas data={filteredTabla} />
+                      </motion.div>
+                    )}
+
+                    {/* SUB-TAB 3: TABLA JERÁRQUICA (4 NIVELES) */}
+                    {tablaSubTab === 'tabla_jerarquica' && (
+                      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }}>
+                        <div style={{ marginBottom: '32px' }}>
+                          {/* BANNER DE FÓRMULA DE CÁLCULO Y ACLARACIÓN METODOLÓGICA */}
+                          <div style={{ background: 'linear-gradient(135deg, #eff6ff, #dbeafe)', border: '1px solid #bfdbfe', borderRadius: '16px', padding: '20px 24px', marginBottom: '24px', boxShadow: '0 4px 15px rgba(30, 64, 175, 0.05)' }}>
+                            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '16px' }}>
+                              <div style={{ background: '#1e40af', color: 'white', padding: '10px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                <Activity size={22} />
+                              </div>
+                              <div style={{ flex: 1 }}>
+                                <h4 style={{ margin: '0 0 6px 0', fontSize: '1rem', fontWeight: 800, color: '#1e3a8a' }}>Fórmula de Cálculo y Criterio Metodológico</h4>
+                                <div style={{ background: 'white', border: '1px solid #93c5fd', borderRadius: '10px', padding: '10px 16px', margin: '8px 0 12px 0', display: 'inline-block', fontWeight: 800, color: '#1e40af', fontSize: '0.9rem' }}>
+                                  Tasa de Suspensión (%) = ( Pacientes Suspendidos / Pacientes Programados Totales ) × 100
+                                </div>
+                                <p style={{ margin: 0, fontSize: '0.82rem', color: '#1e3a8a', lineHeight: '1.55' }}>
+                                  <strong>Aclaración Metodológica REM vs. Informe Integral:</strong> Para los indicadores estandarizados oficiales del <strong>Registro Estadístico Mensual (REM - MINSAL)</strong>, la reglamentación exige <strong>excluir</strong> a los pacientes registrados en condición <em>"Condicional"</em>. No obstante, en este reporte institucional se incluyen de manera predeterminada para visibilizar y analizar la totalidad del fenómeno de suspensiones en la tabla quirúrgica. El usuario puede aplicar dicha exclusión en cualquier momento utilizando el <strong>menú flotante de filtros</strong>.
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* TABLA DINÁMICA JERÁRQUICA COLAPSABLE */}
+                          <TablaDinamicaSuspensiones data={filteredTabla} />
+
+                          {/* PANEL DE ANÁLISIS DE HALLAZGOS ESTADÍSTICOS DEL PACIENTE SUSPENDIDO */}
+                          <AnalisisHallazgosSuspensiones data={filteredTabla} />
+                        </div>
+                      </motion.div>
+                    )}
+
+                    {/* SUB-TAB 4: MATRIZ PIVOT QUIRÚRGICA */}
+                    {tablaSubTab === 'pivot' && (
+                      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }}>
+                        <div style={{ marginBottom: '24px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
+                            <Users size={22} color="#1e40af" />
+                            <h3 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 700, color: '#0f172a' }}>Despliegue Detallado de Producción (Tabla Dinámica)</h3>
+                          </div>
+                          <PivotTable data={filteredTabla} totalCirugias={tablaProgKPI.val} />
+                        </div>
+                      </motion.div>
+                    )}
                   </div>
                 )}
 
