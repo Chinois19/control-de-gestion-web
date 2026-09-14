@@ -66,6 +66,18 @@ function CustomTooltip({ active, payload, label }) {
   );
 }
 
+export const isAtendida = (r) => {
+  const estAt = (r.estado_atencion || '').toUpperCase().trim();
+  const estH = (r.estado_hora || '').toUpperCase().trim();
+  return estAt === 'SE PRESENTO' || estH === 'EJECUTADA' || estAt.includes('REALIZADA') || estAt === 'ATENCION INICIADA';
+};
+
+export const isNSP = (r) => {
+  const estAt = (r.estado_atencion || '').toUpperCase().trim();
+  const estH = (r.estado_hora || '').toUpperCase().trim();
+  return estAt.includes('NO SE PRESENTO') || estH.includes('NO SE PRESENTO');
+};
+
 export default function ProfesionalesApsDashboard({ onBack }) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -167,9 +179,9 @@ export default function ProfesionalesApsDashboard({ onBack }) {
       if (tipoConsultaFiltro.length > 0 && !tipoConsultaFiltro.includes(r.tipo_consulta)) return false;
       // Estado Atención
       if (estadoAtencionFiltro !== 'all') {
-        const est = (r.estado_atencion || '').toUpperCase();
-        if (estadoAtencionFiltro === 'REALIZADA' && !est.includes('REALIZADA')) return false;
-        if (estadoAtencionFiltro === 'NO REALIZADA' && est.includes('REALIZADA')) return false;
+        if (estadoAtencionFiltro === 'REALIZADA' && !isAtendida(r)) return false;
+        if (estadoAtencionFiltro === 'NSP' && !isNSP(r)) return false;
+        if (estadoAtencionFiltro === 'NO_ATENDIO' && (isAtendida(r) || isNSP(r))) return false;
       }
       // Previsión
       if (previsionFiltro !== 'all') {
@@ -199,25 +211,34 @@ export default function ProfesionalesApsDashboard({ onBack }) {
   const kpis = useMemo(() => {
     const total = filteredRecords.length;
     let realizadas = 0;
+    let nspCount = 0;
+    let noAtendidas = 0;
     const pacientes = new Set();
     const profs = new Set();
     const dias = new Set();
 
     filteredRecords.forEach(r => {
-      const est = (r.estado_atencion || '').toUpperCase();
-      if (est.includes('REALIZADA')) realizadas++;
+      if (isAtendida(r)) {
+        realizadas++;
+      } else if (isNSP(r)) {
+        nspCount++;
+      } else {
+        noAtendidas++;
+      }
       if (r.ficha || r.cta_cte) pacientes.add(r.ficha || r.cta_cte);
       if (r.profesional_nombre) profs.add(r.profesional_nombre);
       if (r.fecha_atencion) dias.add(r.fecha_atencion);
     });
 
     const efectividad = total > 0 ? (realizadas / total) * 100 : 0;
-    const nspPct = 100 - efectividad;
+    const nspPct = total > 0 ? (nspCount / total) * 100 : 0;
     const promDiario = dias.size > 0 ? Math.round(realizadas / dias.size) : 0;
 
     return {
       total,
       realizadas,
+      nspCount,
+      noAtendidas,
       noRealizadas: total - realizadas,
       efectividad,
       nspPct,
@@ -235,13 +256,14 @@ export default function ProfesionalesApsDashboard({ onBack }) {
       if (!r.fecha_atencion) return;
       const key = r.fecha_atencion.substring(0, 7); // YYYY-MM
       if (!map[key]) {
-        map[key] = { mes: key, Realizadas: 0, 'No Realizadas': 0, Total: 0 };
+        map[key] = { mes: key, Realizadas: 0, NSP: 0, 'No Atendidas': 0, Total: 0 };
       }
-      const est = (r.estado_atencion || '').toUpperCase();
-      if (est.includes('REALIZADA')) {
+      if (isAtendida(r)) {
         map[key].Realizadas++;
+      } else if (isNSP(r)) {
+        map[key].NSP++;
       } else {
-        map[key]['No Realizadas']++;
+        map[key]['No Atendidas']++;
       }
       map[key].Total++;
     });
@@ -307,15 +329,16 @@ export default function ProfesionalesApsDashboard({ onBack }) {
           policlinico: r.policlinico || '—',
           total: 0,
           realizadas: 0,
+          nsp: 0,
           noRealizadas: 0
         };
       }
       map[p].total++;
-      const est = (r.estado_atencion || '').toUpperCase();
-      if (est.includes('REALIZADA')) {
+      if (isAtendida(r)) {
         map[p].realizadas++;
       } else {
         map[p].noRealizadas++;
+        if (isNSP(r)) map[p].nsp++;
       }
     });
 
@@ -559,9 +582,10 @@ export default function ProfesionalesApsDashboard({ onBack }) {
             onChange={(e) => setEstadoAtencionFiltro(e.target.value)}
             style={{ width: '100%', padding: '9px 12px', borderRadius: '10px', border: '1px solid #cbd5e1', fontSize: '0.84rem', fontWeight: 600, color: '#0f172a' }}
           >
-            <option value="all">Todas las atenciones</option>
-            <option value="REALIZADA">Solo Realizadas</option>
-            <option value="NO REALIZADA">No Realizadas / NSP</option>
+            <option value="all">Todos los estados</option>
+            <option value="REALIZADA">Atendidas (Se Presentó)</option>
+            <option value="NSP">Inasistencias (NSP)</option>
+            <option value="NO_ATENDIO">No Se Atendió</option>
           </select>
         </div>
 
@@ -692,8 +716,9 @@ export default function ProfesionalesApsDashboard({ onBack }) {
                   <YAxis stroke="#64748b" fontSize={12} tickFormatter={fmt} />
                   <Tooltip content={<CustomTooltip />} />
                   <Legend />
-                  <Bar dataKey="Realizadas" stackId="a" fill="#10b981" radius={[0, 0, 4, 4]} />
-                  <Bar dataKey="No Realizadas" stackId="a" fill="#ef4444" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="Realizadas" name="Atendidas (Se Presentó)" stackId="a" fill="#10b981" radius={[0, 0, 4, 4]} />
+                  <Bar dataKey="NSP" name="No Asistió (NSP)" stackId="a" fill="#ef4444" radius={[0, 0, 0, 0]} />
+                  <Bar dataKey="No Atendidas" name="No Se Atendió / Otros" stackId="a" fill="#f59e0b" radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
@@ -891,8 +916,8 @@ export default function ProfesionalesApsDashboard({ onBack }) {
               </thead>
               <tbody>
                 {paginatedRecords.map((r, i) => {
-                  const est = (r.estado_atencion || '').toUpperCase();
-                  const isRealizada = est.includes('REALIZADA');
+                  const atendida = isAtendida(r);
+                  const nsp = isNSP(r);
                   return (
                     <tr key={i} style={{ borderBottom: '1px solid #f1f5f9', background: i % 2 === 0 ? '#ffffff' : '#fafafa' }}>
                       <td style={{ padding: '10px 16px', whiteSpace: 'nowrap', fontWeight: 600, color: '#0f172a' }}>
@@ -920,11 +945,11 @@ export default function ProfesionalesApsDashboard({ onBack }) {
                       <td style={{ padding: '10px 16px', color: '#64748b' }}>{r.prevision || '—'}</td>
                       <td style={{ padding: '10px 16px' }}>
                         <span style={{
-                          padding: '2px 8px', borderRadius: '10px', fontSize: '0.7rem', fontWeight: 700,
-                          background: isRealizada ? 'rgba(16, 185, 129, 0.12)' : 'rgba(239, 68, 68, 0.12)',
-                          color: isRealizada ? '#10b981' : '#ef4444'
+                          padding: '3px 8px', borderRadius: '10px', fontSize: '0.7rem', fontWeight: 700,
+                          background: atendida ? 'rgba(16, 185, 129, 0.12)' : nsp ? 'rgba(239, 68, 68, 0.12)' : 'rgba(245, 158, 11, 0.12)',
+                          color: atendida ? '#10b981' : nsp ? '#ef4444' : '#f59e0b'
                         }}>
-                          {r.estado_atencion || r.estado_hora || '—'}
+                          {r.estado_atencion || r.estado_hora || (atendida ? 'SE PRESENTÓ' : 'NO ATENDIDO')}
                         </span>
                       </td>
                     </tr>
