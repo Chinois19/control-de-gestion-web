@@ -41,9 +41,13 @@ echo [9/10] Obteniendo Consultas de Urgencia desde ODBC...
 node fetch-urgencia.cjs
 if %errorlevel% neq 0 echo Error en fetch-urgencia.cjs
 
-echo [10/10] Obteniendo Lista de Espera desde ODBC...
+echo [10/11] Obteniendo Lista de Espera desde ODBC...
 node fetch-lista-espera.cjs
 if %errorlevel% neq 0 echo Error en fetch-lista-espera.cjs
+
+echo [11/11] Obteniendo Consultas Profesionales No Medicos (RUP APS) desde ODBC...
+node fetch-profesionales-aps.cjs
+if %errorlevel% neq 0 echo Error en fetch-profesionales-aps.cjs
 
 echo.
 echo ===================================================

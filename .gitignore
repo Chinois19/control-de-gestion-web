@@ -8,6 +8,7 @@ dist-ssr
 temp_*.json
 scratch/
 public/data/laboratory_cached.json
+public/data/profesionales_aps_cached.json
 public/data/*-Gonzalo.json
 public/data/*-ASRVLLHOPWT8SF4.json
 src/data/Producción Laboratorio/

@@ -52,6 +52,7 @@ import ProgramacionProfesionalesDashboard from './components/ProgramacionProfesi
 import ProgramacionOdontologiaDashboard from './components/ProgramacionOdontologiaDashboard';
 import ListaEsperaDashboard from './components/ListaEsperaDashboard';
 import ActividadesMedicinaDashboard from './components/ActividadesMedicinaDashboard';
+import ProfesionalesApsDashboard from './components/ProfesionalesApsDashboard';
 import EmergencyDashboard from './components/EmergencyDashboard';
 import './App.css';
 
@@ -1178,6 +1179,11 @@ function App() {
               )}
               {(activeView === 'actividades_medicina' || activeView === 'esp_medicas') && (
                 <ActividadesMedicinaDashboard 
+                  onBack={() => navigateToView('atencion_abierta')} 
+                />
+              )}
+              {activeView === 'prof_no_medicos' && (
+                <ProfesionalesApsDashboard 
                   onBack={() => navigateToView('atencion_abierta')} 
                 />
               )}
