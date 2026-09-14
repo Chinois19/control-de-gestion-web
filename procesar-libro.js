@@ -1,5 +1,6 @@
 import fs from 'fs';
 import path from 'path';
+import zlib from 'zlib';
 import xlsx from 'xlsx';
 import { fileURLToPath } from 'url';
 
@@ -51,6 +52,7 @@ rawData.forEach(row => {
     especialidad: row['ESPECIALIDAD ORIGEN'],
     cirujano: row['Nombre Primer Cirujano'] || row['Rut Cirujano'],
     segundo_cirujano: row['Nombre Segundo Cirujano'] || '',
+    anestesiologo: (row['Nombre Anestesiólogo'] || row['Rut Anestesiólogo'] || '').trim(),
     intervencion: row['NOMBRE DE LA INTERVENCIÓN'],
     familia_iq: row['FAMILIA DE LA INTERVENCIÓN'],
     estado: row['ESTADO DE ATENCIÓN'],
@@ -59,6 +61,7 @@ rawData.forEach(row => {
     urgencia: row['PROCEDENCIA URGENCIA'] ? 'SI' : 'NO',
     procedencia: row['PROCEDENCIA URGENCIA'] ? 'URGENCIA' : (row['PROCEDENCIA ATENCIÓN ABIERTA'] ? 'ATENCION ABIERTA' : 'OTRA'),
     tipo_gestor: row['Tipo de Gestor'] || 'No definido',
+    tipo_paciente: row['Tipo de Gestor'] || (row['DETALLE GES'] && row['DETALLE GES'] !== 'NO GES' ? 'GES' : 'Institucional'),
     forma_pago: row['Forma de Pago'] || 'No definido',
     reintervencion_no_prog: row['Reintervención no Programada'] || 'NO',
     mai: row['Beneficiarios MAI'] ? 'SI' : 'NO',
@@ -70,7 +73,16 @@ rawData.forEach(row => {
   });
 });
 
-fs.writeFileSync(OUTPUT_PATH, JSON.stringify({ records: cleanedData }), 'utf8');
+const jsonStr = JSON.stringify({ records: cleanedData });
+fs.writeFileSync(OUTPUT_PATH, jsonStr, 'utf8');
+
+try {
+  const gzBuffer = zlib.gzipSync(Buffer.from(jsonStr));
+  fs.writeFileSync(OUTPUT_PATH + '.gz', gzBuffer);
+  console.log(`🗜️ Archivo .gz actualizado: ${OUTPUT_PATH}.gz`);
+} catch (e) {
+  console.error('Error al comprimir a .gz:', e);
+}
 
 console.log(`✅ ¡Éxito! Se ha guardado el archivo JSON optimizado (${cleanedData.length} registros) en: public/data/libro_pabellon_cached.json`);
 console.timeEnd('TiempoTotal');

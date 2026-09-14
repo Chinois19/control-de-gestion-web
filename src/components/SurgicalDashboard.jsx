@@ -1158,7 +1158,7 @@ const AnalisisCirujanosYCausas = ({ data = [] }) => {
 
     susp.forEach(r => {
       const cir = r.cirujano || r.primer_cirujano || 'Sin Médico Asignado';
-      const ane = r.anestesiologo || 'Sin Anestesiólogo Especificado';
+      const ane = (r.anestesista || r.anestesiologo || '').trim() || 'Sin Anestesiólogo Especificado';
       const causa = r.causa_suspension || 'Sin Causa Especificada';
       const motivo = r.motivo_suspension || '';
       const esp = r.especialidad || 'General';
@@ -1501,22 +1501,26 @@ export default function SurgicalDashboard({ onBack }) {
   // Sidebar Filters for Libro
   const [dateRange, setDateRange] = useState({ start: '2025-01-01', end: '2026-12-31' });
   const [tipoCirugia, setTipoCirugia] = useState([]);
+  const [tipoPaciente, setTipoPaciente] = useState([]);
   const [procedencia, setProcedencia] = useState([]);
   const [tipoGestor, setTipoGestor] = useState([]);
   const [formaPago, setFormaPago] = useState([]);
   const [nombreIq, setNombreIq] = useState([]);
   const [primerCirujano, setPrimerCirujano] = useState([]);
   const [segundoCirujano, setSegundoCirujano] = useState([]);
+  const [anestesiologo, setAnestesiologo] = useState([]);
   const [reintervencion, setReintervencion] = useState([]);
   const [pieMode, setPieMode] = useState('cirugia');
 
   // Sidebar Filters for Tabla
   const [tablaFechaProg, setTablaFechaProg] = useState([]);
   const [tablaTipoCirugia, setTablaTipoCirugia] = useState([]);
+  const [tablaTipoPaciente, setTablaTipoPaciente] = useState([]);
   const [tablaPriorizacion, setTablaPriorizacion] = useState([]);
   const [tablaPabellonCrr, setTablaPabellonCrr] = useState([]);
   const [tablaIntervencion, setTablaIntervencion] = useState([]);
   const [tablaCirujano, setTablaCirujano] = useState([]);
+  const [tablaAnestesista, setTablaAnestesista] = useState([]);
   const [tablaPabellon, setTablaPabellon] = useState([]);
   const [tablaModalidad, setTablaModalidad] = useState([]);
 
@@ -1527,22 +1531,22 @@ export default function SurgicalDashboard({ onBack }) {
 
   const activeFilterCount = useMemo(() => {
     if (activeTab === 'libro') {
-      return [tipoCirugia, procedencia, tipoGestor, formaPago, nombreIq, primerCirujano, segundoCirujano, reintervencion]
+      return [tipoCirugia, tipoPaciente, procedencia, tipoGestor, formaPago, nombreIq, primerCirujano, segundoCirujano, anestesiologo, reintervencion]
         .filter(arr => Array.isArray(arr) && arr.length > 0).length;
     } else if (activeTab === 'tabla') {
-      return [tablaFechaProg, tablaTipoCirugia, tablaPriorizacion, tablaPabellonCrr, tablaIntervencion, tablaCirujano, tablaPabellon, tablaModalidad]
+      return [tablaFechaProg, tablaTipoCirugia, tablaTipoPaciente, tablaPriorizacion, tablaPabellonCrr, tablaIntervencion, tablaCirujano, tablaAnestesista, tablaPabellon, tablaModalidad]
         .filter(arr => Array.isArray(arr) && arr.length > 0).length;
     }
     return 0;
-  }, [activeTab, tipoCirugia, procedencia, tipoGestor, formaPago, nombreIq, primerCirujano, segundoCirujano, reintervencion, tablaFechaProg, tablaTipoCirugia, tablaPriorizacion, tablaPabellonCrr, tablaIntervencion, tablaCirujano, tablaPabellon, tablaModalidad]);
+  }, [activeTab, tipoCirugia, tipoPaciente, procedencia, tipoGestor, formaPago, nombreIq, primerCirujano, segundoCirujano, anestesiologo, reintervencion, tablaFechaProg, tablaTipoCirugia, tablaTipoPaciente, tablaPriorizacion, tablaPabellonCrr, tablaIntervencion, tablaCirujano, tablaAnestesista, tablaPabellon, tablaModalidad]);
 
   const clearAllFilters = () => {
     if (activeTab === 'libro') {
-      setTipoCirugia([]); setProcedencia([]); setTipoGestor([]); setFormaPago([]);
-      setNombreIq([]); setPrimerCirujano([]); setSegundoCirujano([]); setReintervencion([]);
+      setTipoCirugia([]); setTipoPaciente([]); setProcedencia([]); setTipoGestor([]); setFormaPago([]);
+      setNombreIq([]); setPrimerCirujano([]); setSegundoCirujano([]); setAnestesiologo([]); setReintervencion([]);
     } else if (activeTab === 'tabla') {
-      setTablaFechaProg([]); setTablaTipoCirugia([]); setTablaPriorizacion([]); setTablaPabellonCrr([]);
-      setTablaIntervencion([]); setTablaCirujano([]); setTablaPabellon([]); setTablaModalidad([]);
+      setTablaFechaProg([]); setTablaTipoCirugia([]); setTablaTipoPaciente([]); setTablaPriorizacion([]); setTablaPabellonCrr([]);
+      setTablaIntervencion([]); setTablaCirujano([]); setTablaAnestesista([]); setTablaPabellon([]); setTablaModalidad([]);
     }
   };
 
@@ -1607,33 +1611,39 @@ export default function SurgicalDashboard({ onBack }) {
   // Dropdown lists
   const dropdowns = useMemo(() => {
     const tipos = new Set();
+    const tipoPac = new Set();
     const procs = new Set();
     const gestores = new Set();
     const pagos = new Set();
     const iqs = new Set();
     const ciru1 = new Set();
     const ciru2 = new Set();
+    const anestes = new Set();
     const reints = new Set();
 
     rawDataLibro.forEach(r => {
       if (r.tipo_cirugia) tipos.add(r.tipo_cirugia);
+      if (r.tipo_paciente) tipoPac.add(r.tipo_paciente);
       if (r.procedencia) procs.add(r.procedencia);
       if (r.tipo_gestor) gestores.add(r.tipo_gestor);
       if (r.forma_pago) pagos.add(r.forma_pago);
       if (r.intervencion) iqs.add(r.intervencion);
       if (r.cirujano) ciru1.add(r.cirujano);
       if (r.segundo_cirujano) ciru2.add(r.segundo_cirujano);
+      if (r.anestesiologo) anestes.add(r.anestesiologo);
       if (r.reintervencion_no_prog) reints.add(r.reintervencion_no_prog);
     });
 
     return {
       tipos: Array.from(tipos).sort(),
+      tipoPacientes: Array.from(tipoPac).sort().filter(Boolean),
       procedencias: Array.from(procs).sort(),
       gestores: Array.from(gestores).sort(),
       pagos: Array.from(pagos).sort(),
       iqs: Array.from(iqs).sort(),
       ciru1: Array.from(ciru1).sort(),
       cirus2: Array.from(ciru2).sort().filter(Boolean),
+      anestes: Array.from(anestes).sort().filter(Boolean),
       reints: Array.from(reints).sort().filter(Boolean)
     };
   }, [rawDataLibro]);
@@ -1641,20 +1651,25 @@ export default function SurgicalDashboard({ onBack }) {
   const tablaDropdowns = useMemo(() => {
     const fechas = new Set();
     const tipos = new Set();
+    const tipoPacientes = new Set();
     const prios = new Set();
     const crrs = new Set();
     const ints = new Set();
     const cirus = new Set();
+    const anestesistas = new Set();
     const pabs = new Set();
     const mods = new Set();
 
     tablaData.forEach(r => {
       if (r.fecha_programacion) fechas.add(r.fecha_programacion.split('-')[0]);
       if (r.tipo_cirugia) tipos.add(r.tipo_cirugia);
+      if (r.tipo_paciente) tipoPacientes.add(r.tipo_paciente);
       if (r.priorizacion) prios.add(r.priorizacion);
       if (r.pabellon_crr) crrs.add(r.pabellon_crr);
       if (r.intervencion_propuesta) ints.add(r.intervencion_propuesta);
       if (r.cirujano) cirus.add(r.cirujano);
+      const ane = (r.anestesista || r.anestesiologo || '').trim();
+      if (ane && ane !== '0' && ane !== '.') anestesistas.add(ane);
       if (r.pabellon) pabs.add(String(r.pabellon));
       if (r.modalidad) mods.add(r.modalidad);
     });
@@ -1662,10 +1677,12 @@ export default function SurgicalDashboard({ onBack }) {
     return {
       fechas: Array.from(fechas).sort().filter(Boolean),
       tipos: Array.from(tipos).sort().filter(Boolean),
+      tipoPacientes: Array.from(tipoPacientes).sort().filter(Boolean),
       prios: Array.from(prios).sort().filter(Boolean),
       crrs: Array.from(crrs).sort().filter(Boolean),
       ints: Array.from(ints).sort().filter(Boolean),
       cirus: Array.from(cirus).sort().filter(Boolean),
+      anestesistas: Array.from(anestesistas).sort().filter(Boolean),
       pabs: Array.from(pabs).sort((a, b) => a.localeCompare(b)).filter(Boolean),
       mods: Array.from(mods).sort().filter(Boolean),
     };
@@ -1682,16 +1699,19 @@ export default function SurgicalDashboard({ onBack }) {
 
       if (tablaFechaProg.length > 0 && !tablaFechaProg.includes(r.fecha_programacion.split('-')[0])) return false;
       if (tablaTipoCirugia.length > 0 && !tablaTipoCirugia.includes(r.tipo_cirugia)) return false;
+      if (tablaTipoPaciente.length > 0 && !tablaTipoPaciente.includes(r.tipo_paciente)) return false;
       if (tablaPriorizacion.length > 0 && !tablaPriorizacion.includes(r.priorizacion)) return false;
       if (tablaPabellonCrr.length > 0 && !tablaPabellonCrr.includes(r.pabellon_crr)) return false;
       if (tablaIntervencion.length > 0 && !tablaIntervencion.includes(r.intervencion_propuesta)) return false;
       if (tablaCirujano.length > 0 && !tablaCirujano.includes(r.cirujano)) return false;
+      const ane = (r.anestesista || r.anestesiologo || '').trim();
+      if (tablaAnestesista.length > 0 && !tablaAnestesista.includes(ane)) return false;
       if (tablaPabellon.length > 0 && !tablaPabellon.includes(String(r.pabellon))) return false;
       if (tablaModalidad.length > 0 && !tablaModalidad.includes(r.modalidad)) return false;
 
       return true;
     });
-  }, [tablaData, dateRange, tablaFechaProg, tablaTipoCirugia, tablaPriorizacion, tablaPabellonCrr, tablaIntervencion, tablaCirujano, tablaPabellon, tablaModalidad]);
+  }, [tablaData, dateRange, tablaFechaProg, tablaTipoCirugia, tablaTipoPaciente, tablaPriorizacion, tablaPabellonCrr, tablaIntervencion, tablaCirujano, tablaAnestesista, tablaPabellon, tablaModalidad]);
 
   // Compute stats and YoY for Tabla
   const getTablaYoYStats = (key) => {
@@ -1721,10 +1741,13 @@ export default function SurgicalDashboard({ onBack }) {
 
       if (tablaFechaProg.length > 0 && !tablaFechaProg.includes(r.fecha_programacion.split('-')[0])) return;
       if (tablaTipoCirugia.length > 0 && !tablaTipoCirugia.includes(r.tipo_cirugia)) return;
+      if (tablaTipoPaciente.length > 0 && !tablaTipoPaciente.includes(r.tipo_paciente)) return;
       if (tablaPriorizacion.length > 0 && !tablaPriorizacion.includes(r.priorizacion)) return;
       if (tablaPabellonCrr.length > 0 && !tablaPabellonCrr.includes(r.pabellon_crr)) return;
       if (tablaIntervencion.length > 0 && !tablaIntervencion.includes(r.intervencion_propuesta)) return;
       if (tablaCirujano.length > 0 && !tablaCirujano.includes(r.cirujano)) return;
+      const ane = (r.anestesista || r.anestesiologo || '').trim();
+      if (tablaAnestesista.length > 0 && !tablaAnestesista.includes(ane)) return;
       if (tablaPabellon.length > 0 && !tablaPabellon.includes(String(r.pabellon))) return;
       if (tablaModalidad.length > 0 && !tablaModalidad.includes(r.modalidad)) return;
 
@@ -1857,17 +1880,19 @@ export default function SurgicalDashboard({ onBack }) {
       if (dateOnly < dateRange.start || dateOnly > dateRange.end) return false;
 
       if (tipoCirugia.length > 0 && !tipoCirugia.includes(r.tipo_cirugia)) return false;
+      if (tipoPaciente.length > 0 && !tipoPaciente.includes(r.tipo_paciente)) return false;
       if (procedencia.length > 0 && !procedencia.includes(r.procedencia)) return false;
       if (tipoGestor.length > 0 && !tipoGestor.includes(r.tipo_gestor)) return false;
       if (formaPago.length > 0 && !formaPago.includes(r.forma_pago)) return false;
       if (nombreIq.length > 0 && !nombreIq.includes(r.intervencion)) return false;
       if (primerCirujano.length > 0 && !primerCirujano.includes(r.cirujano)) return false;
       if (segundoCirujano.length > 0 && !segundoCirujano.includes(r.segundo_cirujano)) return false;
+      if (anestesiologo.length > 0 && !anestesiologo.includes(r.anestesiologo)) return false;
       if (reintervencion.length > 0 && !reintervencion.includes(r.reintervencion_no_prog)) return false;
 
       return true;
     });
-  }, [rawDataLibro, dateRange, tipoCirugia, procedencia, tipoGestor, formaPago, nombreIq, primerCirujano, segundoCirujano, reintervencion]);
+  }, [rawDataLibro, dateRange, tipoCirugia, tipoPaciente, procedencia, tipoGestor, formaPago, nombreIq, primerCirujano, segundoCirujano, anestesiologo, reintervencion]);
 
   // Comparative Year-Over-Year logic for KPI cards
   const getYoYStats = (key) => {
@@ -1894,9 +1919,15 @@ export default function SurgicalDashboard({ onBack }) {
       const dateOnly = r.fecha_cirugia.substring(0, 10);
 
       if (tipoCirugia.length > 0 && !tipoCirugia.includes(r.tipo_cirugia)) return;
+      if (tipoPaciente.length > 0 && !tipoPaciente.includes(r.tipo_paciente)) return;
       if (procedencia.length > 0 && !procedencia.includes(r.procedencia)) return;
       if (tipoGestor.length > 0 && !tipoGestor.includes(r.tipo_gestor)) return;
       if (formaPago.length > 0 && !formaPago.includes(r.forma_pago)) return;
+      if (nombreIq.length > 0 && !nombreIq.includes(r.intervencion)) return;
+      if (primerCirujano.length > 0 && !primerCirujano.includes(r.cirujano)) return;
+      if (segundoCirujano.length > 0 && !segundoCirujano.includes(r.segundo_cirujano)) return;
+      if (anestesiologo.length > 0 && !anestesiologo.includes(r.anestesiologo)) return;
+      if (reintervencion.length > 0 && !reintervencion.includes(r.reintervencion_no_prog)) return;
 
       if (dateOnly >= priorStart && dateOnly <= priorEnd) {
         if (key === 'total') priorCount++;
@@ -2280,12 +2311,14 @@ export default function SurgicalDashboard({ onBack }) {
                     <>
                       {[
                         { label: 'Tipo de Cirugía', val: tipoCirugia, set: setTipoCirugia, options: dropdowns.tipos },
+                        { label: 'Tipo de Paciente', val: tipoPaciente, set: setTipoPaciente, options: dropdowns.tipoPacientes },
                         { label: 'Procedencia', val: procedencia, set: setProcedencia, options: dropdowns.procedencias },
                         { label: 'Tipo de Gestor', val: tipoGestor, set: setTipoGestor, options: dropdowns.gestores },
                         { label: 'Forma de Pago', val: formaPago, set: setFormaPago, options: dropdowns.pagos },
                         { label: 'Nombre IQ', val: nombreIq, set: setNombreIq, options: dropdowns.iqs },
                         { label: 'Primer Cirujano', val: primerCirujano, set: setPrimerCirujano, options: dropdowns.ciru1 },
                         { label: 'Segundo Cirujano', val: segundoCirujano, set: setSegundoCirujano, options: dropdowns.ciru2 },
+                        { label: 'Anestesiólogo', val: anestesiologo, set: setAnestesiologo, options: dropdowns.anestes },
                         { label: 'Reintervención', val: reintervencion, set: setReintervencion, options: dropdowns.reints }
                       ].map((f, i) => (
                         <div key={i}>
@@ -2301,10 +2334,12 @@ export default function SurgicalDashboard({ onBack }) {
                       {[
                         { label: 'Fecha de programación', val: tablaFechaProg, set: setTablaFechaProg, options: tablaDropdowns.fechas },
                         { label: 'Tipo de cirugía', val: tablaTipoCirugia, set: setTablaTipoCirugia, options: tablaDropdowns.tipos },
+                        { label: 'Tipo de paciente', val: tablaTipoPaciente, set: setTablaTipoPaciente, options: tablaDropdowns.tipoPacientes },
                         { label: 'Tipo de priorización', val: tablaPriorizacion, set: setTablaPriorizacion, options: tablaDropdowns.prios },
                         { label: 'Pabellón CRR', val: tablaPabellonCrr, set: setTablaPabellonCrr, options: tablaDropdowns.crrs },
                         { label: 'Intervención Propuesta', val: tablaIntervencion, set: setTablaIntervencion, options: tablaDropdowns.ints },
                         { label: 'Primer Cirujano', val: tablaCirujano, set: setTablaCirujano, options: tablaDropdowns.cirus },
+                        { label: 'Anestesiólogo', val: tablaAnestesista, set: setTablaAnestesista, options: tablaDropdowns.anestesistas },
                         { label: 'Pabellón', val: tablaPabellon, set: setTablaPabellon, options: tablaDropdowns.pabs },
                         { label: 'Modalidad de atención', val: tablaModalidad, set: setTablaModalidad, options: tablaDropdowns.mods }
                       ].map((f, i) => (
