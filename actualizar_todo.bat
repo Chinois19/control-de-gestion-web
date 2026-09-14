@@ -47,13 +47,23 @@ if %errorlevel% neq 0 echo Error en fetch-lista-espera.cjs
 
 echo.
 echo ===================================================
-echo   SUBIENDO CAMBIOS A PRODUCCION...
+echo   SUBIENDO CAMBIOS A REPOSITORIO GIT...
 echo ===================================================
 git add .
 git commit -m "chore: actualizacion completa de paneles desde VPN"
 git push
 
+echo.
 echo ===================================================
-echo   ACTUALIZACION FINALIZADA
+echo   COMPILANDO Y DESPLEGANDO A CLOUDFLARE Y VERCEL...
+echo ===================================================
+call npm run build
+echo [1/2] Desplegando en Cloudflare Workers...
+call npx wrangler deploy
+echo [2/2] Desplegando en Vercel...
+call npx vercel --prod --yes
+
+echo ===================================================
+echo   ACTUALIZACION FINALIZADA CON EXITO
 echo ===================================================
 pause
