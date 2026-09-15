@@ -2,11 +2,12 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   ArrowLeft, Calendar, Search, Users, Activity, Clock, CheckCircle, FileText,
-  XCircle, AlertCircle, Filter, PieChart, BarChart2, ChevronRight, ChevronLeft, ChevronDown, TrendingUp, RotateCcw, Pin
+  XCircle, AlertCircle, Filter, PieChart, BarChart2, ChevronRight, ChevronLeft, ChevronDown, TrendingUp, RotateCcw, Pin, DollarSign, Package, TrendingDown, Award, Hash
 } from 'lucide-react';
 import {
   ComposedChart, Line, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer,
-  PieChart as RechartsPieChart, Pie, Cell, LabelList, Label, ReferenceLine
+  PieChart as RechartsPieChart, Pie, Cell, LabelList, Label, ReferenceLine,
+  Treemap, AreaChart, Area, BarChart
 } from 'recharts';
 
 const COLORS = ['#1e40af', '#DF6D05', '#F2A400', '#38bdf8', '#EAE6E1', '#1e3a8a', '#a65103', '#b37800', '#60a5fa'];
@@ -1486,6 +1487,492 @@ const AnalisisCirujanosYCausas = ({ data = [] }) => {
   );
 };
 
+/* ============================================================
+   INSUMOS Y COSTEO DASHBOARD
+   ============================================================ */
+const INSUMOS_COLORS = [
+  '#10b981','#059669','#047857','#065f46','#34d399','#6ee7b7',
+  '#14b8a6','#0d9488','#0891b2','#0284c7','#7c3aed','#a855f7',
+  '#e11d48','#f59e0b','#84cc16','#ef4444'
+];
+const formatCLP = (v) => {
+  if (v === null || v === undefined || isNaN(v)) return '$0';
+  if (v >= 1000000000) return `$${(v/1000000000).toFixed(1)}B`;
+  if (v >= 1000000) return `$${(v/1000000).toFixed(1)}M`;
+  if (v >= 1000) return `$${(v/1000).toFixed(0)}K`;
+  return `$${v.toLocaleString('es-CL')}`;
+};
+
+const CustomTreemapContent = ({ root, depth, x, y, width, height, index, name, value, colors }) => {
+  if (width < 30 || height < 20) return null;
+  const color = colors ? colors[index % colors.length] : INSUMOS_COLORS[index % INSUMOS_COLORS.length];
+  return (
+    <g>
+      <rect x={x} y={y} width={width} height={height} style={{ fill: color, stroke: '#fff', strokeWidth: 2, fillOpacity: 0.85 }} rx={6} />
+      {width > 80 && height > 40 && (
+        <>
+          <text x={x + width/2} y={y + height/2 - 6} textAnchor="middle" fill="white" fontSize={Math.min(13, width/7)} fontWeight={700}
+            style={{ textShadow: '0 1px 3px rgba(0,0,0,0.5)' }}>
+            {name && name.length > 18 ? name.substring(0,16)+'…' : name}
+          </text>
+          <text x={x + width/2} y={y + height/2 + 10} textAnchor="middle" fill="rgba(255,255,255,0.9)" fontSize={Math.min(11, width/9)}>
+            {formatCLP(value)}
+          </text>
+        </>
+      )}
+    </g>
+  );
+};
+
+function InsumosCosteoDashboard({ rawDataLibro, insumosData, insumosLoading, insumosError,
+  insumosEspecialidad, setInsumosEspecialidad, insumosSearch, setInsumosSearch,
+  insumosDrillOpen, setInsumosDrillOpen }) {
+
+  // Cross insumosData with rawDataLibro by id_cirugia to get especialidad
+  const enrichedData = useMemo(() => {
+    const libroMap = new Map();
+    rawDataLibro.forEach(r => {
+      if (r.id_cirugia != null) libroMap.set(String(r.id_cirugia), r.especialidad || 'Sin Especialidad');
+    });
+    return insumosData.map(item => ({
+      ...item,
+      total: Number(item.total) || 0,
+      precio_compra: Number(item.precio_compra) || Number(item.precio_unitario) || 0,
+      cantidad: Number(item.cantidad) || 0,
+      especialidad: libroMap.get(String(item.id_cirugia)) || (item.especialidad) || 'Sin Especialidad',
+    }));
+  }, [insumosData, rawDataLibro]);
+
+  // Available specialties for filter
+  const especialidades = useMemo(() => {
+    return [...new Set(enrichedData.map(r => r.especialidad))].filter(Boolean).sort();
+  }, [enrichedData]);
+
+  // Filtered data
+  const filtered = useMemo(() => {
+    let d = enrichedData;
+    if (insumosEspecialidad.length > 0) d = d.filter(r => insumosEspecialidad.includes(r.especialidad));
+    if (insumosSearch.trim()) {
+      const q = insumosSearch.trim().toLowerCase();
+      d = d.filter(r => (r.descripcion || '').toLowerCase().includes(q) || (r.intervencion || '').toLowerCase().includes(q));
+    }
+    return d;
+  }, [enrichedData, insumosEspecialidad, insumosSearch]);
+
+  // KPIs
+  const kpis = useMemo(() => {
+    const totalCosto = filtered.reduce((s, r) => s + r.total, 0);
+    const totalRegistros = filtered.length;
+    const especialidadesUnicas = new Set(filtered.map(r => r.especialidad)).size;
+    const intervencionesUnicas = new Set(filtered.map(r => r.id_cirugia)).size;
+    const insumoMap = new Map();
+    filtered.forEach(r => {
+      insumoMap.set(r.descripcion, (insumoMap.get(r.descripcion) || 0) + r.total);
+    });
+    const insumosCostosos = [...insumoMap.entries()].sort((a, b) => b[1] - a[1]);
+    const topInsumo = insumosCostosos.length > 0 ? insumosCostosos[0][0] : '-';
+    const topInsumoCosto = insumosCostosos.length > 0 ? insumosCostosos[0][1] : 0;
+    return { totalCosto, totalRegistros, especialidadesUnicas, intervencionesUnicas, topInsumo, topInsumoCosto };
+  }, [filtered]);
+
+  // Data for Treemap: by especialidad
+  const treemapData = useMemo(() => {
+    const map = new Map();
+    filtered.forEach(r => {
+      map.set(r.especialidad, (map.get(r.especialidad) || 0) + r.total);
+    });
+    return [...map.entries()].map(([name, value]) => ({ name, value })).sort((a, b) => b.value - a.value);
+  }, [filtered]);
+
+  // Top 10 cirugías por costo (grouped by intervencion label)
+  const topCirugias = useMemo(() => {
+    const map = new Map();
+    filtered.forEach(r => {
+      const key = r.intervencion || 'Sin Intervención';
+      map.set(key, (map.get(key) || 0) + r.total);
+    });
+    return [...map.entries()]
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 10)
+      .map(([name, total]) => ({
+        name: name.length > 38 ? name.substring(0, 36) + '…' : name,
+        fullName: name,
+        total
+      }));
+  }, [filtered]);
+
+  // Evolución mensual
+  const evolucionMensual = useMemo(() => {
+    const map = new Map();
+    filtered.forEach(r => {
+      if (!r.fecha_cirugia) return;
+      const key = r.fecha_cirugia.substring(0, 7); // YYYY-MM
+      map.set(key, (map.get(key) || 0) + r.total);
+    });
+    return [...map.entries()].sort((a, b) => a[0].localeCompare(b[0]))
+      .map(([mes, total]) => ({ mes, total, label: mes }));
+  }, [filtered]);
+
+  // Top 10 insumos por tipo
+  const topInsumosTipo = useMemo(() => {
+    const map = new Map();
+    filtered.forEach(r => {
+      const key = r.descripcion || 'Sin descripción';
+      map.set(key, (map.get(key) || 0) + r.total);
+    });
+    return [...map.entries()]
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 10)
+      .map(([name, value]) => ({ name: name.length > 28 ? name.substring(0, 26) + '…' : name, value }));
+  }, [filtered]);
+
+  // Drill-down: especialidad → cirugías → insumos
+  const drilldownData = useMemo(() => {
+    const especMap = new Map();
+    filtered.forEach(r => {
+      const espec = r.especialidad;
+      if (!especMap.has(espec)) especMap.set(espec, { total: 0, cirugias: new Map() });
+      const eData = especMap.get(espec);
+      eData.total += r.total;
+      const cKey = r.intervencion || 'Sin Intervención';
+      if (!eData.cirugias.has(cKey)) eData.cirugias.set(cKey, { total: 0, insumos: [] });
+      const cData = eData.cirugias.get(cKey);
+      cData.total += r.total;
+      cData.insumos.push(r);
+    });
+    return [...especMap.entries()]
+      .sort((a, b) => b[1].total - a[1].total)
+      .map(([espec, data]) => ({
+        especialidad: espec,
+        total: data.total,
+        cirugias: [...data.cirugias.entries()]
+          .sort((a, b) => b[1].total - a[1].total)
+          .map(([cirugia, cData]) => ({ cirugia, total: cData.total, insumos: cData.insumos }))
+      }));
+  }, [filtered]);
+
+  const grandTotal = filtered.reduce((s, r) => s + r.total, 0);
+  const toggleDrill = (key) => {
+    setInsumosDrillOpen(prev => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key); else next.add(key);
+      return next;
+    });
+  };
+
+  // Styles
+  const S = {
+    page: { padding: '32px', background: '#f0fdf4', minHeight: '100vh' },
+    header: { marginBottom: '28px' },
+    title: { fontSize: '1.8rem', fontWeight: 800, color: '#064e3b', margin: 0, display: 'flex', alignItems: 'center', gap: '12px' },
+    subtitle: { color: '#6b7280', fontSize: '0.95rem', marginTop: '6px' },
+    filterRow: { display: 'flex', gap: '16px', marginBottom: '24px', flexWrap: 'wrap', alignItems: 'flex-end' },
+    filterLabel: { fontSize: '0.78rem', fontWeight: 700, color: '#047857', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.05em' },
+    input: { padding: '10px 14px', borderRadius: '10px', border: '1.5px solid #a7f3d0', background: 'white', fontSize: '0.85rem', outline: 'none', width: '260px', color: '#064e3b' },
+    kpiGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '16px', marginBottom: '28px' },
+    kpiCard: { background: 'white', borderRadius: '16px', padding: '20px', border: '1.5px solid #d1fae5', boxShadow: '0 4px 20px rgba(16,185,129,0.08)', display: 'flex', flexDirection: 'column', gap: '6px' },
+    kpiLabel: { fontSize: '0.75rem', fontWeight: 700, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.06em' },
+    kpiValue: { fontSize: '1.7rem', fontWeight: 900, color: '#064e3b', lineHeight: 1.1 },
+    kpiSub: { fontSize: '0.72rem', color: '#10b981', fontWeight: 600 },
+    row2: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '20px' },
+    row3: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '20px' },
+    card: { background: 'white', borderRadius: '18px', padding: '24px', border: '1.5px solid #d1fae5', boxShadow: '0 4px 20px rgba(16,185,129,0.06)' },
+    cardTitle: { fontSize: '0.95rem', fontWeight: 700, color: '#064e3b', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' },
+    tableWrap: { overflowX: 'auto', borderRadius: '12px', border: '1px solid #d1fae5' },
+    thead: { background: 'linear-gradient(135deg, #064e3b, #065f46)', color: 'white', fontSize: '0.78rem', fontWeight: 700 },
+    th: { padding: '12px 16px', textAlign: 'left', whiteSpace: 'nowrap' },
+    tr: (i) => ({ background: i % 2 === 0 ? 'white' : '#f0fdf4', fontSize: '0.82rem', color: '#1e293b' }),
+    td: { padding: '10px 16px', borderBottom: '1px solid #ecfdf5' },
+  };
+
+  if (insumosLoading) return (
+    <div style={{ ...S.page, display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '400px' }}>
+      <div style={{ textAlign: 'center' }}>
+        <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1.2, ease: 'linear' }}
+          style={{ width: 56, height: 56, border: '4px solid #d1fae5', borderTopColor: '#10b981', borderRadius: '50%', margin: '0 auto 16px' }} />
+        <p style={{ color: '#10b981', fontWeight: 700, fontSize: '1rem' }}>Cargando datos de insumos...</p>
+      </div>
+    </div>
+  );
+
+  if (insumosError) return (
+    <div style={{ ...S.page, display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '400px' }}>
+      <div style={{ background: 'white', borderRadius: '16px', padding: '40px', border: '2px solid #fecaca', textAlign: 'center', maxWidth: '500px' }}>
+        <AlertCircle size={48} color="#ef4444" style={{ marginBottom: '16px' }} />
+        <h3 style={{ color: '#ef4444', marginTop: 0 }}>Error al cargar insumos</h3>
+        <p style={{ color: '#6b7280' }}>{insumosError}</p>
+        <p style={{ color: '#9ca3af', fontSize: '0.82rem' }}>Verifica que el archivo <code>/data/insumos_cirugias_cached.json</code> exista o que la API esté disponible.</p>
+      </div>
+    </div>
+  );
+
+  if (enrichedData.length === 0 && !insumosLoading) return (
+    <div style={{ ...S.page, display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '400px' }}>
+      <div style={{ background: 'white', borderRadius: '16px', padding: '40px', border: '2px solid #d1fae5', textAlign: 'center', maxWidth: '500px' }}>
+        <Package size={48} color="#10b981" style={{ marginBottom: '16px' }} />
+        <h3 style={{ color: '#064e3b', marginTop: 0 }}>Sin datos de insumos</h3>
+        <p style={{ color: '#6b7280' }}>No se encontraron registros de costos de insumos quirúrgicos. Ejecuta el script de compilación para pre-exportar los datos.</p>
+      </div>
+    </div>
+  );
+
+  return (
+    <div style={S.page}>
+      {/* Header */}
+      <div style={S.header}>
+        <h2 style={S.title}>
+          <div style={{ width: 44, height: 44, borderRadius: '14px', background: 'linear-gradient(135deg, #10b981, #059669)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 6px 20px rgba(16,185,129,0.35)' }}>
+            <DollarSign size={24} color="white" />
+          </div>
+          Insumos y Costeo Quirúrgico
+        </h2>
+        <p style={S.subtitle}>Análisis descriptivo de costos de insumos por especialidad y cirugía · {enrichedData.length.toLocaleString('es-CL')} registros totales</p>
+      </div>
+
+      {/* Filters */}
+      <div style={S.filterRow}>
+        <div>
+          <div style={S.filterLabel}>🔍 Buscar insumo / cirugía</div>
+          <input style={S.input} placeholder="Escriba para filtrar..." value={insumosSearch} onChange={e => setInsumosSearch(e.target.value)} />
+        </div>
+        <div style={{ flex: 1, minWidth: 220 }}>
+          <div style={S.filterLabel}>🏥 Especialidad</div>
+          <MultiSearchableSelect
+            value={insumosEspecialidad}
+            options={especialidades}
+            onChange={setInsumosEspecialidad}
+          />
+        </div>
+        {(insumosEspecialidad.length > 0 || insumosSearch) && (
+          <button onClick={() => { setInsumosEspecialidad([]); setInsumosSearch(''); }}
+            style={{ padding: '10px 16px', borderRadius: '10px', border: '1.5px solid #fca5a5', background: '#fff1f2', color: '#dc2626', fontWeight: 700, cursor: 'pointer', fontSize: '0.82rem', alignSelf: 'flex-end' }}>
+            ✕ Limpiar filtros
+          </button>
+        )}
+        <div style={{ marginLeft: 'auto', alignSelf: 'flex-end', background: 'linear-gradient(135deg, #10b981, #059669)', borderRadius: '12px', padding: '10px 18px', color: 'white', fontWeight: 700, fontSize: '0.85rem' }}>
+          {filtered.length.toLocaleString('es-CL')} registros filtrados
+        </div>
+      </div>
+
+      {/* KPI Cards */}
+      <div style={S.kpiGrid}>
+        {[
+          { icon: <DollarSign size={20} color="#10b981" />, label: 'Costo Total Acumulado', value: formatCLP(kpis.totalCosto), sub: `${kpis.totalRegistros.toLocaleString('es-CL')} registros de insumos` },
+          { icon: <Hash size={20} color="#059669" />, label: 'Registros de Insumos', value: kpis.totalRegistros.toLocaleString('es-CL'), sub: 'líneas de insumos valorizadas' },
+          { icon: <Activity size={20} color="#047857" />, label: 'Especialidades con Costos', value: kpis.especialidadesUnicas, sub: 'especialidades quirúrgicas' },
+          { icon: <FileText size={20} color="#065f46" />, label: 'Intervenciones Valorizadas', value: kpis.intervencionesUnicas.toLocaleString('es-CL'), sub: 'cirugías únicas costeadas' },
+          { icon: <Award size={20} color="#10b981" />, label: 'Insumo Más Costoso', value: formatCLP(kpis.topInsumoCosto), sub: kpis.topInsumo.length > 30 ? kpis.topInsumo.substring(0, 28) + '…' : kpis.topInsumo },
+        ].map((k, i) => (
+          <motion.div key={i} style={S.kpiCard} whileHover={{ y: -3, boxShadow: '0 8px 30px rgba(16,185,129,0.18)' }} transition={{ duration: 0.2 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>{k.icon}<span style={S.kpiLabel}>{k.label}</span></div>
+            <div style={S.kpiValue}>{k.value}</div>
+            <div style={S.kpiSub}>{k.sub}</div>
+          </motion.div>
+        ))}
+      </div>
+
+      {/* Row 1: Treemap + Bar Top Cirugías */}
+      <div style={S.row2}>
+        <div style={S.card}>
+          <div style={S.cardTitle}><BarChart2 size={18} color="#10b981" /> Distribución de Costos por Especialidad</div>
+          {treemapData.length > 0 ? (
+            <ResponsiveContainer width="100%" height={280}>
+              <Treemap data={treemapData} dataKey="value" aspectRatio={4/3} stroke="#fff"
+                content={<CustomTreemapContent colors={INSUMOS_COLORS} />}>
+                <RechartsTooltip formatter={(v) => [formatCLP(v), 'Costo Total']}
+                  contentStyle={{ borderRadius: '10px', fontSize: '0.82rem', border: '1px solid #d1fae5' }} />
+              </Treemap>
+            </ResponsiveContainer>
+          ) : <div style={{ height: 280, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#9ca3af' }}>Sin datos</div>}
+        </div>
+
+        <div style={S.card}>
+          <div style={S.cardTitle}><TrendingUp size={18} color="#059669" /> Top 10 Cirugías por Costo Total</div>
+          {topCirugias.length > 0 ? (
+            <ResponsiveContainer width="100%" height={280}>
+              <BarChart data={topCirugias} layout="vertical" margin={{ top: 0, right: 30, left: 0, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#ecfdf5" />
+                <XAxis type="number" tickFormatter={formatCLP} tick={{ fontSize: 10, fill: '#6b7280' }} />
+                <YAxis type="category" dataKey="name" width={160} tick={{ fontSize: 9.5, fill: '#374151' }} />
+                <RechartsTooltip formatter={(v) => [formatCLP(v), 'Costo']} labelFormatter={(l, payload) => payload?.[0]?.payload?.fullName || l}
+                  contentStyle={{ borderRadius: '10px', fontSize: '0.82rem', border: '1px solid #d1fae5' }} />
+                <Bar dataKey="total" radius={[0, 6, 6, 0]}>
+                  {topCirugias.map((_, i) => <Cell key={i} fill={INSUMOS_COLORS[i % INSUMOS_COLORS.length]} />)}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          ) : <div style={{ height: 280, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#9ca3af' }}>Sin datos</div>}
+        </div>
+      </div>
+
+      {/* Row 2: Line chart evolución + Donut Top insumos */}
+      <div style={S.row3}>
+        <div style={S.card}>
+          <div style={S.cardTitle}><TrendingUp size={18} color="#10b981" /> Evolución Mensual del Costo de Insumos</div>
+          {evolucionMensual.length > 1 ? (
+            <ResponsiveContainer width="100%" height={240}>
+              <AreaChart data={evolucionMensual} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="insumoGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
+                    <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="#f0fdf4" />
+                <XAxis dataKey="mes" tick={{ fontSize: 10, fill: '#6b7280' }} />
+                <YAxis tickFormatter={formatCLP} tick={{ fontSize: 10, fill: '#6b7280' }} />
+                <RechartsTooltip formatter={(v) => [formatCLP(v), 'Costo Mensual']}
+                  contentStyle={{ borderRadius: '10px', fontSize: '0.82rem', border: '1px solid #d1fae5' }} />
+                <Area type="monotone" dataKey="total" stroke="#10b981" strokeWidth={2.5} fill="url(#insumoGrad)" dot={{ fill: '#10b981', r: 3 }} />
+              </AreaChart>
+            </ResponsiveContainer>
+          ) : (
+            <div style={{ height: 240, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#9ca3af', flexDirection: 'column', gap: '8px' }}>
+              <TrendingDown size={32} color="#d1d5db" />
+              <span style={{ fontSize: '0.85rem' }}>Datos insuficientes para evolución mensual (se requieren fechas de cirugía)</span>
+            </div>
+          )}
+        </div>
+
+        <div style={S.card}>
+          <div style={S.cardTitle}><PieChart size={18} color="#059669" /> Top 10 Insumos Más Costosos</div>
+          {topInsumosTipo.length > 0 ? (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <ResponsiveContainer width="55%" height={240}>
+                <RechartsPieChart>
+                  <Pie data={topInsumosTipo} cx="50%" cy="50%" innerRadius={55} outerRadius={100}
+                    dataKey="value" paddingAngle={2}>
+                    {topInsumosTipo.map((_, i) => <Cell key={i} fill={INSUMOS_COLORS[i % INSUMOS_COLORS.length]} />)}
+                  </Pie>
+                  <RechartsTooltip formatter={(v) => [formatCLP(v), 'Costo']}
+                    contentStyle={{ borderRadius: '10px', fontSize: '0.8rem', border: '1px solid #d1fae5' }} />
+                </RechartsPieChart>
+              </ResponsiveContainer>
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '4px', maxHeight: 240, overflowY: 'auto' }}>
+                {topInsumosTipo.map((item, i) => (
+                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '7px', fontSize: '0.75rem' }}>
+                    <div style={{ width: 10, height: 10, borderRadius: '50%', background: INSUMOS_COLORS[i % INSUMOS_COLORS.length], flexShrink: 0 }} />
+                    <span style={{ color: '#374151', flex: 1, lineHeight: 1.3 }}>{item.name}</span>
+                    <span style={{ color: '#10b981', fontWeight: 700, whiteSpace: 'nowrap' }}>{formatCLP(item.value)}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : <div style={{ height: 240, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#9ca3af' }}>Sin datos</div>}
+        </div>
+      </div>
+
+      {/* Drill-down table */}
+      <div style={{ ...S.card, marginBottom: '32px' }}>
+        <div style={S.cardTitle}><Users size={18} color="#059669" /> Desglose por Especialidad → Cirugía → Insumos</div>
+        <div style={S.tableWrap}>
+          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <thead style={S.thead}>
+              <tr>
+                <th style={S.th}>Especialidad / Cirugía / Insumo</th>
+                <th style={{ ...S.th, textAlign: 'right' }}>Cantidad</th>
+                <th style={{ ...S.th, textAlign: 'right' }}>Precio Unit.</th>
+                <th style={{ ...S.th, textAlign: 'right' }}>Total</th>
+                <th style={{ ...S.th, textAlign: 'right' }}>% del Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              {drilldownData.map((espec, ei) => {
+                const espKey = `espec-${espec.especialidad}`;
+                const espOpen = insumosDrillOpen.has(espKey);
+                const pct = grandTotal > 0 ? ((espec.total / grandTotal) * 100).toFixed(1) : '0';
+                return (
+                  <React.Fragment key={espKey}>
+                    {/* Especialidad row */}
+                    <tr style={{ background: 'linear-gradient(135deg, #ecfdf5, #d1fae5)', cursor: 'pointer' }} onClick={() => toggleDrill(espKey)}>
+                      <td style={{ ...S.td, fontWeight: 800, color: '#064e3b', fontSize: '0.88rem', borderBottom: '2px solid #a7f3d0' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <motion.span animate={{ rotate: espOpen ? 90 : 0 }} transition={{ duration: 0.2 }}>
+                            <ChevronRight size={16} color="#10b981" />
+                          </motion.span>
+                          🏥 {espec.especialidad}
+                          <span style={{ marginLeft: '8px', background: '#10b981', color: 'white', borderRadius: '20px', padding: '2px 10px', fontSize: '0.72rem', fontWeight: 700 }}>
+                            {espec.cirugias.length} cirugías
+                          </span>
+                        </div>
+                      </td>
+                      <td style={{ ...S.td, textAlign: 'right', borderBottom: '2px solid #a7f3d0' }} />
+                      <td style={{ ...S.td, textAlign: 'right', borderBottom: '2px solid #a7f3d0' }} />
+                      <td style={{ ...S.td, textAlign: 'right', fontWeight: 800, color: '#064e3b', borderBottom: '2px solid #a7f3d0', fontSize: '0.9rem' }}>{formatCLP(espec.total)}</td>
+                      <td style={{ ...S.td, textAlign: 'right', borderBottom: '2px solid #a7f3d0' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '6px' }}>
+                          <div style={{ width: 60, height: 6, background: '#ecfdf5', borderRadius: 3, overflow: 'hidden' }}>
+                            <div style={{ width: `${pct}%`, height: '100%', background: 'linear-gradient(90deg, #10b981, #059669)', borderRadius: 3 }} />
+                          </div>
+                          <span style={{ fontWeight: 700, color: '#059669', fontSize: '0.82rem' }}>{pct}%</span>
+                        </div>
+                      </td>
+                    </tr>
+
+                    {/* Cirugías */}
+                    {espOpen && espec.cirugias.map((cir, ci) => {
+                      const cirKey = `cir-${espec.especialidad}-${ci}`;
+                      const cirOpen = insumosDrillOpen.has(cirKey);
+                      return (
+                        <React.Fragment key={cirKey}>
+                          <tr style={{ background: ci % 2 === 0 ? '#f0fdf4' : '#fafff9', cursor: 'pointer' }} onClick={() => toggleDrill(cirKey)}>
+                            <td style={{ ...S.td, paddingLeft: '36px', color: '#065f46', fontWeight: 700, fontSize: '0.82rem' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                <motion.span animate={{ rotate: cirOpen ? 90 : 0 }} transition={{ duration: 0.2 }}>
+                                  <ChevronRight size={13} color="#34d399" />
+                                </motion.span>
+                                🔪 {cir.cirugia.length > 55 ? cir.cirugia.substring(0, 53) + '…' : cir.cirugia}
+                                <span style={{ marginLeft: '6px', background: '#ecfdf5', color: '#059669', borderRadius: '20px', padding: '1px 8px', fontSize: '0.7rem', fontWeight: 700, border: '1px solid #a7f3d0' }}>
+                                  {cir.insumos.length} insumos
+                                </span>
+                              </div>
+                            </td>
+                            <td style={{ ...S.td, textAlign: 'right' }} />
+                            <td style={{ ...S.td, textAlign: 'right' }} />
+                            <td style={{ ...S.td, textAlign: 'right', fontWeight: 700, color: '#065f46', fontSize: '0.82rem' }}>{formatCLP(cir.total)}</td>
+                            <td style={{ ...S.td, textAlign: 'right', color: '#6b7280', fontSize: '0.78rem' }}>
+                              {espec.total > 0 ? ((cir.total / espec.total) * 100).toFixed(1) : '0'}% de especialidad
+                            </td>
+                          </tr>
+
+                          {/* Insumos */}
+                          {cirOpen && cir.insumos.map((ins, ii) => (
+                            <tr key={ii} style={{ background: ii % 2 === 0 ? '#f7fffe' : 'white', fontSize: '0.78rem' }}>
+                              <td style={{ ...S.td, paddingLeft: '64px', color: '#374151' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                  <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#10b981', flexShrink: 0 }} />
+                                  {ins.descripcion || 'Sin descripción'}
+                                </div>
+                              </td>
+                              <td style={{ ...S.td, textAlign: 'right', color: '#374151' }}>{ins.cantidad ?? '-'}</td>
+                              <td style={{ ...S.td, textAlign: 'right', color: '#374151' }}>{ins.precio_compra ? formatCLP(ins.precio_compra) : '-'}</td>
+                              <td style={{ ...S.td, textAlign: 'right', fontWeight: 600, color: '#059669' }}>{formatCLP(ins.total)}</td>
+                              <td style={{ ...S.td, textAlign: 'right', color: '#9ca3af' }} />
+                            </tr>
+                          ))}
+                        </React.Fragment>
+                      );
+                    })}
+                  </React.Fragment>
+                );
+              })}
+            </tbody>
+            <tfoot>
+              <tr style={{ background: 'linear-gradient(135deg, #064e3b, #065f46)' }}>
+                <td style={{ ...S.td, fontWeight: 800, color: 'white', fontSize: '0.9rem' }}>TOTAL GENERAL</td>
+                <td style={{ ...S.td }} />
+                <td style={{ ...S.td }} />
+                <td style={{ ...S.td, textAlign: 'right', fontWeight: 900, color: 'white', fontSize: '1rem' }}>{formatCLP(grandTotal)}</td>
+                <td style={{ ...S.td, textAlign: 'right', color: '#6ee7b7', fontWeight: 700 }}>100%</td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function SurgicalDashboard({ onBack }) {
   const [activeTab, setActiveTab] = useState('libro');
   const [tablaSubTab, setTablaSubTab] = useState('resumen');
@@ -1523,6 +2010,14 @@ export default function SurgicalDashboard({ onBack }) {
   const [tablaAnestesista, setTablaAnestesista] = useState([]);
   const [tablaPabellon, setTablaPabellon] = useState([]);
   const [tablaModalidad, setTablaModalidad] = useState([]);
+
+  // Insumos y Costeo state
+  const [insumosData, setInsumosData] = useState([]);
+  const [insumosLoading, setInsumosLoading] = useState(false);
+  const [insumosError, setInsumosError] = useState(null);
+  const [insumosEspecialidad, setInsumosEspecialidad] = useState([]);
+  const [insumosSearch, setInsumosSearch] = useState('');
+  const [insumosDrillOpen, setInsumosDrillOpen] = useState(new Set());
 
   // Floating Sidebar state
   const [sidebarHovered, setSidebarHovered] = useState(false);
@@ -1607,6 +2102,65 @@ export default function SurgicalDashboard({ onBack }) {
     }
     loadData();
   }, []);
+
+  // Load insumos data (fetched on demand when tab is opened)
+  useEffect(() => {
+    if (activeTab !== 'insumos') return;
+    if (insumosData.length > 0) return; // already loaded
+    async function loadInsumos() {
+      setInsumosLoading(true);
+      setInsumosError(null);
+      try {
+        // Try local pre-exported JSON first
+        const localRes = await fetch('/data/insumos_cirugias_cached.json?v=' + Date.now()).catch(() => null);
+        if (localRes && localRes.ok) {
+          const localJson = await localRes.json();
+          const arr = Array.isArray(localJson)
+            ? localJson
+            : (localJson.insumos_cirugias || localJson.data || []);
+          setInsumosData(arr);
+          return;
+        }
+        // Fallback: fetch directly from pythonanywhere API
+        // Step 1: get CSRF token from login page
+        const loginPageRes = await fetch('https://pabellonhospitalvillarrica.pythonanywhere.com/accounts/login/', {
+          credentials: 'include',
+          mode: 'cors'
+        }).catch(() => null);
+        let csrf = '';
+        if (loginPageRes && loginPageRes.ok) {
+          const loginHtml = await loginPageRes.text();
+          const csrfMatch = loginHtml.match(/csrfmiddlewaretoken[^>]*value="([^"]+)"/);
+          csrf = csrfMatch ? csrfMatch[1] : '';
+        }
+        // Step 2: login
+        if (csrf) {
+          await fetch('https://pabellonhospitalvillarrica.pythonanywhere.com/accounts/login/', {
+            method: 'POST',
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'Referer': 'https://pabellonhospitalvillarrica.pythonanywhere.com/' },
+            body: `username=admin&password=Controldegestion2025&csrfmiddlewaretoken=${csrf}&next=/`
+          }).catch(() => {});
+        }
+        // Step 3: fetch data
+        const dataRes = await fetch('https://pabellonhospitalvillarrica.pythonanywhere.com/pabellon/exportar_insumos_cirugias/', {
+          credentials: 'include',
+          mode: 'cors'
+        });
+        if (!dataRes.ok) throw new Error(`API respondió ${dataRes.status}. Por favor ejecuta el script de exportación para generar /data/insumos_cirugias_cached.json`);
+        const json = await dataRes.json();
+        const arr = Array.isArray(json)
+          ? json
+          : (json.insumos_cirugias || json.data || []);
+        setInsumosData(arr);
+      } catch (err) {
+        setInsumosError(`Error al cargar insumos: ${err.message}`);
+      } finally {
+        setInsumosLoading(false);
+      }
+    }
+    loadInsumos();
+  }, [activeTab]);
 
   // Dropdown lists
   const dropdowns = useMemo(() => {
@@ -2138,7 +2692,8 @@ export default function SurgicalDashboard({ onBack }) {
           {[
             { id: 'libro', label: 'Estadística (Libro)', icon: <BarChart2 size={18} /> },
             { id: 'tabla', label: 'Programación de tabla', icon: <Calendar size={18} /> },
-            { id: 'disponibilidad', label: 'Disponibilidad (Infra)', icon: <Clock size={18} /> }
+            { id: 'disponibilidad', label: 'Disponibilidad (Infra)', icon: <Clock size={18} /> },
+            { id: 'insumos', label: 'Insumos y Costeo', icon: <DollarSign size={18} /> }
           ].map(tab => (
             <button
               key={tab.id}
@@ -2780,6 +3335,22 @@ export default function SurgicalDashboard({ onBack }) {
             <p>La vista seleccionada ({activeTab}) se ha omitido temporalmente para centrarse en las Estadísticas del Libro.</p>
           </div>
         </div>
+      )}
+
+      {/* INSUMOS Y COSTEO TAB */}
+      {activeTab === 'insumos' && (
+        <InsumosCosteoDashboard
+          rawDataLibro={rawDataLibro}
+          insumosData={insumosData}
+          insumosLoading={insumosLoading}
+          insumosError={insumosError}
+          insumosEspecialidad={insumosEspecialidad}
+          setInsumosEspecialidad={setInsumosEspecialidad}
+          insumosSearch={insumosSearch}
+          setInsumosSearch={setInsumosSearch}
+          insumosDrillOpen={insumosDrillOpen}
+          setInsumosDrillOpen={setInsumosDrillOpen}
+        />
       )}
     </div>
   );
