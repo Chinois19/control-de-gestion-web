@@ -1885,7 +1885,14 @@ export default function ClosedAttentionDashboard({ onBack, initialTab, initialSu
     });
 
     let camasHabilitadas = 120;
-    const divisor = countCuadraturaDays || diffDaysMonitor || 1;
+    // divisor = número de días del periodo con registro en cuadratura.
+    // Si la cuadratura tiene >1 fila por día (ej: una por servicio), countCuadraturaDays
+    // se inflará. Para obtener el promedio real usamos diffDaysMonitor como divisor seguro
+    // cuando countCuadraturaDays supera la cantidad de días del periodo.
+    const divisor = (countCuadraturaDays > 0 && countCuadraturaDays <= diffDaysMonitor)
+      ? countCuadraturaDays
+      : diffDaysMonitor || 1;
+
     if (diasCamaDisponibles > 0) {
       camasHabilitadas = Math.round(diasCamaDisponibles / divisor);
     } else {
@@ -1900,9 +1907,11 @@ export default function ClosedAttentionDashboard({ onBack, initialTab, initialSu
       }
     }
 
-    if (diasCamaDisponibles === 0) {
-      diasCamaDisponibles = camasHabilitadas * diffDaysMonitor;
-    }
+    // Días cama disponibles = camas habilitadas (promedio) × días del periodo.
+    // Se recalcula siempre desde camasHabilitadas para evitar que la acumulación
+    // cruda de cuadraturaRaw infle el total cuando hay múltiples registros por día.
+    diasCamaDisponibles = camasHabilitadas * diffDaysMonitor;
+
     if (diasCamaOcupadas === 0) {
       diasCamaOcupadas = totalBedDaysDedup;
     }
