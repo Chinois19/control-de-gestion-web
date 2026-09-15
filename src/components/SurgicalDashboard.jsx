@@ -1497,165 +1497,316 @@ const INSUMOS_COLORS = [
 ];
 const formatCLP = (v) => {
   if (v === null || v === undefined || isNaN(v)) return '$0';
-  if (v >= 1000000000) return `$${(v/1000000000).toFixed(1)}B`;
-  if (v >= 1000000) return `$${(v/1000000).toFixed(1)}M`;
-  if (v >= 1000) return `$${(v/1000).toFixed(0)}K`;
-  return `$${v.toLocaleString('es-CL')}`;
+  return `$${Math.round(Number(v) || 0).toLocaleString('es-CL')}`;
 };
 
-const CustomTreemapContent = ({ root, depth, x, y, width, height, index, name, value, colors }) => {
-  if (width < 30 || height < 20) return null;
-  const color = colors ? colors[index % colors.length] : INSUMOS_COLORS[index % INSUMOS_COLORS.length];
-  return (
-    <g>
-      <rect x={x} y={y} width={width} height={height} style={{ fill: color, stroke: '#fff', strokeWidth: 2, fillOpacity: 0.85 }} rx={6} />
-      {width > 80 && height > 40 && (
-        <>
-          <text x={x + width/2} y={y + height/2 - 6} textAnchor="middle" fill="white" fontSize={Math.min(13, width/7)} fontWeight={700}
-            style={{ textShadow: '0 1px 3px rgba(0,0,0,0.5)' }}>
-            {name && name.length > 18 ? name.substring(0,16)+'…' : name}
-          </text>
-          <text x={x + width/2} y={y + height/2 + 10} textAnchor="middle" fill="rgba(255,255,255,0.9)" fontSize={Math.min(11, width/9)}>
-            {formatCLP(value)}
-          </text>
-        </>
-      )}
-    </g>
-  );
-};
+function InsumosCosteoDashboard({
+  rawDataLibro,
+  insumosData,
+  insumosLoading,
+  insumosError
+}) {
+  // Filter states
+  const [fechaDesde, setFechaDesde] = useState('');
+  const [fechaHasta, setFechaHasta] = useState('');
+  const [selectedEspecialidades, setSelectedEspecialidades] = useState([]);
+  const [selectedCirujanos, setSelectedCirujanos] = useState([]);
+  const [selectedTiposPaciente, setSelectedTiposPaciente] = useState([]);
+  const [selectedTiposCirugia, setSelectedTiposCirugia] = useState([]);
+  const [insumosSearch, setInsumosSearch] = useState('');
+  const [drillOpen, setDrillOpen] = useState(new Set());
 
-function InsumosCosteoDashboard({ rawDataLibro, insumosData, insumosLoading, insumosError,
-  insumosEspecialidad, setInsumosEspecialidad, insumosSearch, setInsumosSearch,
-  insumosDrillOpen, setInsumosDrillOpen }) {
-
-  // Cross insumosData with rawDataLibro by id_cirugia to get especialidad
+  // Enriched data: incorporates all new variables from the updated API query
   const enrichedData = useMemo(() => {
-    const libroMap = new Map();
-    rawDataLibro.forEach(r => {
-      if (r.id_cirugia != null) libroMap.set(String(r.id_cirugia), r.especialidad || 'Sin Especialidad');
-    });
-    return insumosData.map(item => ({
-      ...item,
-      total: Number(item.total) || 0,
-      precio_compra: Number(item.precio_compra) || Number(item.precio_unitario) || 0,
-      cantidad: Number(item.cantidad) || 0,
-      especialidad: libroMap.get(String(item.id_cirugia)) || (item.especialidad) || 'Sin Especialidad',
-    }));
-  }, [insumosData, rawDataLibro]);
+    return (insumosData || []).map(item => {
+      const total = Number(item.total) || 0;
+      const precio_compra = Number(item.precio_compra) || Number(item.precio_unitario) || 0;
+      const cantidad = Number(item.cantidad) || 0;
+      const fecha = item.fecha_programacion ? String(item.fecha_programacion).substring(0, 10) : '';
+      const especialidad = item.especialidad && item.especialidad.trim() ? item.especialidad.trim() : 'Sin Especialidad';
+      const cirujano = item.cirujano && item.cirujano.trim() ? item.cirujano.trim() : 'Sin Cirujano';
+      const tipo_cirugia = item.tipo_cirugia && item.tipo_cirugia.trim() ? item.tipo_cirugia.trim() : 'Sin Tipo';
+      const tipo_paciente = item.tipo_paciente && item.tipo_paciente.trim() ? item.tipo_paciente.trim() : 'Sin Clasificación';
+      const intervencion = item.intervencion && item.intervencion.trim() ? item.intervencion.trim() : 'Sin Intervención';
+      const surgeryId = item.id_cirugia ? String(item.id_cirugia) : [fecha, cirujano, intervencion, item.edad || '', item.sexo || ''].join('__');
 
-  // Available specialties for filter
-  const especialidades = useMemo(() => {
-    return [...new Set(enrichedData.map(r => r.especialidad))].filter(Boolean).sort();
+      return {
+        ...item,
+        total,
+        precio_compra,
+        cantidad,
+        fecha,
+        especialidad,
+        cirujano,
+        tipo_cirugia,
+        tipo_paciente,
+        intervencion,
+        surgeryId
+      };
+    });
+  }, [insumosData]);
+
+  // Options for all filters
+  const filterOptions = useMemo(() => {
+    const especialidades = new Set();
+    const cirujanos = new Set();
+    const tiposPaciente = new Set();
+    const tiposCirugia = new Set();
+    let minDate = '';
+    let maxDate = '';
+
+    enrichedData.forEach(r => {
+      if (r.especialidad) especialidades.add(r.especialidad);
+      if (r.cirujano) cirujanos.add(r.cirujano);
+      if (r.tipo_paciente) tiposPaciente.add(r.tipo_paciente);
+      if (r.tipo_cirugia) tiposCirugia.add(r.tipo_cirugia);
+      if (r.fecha) {
+        if (!minDate || r.fecha < minDate) minDate = r.fecha;
+        if (!maxDate || r.fecha > maxDate) maxDate = r.fecha;
+      }
+    });
+
+    return {
+      especialidades: Array.from(especialidades).sort(),
+      cirujanos: Array.from(cirujanos).sort(),
+      tiposPaciente: Array.from(tiposPaciente).sort(),
+      tiposCirugia: Array.from(tiposCirugia).sort(),
+      minDate,
+      maxDate
+    };
   }, [enrichedData]);
 
-  // Filtered data
+  // Apply filters
   const filtered = useMemo(() => {
-    let d = enrichedData;
-    if (insumosEspecialidad.length > 0) d = d.filter(r => insumosEspecialidad.includes(r.especialidad));
-    if (insumosSearch.trim()) {
-      const q = insumosSearch.trim().toLowerCase();
-      d = d.filter(r => (r.descripcion || '').toLowerCase().includes(q) || (r.intervencion || '').toLowerCase().includes(q));
-    }
-    return d;
-  }, [enrichedData, insumosEspecialidad, insumosSearch]);
+    return enrichedData.filter(r => {
+      if (fechaDesde && r.fecha && r.fecha < fechaDesde) return false;
+      if (fechaHasta && r.fecha && r.fecha > fechaHasta) return false;
+      if (selectedEspecialidades.length > 0 && !selectedEspecialidades.includes(r.especialidad)) return false;
+      if (selectedCirujanos.length > 0 && !selectedCirujanos.includes(r.cirujano)) return false;
+      if (selectedTiposPaciente.length > 0 && !selectedTiposPaciente.includes(r.tipo_paciente)) return false;
+      if (selectedTiposCirugia.length > 0 && !selectedTiposCirugia.includes(r.tipo_cirugia)) return false;
+      if (insumosSearch.trim()) {
+        const q = insumosSearch.trim().toLowerCase();
+        const matchDesc = (r.descripcion || '').toLowerCase().includes(q);
+        const matchIq = (r.intervencion || '').toLowerCase().includes(q);
+        const matchCir = (r.cirujano || '').toLowerCase().includes(q);
+        if (!matchDesc && !matchIq && !matchCir) return false;
+      }
+      return true;
+    });
+  }, [enrichedData, fechaDesde, fechaHasta, selectedEspecialidades, selectedCirujanos, selectedTiposPaciente, selectedTiposCirugia, insumosSearch]);
+
+  // Reset all filters
+  const hasActiveFilters = Boolean(
+    fechaDesde || fechaHasta ||
+    selectedEspecialidades.length > 0 ||
+    selectedCirujanos.length > 0 ||
+    selectedTiposPaciente.length > 0 ||
+    selectedTiposCirugia.length > 0 ||
+    insumosSearch.trim()
+  );
+
+  const handleClearFilters = () => {
+    setFechaDesde('');
+    setFechaHasta('');
+    setSelectedEspecialidades([]);
+    setSelectedCirujanos([]);
+    setSelectedTiposPaciente([]);
+    setSelectedTiposCirugia([]);
+    setInsumosSearch('');
+  };
 
   // KPIs
   const kpis = useMemo(() => {
     const totalCosto = filtered.reduce((s, r) => s + r.total, 0);
     const totalRegistros = filtered.length;
+    const uniqueSurgeries = new Set(filtered.map(r => r.surgeryId));
+    const totalCirugias = uniqueSurgeries.size;
+    const costoPromedioCirugia = totalCirugias > 0 ? Math.round(totalCosto / totalCirugias) : 0;
     const especialidadesUnicas = new Set(filtered.map(r => r.especialidad)).size;
-    const intervencionesUnicas = new Set(filtered.map(r => r.id_cirugia)).size;
+
     const insumoMap = new Map();
     filtered.forEach(r => {
-      insumoMap.set(r.descripcion, (insumoMap.get(r.descripcion) || 0) + r.total);
+      const key = r.descripcion || 'Sin descripción';
+      insumoMap.set(key, (insumoMap.get(key) || 0) + r.total);
     });
-    const insumosCostosos = [...insumoMap.entries()].sort((a, b) => b[1] - a[1]);
-    const topInsumo = insumosCostosos.length > 0 ? insumosCostosos[0][0] : '-';
-    const topInsumoCosto = insumosCostosos.length > 0 ? insumosCostosos[0][1] : 0;
-    return { totalCosto, totalRegistros, especialidadesUnicas, intervencionesUnicas, topInsumo, topInsumoCosto };
+    const sortedInsumos = [...insumoMap.entries()].sort((a, b) => b[1] - a[1]);
+    const topInsumo = sortedInsumos.length > 0 ? sortedInsumos[0][0] : '-';
+    const topInsumoCosto = sortedInsumos.length > 0 ? sortedInsumos[0][1] : 0;
+
+    return {
+      totalCosto,
+      totalRegistros,
+      totalCirugias,
+      costoPromedioCirugia,
+      especialidadesUnicas,
+      topInsumo,
+      topInsumoCosto
+    };
   }, [filtered]);
 
-  // Data for Treemap: by especialidad
-  const treemapData = useMemo(() => {
+  // Chart 1: Costo Promedio por Especialidad
+  const especialidadPromedios = useMemo(() => {
     const map = new Map();
     filtered.forEach(r => {
-      map.set(r.especialidad, (map.get(r.especialidad) || 0) + r.total);
+      if (!map.has(r.especialidad)) {
+        map.set(r.especialidad, { totalCost: 0, surgeries: new Set() });
+      }
+      const entry = map.get(r.especialidad);
+      entry.totalCost += r.total;
+      entry.surgeries.add(r.surgeryId);
     });
-    return [...map.entries()].map(([name, value]) => ({ name, value })).sort((a, b) => b.value - a.value);
+
+    return [...map.entries()]
+      .map(([name, data]) => {
+        const nSurgeries = data.surgeries.size || 1;
+        const promedio = Math.round(data.totalCost / nSurgeries);
+        return {
+          name,
+          promedio,
+          totalCost: data.totalCost,
+          nSurgeries
+        };
+      })
+      .sort((a, b) => b.promedio - a.promedio);
   }, [filtered]);
 
-  // Top 10 cirugías por costo (grouped by intervencion label)
-  const topCirugias = useMemo(() => {
+  // Chart 2: Top 10 Cirugías por Costo Promedio de Insumos
+  const topCirugiasPromedio = useMemo(() => {
     const map = new Map();
     filtered.forEach(r => {
       const key = r.intervencion || 'Sin Intervención';
-      map.set(key, (map.get(key) || 0) + r.total);
+      if (!map.has(key)) {
+        map.set(key, { totalCost: 0, surgeries: new Set() });
+      }
+      const entry = map.get(key);
+      entry.totalCost += r.total;
+      entry.surgeries.add(r.surgeryId);
     });
+
     return [...map.entries()]
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 10)
-      .map(([name, total]) => ({
-        name: name.length > 38 ? name.substring(0, 36) + '…' : name,
-        fullName: name,
-        total
-      }));
+      .map(([fullName, data]) => {
+        const nSurgeries = data.surgeries.size || 1;
+        const promedio = Math.round(data.totalCost / nSurgeries);
+        return {
+          fullName,
+          name: fullName.length > 38 ? fullName.substring(0, 36) + '…' : fullName,
+          promedio,
+          totalCost: data.totalCost,
+          nSurgeries
+        };
+      })
+      .sort((a, b) => b.promedio - a.promedio)
+      .slice(0, 10);
   }, [filtered]);
 
-  // Evolución mensual
-  const evolucionMensual = useMemo(() => {
-    const map = new Map();
-    filtered.forEach(r => {
-      if (!r.fecha_cirugia) return;
-      const key = r.fecha_cirugia.substring(0, 7); // YYYY-MM
-      map.set(key, (map.get(key) || 0) + r.total);
-    });
-    return [...map.entries()].sort((a, b) => a[0].localeCompare(b[0]))
-      .map(([mes, total]) => ({ mes, total, label: mes }));
-  }, [filtered]);
-
-  // Top 10 insumos por tipo
-  const topInsumosTipo = useMemo(() => {
-    const map = new Map();
-    filtered.forEach(r => {
-      const key = r.descripcion || 'Sin descripción';
-      map.set(key, (map.get(key) || 0) + r.total);
-    });
-    return [...map.entries()]
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 10)
-      .map(([name, value]) => ({ name: name.length > 28 ? name.substring(0, 26) + '…' : name, value }));
-  }, [filtered]);
-
-  // Drill-down: especialidad → cirugías → insumos
+  // Drill-down Table: Especialidad → Cirugía → Insumos (con división Pareto 90% / 10%)
   const drilldownData = useMemo(() => {
     const especMap = new Map();
+
     filtered.forEach(r => {
       const espec = r.especialidad;
-      if (!especMap.has(espec)) especMap.set(espec, { total: 0, cirugias: new Map() });
+      if (!especMap.has(espec)) {
+        especMap.set(espec, {
+          totalCost: 0,
+          surgeries: new Set(),
+          cirugiasMap: new Map()
+        });
+      }
       const eData = especMap.get(espec);
-      eData.total += r.total;
+      eData.totalCost += r.total;
+      eData.surgeries.add(r.surgeryId);
+
       const cKey = r.intervencion || 'Sin Intervención';
-      if (!eData.cirugias.has(cKey)) eData.cirugias.set(cKey, { total: 0, insumos: [] });
-      const cData = eData.cirugias.get(cKey);
-      cData.total += r.total;
-      cData.insumos.push(r);
+      if (!eData.cirugiasMap.has(cKey)) {
+        eData.cirugiasMap.set(cKey, {
+          totalCost: 0,
+          surgeries: new Set(),
+          insumosMap: new Map()
+        });
+      }
+      const cData = eData.cirugiasMap.get(cKey);
+      cData.totalCost += r.total;
+      cData.surgeries.add(r.surgeryId);
+
+      // Insumos grouping by descripcion
+      const iKey = r.descripcion || 'Sin descripción';
+      if (!cData.insumosMap.has(iKey)) {
+        cData.insumosMap.set(iKey, {
+          descripcion: iKey,
+          codigo: r.codigo_insumo || '',
+          cantidad: 0,
+          total: 0,
+          precio_compra: r.precio_compra
+        });
+      }
+      const iData = cData.insumosMap.get(iKey);
+      iData.cantidad += r.cantidad;
+      iData.total += r.total;
     });
+
     return [...especMap.entries()]
-      .sort((a, b) => b[1].total - a[1].total)
-      .map(([espec, data]) => ({
-        especialidad: espec,
-        total: data.total,
-        cirugias: [...data.cirugias.entries()]
-          .sort((a, b) => b[1].total - a[1].total)
-          .map(([cirugia, cData]) => ({ cirugia, total: cData.total, insumos: cData.insumos }))
-      }));
+      .sort((a, b) => b[1].totalCost - a[1].totalCost)
+      .map(([espec, eData]) => {
+        const totalCirugiasEspecialidad = eData.surgeries.size;
+        const costoPromedioEspecialidad = totalCirugiasEspecialidad > 0
+          ? Math.round(eData.totalCost / totalCirugiasEspecialidad)
+          : 0;
+
+        const cirugias = [...eData.cirugiasMap.entries()]
+          .sort((a, b) => b[1].totalCost - a[1].totalCost)
+          .map(([cirugiaName, cData]) => {
+            const totalCirugiasCirugia = cData.surgeries.size;
+            const costoPromedioCirugia = totalCirugiasCirugia > 0
+              ? Math.round(cData.totalCost / totalCirugiasCirugia)
+              : 0;
+
+            // Insumos list sorted by quantity (usage)
+            const sortedInsumos = [...cData.insumosMap.values()]
+              .sort((a, b) => b.cantidad - a.cantidad);
+
+            const totalQuantity = sortedInsumos.reduce((s, i) => s + i.cantidad, 0);
+
+            // Separate into top 90% most used and bottom 10% least used
+            let cumulativeQty = 0;
+            const top90Insumos = [];
+            const bottom10Insumos = [];
+
+            sortedInsumos.forEach(item => {
+              if (totalQuantity === 0 || (cumulativeQty / totalQuantity) < 0.90 || top90Insumos.length === 0) {
+                top90Insumos.push(item);
+                cumulativeQty += item.cantidad;
+              } else {
+                bottom10Insumos.push(item);
+              }
+            });
+
+            return {
+              cirugiaName,
+              totalCost: cData.totalCost,
+              totalCirugias: totalCirugiasCirugia,
+              costoPromedio: costoPromedioCirugia,
+              totalInsumosCount: sortedInsumos.length,
+              top90Insumos,
+              bottom10Insumos
+            };
+          });
+
+        return {
+          especialidad: espec,
+          totalCost: eData.totalCost,
+          totalCirugias: totalCirugiasEspecialidad,
+          costoPromedio: costoPromedioEspecialidad,
+          cirugias
+        };
+      });
   }, [filtered]);
 
-  const grandTotal = filtered.reduce((s, r) => s + r.total, 0);
   const toggleDrill = (key) => {
-    setInsumosDrillOpen(prev => {
+    setDrillOpen(prev => {
       const next = new Set(prev);
-      if (next.has(key)) next.delete(key); else next.add(key);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
       return next;
     });
   };
@@ -1663,26 +1814,26 @@ function InsumosCosteoDashboard({ rawDataLibro, insumosData, insumosLoading, ins
   // Styles
   const S = {
     page: { padding: '32px', background: '#f0fdf4', minHeight: '100vh' },
-    header: { marginBottom: '28px' },
+    header: { marginBottom: '24px' },
     title: { fontSize: '1.8rem', fontWeight: 800, color: '#064e3b', margin: 0, display: 'flex', alignItems: 'center', gap: '12px' },
     subtitle: { color: '#6b7280', fontSize: '0.95rem', marginTop: '6px' },
-    filterRow: { display: 'flex', gap: '16px', marginBottom: '24px', flexWrap: 'wrap', alignItems: 'flex-end' },
-    filterLabel: { fontSize: '0.78rem', fontWeight: 700, color: '#047857', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.05em' },
-    input: { padding: '10px 14px', borderRadius: '10px', border: '1.5px solid #a7f3d0', background: 'white', fontSize: '0.85rem', outline: 'none', width: '260px', color: '#064e3b' },
+    filterCard: { background: 'white', borderRadius: '16px', padding: '20px 24px', border: '1.5px solid #d1fae5', boxShadow: '0 4px 20px rgba(16,185,129,0.06)', marginBottom: '24px' },
+    filterGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', alignItems: 'flex-end' },
+    filterGroup: { display: 'flex', flexDirection: 'column' },
+    filterLabel: { fontSize: '0.74rem', fontWeight: 700, color: '#047857', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.05em' },
+    input: { padding: '9px 12px', borderRadius: '8px', border: '1.5px solid #a7f3d0', background: 'white', fontSize: '0.85rem', outline: 'none', color: '#064e3b', width: '100%' },
     kpiGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '16px', marginBottom: '28px' },
     kpiCard: { background: 'white', borderRadius: '16px', padding: '20px', border: '1.5px solid #d1fae5', boxShadow: '0 4px 20px rgba(16,185,129,0.08)', display: 'flex', flexDirection: 'column', gap: '6px' },
-    kpiLabel: { fontSize: '0.75rem', fontWeight: 700, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.06em' },
-    kpiValue: { fontSize: '1.7rem', fontWeight: 900, color: '#064e3b', lineHeight: 1.1 },
+    kpiLabel: { fontSize: '0.72rem', fontWeight: 700, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.06em' },
+    kpiValue: { fontSize: '1.55rem', fontWeight: 900, color: '#064e3b', lineHeight: 1.15 },
     kpiSub: { fontSize: '0.72rem', color: '#10b981', fontWeight: 600 },
-    row2: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '20px' },
-    row3: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '20px' },
+    chartGrid: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '28px' },
     card: { background: 'white', borderRadius: '18px', padding: '24px', border: '1.5px solid #d1fae5', boxShadow: '0 4px 20px rgba(16,185,129,0.06)' },
     cardTitle: { fontSize: '0.95rem', fontWeight: 700, color: '#064e3b', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' },
-    tableWrap: { overflowX: 'auto', borderRadius: '12px', border: '1px solid #d1fae5' },
+    tableWrap: { overflowX: 'auto', borderRadius: '14px', border: '1.5px solid #d1fae5', background: 'white' },
     thead: { background: 'linear-gradient(135deg, #064e3b, #065f46)', color: 'white', fontSize: '0.78rem', fontWeight: 700 },
-    th: { padding: '12px 16px', textAlign: 'left', whiteSpace: 'nowrap' },
-    tr: (i) => ({ background: i % 2 === 0 ? 'white' : '#f0fdf4', fontSize: '0.82rem', color: '#1e293b' }),
-    td: { padding: '10px 16px', borderBottom: '1px solid #ecfdf5' },
+    th: { padding: '14px 18px', textAlign: 'left', whiteSpace: 'nowrap' },
+    td: { padding: '11px 18px', borderBottom: '1px solid #ecfdf5' },
   };
 
   if (insumosLoading) return (
@@ -1690,7 +1841,7 @@ function InsumosCosteoDashboard({ rawDataLibro, insumosData, insumosLoading, ins
       <div style={{ textAlign: 'center' }}>
         <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1.2, ease: 'linear' }}
           style={{ width: 56, height: 56, border: '4px solid #d1fae5', borderTopColor: '#10b981', borderRadius: '50%', margin: '0 auto 16px' }} />
-        <p style={{ color: '#10b981', fontWeight: 700, fontSize: '1rem' }}>Cargando datos de insumos...</p>
+        <p style={{ color: '#10b981', fontWeight: 700, fontSize: '1rem' }}>Cargando datos de insumos y costeo...</p>
       </div>
     </div>
   );
@@ -1701,7 +1852,7 @@ function InsumosCosteoDashboard({ rawDataLibro, insumosData, insumosLoading, ins
         <AlertCircle size={48} color="#ef4444" style={{ marginBottom: '16px' }} />
         <h3 style={{ color: '#ef4444', marginTop: 0 }}>Error al cargar insumos</h3>
         <p style={{ color: '#6b7280' }}>{insumosError}</p>
-        <p style={{ color: '#9ca3af', fontSize: '0.82rem' }}>Verifica que el archivo <code>/data/insumos_cirugias_cached.json</code> exista o que la API esté disponible.</p>
+        <p style={{ color: '#9ca3af', fontSize: '0.82rem' }}>Verifica la conexión a la API de pabellón.</p>
       </div>
     </div>
   );
@@ -1711,7 +1862,7 @@ function InsumosCosteoDashboard({ rawDataLibro, insumosData, insumosLoading, ins
       <div style={{ background: 'white', borderRadius: '16px', padding: '40px', border: '2px solid #d1fae5', textAlign: 'center', maxWidth: '500px' }}>
         <Package size={48} color="#10b981" style={{ marginBottom: '16px' }} />
         <h3 style={{ color: '#064e3b', marginTop: 0 }}>Sin datos de insumos</h3>
-        <p style={{ color: '#6b7280' }}>No se encontraron registros de costos de insumos quirúrgicos. Ejecuta el script de compilación para pre-exportar los datos.</p>
+        <p style={{ color: '#6b7280' }}>No se encontraron registros de insumos quirúrgicos.</p>
       </div>
     </div>
   );
@@ -1726,230 +1877,391 @@ function InsumosCosteoDashboard({ rawDataLibro, insumosData, insumosLoading, ins
           </div>
           Insumos y Costeo Quirúrgico
         </h2>
-        <p style={S.subtitle}>Análisis descriptivo de costos de insumos por especialidad y cirugía · {enrichedData.length.toLocaleString('es-CL')} registros totales</p>
+        <p style={S.subtitle}>
+          Visualización descriptiva de costos de insumos por especialidad, cirujano y procedimiento · {enrichedData.length.toLocaleString('es-CL')} registros totales cargados
+        </p>
       </div>
 
-      {/* Filters */}
-      <div style={S.filterRow}>
-        <div>
-          <div style={S.filterLabel}>🔍 Buscar insumo / cirugía</div>
-          <input style={S.input} placeholder="Escriba para filtrar..." value={insumosSearch} onChange={e => setInsumosSearch(e.target.value)} />
+      {/* Filter Panel */}
+      <div style={S.filterCard}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 700, color: '#064e3b', fontSize: '0.88rem' }}>
+            <Filter size={16} color="#10b981" /> Filtros de Análisis
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            {hasActiveFilters && (
+              <button
+                onClick={handleClearFilters}
+                style={{ padding: '6px 12px', borderRadius: '8px', border: '1.5px solid #fca5a5', background: '#fff1f2', color: '#dc2626', fontWeight: 700, cursor: 'pointer', fontSize: '0.78rem', display: 'flex', alignItems: 'center', gap: '4px' }}
+              >
+                <XCircle size={14} /> Limpiar filtros
+              </button>
+            )}
+            <span style={{ background: '#ecfdf5', color: '#047857', borderRadius: '20px', padding: '4px 12px', fontSize: '0.78rem', fontWeight: 700, border: '1px solid #a7f3d0' }}>
+              {filtered.length.toLocaleString('es-CL')} de {enrichedData.length.toLocaleString('es-CL')} registros
+            </span>
+          </div>
         </div>
-        <div style={{ flex: 1, minWidth: 220 }}>
-          <div style={S.filterLabel}>🏥 Especialidad</div>
-          <MultiSearchableSelect
-            value={insumosEspecialidad}
-            options={especialidades}
-            onChange={setInsumosEspecialidad}
-          />
-        </div>
-        {(insumosEspecialidad.length > 0 || insumosSearch) && (
-          <button onClick={() => { setInsumosEspecialidad([]); setInsumosSearch(''); }}
-            style={{ padding: '10px 16px', borderRadius: '10px', border: '1.5px solid #fca5a5', background: '#fff1f2', color: '#dc2626', fontWeight: 700, cursor: 'pointer', fontSize: '0.82rem', alignSelf: 'flex-end' }}>
-            ✕ Limpiar filtros
-          </button>
-        )}
-        <div style={{ marginLeft: 'auto', alignSelf: 'flex-end', background: 'linear-gradient(135deg, #10b981, #059669)', borderRadius: '12px', padding: '10px 18px', color: 'white', fontWeight: 700, fontSize: '0.85rem' }}>
-          {filtered.length.toLocaleString('es-CL')} registros filtrados
+
+        <div style={S.filterGrid}>
+          {/* Fecha Desde */}
+          <div style={S.filterGroup}>
+            <div style={S.filterLabel}>📅 Fecha Intervención Desde</div>
+            <input
+              type="date"
+              style={S.input}
+              value={fechaDesde}
+              onChange={e => setFechaDesde(e.target.value)}
+            />
+          </div>
+
+          {/* Fecha Hasta */}
+          <div style={S.filterGroup}>
+            <div style={S.filterLabel}>📅 Fecha Intervención Hasta</div>
+            <input
+              type="date"
+              style={S.input}
+              value={fechaHasta}
+              onChange={e => setFechaHasta(e.target.value)}
+            />
+          </div>
+
+          {/* Especialidad */}
+          <div style={S.filterGroup}>
+            <div style={S.filterLabel}>🏥 Especialidad</div>
+            <MultiSearchableSelect
+              value={selectedEspecialidades}
+              options={filterOptions.especialidades}
+              onChange={setSelectedEspecialidades}
+            />
+          </div>
+
+          {/* Cirujano */}
+          <div style={S.filterGroup}>
+            <div style={S.filterLabel}>👨‍⚕️ Cirujano</div>
+            <MultiSearchableSelect
+              value={selectedCirujanos}
+              options={filterOptions.cirujanos}
+              onChange={setSelectedCirujanos}
+            />
+          </div>
+
+          {/* Tipo Paciente */}
+          <div style={S.filterGroup}>
+            <div style={S.filterLabel}>👥 Tipo de Paciente</div>
+            <MultiSearchableSelect
+              value={selectedTiposPaciente}
+              options={filterOptions.tiposPaciente}
+              onChange={setSelectedTiposPaciente}
+            />
+          </div>
+
+          {/* Tipo Cirugia */}
+          <div style={S.filterGroup}>
+            <div style={S.filterLabel}>🔪 Tipo de Cirugía</div>
+            <MultiSearchableSelect
+              value={selectedTiposCirugia}
+              options={filterOptions.tiposCirugia}
+              onChange={setSelectedTiposCirugia}
+            />
+          </div>
+
+          {/* Buscador de insumo / cirugía */}
+          <div style={{ ...S.filterGroup, gridColumn: 'span 2' }}>
+            <div style={S.filterLabel}>🔍 Buscar Insumo o Intervención</div>
+            <input
+              style={S.input}
+              placeholder="Ej: gasa, prótesis, colecistectomía, Franz..."
+              value={insumosSearch}
+              onChange={e => setInsumosSearch(e.target.value)}
+            />
+          </div>
         </div>
       </div>
 
-      {/* KPI Cards */}
+      {/* KPI Cards (Valores no resumidos) */}
       <div style={S.kpiGrid}>
         {[
-          { icon: <DollarSign size={20} color="#10b981" />, label: 'Costo Total Acumulado', value: formatCLP(kpis.totalCosto), sub: `${kpis.totalRegistros.toLocaleString('es-CL')} registros de insumos` },
-          { icon: <Hash size={20} color="#059669" />, label: 'Registros de Insumos', value: kpis.totalRegistros.toLocaleString('es-CL'), sub: 'líneas de insumos valorizadas' },
-          { icon: <Activity size={20} color="#047857" />, label: 'Especialidades con Costos', value: kpis.especialidadesUnicas, sub: 'especialidades quirúrgicas' },
-          { icon: <FileText size={20} color="#065f46" />, label: 'Intervenciones Valorizadas', value: kpis.intervencionesUnicas.toLocaleString('es-CL'), sub: 'cirugías únicas costeadas' },
-          { icon: <Award size={20} color="#10b981" />, label: 'Insumo Más Costoso', value: formatCLP(kpis.topInsumoCosto), sub: kpis.topInsumo.length > 30 ? kpis.topInsumo.substring(0, 28) + '…' : kpis.topInsumo },
+          {
+            icon: <DollarSign size={20} color="#10b981" />,
+            label: 'Costo Total Acumulado',
+            value: formatCLP(kpis.totalCosto),
+            sub: `${kpis.totalRegistros.toLocaleString('es-CL')} líneas de insumos`
+          },
+          {
+            icon: <CheckCircle size={20} color="#059669" />,
+            label: 'Cirugías Realizadas',
+            value: kpis.totalCirugias.toLocaleString('es-CL'),
+            sub: 'intervenciones únicas costeadas'
+          },
+          {
+            icon: <TrendingUp size={20} color="#047857" />,
+            label: 'Costo Promedio / Cirugía',
+            value: formatCLP(kpis.costoPromedioCirugia),
+            sub: 'gasto medio en insumos por cirugía'
+          },
+          {
+            icon: <Activity size={20} color="#065f46" />,
+            label: 'Especialidades Activas',
+            value: kpis.especialidadesUnicas,
+            sub: 'especialidades quirúrgicas'
+          },
+          {
+            icon: <Award size={20} color="#10b981" />,
+            label: 'Insumo de Mayor Costo',
+            value: formatCLP(kpis.topInsumoCosto),
+            sub: kpis.topInsumo.length > 28 ? kpis.topInsumo.substring(0, 26) + '…' : kpis.topInsumo
+          },
         ].map((k, i) => (
           <motion.div key={i} style={S.kpiCard} whileHover={{ y: -3, boxShadow: '0 8px 30px rgba(16,185,129,0.18)' }} transition={{ duration: 0.2 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>{k.icon}<span style={S.kpiLabel}>{k.label}</span></div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+              {k.icon}
+              <span style={S.kpiLabel}>{k.label}</span>
+            </div>
             <div style={S.kpiValue}>{k.value}</div>
             <div style={S.kpiSub}>{k.sub}</div>
           </motion.div>
         ))}
       </div>
 
-      {/* Row 1: Treemap + Bar Top Cirugías */}
-      <div style={S.row2}>
+      {/* Charts con Costos Promedios de Insumos */}
+      <div style={S.chartGrid}>
+        {/* Chart 1: Costo Promedio por Especialidad */}
         <div style={S.card}>
-          <div style={S.cardTitle}><BarChart2 size={18} color="#10b981" /> Distribución de Costos por Especialidad</div>
-          {treemapData.length > 0 ? (
-            <ResponsiveContainer width="100%" height={280}>
-              <Treemap data={treemapData} dataKey="value" aspectRatio={4/3} stroke="#fff"
-                content={<CustomTreemapContent colors={INSUMOS_COLORS} />}>
-                <RechartsTooltip formatter={(v) => [formatCLP(v), 'Costo Total']}
-                  contentStyle={{ borderRadius: '10px', fontSize: '0.82rem', border: '1px solid #d1fae5' }} />
-              </Treemap>
-            </ResponsiveContainer>
-          ) : <div style={{ height: 280, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#9ca3af' }}>Sin datos</div>}
-        </div>
-
-        <div style={S.card}>
-          <div style={S.cardTitle}><TrendingUp size={18} color="#059669" /> Top 10 Cirugías por Costo Total</div>
-          {topCirugias.length > 0 ? (
-            <ResponsiveContainer width="100%" height={280}>
-              <BarChart data={topCirugias} layout="vertical" margin={{ top: 0, right: 30, left: 0, bottom: 0 }}>
+          <div style={S.cardTitle}>
+            <BarChart2 size={18} color="#10b981" /> Costo Promedio de Insumos por Especialidad
+          </div>
+          <div style={{ fontSize: '0.78rem', color: '#6b7280', marginBottom: '14px' }}>
+            Calculado dividiendo el costo total de insumos entre el total de cirugías realizadas en cada especialidad.
+          </div>
+          {especialidadPromedios.length > 0 ? (
+            <ResponsiveContainer width="100%" height={320}>
+              <BarChart data={especialidadPromedios} layout="vertical" margin={{ top: 0, right: 35, left: 10, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#ecfdf5" />
                 <XAxis type="number" tickFormatter={formatCLP} tick={{ fontSize: 10, fill: '#6b7280' }} />
-                <YAxis type="category" dataKey="name" width={160} tick={{ fontSize: 9.5, fill: '#374151' }} />
-                <RechartsTooltip formatter={(v) => [formatCLP(v), 'Costo']} labelFormatter={(l, payload) => payload?.[0]?.payload?.fullName || l}
-                  contentStyle={{ borderRadius: '10px', fontSize: '0.82rem', border: '1px solid #d1fae5' }} />
-                <Bar dataKey="total" radius={[0, 6, 6, 0]}>
-                  {topCirugias.map((_, i) => <Cell key={i} fill={INSUMOS_COLORS[i % INSUMOS_COLORS.length]} />)}
+                <YAxis type="category" dataKey="name" width={150} tick={{ fontSize: 10, fill: '#374151' }} />
+                <RechartsTooltip
+                  formatter={(v, name, item) => [
+                    formatCLP(v),
+                    'Costo Promedio'
+                  ]}
+                  labelFormatter={(label, payload) => {
+                    const item = payload?.[0]?.payload;
+                    if (!item) return label;
+                    return `${label} (${item.nSurgeries} cirugías · Total: ${formatCLP(item.totalCost)})`;
+                  }}
+                  contentStyle={{ borderRadius: '10px', fontSize: '0.82rem', border: '1px solid #d1fae5', background: 'white' }}
+                />
+                <Bar dataKey="promedio" radius={[0, 6, 6, 0]}>
+                  {especialidadPromedios.map((_, i) => (
+                    <Cell key={i} fill={INSUMOS_COLORS[i % INSUMOS_COLORS.length]} />
+                  ))}
                 </Bar>
               </BarChart>
             </ResponsiveContainer>
-          ) : <div style={{ height: 280, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#9ca3af' }}>Sin datos</div>}
-        </div>
-      </div>
-
-      {/* Row 2: Line chart evolución + Donut Top insumos */}
-      <div style={S.row3}>
-        <div style={S.card}>
-          <div style={S.cardTitle}><TrendingUp size={18} color="#10b981" /> Evolución Mensual del Costo de Insumos</div>
-          {evolucionMensual.length > 1 ? (
-            <ResponsiveContainer width="100%" height={240}>
-              <AreaChart data={evolucionMensual} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
-                <defs>
-                  <linearGradient id="insumoGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
-                    <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f0fdf4" />
-                <XAxis dataKey="mes" tick={{ fontSize: 10, fill: '#6b7280' }} />
-                <YAxis tickFormatter={formatCLP} tick={{ fontSize: 10, fill: '#6b7280' }} />
-                <RechartsTooltip formatter={(v) => [formatCLP(v), 'Costo Mensual']}
-                  contentStyle={{ borderRadius: '10px', fontSize: '0.82rem', border: '1px solid #d1fae5' }} />
-                <Area type="monotone" dataKey="total" stroke="#10b981" strokeWidth={2.5} fill="url(#insumoGrad)" dot={{ fill: '#10b981', r: 3 }} />
-              </AreaChart>
-            </ResponsiveContainer>
           ) : (
-            <div style={{ height: 240, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#9ca3af', flexDirection: 'column', gap: '8px' }}>
-              <TrendingDown size={32} color="#d1d5db" />
-              <span style={{ fontSize: '0.85rem' }}>Datos insuficientes para evolución mensual (se requieren fechas de cirugía)</span>
-            </div>
+            <div style={{ height: 320, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#9ca3af' }}>Sin datos disponibles</div>
           )}
         </div>
 
+        {/* Chart 2: Top 10 Cirugías por Costo Promedio */}
         <div style={S.card}>
-          <div style={S.cardTitle}><PieChart size={18} color="#059669" /> Top 10 Insumos Más Costosos</div>
-          {topInsumosTipo.length > 0 ? (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <ResponsiveContainer width="55%" height={240}>
-                <RechartsPieChart>
-                  <Pie data={topInsumosTipo} cx="50%" cy="50%" innerRadius={55} outerRadius={100}
-                    dataKey="value" paddingAngle={2}>
-                    {topInsumosTipo.map((_, i) => <Cell key={i} fill={INSUMOS_COLORS[i % INSUMOS_COLORS.length]} />)}
-                  </Pie>
-                  <RechartsTooltip formatter={(v) => [formatCLP(v), 'Costo']}
-                    contentStyle={{ borderRadius: '10px', fontSize: '0.8rem', border: '1px solid #d1fae5' }} />
-                </RechartsPieChart>
-              </ResponsiveContainer>
-              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '4px', maxHeight: 240, overflowY: 'auto' }}>
-                {topInsumosTipo.map((item, i) => (
-                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '7px', fontSize: '0.75rem' }}>
-                    <div style={{ width: 10, height: 10, borderRadius: '50%', background: INSUMOS_COLORS[i % INSUMOS_COLORS.length], flexShrink: 0 }} />
-                    <span style={{ color: '#374151', flex: 1, lineHeight: 1.3 }}>{item.name}</span>
-                    <span style={{ color: '#10b981', fontWeight: 700, whiteSpace: 'nowrap' }}>{formatCLP(item.value)}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          ) : <div style={{ height: 240, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#9ca3af' }}>Sin datos</div>}
+          <div style={S.cardTitle}>
+            <TrendingUp size={18} color="#059669" /> Top 10 Cirugías por Costo Promedio de Insumos
+          </div>
+          <div style={{ fontSize: '0.78rem', color: '#6b7280', marginBottom: '14px' }}>
+            Intervenciones que en promedio requieren mayor gasto de insumos quirúrgicos por cada procedimiento.
+          </div>
+          {topCirugiasPromedio.length > 0 ? (
+            <ResponsiveContainer width="100%" height={320}>
+              <BarChart data={topCirugiasPromedio} layout="vertical" margin={{ top: 0, right: 35, left: 10, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#ecfdf5" />
+                <XAxis type="number" tickFormatter={formatCLP} tick={{ fontSize: 10, fill: '#6b7280' }} />
+                <YAxis type="category" dataKey="name" width={175} tick={{ fontSize: 9.5, fill: '#374151' }} />
+                <RechartsTooltip
+                  formatter={(v) => [formatCLP(v), 'Costo Promedio']}
+                  labelFormatter={(l, payload) => {
+                    const item = payload?.[0]?.payload;
+                    if (!item) return l;
+                    return `${item.fullName} (${item.nSurgeries} cirugías · Total: ${formatCLP(item.totalCost)})`;
+                  }}
+                  contentStyle={{ borderRadius: '10px', fontSize: '0.82rem', border: '1px solid #d1fae5', background: 'white' }}
+                />
+                <Bar dataKey="promedio" radius={[0, 6, 6, 0]}>
+                  {topCirugiasPromedio.map((_, i) => (
+                    <Cell key={i} fill={INSUMOS_COLORS[(i + 3) % INSUMOS_COLORS.length]} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          ) : (
+            <div style={{ height: 320, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#9ca3af' }}>Sin datos disponibles</div>
+          )}
         </div>
       </div>
 
-      {/* Drill-down table */}
+      {/* Tabla Desglose: Especialidad → Cirugía → Insumos con 90% más usados y 10% menos usados */}
       <div style={{ ...S.card, marginBottom: '32px' }}>
-        <div style={S.cardTitle}><Users size={18} color="#059669" /> Desglose por Especialidad → Cirugía → Insumos</div>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px', flexWrap: 'wrap', gap: '8px' }}>
+          <div style={S.cardTitle}>
+            <Users size={18} color="#059669" /> Desglose Detallado por Especialidad → Cirugía → Insumos
+          </div>
+          <div style={{ fontSize: '0.78rem', color: '#047857', background: '#ecfdf5', padding: '6px 14px', borderRadius: '10px', fontWeight: 600, border: '1px solid #a7f3d0' }}>
+            💡 Haz clic en una fila para desplegar cirugías e insumos (segmentados en el 90% más utilizado y 10% ocasional)
+          </div>
+        </div>
+
         <div style={S.tableWrap}>
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead style={S.thead}>
               <tr>
-                <th style={S.th}>Especialidad / Cirugía / Insumo</th>
-                <th style={{ ...S.th, textAlign: 'right' }}>Cantidad</th>
-                <th style={{ ...S.th, textAlign: 'right' }}>Precio Unit.</th>
-                <th style={{ ...S.th, textAlign: 'right' }}>Total</th>
-                <th style={{ ...S.th, textAlign: 'right' }}>% del Total</th>
+                <th style={{ ...S.th, width: '45%' }}>Especialidad / Cirugía / Insumo</th>
+                <th style={{ ...S.th, textAlign: 'center', width: '18%' }}>Total Cirugías Registradas</th>
+                <th style={{ ...S.th, textAlign: 'right', width: '18%' }}>Costo Promedio / Cirugía</th>
+                <th style={{ ...S.th, textAlign: 'right', width: '19%' }}>Costo Total Acumulado</th>
               </tr>
             </thead>
             <tbody>
-              {drilldownData.map((espec, ei) => {
+              {drilldownData.map((espec) => {
                 const espKey = `espec-${espec.especialidad}`;
-                const espOpen = insumosDrillOpen.has(espKey);
-                const pct = grandTotal > 0 ? ((espec.total / grandTotal) * 100).toFixed(1) : '0';
+                const espOpen = drillOpen.has(espKey);
+
                 return (
                   <React.Fragment key={espKey}>
-                    {/* Especialidad row */}
-                    <tr style={{ background: 'linear-gradient(135deg, #ecfdf5, #d1fae5)', cursor: 'pointer' }} onClick={() => toggleDrill(espKey)}>
-                      <td style={{ ...S.td, fontWeight: 800, color: '#064e3b', fontSize: '0.88rem', borderBottom: '2px solid #a7f3d0' }}>
+                    {/* Fila Nivel 1: Especialidad */}
+                    <tr
+                      style={{ background: 'linear-gradient(135deg, #ecfdf5, #d1fae5)', cursor: 'pointer', borderBottom: '2px solid #a7f3d0' }}
+                      onClick={() => toggleDrill(espKey)}
+                    >
+                      <td style={{ ...S.td, fontWeight: 800, color: '#064e3b', fontSize: '0.88rem' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                           <motion.span animate={{ rotate: espOpen ? 90 : 0 }} transition={{ duration: 0.2 }}>
                             <ChevronRight size={16} color="#10b981" />
                           </motion.span>
                           🏥 {espec.especialidad}
                           <span style={{ marginLeft: '8px', background: '#10b981', color: 'white', borderRadius: '20px', padding: '2px 10px', fontSize: '0.72rem', fontWeight: 700 }}>
-                            {espec.cirugias.length} cirugías
+                            {espec.cirugias.length} tipos de intervención
                           </span>
                         </div>
                       </td>
-                      <td style={{ ...S.td, textAlign: 'right', borderBottom: '2px solid #a7f3d0' }} />
-                      <td style={{ ...S.td, textAlign: 'right', borderBottom: '2px solid #a7f3d0' }} />
-                      <td style={{ ...S.td, textAlign: 'right', fontWeight: 800, color: '#064e3b', borderBottom: '2px solid #a7f3d0', fontSize: '0.9rem' }}>{formatCLP(espec.total)}</td>
-                      <td style={{ ...S.td, textAlign: 'right', borderBottom: '2px solid #a7f3d0' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '6px' }}>
-                          <div style={{ width: 60, height: 6, background: '#ecfdf5', borderRadius: 3, overflow: 'hidden' }}>
-                            <div style={{ width: `${pct}%`, height: '100%', background: 'linear-gradient(90deg, #10b981, #059669)', borderRadius: 3 }} />
-                          </div>
-                          <span style={{ fontWeight: 700, color: '#059669', fontSize: '0.82rem' }}>{pct}%</span>
-                        </div>
+                      <td style={{ ...S.td, textAlign: 'center', fontWeight: 800, color: '#064e3b', fontSize: '0.88rem' }}>
+                        {espec.totalCirugias.toLocaleString('es-CL')}
+                      </td>
+                      <td style={{ ...S.td, textAlign: 'right', fontWeight: 800, color: '#047857', fontSize: '0.88rem' }}>
+                        {formatCLP(espec.costoPromedio)}
+                      </td>
+                      <td style={{ ...S.td, textAlign: 'right', fontWeight: 900, color: '#064e3b', fontSize: '0.92rem' }}>
+                        {formatCLP(espec.totalCost)}
                       </td>
                     </tr>
 
-                    {/* Cirugías */}
+                    {/* Fila Nivel 2: Cirugías dentro de la Especialidad */}
                     {espOpen && espec.cirugias.map((cir, ci) => {
                       const cirKey = `cir-${espec.especialidad}-${ci}`;
-                      const cirOpen = insumosDrillOpen.has(cirKey);
+                      const cirOpen = drillOpen.has(cirKey);
+
                       return (
                         <React.Fragment key={cirKey}>
-                          <tr style={{ background: ci % 2 === 0 ? '#f0fdf4' : '#fafff9', cursor: 'pointer' }} onClick={() => toggleDrill(cirKey)}>
+                          <tr
+                            style={{ background: ci % 2 === 0 ? '#f7fdf9' : '#ffffff', cursor: 'pointer', borderBottom: '1px solid #e2e8f0' }}
+                            onClick={() => toggleDrill(cirKey)}
+                          >
                             <td style={{ ...S.td, paddingLeft: '36px', color: '#065f46', fontWeight: 700, fontSize: '0.82rem' }}>
                               <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                                 <motion.span animate={{ rotate: cirOpen ? 90 : 0 }} transition={{ duration: 0.2 }}>
                                   <ChevronRight size={13} color="#34d399" />
                                 </motion.span>
-                                🔪 {cir.cirugia.length > 55 ? cir.cirugia.substring(0, 53) + '…' : cir.cirugia}
+                                🔪 {cir.cirugiaName}
                                 <span style={{ marginLeft: '6px', background: '#ecfdf5', color: '#059669', borderRadius: '20px', padding: '1px 8px', fontSize: '0.7rem', fontWeight: 700, border: '1px solid #a7f3d0' }}>
-                                  {cir.insumos.length} insumos
+                                  {cir.totalInsumosCount} insumos
                                 </span>
                               </div>
                             </td>
-                            <td style={{ ...S.td, textAlign: 'right' }} />
-                            <td style={{ ...S.td, textAlign: 'right' }} />
-                            <td style={{ ...S.td, textAlign: 'right', fontWeight: 700, color: '#065f46', fontSize: '0.82rem' }}>{formatCLP(cir.total)}</td>
-                            <td style={{ ...S.td, textAlign: 'right', color: '#6b7280', fontSize: '0.78rem' }}>
-                              {espec.total > 0 ? ((cir.total / espec.total) * 100).toFixed(1) : '0'}% de especialidad
+                            <td style={{ ...S.td, textAlign: 'center', fontWeight: 700, color: '#065f46', fontSize: '0.82rem' }}>
+                              {cir.totalCirugias.toLocaleString('es-CL')}
+                            </td>
+                            <td style={{ ...S.td, textAlign: 'right', fontWeight: 700, color: '#059669', fontSize: '0.82rem' }}>
+                              {formatCLP(cir.costoPromedio)}
+                            </td>
+                            <td style={{ ...S.td, textAlign: 'right', fontWeight: 800, color: '#065f46', fontSize: '0.85rem' }}>
+                              {formatCLP(cir.totalCost)}
                             </td>
                           </tr>
 
-                          {/* Insumos */}
-                          {cirOpen && cir.insumos.map((ins, ii) => (
-                            <tr key={ii} style={{ background: ii % 2 === 0 ? '#f7fffe' : 'white', fontSize: '0.78rem' }}>
-                              <td style={{ ...S.td, paddingLeft: '64px', color: '#374151' }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                  <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#10b981', flexShrink: 0 }} />
-                                  {ins.descripcion || 'Sin descripción'}
-                                </div>
-                              </td>
-                              <td style={{ ...S.td, textAlign: 'right', color: '#374151' }}>{ins.cantidad ?? '-'}</td>
-                              <td style={{ ...S.td, textAlign: 'right', color: '#374151' }}>{ins.precio_compra ? formatCLP(ins.precio_compra) : '-'}</td>
-                              <td style={{ ...S.td, textAlign: 'right', fontWeight: 600, color: '#059669' }}>{formatCLP(ins.total)}</td>
-                              <td style={{ ...S.td, textAlign: 'right', color: '#9ca3af' }} />
-                            </tr>
-                          ))}
+                          {/* Fila Nivel 3: Insumos de la Cirugía con 90% más utilizados arriba y 10% abajo */}
+                          {cirOpen && (
+                            <>
+                              {/* Subsección 1: 90% Insumos más utilizados */}
+                              {cir.top90Insumos.length > 0 && (
+                                <tr style={{ background: '#ecfdf5' }}>
+                                  <td colSpan={4} style={{ padding: '8px 18px 8px 56px', fontSize: '0.75rem', fontWeight: 800, color: '#047857', borderBottom: '1px solid #d1fae5' }}>
+                                    🟢 90% DE INSUMOS MÁS UTILIZADOS (Mayor rotación habitual · {cir.top90Insumos.length} insumos)
+                                  </td>
+                                </tr>
+                              )}
+
+                              {cir.top90Insumos.map((ins, ii) => (
+                                <tr key={`top-${ii}`} style={{ background: ii % 2 === 0 ? '#fafdfb' : '#ffffff', fontSize: '0.78rem' }}>
+                                  <td style={{ ...S.td, paddingLeft: '68px', color: '#1f2937' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                      <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#10b981', flexShrink: 0 }} />
+                                      <span style={{ fontWeight: 600 }}>{ins.descripcion}</span>
+                                      {ins.codigo && (
+                                        <span style={{ color: '#9ca3af', fontSize: '0.7rem' }}>({ins.codigo})</span>
+                                      )}
+                                    </div>
+                                  </td>
+                                  <td style={{ ...S.td, textAlign: 'center', color: '#4b5563', fontSize: '0.78rem' }}>
+                                    <span style={{ fontWeight: 700, color: '#064e3b' }}>{ins.cantidad.toLocaleString('es-CL')}</span> unid.
+                                    <span style={{ color: '#9ca3af', fontSize: '0.72rem', marginLeft: '4px' }}>
+                                      ({(ins.cantidad / (cir.totalCirugias || 1)).toFixed(1)}/cirugía)
+                                    </span>
+                                  </td>
+                                  <td style={{ ...S.td, textAlign: 'right', color: '#4b5563', fontSize: '0.78rem' }}>
+                                    P. Compra: {formatCLP(ins.precio_compra)}
+                                  </td>
+                                  <td style={{ ...S.td, textAlign: 'right', fontWeight: 700, color: '#065f46', fontSize: '0.82rem' }}>
+                                    {formatCLP(ins.total)}
+                                  </td>
+                                </tr>
+                              ))}
+
+                              {/* Subsección 2: 10% Insumos menos utilizados */}
+                              {cir.bottom10Insumos.length > 0 && (
+                                <tr style={{ background: '#fffbeb' }}>
+                                  <td colSpan={4} style={{ padding: '8px 18px 8px 56px', fontSize: '0.75rem', fontWeight: 800, color: '#b45309', borderBottom: '1px solid #fef3c7', borderTop: '1px solid #fde68a' }}>
+                                    🟡 10% DE INSUMOS MENOS UTILIZADOS (Uso ocasional / complementario · {cir.bottom10Insumos.length} insumos)
+                                  </td>
+                                </tr>
+                              )}
+
+                              {cir.bottom10Insumos.map((ins, ii) => (
+                                <tr key={`bot-${ii}`} style={{ background: ii % 2 === 0 ? '#fffdf7' : '#ffffff', fontSize: '0.78rem' }}>
+                                  <td style={{ ...S.td, paddingLeft: '68px', color: '#4b5563' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                      <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#f59e0b', flexShrink: 0 }} />
+                                      <span>{ins.descripcion}</span>
+                                      {ins.codigo && (
+                                        <span style={{ color: '#9ca3af', fontSize: '0.7rem' }}>({ins.codigo})</span>
+                                      )}
+                                    </div>
+                                  </td>
+                                  <td style={{ ...S.td, textAlign: 'center', color: '#6b7280', fontSize: '0.78rem' }}>
+                                    <span style={{ fontWeight: 700, color: '#92400e' }}>{ins.cantidad.toLocaleString('es-CL')}</span> unid.
+                                    <span style={{ color: '#9ca3af', fontSize: '0.72rem', marginLeft: '4px' }}>
+                                      ({(ins.cantidad / (cir.totalCirugias || 1)).toFixed(1)}/cirugía)
+                                    </span>
+                                  </td>
+                                  <td style={{ ...S.td, textAlign: 'right', color: '#6b7280', fontSize: '0.78rem' }}>
+                                    P. Compra: {formatCLP(ins.precio_compra)}
+                                  </td>
+                                  <td style={{ ...S.td, textAlign: 'right', fontWeight: 600, color: '#b45309', fontSize: '0.82rem' }}>
+                                    {formatCLP(ins.total)}
+                                  </td>
+                                </tr>
+                              ))}
+                            </>
+                          )}
                         </React.Fragment>
                       );
                     })}
@@ -1958,12 +2270,19 @@ function InsumosCosteoDashboard({ rawDataLibro, insumosData, insumosLoading, ins
               })}
             </tbody>
             <tfoot>
-              <tr style={{ background: 'linear-gradient(135deg, #064e3b, #065f46)' }}>
-                <td style={{ ...S.td, fontWeight: 800, color: 'white', fontSize: '0.9rem' }}>TOTAL GENERAL</td>
-                <td style={{ ...S.td }} />
-                <td style={{ ...S.td }} />
-                <td style={{ ...S.td, textAlign: 'right', fontWeight: 900, color: 'white', fontSize: '1rem' }}>{formatCLP(grandTotal)}</td>
-                <td style={{ ...S.td, textAlign: 'right', color: '#6ee7b7', fontWeight: 700 }}>100%</td>
+              <tr style={{ background: 'linear-gradient(135deg, #064e3b, #065f46)', color: 'white' }}>
+                <td style={{ ...S.td, fontWeight: 800, color: 'white', fontSize: '0.92rem' }}>
+                  TOTAL GENERAL ({drilldownData.length} especialidades)
+                </td>
+                <td style={{ ...S.td, textAlign: 'center', fontWeight: 900, color: 'white', fontSize: '0.92rem' }}>
+                  {kpis.totalCirugias.toLocaleString('es-CL')} cirugías
+                </td>
+                <td style={{ ...S.td, textAlign: 'right', fontWeight: 900, color: '#a7f3d0', fontSize: '0.92rem' }}>
+                  {formatCLP(kpis.costoPromedioCirugia)}
+                </td>
+                <td style={{ ...S.td, textAlign: 'right', fontWeight: 900, color: 'white', fontSize: '1.05rem' }}>
+                  {formatCLP(kpis.totalCosto)}
+                </td>
               </tr>
             </tfoot>
           </table>
