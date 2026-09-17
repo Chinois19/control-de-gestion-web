@@ -31,13 +31,25 @@ const MultiSearchableSelect = ({ value = [], options = [], onChange }) => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const filtered = options.filter(o => String(o).toLowerCase().includes(search.toLowerCase()));
+  const getOptVal = (o) => (typeof o === 'object' && o !== null ? (o.id ?? o.value) : o);
+  const getOptLabel = (o) => (typeof o === 'object' && o !== null ? (o.label ?? o.name ?? o.id) : String(o));
+
+  const filtered = options.filter(o => getOptLabel(o).toLowerCase().includes(search.toLowerCase()));
   const isAll = value.length === 0;
-  const displayText = isAll ? "Todas" : (value.length === 1 ? value[0] : `${value.length} seleccionadas`);
+  
+  const getSelectedLabel = (valItem) => {
+    const matched = options.find(o => String(getOptVal(o)) === String(valItem));
+    return matched ? getOptLabel(matched) : valItem;
+  };
+
+  const displayText = isAll 
+    ? "Todas" 
+    : (value.length === 1 ? getSelectedLabel(value[0]) : `${value.length} seleccionadas`);
 
   const toggleOption = (o) => {
-    if (value.includes(o)) onChange(value.filter(v => v !== o));
-    else onChange([...value, o]);
+    const val = String(getOptVal(o));
+    if (value.map(String).includes(val)) onChange(value.filter(v => String(v) !== val));
+    else onChange([...value, val]);
   };
 
   return (
@@ -76,18 +88,20 @@ const MultiSearchableSelect = ({ value = [], options = [], onChange }) => {
             </div>
 
             {filtered.length === 0 ? <div style={{ padding: '8px', fontSize: '0.85rem', color: '#94a3b8', textAlign: 'center' }}>Sin resultados</div> : null}
-            {filtered.map(o => {
-              const isSelected = value.includes(o);
+            {filtered.map((o, idx) => {
+              const val = String(getOptVal(o));
+              const label = getOptLabel(o);
+              const isSelected = value.map(String).includes(val);
               return (
                 <div
-                  key={o}
+                  key={idx}
                   onClick={() => toggleOption(o)}
                   style={{ padding: '8px 12px', fontSize: '0.85rem', cursor: 'pointer', borderRadius: '6px', background: isSelected ? '#f1f5f9' : 'transparent', fontWeight: isSelected ? 700 : 400, color: '#1e293b', display: 'flex', alignItems: 'center', gap: '8px' }}
                   onMouseEnter={e => e.currentTarget.style.background = '#f8fafc'}
                   onMouseLeave={e => e.currentTarget.style.background = isSelected ? '#f1f5f9' : 'transparent'}
                 >
                   <input type="checkbox" checked={isSelected} readOnly style={{ cursor: 'pointer' }} />
-                  <span style={{ flex: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{o}</span>
+                  <span style={{ flex: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{label}</span>
                 </div>
               );
             })}
@@ -2338,6 +2352,12 @@ export default function SurgicalDashboard({ onBack }) {
   const [insumosSearch, setInsumosSearch] = useState('');
   const [insumosDrillOpen, setInsumosDrillOpen] = useState(new Set());
 
+  // Sidebar Filters for Indicadores de Gestión
+  const [dateRangeIndicadores, setDateRangeIndicadores] = useState({ start: '2026-01-01', end: '2026-12-31' });
+  const [indicadorPabellon, setIndicadorPabellon] = useState(['1', '2', '3', '4', '5']); // Por defecto excluye 6 y 7
+  const [indicadorCumplimiento, setIndicadorCumplimiento] = useState([]);
+  const [indicadorSearch, setIndicadorSearch] = useState('');
+
   // Floating Sidebar state
   const [sidebarHovered, setSidebarHovered] = useState(false);
   const [sidebarPinned, setSidebarPinned] = useState(false);
@@ -2350,9 +2370,16 @@ export default function SurgicalDashboard({ onBack }) {
     } else if (activeTab === 'tabla') {
       return [tablaFechaProg, tablaTipoCirugia, tablaTipoPaciente, tablaPriorizacion, tablaPabellonCrr, tablaIntervencion, tablaCirujano, tablaAnestesista, tablaPabellon, tablaModalidad]
         .filter(arr => Array.isArray(arr) && arr.length > 0).length;
+    } else if (activeTab === 'disponibilidad') {
+      let count = 0;
+      if (dateRangeIndicadores.start !== '2026-01-01' || dateRangeIndicadores.end !== '2026-12-31') count++;
+      if (indicadorPabellon.length !== 5 || !['1', '2', '3', '4', '5'].every(p => indicadorPabellon.includes(p))) count++;
+      if (indicadorCumplimiento.length > 0) count++;
+      if (indicadorSearch) count++;
+      return count;
     }
     return 0;
-  }, [activeTab, tipoCirugia, tipoPaciente, procedencia, tipoGestor, formaPago, nombreIq, primerCirujano, segundoCirujano, anestesiologo, reintervencion, tablaFechaProg, tablaTipoCirugia, tablaTipoPaciente, tablaPriorizacion, tablaPabellonCrr, tablaIntervencion, tablaCirujano, tablaAnestesista, tablaPabellon, tablaModalidad]);
+  }, [activeTab, tipoCirugia, tipoPaciente, procedencia, tipoGestor, formaPago, nombreIq, primerCirujano, segundoCirujano, anestesiologo, reintervencion, tablaFechaProg, tablaTipoCirugia, tablaTipoPaciente, tablaPriorizacion, tablaPabellonCrr, tablaIntervencion, tablaCirujano, tablaAnestesista, tablaPabellon, tablaModalidad, dateRangeIndicadores, indicadorPabellon, indicadorCumplimiento, indicadorSearch]);
 
   const clearAllFilters = () => {
     if (activeTab === 'libro') {
@@ -2361,6 +2388,11 @@ export default function SurgicalDashboard({ onBack }) {
     } else if (activeTab === 'tabla') {
       setTablaFechaProg([]); setTablaTipoCirugia([]); setTablaTipoPaciente([]); setTablaPriorizacion([]); setTablaPabellonCrr([]);
       setTablaIntervencion([]); setTablaCirujano([]); setTablaAnestesista([]); setTablaPabellon([]); setTablaModalidad([]);
+    } else if (activeTab === 'disponibilidad') {
+      setDateRangeIndicadores({ start: '2026-01-01', end: '2026-12-31' });
+      setIndicadorPabellon(['1', '2', '3', '4', '5']);
+      setIndicadorCumplimiento([]);
+      setIndicadorSearch('');
     }
   };
 
@@ -2561,6 +2593,23 @@ export default function SurgicalDashboard({ onBack }) {
     };
   }, [tablaData]);
 
+  // Dropdowns for Indicadores de Gestión
+  const indicadorDropdowns = useMemo(() => {
+    return {
+      pabs: [
+        { id: '1', label: 'Pabellón 1' },
+        { id: '2', label: 'Pabellón 2' },
+        { id: '3', label: 'Pabellón 3' },
+        { id: '4', label: 'Pabellón 4' },
+        { id: '5', label: 'Pabellón 5' },
+        { id: '6', label: 'Pabellón 6 (Urgencia)' },
+        { id: '7', label: 'Pabellón 7 (Cirugía Menor)' }
+      ],
+      pabValues: ['1', '2', '3', '4', '5', '6', '7'],
+      cumplimientos: ['Cumple norma (≤ 15 min)', 'Con retraso (> 15 min)']
+    };
+  }, []);
+
   // Apply Filters to Tabla
   const filteredTabla = useMemo(() => {
     return tablaData.filter(r => {
@@ -2652,6 +2701,213 @@ export default function SurgicalDashboard({ onBack }) {
   let suspPctDiff = currentSuspPct - priorSuspPct;
   let suspPctTrend = suspPctDiff <= 0 ? 'positive' : 'negative';
   let suspPctText = priorSuspPct === 0 ? '0.0% vs año ant.' : `${suspPctDiff >= 0 ? '↑' : '↓'} ${Math.abs(suspPctDiff).toFixed(1)}% vs año ant.`;
+
+  // Helper to parse HH:MM to minutes
+  const parseTimeToMinutes = (tStr) => {
+    if (!tStr) return null;
+    const match = String(tStr).match(/(\d{1,2}):(\d{2})/);
+    if (!match) return null;
+    return parseInt(match[1], 10) * 60 + parseInt(match[2], 10);
+  };
+
+  // Motor de cálculo: Retraso en Primera Hora (Replicación exacta de la fórmula requerida)
+  const indicadoresGestionData = useMemo(() => {
+    if (!disponibilidadData.length || !tablaData.length) {
+      return {
+        totalRetrasoMinutos: 0,
+        totalHorasRetraso: '0',
+        pabellonesEvaluados: 0,
+        cumplenNorma15m: 0,
+        noCumplenNorma15m: 0,
+        pctCumplimientoNorma: '0.0%',
+        promedioRetrasoMinutos: '0.0',
+        monthlyTrend: [],
+        pabellonStats: [],
+        casosDetalle: []
+      };
+    }
+
+    // Indizar cirugías por fecha_programacion y pabellon
+    const cirugiasIndex = new Map();
+    tablaData.forEach(c => {
+      if (c.eliminada === true || c.eliminada === "true") return;
+      if (!c.fecha_programacion || !c.pabellon) return;
+      const dOnly = c.fecha_programacion.substring(0, 10);
+      const key = `${dOnly}_${c.pabellon}`;
+      if (!cirugiasIndex.has(key)) cirugiasIndex.set(key, []);
+      cirugiasIndex.get(key).push(c);
+    });
+
+    let totalMinutos = 0;
+    const casos = [];
+
+    // Recorrer disponibilidad de pabellones
+    disponibilidadData.forEach(pabellon => {
+      if (pabellon.estado_pabellon === false) return; // Pabellón inhabilitado o cerrado
+      if (!pabellon.fecha) return;
+      const fechaPab = pabellon.fecha.substring(0, 10);
+
+      // Filtro de periodo de monitoreo (por defecto 2026 en este tablero)
+      if (fechaPab < dateRangeIndicadores.start || fechaPab > dateRangeIndicadores.end) return;
+
+      // Solo días hábiles lunes a viernes (programación electiva habitual)
+      const diaObj = new Date(fechaPab + 'T12:00:00');
+      const diaSem = diaObj.getDay();
+      if (diaSem < 1 || diaSem > 5) return;
+
+      const numPab = pabellon.numero_pabellon || pabellon.n_pabellon;
+      if (!numPab) return;
+
+      // Filtro de pabellón seleccionado (por defecto excluye 6 y 7)
+      if (indicadorPabellon.length > 0 && !indicadorPabellon.includes(String(numPab))) return;
+
+      const key = `${fechaPab}_${numPab}`;
+      // Filtrar cirugías con programación en jornada AM que efectivamente ingresaron a pabellón
+      const cirugiasAM = cirugiasDia.filter(c => c.jornada === 'AM' && c.hora_ingreso_cirugia && c.hora_ingreso_cirugia.trim() !== '');
+      if (cirugiasAM.length === 0) return;
+
+      // Obtener el primer paciente efectivamente iniciado en el proceso de intervención
+      // (Si el paciente de orden 1 se suspendió, se toma la siguiente cirugía iniciada por orden)
+      let primeraCirugia = cirugiasAM
+        .filter(c => (c.cirugia_realizada && String(c.cirugia_realizada).toLowerCase() === 'si') || (c.estado && String(c.estado).toLowerCase() === 'intervenido'))
+        .sort((a, b) => (a.orden_cirugia || 999) - (b.orden_cirugia || 999) || String(a.hora_ingreso_cirugia || '').localeCompare(String(b.hora_ingreso_cirugia || '')))[0];
+
+      if (!primeraCirugia) {
+        primeraCirugia = cirugiasAM.sort((a, b) => (a.orden_cirugia || 999) - (b.orden_cirugia || 999) || String(a.hora_ingreso_cirugia || '').localeCompare(String(b.hora_ingreso_cirugia || '')))[0];
+      }
+      if (!primeraCirugia) return;
+
+      if (primeraCirugia && primeraCirugia.hora_ingreso_cirugia) {
+        // La hora de inicio es la que dice la tabla de disponibilidad de ese pabellón ese día
+        const horaInicioVal = pabellon.horario_am_inicio || pabellon.horario_habil_am_inicio || '08:00';
+        const horaIngresoVal = primeraCirugia.hora_ingreso_cirugia;
+
+        const minInicio = parseTimeToMinutes(horaInicioVal) ?? 480;
+        const minIngreso = parseTimeToMinutes(horaIngresoVal) ?? 480;
+
+        const diferencia = minIngreso - minInicio;
+        // Retraso acumulado: minutos que exceden la tolerancia normativa (15 min)
+        const retrasoExcedente = diferencia > 15 ? (diferencia - 15) : 0;
+        totalMinutos += Math.round(retrasoExcedente);
+
+        const cumpleNorma = diferencia <= 15;
+        const retrasoMin = Math.max(0, Math.round(diferencia));
+
+        // Filtro de cumplimiento si está activo
+        if (indicadorCumplimiento.length > 0) {
+          const cat = cumpleNorma ? 'Cumple norma (≤ 15 min)' : 'Con retraso (> 15 min)';
+          if (!indicadorCumplimiento.includes(cat)) return;
+        }
+
+        // Búsqueda de texto libre si está activa
+        if (indicadorSearch) {
+          const q = indicadorSearch.toLowerCase();
+          const matchP = String(primeraCirugia.nombre_paciente || '').toLowerCase().includes(q);
+          const matchC = String(primeraCirugia.cirujano || '').toLowerCase().includes(q);
+          const matchE = String(primeraCirugia.especialidad || '').toLowerCase().includes(q);
+          const matchI = String(primeraCirugia.intervencion_propuesta || '').toLowerCase().includes(q);
+          if (!matchP && !matchC && !matchE && !matchI) return;
+        }
+
+        casos.push({
+          id: `${fechaPab}_${numPab}_${primeraCirugia.id || Math.random()}`,
+          fecha: fechaPab,
+          pabellon: numPab,
+          horaApertura: horaInicioVal,
+          horaIngreso: horaIngresoVal,
+          diferencia,
+          retrasoMinutos: retrasoExcedente,
+          cumpleNorma,
+          paciente: `${primeraCirugia.nombre_paciente || ''} ${primeraCirugia.apellido_paterno || ''}`.trim() || 'Sin Nombre',
+          cirujano: primeraCirugia.cirujano || 'Sin cirujano',
+          especialidad: primeraCirugia.especialidad || 'Sin especialidad',
+          intervencion: primeraCirugia.intervencion_propuesta || 'Sin intervención',
+          orden: primeraCirugia.orden_cirugia || 1,
+          estado: primeraCirugia.estado || (primeraCirugia.cirugia_realizada === 'Si' ? 'Realizada' : 'Pendiente')
+        });
+      }
+    });
+
+    // Ordenar casos por fecha descendente
+    casos.sort((a, b) => b.fecha.localeCompare(a.fecha) || a.pabellon - b.pabellon);
+
+    const totalCasos = casos.length;
+    const cumplen = casos.filter(c => c.cumpleNorma).length;
+    const noCumplen = totalCasos - cumplen;
+    const pctCumplimiento = totalCasos > 0 ? ((cumplen / totalCasos) * 100).toFixed(1) : '0.0';
+    const promRetraso = totalCasos > 0 ? (totalMinutos / totalCasos).toFixed(1) : '0.0';
+
+    // Agrupación mensual
+    const monthNames = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+    const monthlyMap = {};
+    casos.forEach(c => {
+      const mKey = c.fecha.substring(0, 7);
+      if (!monthlyMap[mKey]) {
+        const [y, m] = mKey.split('-');
+        monthlyMap[mKey] = {
+          key: mKey,
+          mes: `${monthNames[parseInt(m, 10) - 1]} ${y}`,
+          totalCasos: 0,
+          cumplen: 0,
+          noCumplen: 0,
+          minutosRetraso: 0
+        };
+      }
+      monthlyMap[mKey].totalCasos++;
+      if (c.cumpleNorma) monthlyMap[mKey].cumplen++;
+      else monthlyMap[mKey].noCumplen++;
+      monthlyMap[mKey].minutosRetraso += c.retrasoMinutos;
+    });
+
+    const monthlyTrend = Object.values(monthlyMap)
+      .sort((a, b) => a.key.localeCompare(b.key))
+      .map(m => ({
+        ...m,
+        pctCumplimiento: m.totalCasos > 0 ? parseFloat(((m.cumplen / m.totalCasos) * 100).toFixed(1)) : 0,
+        promRetrasoMin: m.totalCasos > 0 ? parseFloat((m.minutosRetraso / m.totalCasos).toFixed(1)) : 0
+      }));
+
+    // Agrupación por Pabellón
+    const pabMap = {};
+    casos.forEach(c => {
+      const p = String(c.pabellon);
+      if (!pabMap[p]) {
+        pabMap[p] = {
+          pabellon: `Pabellón ${p}`,
+          pNum: c.pabellon,
+          totalCasos: 0,
+          cumplen: 0,
+          noCumplen: 0,
+          minutosRetraso: 0
+        };
+      }
+      pabMap[p].totalCasos++;
+      if (c.cumpleNorma) pabMap[p].cumplen++;
+      else pabMap[p].noCumplen++;
+      pabMap[p].minutosRetraso += c.retrasoMinutos;
+    });
+
+    const pabellonStats = Object.values(pabMap)
+      .sort((a, b) => a.pNum - b.pNum)
+      .map(p => ({
+        ...p,
+        pctCumplimiento: p.totalCasos > 0 ? parseFloat(((p.cumplen / p.totalCasos) * 100).toFixed(1)) : 0,
+        promRetrasoMin: p.totalCasos > 0 ? parseFloat((p.minutosRetraso / p.totalCasos).toFixed(1)) : 0
+      }));
+
+    return {
+      totalRetrasoMinutos: totalMinutos,
+      totalHorasRetraso: (totalMinutos / 60).toFixed(1),
+      pabellonesEvaluados: totalCasos,
+      cumplenNorma15m: cumplen,
+      noCumplenNorma15m: noCumplen,
+      pctCumplimientoNorma: `${pctCumplimiento}%`,
+      promedioRetrasoMinutos: promRetraso,
+      monthlyTrend,
+      pabellonStats,
+      casosDetalle: casos
+    };
+  }, [disponibilidadData, tablaData, dateRangeIndicadores, indicadorPabellon, indicadorCumplimiento, indicadorSearch]);
 
   // Chart Data Processing for Tabla
   const tablaChartData = useMemo(() => {
@@ -3011,7 +3267,7 @@ export default function SurgicalDashboard({ onBack }) {
           {[
             { id: 'libro', label: 'Estadística (Libro)', icon: <BarChart2 size={18} /> },
             { id: 'tabla', label: 'Programación de tabla', icon: <Calendar size={18} /> },
-            { id: 'disponibilidad', label: 'Disponibilidad (Infra)', icon: <Clock size={18} /> },
+            { id: 'disponibilidad', label: 'Indicadores de gestión', icon: <Clock size={18} /> },
             { id: 'insumos', label: 'Insumos y Costeo', icon: <DollarSign size={18} /> }
           ].map(tab => (
             <button
@@ -3037,7 +3293,7 @@ export default function SurgicalDashboard({ onBack }) {
       </header>
 
       {/* MAIN CONTENT AREA WITH FLOATING SIDEBAR */}
-      {(activeTab === 'libro' || activeTab === 'tabla') && (
+      {(activeTab === 'libro' || activeTab === 'tabla' || activeTab === 'disponibilidad') && (
         <div style={{ display: 'flex', flex: 1, alignItems: 'flex-start', position: 'relative' }}>
           {/* FLOATING SIDEBAR */}
           <motion.div
@@ -3174,11 +3430,47 @@ export default function SurgicalDashboard({ onBack }) {
                 <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.2 }} style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
                   {/* Periodo de Monitoreo */}
                   <div style={{ background: '#f8fafc', padding: '14px', borderRadius: '16px', border: '1px solid #f1f5f9' }}>
-                    <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 800, marginBottom: '10px', color: '#1e40af', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Periodo de Monitoreo</label>
-                    <div style={{ display: 'flex', gap: '8px' }}>
-                      <input type="date" defaultValue={dateRange.start} onBlur={e => setDateRange(p => ({ ...p, start: e.target.value }))} style={{ width: '100%', padding: '8px 10px', borderRadius: '10px', border: '1px solid #e2e8f0', background: 'white', color: '#1e293b', fontSize: '0.8rem', outline: 'none', fontWeight: 600 }} />
-                      <input type="date" defaultValue={dateRange.end} onBlur={e => setDateRange(p => ({ ...p, end: e.target.value }))} style={{ width: '100%', padding: '8px 10px', borderRadius: '10px', border: '1px solid #e2e8f0', background: 'white', color: '#1e293b', fontSize: '0.8rem', outline: 'none', fontWeight: 600 }} />
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                      <label style={{ margin: 0, fontSize: '0.75rem', fontWeight: 800, color: '#1e40af', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Periodo de Monitoreo</label>
+                      {activeTab === 'disponibilidad' && (
+                        <span style={{ fontSize: '0.65rem', background: '#e0e7ff', color: '#3730a3', padding: '2px 6px', borderRadius: '6px', fontWeight: 800 }}>2026</span>
+                      )}
                     </div>
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      {activeTab === 'disponibilidad' ? (
+                        <>
+                          <input type="date" value={dateRangeIndicadores.start} onChange={e => setDateRangeIndicadores(p => ({ ...p, start: e.target.value }))} style={{ width: '100%', padding: '8px 10px', borderRadius: '10px', border: '1px solid #cbd5e1', background: 'white', color: '#1e293b', fontSize: '0.8rem', outline: 'none', fontWeight: 600 }} />
+                          <input type="date" value={dateRangeIndicadores.end} onChange={e => setDateRangeIndicadores(p => ({ ...p, end: e.target.value }))} style={{ width: '100%', padding: '8px 10px', borderRadius: '10px', border: '1px solid #cbd5e1', background: 'white', color: '#1e293b', fontSize: '0.8rem', outline: 'none', fontWeight: 600 }} />
+                        </>
+                      ) : (
+                        <>
+                          <input type="date" defaultValue={dateRange.start} onBlur={e => setDateRange(p => ({ ...p, start: e.target.value }))} style={{ width: '100%', padding: '8px 10px', borderRadius: '10px', border: '1px solid #e2e8f0', background: 'white', color: '#1e293b', fontSize: '0.8rem', outline: 'none', fontWeight: 600 }} />
+                          <input type="date" defaultValue={dateRange.end} onBlur={e => setDateRange(p => ({ ...p, end: e.target.value }))} style={{ width: '100%', padding: '8px 10px', borderRadius: '10px', border: '1px solid #e2e8f0', background: 'white', color: '#1e293b', fontSize: '0.8rem', outline: 'none', fontWeight: 600 }} />
+                        </>
+                      )}
+                    </div>
+                    {activeTab === 'disponibilidad' && (
+                      <div style={{ display: 'flex', gap: '4px', marginTop: '8px' }}>
+                        <button
+                          onClick={() => setDateRangeIndicadores({ start: '2026-01-01', end: '2026-12-31' })}
+                          style={{ flex: 1, padding: '4px 6px', fontSize: '0.7rem', background: (dateRangeIndicadores.start === '2026-01-01' && dateRangeIndicadores.end === '2026-12-31') ? '#1e40af' : '#f1f5f9', color: (dateRangeIndicadores.start === '2026-01-01' && dateRangeIndicadores.end === '2026-12-31') ? 'white' : '#475569', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 700 }}
+                        >
+                          Año 2026
+                        </button>
+                        <button
+                          onClick={() => setDateRangeIndicadores({ start: '2026-01-01', end: '2026-06-30' })}
+                          style={{ flex: 1, padding: '4px 6px', fontSize: '0.7rem', background: (dateRangeIndicadores.start === '2026-01-01' && dateRangeIndicadores.end === '2026-06-30') ? '#1e40af' : '#f1f5f9', color: (dateRangeIndicadores.start === '2026-01-01' && dateRangeIndicadores.end === '2026-06-30') ? 'white' : '#475569', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 700 }}
+                        >
+                          1er Sem 2026
+                        </button>
+                        <button
+                          onClick={() => setDateRangeIndicadores({ start: '2025-01-01', end: '2026-12-31' })}
+                          style={{ flex: 1, padding: '4px 6px', fontSize: '0.7rem', background: (dateRangeIndicadores.start === '2025-01-01' && dateRangeIndicadores.end === '2026-12-31') ? '#1e40af' : '#f1f5f9', color: (dateRangeIndicadores.start === '2025-01-01' && dateRangeIndicadores.end === '2026-12-31') ? 'white' : '#475569', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 700 }}
+                        >
+                          Histórico
+                        </button>
+                      </div>
+                    )}
                   </div>
 
                   {activeTab === 'libro' && (
@@ -3216,6 +3508,33 @@ export default function SurgicalDashboard({ onBack }) {
                         { label: 'Anestesiólogo', val: tablaAnestesista, set: setTablaAnestesista, options: tablaDropdowns.anestesistas },
                         { label: 'Pabellón', val: tablaPabellon, set: setTablaPabellon, options: tablaDropdowns.pabs },
                         { label: 'Modalidad de atención', val: tablaModalidad, set: setTablaModalidad, options: tablaDropdowns.mods }
+                      ].map((f, i) => (
+                        <div key={i}>
+                          <label style={{ display: 'block', fontSize: '0.72rem', fontWeight: 700, marginBottom: '6px', color: '#64748b', textTransform: 'uppercase' }}>{f.label}</label>
+                          <MultiSearchableSelect value={f.val} options={f.options} onChange={f.set} />
+                        </div>
+                      ))}
+                    </>
+                  )}
+
+                  {activeTab === 'disponibilidad' && (
+                    <>
+                      <div style={{ background: '#f8fafc', padding: '12px', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
+                        <label style={{ display: 'block', fontSize: '0.72rem', fontWeight: 700, marginBottom: '6px', color: '#1e40af', textTransform: 'uppercase' }}>Búsqueda Rápida</label>
+                        <div style={{ position: 'relative' }}>
+                          <input
+                            type="text"
+                            placeholder="Paciente, cirujano, IQ..."
+                            value={indicadorSearch}
+                            onChange={e => setIndicadorSearch(e.target.value)}
+                            style={{ width: '100%', padding: '8px 10px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '0.8rem', outline: 'none' }}
+                          />
+                        </div>
+                      </div>
+
+                      {[
+                        { label: 'Pabellón', val: indicadorPabellon, set: setIndicadorPabellon, options: indicadorDropdowns.pabs },
+                        { label: 'Estado Cumplimiento (15 min)', val: indicadorCumplimiento, set: setIndicadorCumplimiento, options: indicadorDropdowns.cumplimientos }
                       ].map((f, i) => (
                         <div key={i}>
                           <label style={{ display: 'block', fontSize: '0.72rem', fontWeight: 700, marginBottom: '6px', color: '#64748b', textTransform: 'uppercase' }}>{f.label}</label>
@@ -3640,18 +3959,170 @@ export default function SurgicalDashboard({ onBack }) {
                   </div>
                 )}
 
+                {/* TAB 3: INDICADORES DE GESTIÓN (RETRASO EN PRIMERA HORA Y DISPONIBILIDAD) */}
+                {activeTab === 'disponibilidad' && (
+                  <div>
+                    {/* ENCABEZADO Y CONTEXTO NORMATIVO */}
+                    <div style={{ background: 'linear-gradient(135deg, #1e3a8a 0%, #1e40af 50%, #3b82f6 100%)', borderRadius: '24px', padding: '28px 32px', color: 'white', marginBottom: '32px', boxShadow: '0 15px 35px -10px rgba(30, 64, 175, 0.4)', position: 'relative', overflow: 'hidden' }}>
+                      <div style={{ position: 'absolute', top: '-40px', right: '-40px', width: '220px', height: '220px', background: 'radial-gradient(circle, rgba(255,255,255,0.15) 0%, transparent 70%)', borderRadius: '50%' }}></div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
+                        <span style={{ background: 'rgba(255,255,255,0.2)', padding: '4px 12px', borderRadius: '20px', fontSize: '0.75rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.5px', backdropFilter: 'blur(4px)' }}>
+                          Estándar Quirúrgico Institucional
+                        </span>
+                        <span style={{ background: '#10b981', color: 'white', padding: '4px 12px', borderRadius: '20px', fontSize: '0.75rem', fontWeight: 800 }}>
+                          Tolerancia: ≤ 15 Minutos
+                        </span>
+                      </div>
+                      <h2 style={{ fontSize: '1.85rem', fontWeight: 900, margin: '0 0 10px 0', letterSpacing: '-0.5px' }}>
+                        Indicador: Retraso en Primera Hora de Pabellón
+                      </h2>
+                      <p style={{ margin: '0 0 16px 0', fontSize: '0.95rem', opacity: 0.92, maxWidth: '900px', lineHeight: 1.5 }}>
+                        Monitoreo del tiempo transcurrido desde la habilitación oficial de cada quirófano (<code style={{ background: 'rgba(0,0,0,0.2)', padding: '2px 6px', borderRadius: '4px', color: '#fed7aa' }}>horario_inicio</code>) hasta el ingreso del primer paciente intervenido (<code style={{ background: 'rgba(0,0,0,0.2)', padding: '2px 6px', borderRadius: '4px', color: '#fed7aa' }}>hora_ingreso_cirugia</code>). Se evalúa el cumplimiento del estándar de inicio puntual (máximo 15 min de demora) y se computan los minutos totales de retraso operacional acumulados.
+                      </p>
+
+                      {/* BADGES DE FILTROS ACTIVOS */}
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', alignItems: 'center', background: 'rgba(0,0,0,0.18)', padding: '10px 16px', borderRadius: '14px', border: '1px solid rgba(255,255,255,0.1)' }}>
+                        <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#fed7aa', textTransform: 'uppercase' }}>Filtros en curso:</span>
+                        <span style={{ background: 'rgba(255,255,255,0.2)', padding: '3px 10px', borderRadius: '12px', fontSize: '0.72rem', fontWeight: 700 }}>
+                          📅 Periodo: {dateRangeIndicadores.start} al {dateRangeIndicadores.end}
+                        </span>
+                        <span style={{ background: 'rgba(255,255,255,0.2)', padding: '3px 10px', borderRadius: '12px', fontSize: '0.72rem', fontWeight: 700 }}>
+                          🏥 Pabellones: {indicadorPabellon.length === 0 ? 'Todos' : indicadorPabellon.map(p => `Pab ${p}`).join(', ')}
+                        </span>
+                        <span style={{ background: 'rgba(239, 68, 68, 0.25)', border: '1px solid rgba(239, 68, 68, 0.4)', color: '#fee2e2', padding: '3px 10px', borderRadius: '12px', fontSize: '0.72rem', fontWeight: 700 }}>
+                          ✕ Pabellones 6 (Urgencia) y 7 (Cirugía Menor) excluidos por defecto
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* KPI SUMMARY CARDS */}
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '20px', marginBottom: '32px' }}>
+                      {/* Minutos Totales Retraso */}
+                      <div style={{ background: 'white', padding: '24px', borderRadius: '20px', border: '1px solid #e2e8f0', borderLeft: '6px solid #ef4444', boxShadow: '0 4px 15px rgba(0,0,0,0.03)' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                          <p style={{ margin: 0, fontSize: '0.75rem', color: '#64748b', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Retraso Acumulado</p>
+                          <span style={{ background: '#fef2f2', color: '#ef4444', padding: '4px 8px', borderRadius: '8px', fontSize: '0.7rem', fontWeight: 800 }}>Fórmula Oficial</span>
+                        </div>
+                        <h2 style={{ margin: '10px 0 4px 0', fontSize: '2.4rem', color: '#0f172a', fontWeight: 900 }}>
+                          {indicadoresGestionData.totalRetrasoMinutos.toLocaleString()} <span style={{ fontSize: '1rem', fontWeight: 700, color: '#64748b' }}>min</span>
+                        </h2>
+                        <p style={{ margin: 0, fontSize: '0.85rem', color: '#ef4444', fontWeight: 700 }}>
+                          ≈ {indicadoresGestionData.totalHorasRetraso} horas operacionales perdidas
+                        </p>
+                      </div>
+
+                      {/* Porcentaje Cumplimiento Norma */}
+                      <div style={{ background: 'white', padding: '24px', borderRadius: '20px', border: '1px solid #e2e8f0', borderLeft: '6px solid #10b981', boxShadow: '0 4px 15px rgba(0,0,0,0.03)' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                          <p style={{ margin: 0, fontSize: '0.75rem', color: '#64748b', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Cumplimiento Norma (≤ 15 min)</p>
+                          <span style={{ background: '#ecfdf5', color: '#10b981', padding: '4px 8px', borderRadius: '8px', fontSize: '0.7rem', fontWeight: 800 }}>Meta &gt; 80%</span>
+                        </div>
+                        <h2 style={{ margin: '10px 0 4px 0', fontSize: '2.4rem', color: parseFloat(indicadoresGestionData.pctCumplimientoNorma) >= 70 ? '#10b981' : '#f59e0b', fontWeight: 900 }}>
+                          {indicadoresGestionData.pctCumplimientoNorma}
+                        </h2>
+                        <p style={{ margin: 0, fontSize: '0.85rem', color: '#64748b', fontWeight: 600 }}>
+                          <strong style={{ color: '#0f172a' }}>{indicadoresGestionData.cumplenNorma15m}</strong> de {indicadoresGestionData.pabellonesEvaluados} jornadas cumplieron la tolerancia
+                        </p>
+                      </div>
+
+                      {/* Promedio Minutos Retraso */}
+                      <div style={{ background: 'white', padding: '24px', borderRadius: '20px', border: '1px solid #e2e8f0', borderLeft: '6px solid #f59e0b', boxShadow: '0 4px 15px rgba(0,0,0,0.03)' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                          <p style={{ margin: 0, fontSize: '0.75rem', color: '#64748b', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Promedio de Demora</p>
+                          <Clock size={16} color="#f59e0b" />
+                        </div>
+                        <h2 style={{ margin: '10px 0 4px 0', fontSize: '2.4rem', color: '#0f172a', fontWeight: 900 }}>
+                          {indicadoresGestionData.promedioRetrasoMinutos} <span style={{ fontSize: '1rem', fontWeight: 700, color: '#64748b' }}>min / pabellón</span>
+                        </h2>
+                        <p style={{ margin: 0, fontSize: '0.85rem', color: '#64748b', fontWeight: 600 }}>
+                          Tiempo medio de ingreso respecto a hora de apertura
+                        </p>
+                      </div>
+
+                      {/* Pabellones / Jornadas Evaluadas */}
+                      <div style={{ background: 'white', padding: '24px', borderRadius: '20px', border: '1px solid #e2e8f0', borderLeft: '6px solid #6366f1', boxShadow: '0 4px 15px rgba(0,0,0,0.03)' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                          <p style={{ margin: 0, fontSize: '0.75rem', color: '#64748b', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Jornadas Quirúrgicas</p>
+                          <Activity size={16} color="#6366f1" />
+                        </div>
+                        <h2 style={{ margin: '10px 0 4px 0', fontSize: '2.4rem', color: '#0f172a', fontWeight: 900 }}>
+                          {indicadoresGestionData.pabellonesEvaluados.toLocaleString()}
+                        </h2>
+                        <p style={{ margin: 0, fontSize: '0.85rem', color: '#ef4444', fontWeight: 600 }}>
+                          <strong style={{ color: '#ef4444' }}>{indicadoresGestionData.noCumplenNorma15m}</strong> iniciaron con más de 15 min de retraso
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* GRÁFICOS DINÁMICOS: TENDENCIA TEMPORAL Y COMPARATIVO PABELLONES */}
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(480px, 1fr))', gap: '24px', marginBottom: '24px' }}>
+                      {/* Gráfico 1: Tendencia Mensual de Cumplimiento y Retraso */}
+                      <div style={{ background: 'white', padding: '24px', borderRadius: '20px', border: '1px solid #e2e8f0', boxShadow: '0 4px 20px rgba(0,0,0,0.03)' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                          <div>
+                            <h3 style={{ margin: 0, fontSize: '1.15rem', color: '#0f172a', fontWeight: 800 }}>Evolución Mensual del Retraso de 1ª Hora</h3>
+                            <p style={{ margin: '4px 0 0 0', fontSize: '0.8rem', color: '#64748b' }}>% de cumplimiento de norma (≤15 min) vs Minutos promedio de demora</p>
+                          </div>
+                        </div>
+                        <div style={{ height: '320px', width: '100%' }}>
+                          <ResponsiveContainer width="100%" height="100%">
+                            <ComposedChart data={indicadoresGestionData.monthlyTrend}>
+                              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                              <XAxis dataKey="mes" tick={{ fill: '#64748b', fontSize: 11 }} />
+                              <YAxis yAxisId="left" orientation="left" tick={{ fill: '#10b981', fontSize: 11 }} domain={[0, 100]} unit="%" />
+                              <YAxis yAxisId="right" orientation="right" tick={{ fill: '#f59e0b', fontSize: 11 }} unit="m" />
+                              <RechartsTooltip
+                                formatter={(val, name) => [
+                                  name === '% Cumplimiento (≤15 min)' ? `${val}%` : `${val} min`,
+                                  name
+                                ]}
+                                contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 25px rgba(0,0,0,0.1)' }}
+                              />
+                              <Legend wrapperStyle={{ fontSize: '0.8rem', paddingTop: '10px' }} />
+                              <Bar yAxisId="right" dataKey="promRetrasoMin" name="Demora Promedio (min)" fill="#f59e0b" radius={[6, 6, 0, 0]} barSize={26} />
+                              <Line yAxisId="left" type="monotone" dataKey="pctCumplimiento" name="% Cumplimiento (≤15 min)" stroke="#10b981" strokeWidth={3} dot={{ r: 4, fill: '#10b981' }} />
+                            </ComposedChart>
+                          </ResponsiveContainer>
+                        </div>
+                      </div>
+
+                      {/* Gráfico 2: Desempeño por Pabellón */}
+                      <div style={{ background: 'white', padding: '24px', borderRadius: '20px', border: '1px solid #e2e8f0', boxShadow: '0 4px 20px rgba(0,0,0,0.03)' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                          <div>
+                            <h3 style={{ margin: 0, fontSize: '1.15rem', color: '#0f172a', fontWeight: 800 }}>Cumplimiento y Retraso por Quirófano</h3>
+                            <p style={{ margin: '4px 0 0 0', fontSize: '0.8rem', color: '#64748b' }}>Comparativa de eficiencia de apertura por pabellón</p>
+                          </div>
+                        </div>
+                        <div style={{ height: '320px', width: '100%' }}>
+                          <ResponsiveContainer width="100%" height="100%">
+                            <BarChart data={indicadoresGestionData.pabellonStats}>
+                              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                              <XAxis dataKey="pabellon" tick={{ fill: '#64748b', fontSize: 11 }} />
+                              <YAxis tick={{ fill: '#64748b', fontSize: 11 }} unit="%" domain={[0, 100]} />
+                              <RechartsTooltip
+                                formatter={(val, name, item) => [
+                                  name === '% Cumplimiento' ? `${val}%` : `${val} min`,
+                                  `${name} (${item.payload.totalCasos} cirugías evaluadas)`
+                                ]}
+                                contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 25px rgba(0,0,0,0.1)' }}
+                              />
+                              <Legend wrapperStyle={{ fontSize: '0.8rem', paddingTop: '10px' }} />
+                              <Bar dataKey="pctCumplimiento" name="% Cumplimiento" fill="#3b82f6" radius={[6, 6, 0, 0]} barSize={34}>
+                                {indicadoresGestionData.pabellonStats.map((entry, index) => (
+                                  <Cell key={`cell-${index}`} fill={entry.pctCumplimiento >= 50 ? '#10b981' : '#f59e0b'} />
+                                ))}
+                              </Bar>
+                            </BarChart>
+                          </ResponsiveContainer>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
               </motion.div>
             )}
-          </div>
-        </div>
-      )}
-
-      {/* OTHER TABS: Keep existing logic for DISPONIBILIDAD */}
-      {activeTab === 'disponibilidad' && (
-        <div style={{ padding: '32px', flex: 1 }}>
-          <div className="glass-panel" style={{ background: 'white', padding: '32px', borderRadius: '24px' }}>
-            <h2 style={{ marginTop: 0 }}>Módulo en Construcción</h2>
-            <p>La vista seleccionada ({activeTab}) se ha omitido temporalmente para centrarse en las Estadísticas del Libro.</p>
           </div>
         </div>
       )}
