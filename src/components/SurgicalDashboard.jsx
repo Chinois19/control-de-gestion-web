@@ -2412,16 +2412,20 @@ export default function SurgicalDashboard({ onBack }) {
           } catch (e) {
             // fallback
           }
-          const res = await fetch(basePath);
-          if (!res.ok) throw new Error(`No se pudo cargar ${basePath}`);
-          return await res.json();
+          try {
+            const res = await fetch(basePath);
+            if (res.ok) return await res.json();
+          } catch (e) {
+            console.warn(`No se pudo cargar ${basePath}:`, e);
+          }
+          return { records: [] };
         };
 
         const [tablaJson, dispJson, libroJson, grdJson] = await Promise.all([
           fetchJsonWithGz('/data/pabellon_tabla_cached.json'),
           fetchJsonWithGz('/data/pabellon_disponibilidad_cached.json'),
-          fetchJsonWithGz('/data/libro_pabellon_cached.json').catch(() => ({ records: [] })),
-          fetch('/data/valorizacion_grd.json').catch(() => ({ json: () => ([]) })).then(r => r.json ? r.json() : r)
+          fetchJsonWithGz('/data/libro_pabellon_cached.json'),
+          fetch('/data/valorizacion_grd.json').catch(() => ({ json: () => ([]) })).then(r => r.json ? r.json() : r).catch(() => [])
         ]);
 
         const normalizeDate = (dStr) => {
@@ -2762,6 +2766,7 @@ export default function SurgicalDashboard({ onBack }) {
       if (indicadorPabellon.length > 0 && !indicadorPabellon.includes(String(numPab))) return;
 
       const key = `${fechaPab}_${numPab}`;
+      const cirugiasDia = cirugiasIndex.get(key) || [];
       // Filtrar cirugías con programación en jornada AM que efectivamente ingresaron a pabellón
       const cirugiasAM = cirugiasDia.filter(c => c.jornada === 'AM' && c.hora_ingreso_cirugia && c.hora_ingreso_cirugia.trim() !== '');
       if (cirugiasAM.length === 0) return;

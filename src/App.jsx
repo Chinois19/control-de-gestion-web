@@ -58,6 +58,38 @@ import './App.css';
 
 const SESSION_TIMEOUT_MS = 30 * 60 * 1000; // 30 minutes
 
+class ViewErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+  static getDerivedStateFromError(error) {
+    return { hasError: true, error };
+  }
+  componentDidCatch(error, errorInfo) {
+    console.error("View Error caught by boundary:", error, errorInfo);
+  }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div style={{ padding: '40px', background: '#fee2e2', borderRadius: '16px', border: '1px solid #ef4444', margin: '40px auto', maxWidth: '800px', textAlign: 'center' }}>
+          <h3 style={{ color: '#991b1b', marginBottom: '12px', fontSize: '1.25rem' }}>Ocurrió un error al cargar este panel</h3>
+          <p style={{ color: '#b91c1c', fontSize: '0.9rem', marginBottom: '20px' }}>
+            {this.state.error?.message || 'Error inesperado'}
+          </p>
+          <button
+            onClick={() => { this.setState({ hasError: false, error: null }); window.location.reload(); }}
+            style={{ padding: '10px 24px', background: '#dc2626', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 600 }}
+          >
+            Reintentar y recargar
+          </button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 // HD Images
 const imgSurgical = "/surgical_hd.png";
 const imgConsultation = "/consultation_hd.png";
@@ -1070,6 +1102,7 @@ function App() {
             </motion.div>
           ) : (
             <div key="detail" style={{ paddingTop: '100px', maxWidth: '1400px', margin: '0 auto', padding: '100px 40px' }}>
+              <ViewErrorBoundary>
               {activeView === 'produccion_general' && (
                 <ProductionPortal 
                   onBack={() => navigateToView('home')} 
@@ -1225,6 +1258,7 @@ function App() {
               {activeView === 'lista_espera_odontologica' && (
                 <ListaEsperaDashboard key={`odontologica-${listaEsperaInitialTab}`} tipo="Odontológica" initialTab={listaEsperaInitialTab} onBack={() => navigateToView('home')} />
               )}
+              </ViewErrorBoundary>
             </div>
           )}
         </AnimatePresence>
