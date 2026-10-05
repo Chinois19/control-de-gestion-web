@@ -33,11 +33,11 @@ export default function PharmacyDashboard({ onBack }) {
   
   // Date values (Raw strings for intermediate input states)
   const [rawDesde, setRawDesde] = useState('2024-05-01');
-  const [rawHasta, setRawHasta] = useState('2026-05-31');
+  const [rawHasta, setRawHasta] = useState('2026-10-05');
   
   // Validated date states actually used in calculation
   const [startDate, setStartDate] = useState('2024-05-01');
-  const [endDate, setEndDate] = useState('2026-05-31');
+  const [endDate, setEndDate] = useState('2026-10-05');
 
   // Custom multi-select checklists in sidebar
   const [selectedServicios, setSelectedServicios] = useState([]);
@@ -643,9 +643,9 @@ export default function PharmacyDashboard({ onBack }) {
                   setSelectedTipos(uniqueDropdownOptions.tipos);
                   setSelectedAreas(uniqueDropdownOptions.areas);
                   setRawDesde('2024-05-01');
-                  setRawHasta('2026-05-31');
+                  setRawHasta('2026-10-05');
                   setStartDate('2024-05-01');
-                  setEndDate('2026-05-31');
+                  setEndDate('2026-10-05');
                 }}
                 style={{ 
                   width: '100%', 

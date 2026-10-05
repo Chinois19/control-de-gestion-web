@@ -159,7 +159,7 @@ export default function LaboratoryDashboard({ onBack }) {
 
   // Advanced Filters
   const [startDate, setStartDate] = useState('2026-01-01');
-  const [endDate, setEndDate] = useState('2026-06-30');
+  const [endDate, setEndDate] = useState('2026-10-05');
   const [selectedSections, setSelectedSections] = useState([]);
   const [selectedProcedencias, setSelectedProcedencias] = useState([]);
   const [selectedEdades, setSelectedEdades] = useState([]);

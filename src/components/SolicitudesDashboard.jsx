@@ -28,7 +28,7 @@ const GESTION_COLORS = {
 const getChileanWorkingDays = (startDateStr, endDateStr) => {
   if (!startDateStr) return 0;
   const start = new Date(startDateStr);
-  const end = endDateStr ? new Date(endDateStr) : new Date('2026-05-25'); // usar fecha de hoy en el contexto local (May 25, 2026)
+  const end = endDateStr ? new Date(endDateStr) : new Date('2026-10-05'); // usar fecha de hoy en el contexto local (Oct 05, 2026)
   if (isNaN(start.getTime()) || isNaN(end.getTime())) return 0;
   
   let count = 0;
