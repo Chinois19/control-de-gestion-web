@@ -2356,6 +2356,7 @@ export default function SurgicalDashboard({ onBack }) {
   const [dateRangeIndicadores, setDateRangeIndicadores] = useState({ start: '2026-01-01', end: '2026-12-31' });
   const [indicadorPabellon, setIndicadorPabellon] = useState(['1', '2', '3', '4', '5']); // Por defecto excluye 6 y 7
   const [indicadorCumplimiento, setIndicadorCumplimiento] = useState([]);
+  const [indicadorTipoDia, setIndicadorTipoDia] = useState('habiles'); // 'habiles', 'no_habiles', 'todos'
   const [indicadorSearch, setIndicadorSearch] = useState('');
 
   // Floating Sidebar state
@@ -2375,11 +2376,12 @@ export default function SurgicalDashboard({ onBack }) {
       if (dateRangeIndicadores.start !== '2026-01-01' || dateRangeIndicadores.end !== '2026-12-31') count++;
       if (indicadorPabellon.length !== 5 || !['1', '2', '3', '4', '5'].every(p => indicadorPabellon.includes(p))) count++;
       if (indicadorCumplimiento.length > 0) count++;
+      if (indicadorTipoDia !== 'habiles') count++;
       if (indicadorSearch) count++;
       return count;
     }
     return 0;
-  }, [activeTab, tipoCirugia, tipoPaciente, procedencia, tipoGestor, formaPago, nombreIq, primerCirujano, segundoCirujano, anestesiologo, reintervencion, tablaFechaProg, tablaTipoCirugia, tablaTipoPaciente, tablaPriorizacion, tablaPabellonCrr, tablaIntervencion, tablaCirujano, tablaAnestesista, tablaPabellon, tablaModalidad, dateRangeIndicadores, indicadorPabellon, indicadorCumplimiento, indicadorSearch]);
+  }, [activeTab, tipoCirugia, tipoPaciente, procedencia, tipoGestor, formaPago, nombreIq, primerCirujano, segundoCirujano, anestesiologo, reintervencion, tablaFechaProg, tablaTipoCirugia, tablaTipoPaciente, tablaPriorizacion, tablaPabellonCrr, tablaIntervencion, tablaCirujano, tablaAnestesista, tablaPabellon, tablaModalidad, dateRangeIndicadores, indicadorPabellon, indicadorCumplimiento, indicadorTipoDia, indicadorSearch]);
 
   const clearAllFilters = () => {
     if (activeTab === 'libro') {
@@ -2392,6 +2394,7 @@ export default function SurgicalDashboard({ onBack }) {
       setDateRangeIndicadores({ start: '2026-01-01', end: '2026-12-31' });
       setIndicadorPabellon(['1', '2', '3', '4', '5']);
       setIndicadorCumplimiento([]);
+      setIndicadorTipoDia('habiles');
       setIndicadorSearch('');
     }
   };
@@ -2610,7 +2613,12 @@ export default function SurgicalDashboard({ onBack }) {
         { id: '7', label: 'Pabellón 7 (Cirugía Menor)' }
       ],
       pabValues: ['1', '2', '3', '4', '5', '6', '7'],
-      cumplimientos: ['Cumple norma (≤ 15 min)', 'Con retraso (> 15 min)']
+      cumplimientos: ['Cumple norma (≤ 15 min)', 'Con retraso (> 15 min)'],
+      tiposDia: [
+        { id: 'habiles', label: 'Días Hábiles (Lunes a Viernes)' },
+        { id: 'no_habiles', label: 'Días No Hábiles (Fines de Semana)' },
+        { id: 'todos', label: 'Todos los Días (Lunes a Domingo)' }
+      ]
     };
   }, []);
 
@@ -2754,10 +2762,12 @@ export default function SurgicalDashboard({ onBack }) {
       // Filtro de periodo de monitoreo (por defecto 2026 en este tablero)
       if (fechaPab < dateRangeIndicadores.start || fechaPab > dateRangeIndicadores.end) return;
 
-      // Solo días hábiles lunes a viernes (programación electiva habitual)
+      // Filtro de días hábiles vs no hábiles
       const diaObj = new Date(fechaPab + 'T12:00:00');
       const diaSem = diaObj.getDay();
-      if (diaSem < 1 || diaSem > 5) return;
+      const isFinDeSemana = (diaSem === 0 || diaSem === 6);
+      if (indicadorTipoDia === 'habiles' && isFinDeSemana) return;
+      if (indicadorTipoDia === 'no_habiles' && !isFinDeSemana) return;
 
       const numPab = pabellon.numero_pabellon || pabellon.n_pabellon;
       if (!numPab) return;
@@ -2912,7 +2922,7 @@ export default function SurgicalDashboard({ onBack }) {
       pabellonStats,
       casosDetalle: casos
     };
-  }, [disponibilidadData, tablaData, dateRangeIndicadores, indicadorPabellon, indicadorCumplimiento, indicadorSearch]);
+  }, [disponibilidadData, tablaData, dateRangeIndicadores, indicadorPabellon, indicadorCumplimiento, indicadorTipoDia, indicadorSearch]);
 
   // Chart Data Processing for Tabla
   const tablaChartData = useMemo(() => {
@@ -3537,6 +3547,44 @@ export default function SurgicalDashboard({ onBack }) {
                         </div>
                       </div>
 
+                      {/* Selector Tipo de Jornada (Días Hábiles / No Hábiles) */}
+                      <div style={{ background: '#f8fafc', padding: '12px', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
+                        <label style={{ display: 'block', fontSize: '0.72rem', fontWeight: 800, marginBottom: '8px', color: '#1e40af', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Tipo de Jornada / Días</label>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                          {[
+                            { id: 'habiles', label: 'Días hábiles (Lun - Vie)', badge: 'Lun a Vie' },
+                            { id: 'no_habiles', label: 'Días no hábiles (Sáb - Dom)', badge: 'Sáb y Dom' },
+                            { id: 'todos', label: 'Todos los días', badge: 'Completo' }
+                          ].map(t => (
+                            <button
+                              key={t.id}
+                              onClick={() => setIndicadorTipoDia(t.id)}
+                              style={{
+                                width: '100%',
+                                padding: '8px 10px',
+                                fontSize: '0.78rem',
+                                textAlign: 'left',
+                                borderRadius: '8px',
+                                border: indicadorTipoDia === t.id ? '1.5px solid #1e40af' : '1px solid #e2e8f0',
+                                background: indicadorTipoDia === t.id ? '#eff6ff' : 'white',
+                                color: indicadorTipoDia === t.id ? '#1e40af' : '#334155',
+                                fontWeight: indicadorTipoDia === t.id ? 800 : 500,
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'space-between',
+                                transition: 'all 0.15s ease'
+                              }}
+                            >
+                              <span>{t.label}</span>
+                              {indicadorTipoDia === t.id && (
+                                <span style={{ background: '#1e40af', color: 'white', fontSize: '0.65rem', padding: '2px 6px', borderRadius: '6px', fontWeight: 700 }}>Activo</span>
+                              )}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
                       {[
                         { label: 'Pabellón', val: indicadorPabellon, set: setIndicadorPabellon, options: indicadorDropdowns.pabs },
                         { label: 'Estado Cumplimiento (15 min)', val: indicadorCumplimiento, set: setIndicadorCumplimiento, options: indicadorDropdowns.cumplimientos }
@@ -3993,6 +4041,9 @@ export default function SurgicalDashboard({ onBack }) {
                         </span>
                         <span style={{ background: 'rgba(255,255,255,0.2)', padding: '3px 10px', borderRadius: '12px', fontSize: '0.72rem', fontWeight: 700 }}>
                           🏥 Pabellones: {indicadorPabellon.length === 0 ? 'Todos' : indicadorPabellon.map(p => `Pab ${p}`).join(', ')}
+                        </span>
+                        <span style={{ background: indicadorTipoDia === 'habiles' ? 'rgba(16, 185, 129, 0.25)' : indicadorTipoDia === 'no_habiles' ? 'rgba(245, 158, 11, 0.25)' : 'rgba(59, 130, 246, 0.25)', border: '1px solid rgba(255,255,255,0.3)', padding: '3px 10px', borderRadius: '12px', fontSize: '0.72rem', fontWeight: 800 }}>
+                          🗓️ {indicadorTipoDia === 'habiles' ? 'Días Hábiles (Lun a Vie)' : indicadorTipoDia === 'no_habiles' ? 'Días No Hábiles (Fines de Semana)' : 'Todos los Días'}
                         </span>
                         <span style={{ background: 'rgba(239, 68, 68, 0.25)', border: '1px solid rgba(239, 68, 68, 0.4)', color: '#fee2e2', padding: '3px 10px', borderRadius: '12px', fontSize: '0.72rem', fontWeight: 700 }}>
                           ✕ Pabellones 6 (Urgencia) y 7 (Cirugía Menor) excluidos por defecto
