@@ -1,5 +1,6 @@
 import fs from 'fs';
 import path from 'path';
+import zlib from 'zlib';
 import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -99,9 +100,11 @@ async function fetchAndCache(name, token, cacheFileName) {
     };
 
     const cacheFilePath = path.join(cacheDir, cacheFileName);
-    // Minify JSON to optimize file transfer size
-    fs.writeFileSync(cacheFilePath, JSON.stringify(cacheData), 'utf-8');
-    console.log(`[${name}] Saved cache to ${cacheFilePath}`);
+    const jsonStr = JSON.stringify(cacheData);
+    fs.writeFileSync(cacheFilePath, jsonStr, 'utf-8');
+    const gzFilePath = cacheFilePath + '.gz';
+    fs.writeFileSync(gzFilePath, zlib.gzipSync(Buffer.from(jsonStr), { level: 9 }));
+    console.log(`[${name}] Saved cache to ${cacheFilePath} and ${gzFilePath}`);
   } catch (err) {
     console.error(`[${name}] Error caching records:`, err);
   }
@@ -140,9 +143,11 @@ async function fetchAndCacheBasicAuth(name, url, username, password, cacheFileNa
     };
 
     const cacheFilePath = path.join(cacheDir, cacheFileName);
-    // Minify JSON to optimize file transfer size
-    fs.writeFileSync(cacheFilePath, JSON.stringify(cacheData), 'utf-8');
-    console.log(`[${name}] Saved cache to ${cacheFilePath}`);
+    const jsonStr = JSON.stringify(cacheData);
+    fs.writeFileSync(cacheFilePath, jsonStr, 'utf-8');
+    const gzFilePath = cacheFilePath + '.gz';
+    fs.writeFileSync(gzFilePath, zlib.gzipSync(Buffer.from(jsonStr), { level: 9 }));
+    console.log(`[${name}] Saved cache to ${cacheFilePath} and ${gzFilePath}`);
   } catch (err) {
     console.error(`[${name}] Error caching records:`, err);
   }
@@ -183,8 +188,11 @@ async function fetchAndCachePabellonDisponibilidad(name, url, username, password
     };
 
     const cacheFilePath = path.join(cacheDir, cacheFileName);
-    fs.writeFileSync(cacheFilePath, JSON.stringify(cacheData), 'utf-8');
-    console.log(`[${name}] Saved cache to ${cacheFilePath}`);
+    const jsonStr = JSON.stringify(cacheData);
+    fs.writeFileSync(cacheFilePath, jsonStr, 'utf-8');
+    const gzFilePath = cacheFilePath + '.gz';
+    fs.writeFileSync(gzFilePath, zlib.gzipSync(Buffer.from(jsonStr), { level: 9 }));
+    console.log(`[${name}] Saved cache to ${cacheFilePath} and ${gzFilePath}`);
   } catch (err) {
     console.error(`[${name}] Error caching records:`, err);
   }

@@ -1,5 +1,6 @@
 import fs from 'fs';
 import path from 'path';
+import zlib from 'zlib';
 import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -231,8 +232,11 @@ function run() {
     records: mergedRecords
   };
   
-  fs.writeFileSync(jsonOutputPath, JSON.stringify(outputData, null, 2), 'utf-8');
-  console.log(`Saved clean cache to ${jsonOutputPath}`);
+  const jsonStr = JSON.stringify(outputData);
+  fs.writeFileSync(jsonOutputPath, jsonStr, 'utf-8');
+  const gzPath = jsonOutputPath + '.gz';
+  fs.writeFileSync(gzPath, zlib.gzipSync(Buffer.from(jsonStr), { level: 9 }));
+  console.log(`Saved clean cache to ${jsonOutputPath} and ${gzPath}`);
 }
 
 run();
