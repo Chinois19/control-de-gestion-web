@@ -7,7 +7,7 @@ import {
 import {
   ComposedChart, Line, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer,
   PieChart as RechartsPieChart, Pie, Cell, LabelList, Label, ReferenceLine,
-  Treemap, AreaChart, Area, BarChart
+  Treemap, AreaChart, Area, BarChart, LineChart
 } from 'recharts';
 
 const COLORS = ['#1e40af', '#DF6D05', '#F2A400', '#38bdf8', '#EAE6E1', '#1e3a8a', '#a65103', '#b37800', '#60a5fa'];
@@ -2865,6 +2865,8 @@ export default function SurgicalDashboard({ onBack }) {
     const noCumplen = totalCasos - cumplen;
     const pctCumplimiento = totalCasos > 0 ? ((cumplen / totalCasos) * 100).toFixed(1) : '0.0';
     const promRetraso = totalCasos > 0 ? (totalMinutos / totalCasos).toFixed(1) : '0.0';
+    const totalDiferenciaReal = casos.reduce((acc, c) => acc + Math.max(0, c.diferencia), 0);
+    const promTiempoInicio = totalCasos > 0 ? (totalDiferenciaReal / totalCasos).toFixed(1) : '0.0';
 
     // Agrupación mensual
     const monthNames = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
@@ -2879,13 +2881,15 @@ export default function SurgicalDashboard({ onBack }) {
           totalCasos: 0,
           cumplen: 0,
           noCumplen: 0,
-          minutosRetraso: 0
+          minutosRetraso: 0,
+          minutosInicioReal: 0
         };
       }
       monthlyMap[mKey].totalCasos++;
       if (c.cumpleNorma) monthlyMap[mKey].cumplen++;
       else monthlyMap[mKey].noCumplen++;
       monthlyMap[mKey].minutosRetraso += c.retrasoMinutos;
+      monthlyMap[mKey].minutosInicioReal += Math.max(0, c.diferencia);
     });
 
     const monthlyTrend = Object.values(monthlyMap)
@@ -2893,7 +2897,8 @@ export default function SurgicalDashboard({ onBack }) {
       .map(m => ({
         ...m,
         pctCumplimiento: m.totalCasos > 0 ? parseFloat(((m.cumplen / m.totalCasos) * 100).toFixed(1)) : 0,
-        promRetrasoMin: m.totalCasos > 0 ? parseFloat((m.minutosRetraso / m.totalCasos).toFixed(1)) : 0
+        promRetrasoMin: m.totalCasos > 0 ? parseFloat((m.minutosRetraso / m.totalCasos).toFixed(1)) : 0,
+        promTiempoInicioMin: m.totalCasos > 0 ? parseFloat((m.minutosInicioReal / m.totalCasos).toFixed(1)) : 0
       }));
 
     // Agrupación por Pabellón
@@ -2932,6 +2937,7 @@ export default function SurgicalDashboard({ onBack }) {
       noCumplenNorma15m: noCumplen,
       pctCumplimientoNorma: `${pctCumplimiento}%`,
       promedioRetrasoMinutos: promRetraso,
+      promedioTiempoInicioMin: promTiempoInicio,
       monthlyTrend,
       pabellonStats,
       casosDetalle: casos
@@ -4154,17 +4160,17 @@ export default function SurgicalDashboard({ onBack }) {
                         </p>
                       </div>
 
-                      {/* Promedio Minutos Retraso */}
-                      <div style={{ background: 'white', padding: '24px', borderRadius: '20px', border: '1px solid #e2e8f0', borderLeft: '6px solid #f59e0b', boxShadow: '0 4px 15px rgba(0,0,0,0.03)' }}>
+                      {/* Promedio Minutos Inicio Cirugía */}
+                      <div style={{ background: 'white', padding: '24px', borderRadius: '20px', border: '1px solid #e2e8f0', borderLeft: '6px solid #4f46e5', boxShadow: '0 4px 15px rgba(0,0,0,0.03)' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                          <p style={{ margin: 0, fontSize: '0.75rem', color: '#64748b', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Promedio de Demora</p>
-                          <Clock size={16} color="#f59e0b" />
+                          <p style={{ margin: 0, fontSize: '0.75rem', color: '#64748b', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Tiempo Promedio de Inicio</p>
+                          <Clock size={16} color="#4f46e5" />
                         </div>
                         <h2 style={{ margin: '10px 0 4px 0', fontSize: '2.4rem', color: '#0f172a', fontWeight: 900 }}>
-                          {indicadoresGestionData.promedioRetrasoMinutos} <span style={{ fontSize: '1rem', fontWeight: 700, color: '#64748b' }}>min / pabellón</span>
+                          {indicadoresGestionData.promedioTiempoInicioMin} <span style={{ fontSize: '1rem', fontWeight: 700, color: '#64748b' }}>min</span>
                         </h2>
                         <p style={{ margin: 0, fontSize: '0.85rem', color: '#64748b', fontWeight: 600 }}>
-                          Tiempo medio de ingreso respecto a hora de apertura
+                          Demora neta sobre norma: <strong style={{ color: '#f59e0b' }}>{indicadoresGestionData.promedioRetrasoMinutos} min / pab</strong>
                         </p>
                       </div>
 
@@ -4180,6 +4186,79 @@ export default function SurgicalDashboard({ onBack }) {
                         <p style={{ margin: 0, fontSize: '0.85rem', color: '#ef4444', fontWeight: 600 }}>
                           <strong style={{ color: '#ef4444' }}>{indicadoresGestionData.noCumplenNorma15m}</strong> iniciaron con más de 15 min de retraso
                         </p>
+                      </div>
+                    </div>
+
+                    {/* GRÁFICO DESTACADO: TIEMPO PROMEDIO DE INICIO DE CIRUGÍA (LÍNEAS MENSUALES) */}
+                    <div style={{ background: 'white', padding: '26px', borderRadius: '20px', border: '1px solid #e2e8f0', boxShadow: '0 4px 20px rgba(0,0,0,0.03)', marginBottom: '24px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '16px', marginBottom: '20px' }}>
+                        <div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                            <div style={{ width: '38px', height: '38px', borderRadius: '12px', background: 'linear-gradient(135deg, #4f46e5, #6366f1)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 12px rgba(79,70,229,0.3)' }}>
+                              <Clock size={20} color="white" />
+                            </div>
+                            <div>
+                              <h3 style={{ margin: 0, fontSize: '1.25rem', color: '#0f172a', fontWeight: 800 }}>
+                                Tiempo Promedio de Inicio de Cirugía (Minutos) — Evolución Mensual
+                              </h3>
+                              <p style={{ margin: '4px 0 0 0', fontSize: '0.85rem', color: '#64748b' }}>
+                                Tiempo medio transcurrido desde la habilitación del quirófano hasta el ingreso/inicio del primer paciente por mes en lo que va del año
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                        <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
+                          <div style={{ background: '#f8fafc', padding: '8px 16px', borderRadius: '12px', border: '1px solid #e2e8f0', textAlign: 'right' }}>
+                            <span style={{ fontSize: '0.7rem', color: '#64748b', fontWeight: 700, textTransform: 'uppercase', display: 'block' }}>Promedio Global</span>
+                            <span style={{ fontSize: '1.2rem', color: '#0f172a', fontWeight: 900 }}>{indicadoresGestionData.promedioTiempoInicioMin} min</span>
+                          </div>
+                          <div style={{ background: '#ecfdf5', padding: '8px 16px', borderRadius: '12px', border: '1.5px solid #a7f3d0', textAlign: 'right' }}>
+                            <span style={{ fontSize: '0.7rem', color: '#047857', fontWeight: 700, textTransform: 'uppercase', display: 'block' }}>Tolerancia Estándar</span>
+                            <span style={{ fontSize: '1.2rem', color: '#059669', fontWeight: 900 }}>≤ 15 min</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div style={{ height: '340px', width: '100%' }}>
+                        <ResponsiveContainer width="100%" height="100%">
+                          <LineChart data={indicadoresGestionData.monthlyTrend} margin={{ top: 24, right: 30, left: 10, bottom: 10 }}>
+                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                            <XAxis dataKey="mes" tick={{ fill: '#64748b', fontSize: 12, fontWeight: 600 }} tickLine={false} />
+                            <YAxis tick={{ fill: '#64748b', fontSize: 12 }} unit=" min" domain={[0, 'auto']} tickLine={false} />
+                            <RechartsTooltip
+                              formatter={(val, name) => [
+                                `${val} min`,
+                                name
+                              ]}
+                              labelFormatter={(label) => `Mes: ${label}`}
+                              contentStyle={{ borderRadius: '14px', border: '1px solid #e2e8f0', boxShadow: '0 10px 25px rgba(0,0,0,0.08)', fontWeight: 600 }}
+                            />
+                            <Legend wrapperStyle={{ fontSize: '0.82rem', paddingTop: '12px' }} />
+                            <ReferenceLine y={15} stroke="#10b981" strokeDasharray="4 4" strokeWidth={2}>
+                              <Label value="Tolerancia Estándar (15 min)" position="insideTopLeft" fill="#059669" fontSize={11} fontWeight={700} />
+                            </ReferenceLine>
+                            <Line
+                              type="monotone"
+                              dataKey="promTiempoInicioMin"
+                              name="Tiempo Promedio de Inicio (minutos)"
+                              stroke="#4f46e5"
+                              strokeWidth={3.5}
+                              activeDot={{ r: 8, stroke: '#4f46e5', strokeWidth: 2, fill: 'white' }}
+                              dot={{ r: 5, fill: '#4f46e5', stroke: 'white', strokeWidth: 2 }}
+                            >
+                              <LabelList dataKey="promTiempoInicioMin" position="top" offset={10} fill="#4f46e5" fontSize={11} fontWeight={700} formatter={(v) => `${v}m`} />
+                            </Line>
+                            <Line
+                              type="monotone"
+                              dataKey="promRetrasoMin"
+                              name="Demora Neta Excedente (>15 min)"
+                              stroke="#f59e0b"
+                              strokeWidth={2}
+                              strokeDasharray="4 4"
+                              dot={{ r: 4, fill: '#f59e0b' }}
+                            />
+                          </LineChart>
+                        </ResponsiveContainer>
                       </div>
                     </div>
 
