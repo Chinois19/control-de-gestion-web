@@ -73,7 +73,10 @@ rawData.forEach(row => {
   });
 });
 
-const jsonStr = JSON.stringify({ records: cleanedData });
+const jsonStr = JSON.stringify({
+  lastUpdated: new Date().toISOString(),
+  records: cleanedData
+});
 fs.writeFileSync(OUTPUT_PATH, jsonStr, 'utf8');
 
 try {

@@ -2349,6 +2349,9 @@ export default function SurgicalDashboard({ onBack }) {
   const [tablaAnestesista, setTablaAnestesista] = useState([]);
   const [tablaPabellon, setTablaPabellon] = useState([]);
   const [tablaModalidad, setTablaModalidad] = useState([]);
+  const [tablaLastUpdated, setTablaLastUpdated] = useState(null);
+  const [dispLastUpdated, setDispLastUpdated] = useState(null);
+  const [libroLastUpdated, setLibroLastUpdated] = useState(null);
 
   // Insumos y Costeo state
   const [insumosData, setInsumosData] = useState([]);
@@ -2455,9 +2458,12 @@ export default function SurgicalDashboard({ onBack }) {
         }));
 
         setTablaData(tablaJson.records || []);
+        setTablaLastUpdated(tablaJson.lastUpdated || null);
         setDisponibilidadData(dispJson.records || []);
+        setDispLastUpdated(dispJson.lastUpdated || dispJson.fecha_actualizacion_fuente || null);
         setRawDataLibro(normalizedLibro);
         setLibroData(normalizedLibro);
+        setLibroLastUpdated(libroJson.lastUpdated || null);
         setGrdData(grdJson || []);
       } catch (err) {
         console.error("Error loading surgical data:", err);
@@ -3273,6 +3279,45 @@ export default function SurgicalDashboard({ onBack }) {
     );
   };
 
+  const currentTabUpdatedDate = useMemo(() => {
+    let rawDate = null;
+    let label = '';
+
+    if (activeTab === 'libro') {
+      rawDate = libroLastUpdated;
+      label = 'Libro Electrónico';
+    } else if (activeTab === 'tabla') {
+      rawDate = tablaLastUpdated;
+      label = 'Programación de Tabla';
+    } else if (activeTab === 'disponibilidad') {
+      rawDate = dispLastUpdated || tablaLastUpdated;
+      label = 'Indicadores de Gestión';
+    } else if (activeTab === 'insumos') {
+      rawDate = insumosLastUpdated;
+      label = 'Insumos y Costeo';
+    }
+
+    if (!rawDate) {
+      rawDate = tablaLastUpdated || dispLastUpdated || libroLastUpdated || insumosLastUpdated;
+      label = 'Base Quirúrgica';
+    }
+
+    if (!rawDate) return null;
+
+    const d = new Date(rawDate);
+    const formatted = !isNaN(d.getTime())
+      ? d.toLocaleString('es-CL', {
+          day: '2-digit',
+          month: '2-digit',
+          year: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit'
+        })
+      : String(rawDate);
+
+    return { formatted, label };
+  }, [activeTab, tablaLastUpdated, dispLastUpdated, libroLastUpdated, insumosLastUpdated]);
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', background: '#F4F4F4' }}>
       {/* HEADER */}
@@ -3282,7 +3327,27 @@ export default function SurgicalDashboard({ onBack }) {
             <ArrowLeft size={16} /> Volver al Portal General
           </button>
           <h1 style={{ fontSize: '2.2rem', color: '#1e293b', margin: 0, fontWeight: 800 }}>Panel de Producción Quirúrgica</h1>
-          <p style={{ color: '#64748b', fontSize: '1.1rem', margin: '8px 0 0 0' }}>Estadísticas de Producción General y Libro Electrónico</p>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginTop: '8px', flexWrap: 'wrap' }}>
+            <p style={{ color: '#64748b', fontSize: '1.05rem', margin: 0 }}>Estadísticas de Producción General y Libro Electrónico</p>
+            {currentTabUpdatedDate && (
+              <span style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '7px',
+                padding: '4px 14px',
+                borderRadius: '999px',
+                background: '#ecfdf5',
+                color: '#065f46',
+                border: '1.5px solid #a7f3d0',
+                fontSize: '0.82rem',
+                fontWeight: 700,
+                boxShadow: '0 2px 6px rgba(16,185,129,0.1)'
+              }}>
+                <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#10b981', display: 'inline-block' }}></span>
+                Actualizado: {currentTabUpdatedDate.formatted} ({currentTabUpdatedDate.label})
+              </span>
+            )}
+          </div>
         </div>
 
         {/* TABS (Dark Longitudinal Menu) */}
