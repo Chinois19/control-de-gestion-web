@@ -41,6 +41,10 @@ echo [9/10] Obteniendo Consultas de Urgencia desde ODBC...
 node fetch-urgencia.cjs
 if %errorlevel% neq 0 echo Error en fetch-urgencia.cjs
 
+echo [9b/11] Obteniendo Tiempos de Espera C2 de Urgencia desde ODBC...
+node extract_urgencia_tiempos.cjs
+if %errorlevel% neq 0 echo Error en extract_urgencia_tiempos.cjs
+
 echo [10/11] Obteniendo Lista de Espera desde ODBC...
 node fetch-lista-espera.cjs
 if %errorlevel% neq 0 echo Error en fetch-lista-espera.cjs
@@ -59,13 +63,11 @@ git push
 
 echo.
 echo ===================================================
-echo   COMPILANDO Y DESPLEGANDO A CLOUDFLARE Y VERCEL...
+echo   COMPILANDO Y DESPLEGANDO A CLOUDFLARE...
 echo ===================================================
 call npm run build
-echo [1/2] Desplegando en Cloudflare Workers...
+echo Desplegando en Cloudflare Workers...
 call npx wrangler deploy
-echo [2/2] Desplegando en Vercel...
-call npx vercel --prod --yes
 
 echo ===================================================
 echo   ACTUALIZACION FINALIZADA CON EXITO
