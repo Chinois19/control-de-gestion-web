@@ -45,6 +45,10 @@ echo [9b/11] Obteniendo Tiempos de Espera C2 de Urgencia desde ODBC...
 node extract_urgencia_tiempos.cjs
 if %errorlevel% neq 0 echo Error en extract_urgencia_tiempos.cjs
 
+echo [9c/11] Obteniendo Insumos y Costeo Quirurgico...
+node fetch-insumos.cjs
+if %errorlevel% neq 0 echo Error en fetch-insumos.cjs
+
 echo [10/11] Obteniendo Lista de Espera desde ODBC...
 node fetch-lista-espera.cjs
 if %errorlevel% neq 0 echo Error en fetch-lista-espera.cjs

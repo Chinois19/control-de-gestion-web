@@ -1518,6 +1518,7 @@ function InsumosCosteoDashboard({
   rawDataLibro,
   insumosData,
   insumosLoading,
+  insumosLastUpdated,
   insumosError
 }) {
   // Filter states
@@ -1893,6 +1894,11 @@ function InsumosCosteoDashboard({
         </h2>
         <p style={S.subtitle}>
           Visualización descriptiva de costos de insumos por especialidad, cirujano y procedimiento · {enrichedData.length.toLocaleString('es-CL')} registros totales cargados
+          {insumosLastUpdated && (
+            <span style={{ marginLeft: 10, padding: '3px 10px', borderRadius: '999px', background: '#d1fae5', color: '#047857', fontWeight: 700, fontSize: '0.78rem', whiteSpace: 'nowrap' }}>
+              Última actualización: {new Date(insumosLastUpdated).toLocaleString('es-CL', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+            </span>
+          )}
         </p>
       </div>
 
@@ -2348,6 +2354,7 @@ export default function SurgicalDashboard({ onBack }) {
   const [insumosData, setInsumosData] = useState([]);
   const [insumosLoading, setInsumosLoading] = useState(false);
   const [insumosError, setInsumosError] = useState(null);
+  const [insumosLastUpdated, setInsumosLastUpdated] = useState(null);
   const [insumosEspecialidad, setInsumosEspecialidad] = useState([]);
   const [insumosSearch, setInsumosSearch] = useState('');
   const [insumosDrillOpen, setInsumosDrillOpen] = useState(new Set());
@@ -2475,8 +2482,9 @@ export default function SurgicalDashboard({ onBack }) {
           const localJson = await localRes.json();
           const arr = Array.isArray(localJson)
             ? localJson
-            : (localJson.insumos_cirugias || localJson.data || []);
+            : (localJson.records || localJson.insumos_cirugias || localJson.data || []);
           setInsumosData(arr);
+          setInsumosLastUpdated(localJson.lastUpdated || null);
           return;
         }
         // Fallback: fetch directly from pythonanywhere API
@@ -4189,6 +4197,7 @@ export default function SurgicalDashboard({ onBack }) {
           rawDataLibro={rawDataLibro}
           insumosData={insumosData}
           insumosLoading={insumosLoading}
+          insumosLastUpdated={insumosLastUpdated}
           insumosError={insumosError}
           insumosEspecialidad={insumosEspecialidad}
           setInsumosEspecialidad={setInsumosEspecialidad}
