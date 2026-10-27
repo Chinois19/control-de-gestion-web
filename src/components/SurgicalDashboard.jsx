@@ -10,6 +10,9 @@ import {
   Treemap, AreaChart, Area, BarChart, LineChart
 } from 'recharts';
 
+import TablaCausasSuspensionColapsable, { resolverGranCausa } from './TablaCausasSuspensionColapsable';
+import TablaEspecialidadesSuspensionColapsable from './TablaEspecialidadesSuspensionColapsable';
+
 const COLORS = ['#1e40af', '#DF6D05', '#F2A400', '#38bdf8', '#EAE6E1', '#1e3a8a', '#a65103', '#b37800', '#60a5fa'];
 const PIE_COLORS = {
   'Cirugía Mayor': '#1e40af',
@@ -2336,7 +2339,12 @@ export default function SurgicalDashboard({ onBack }) {
   const [segundoCirujano, setSegundoCirujano] = useState([]);
   const [anestesiologo, setAnestesiologo] = useState([]);
   const [reintervencion, setReintervencion] = useState([]);
+  const [libroPabellonTabla, setLibroPabellonTabla] = useState([]);
+  const [libroPabellonCrr, setLibroPabellonCrr] = useState([]);
   const [pieMode, setPieMode] = useState('cirugia');
+  const [viewMode, setViewMode] = useState('cirugias'); // 'cirugias' | 'pacientes'
+  const [showPivotTable, setShowPivotTable] = useState(false);
+  const [showAuditoriaModal, setShowAuditoriaModal] = useState(false);
 
   // Sidebar Filters for Tabla
   const [tablaFechaProg, setTablaFechaProg] = useState([]);
@@ -2349,6 +2357,8 @@ export default function SurgicalDashboard({ onBack }) {
   const [tablaAnestesista, setTablaAnestesista] = useState([]);
   const [tablaPabellon, setTablaPabellon] = useState([]);
   const [tablaModalidad, setTablaModalidad] = useState([]);
+  const [tablaCausaSuspension, setTablaCausaSuspension] = useState([]);
+  const [tablaMotivoSuspension, setTablaMotivoSuspension] = useState([]);
   const [tablaLastUpdated, setTablaLastUpdated] = useState(null);
   const [dispLastUpdated, setDispLastUpdated] = useState(null);
   const [libroLastUpdated, setLibroLastUpdated] = useState(null);
@@ -2376,10 +2386,10 @@ export default function SurgicalDashboard({ onBack }) {
 
   const activeFilterCount = useMemo(() => {
     if (activeTab === 'libro') {
-      return [tipoCirugia, tipoPaciente, procedencia, tipoGestor, formaPago, nombreIq, primerCirujano, segundoCirujano, anestesiologo, reintervencion]
+      return [tipoCirugia, tipoPaciente, procedencia, tipoGestor, formaPago, nombreIq, primerCirujano, segundoCirujano, anestesiologo, reintervencion, libroPabellonTabla, libroPabellonCrr]
         .filter(arr => Array.isArray(arr) && arr.length > 0).length;
     } else if (activeTab === 'tabla') {
-      return [tablaFechaProg, tablaTipoCirugia, tablaTipoPaciente, tablaPriorizacion, tablaPabellonCrr, tablaIntervencion, tablaCirujano, tablaAnestesista, tablaPabellon, tablaModalidad]
+      return [tablaFechaProg, tablaTipoCirugia, tablaTipoPaciente, tablaPriorizacion, tablaPabellonCrr, tablaIntervencion, tablaCirujano, tablaAnestesista, tablaPabellon, tablaModalidad, tablaCausaSuspension, tablaMotivoSuspension]
         .filter(arr => Array.isArray(arr) && arr.length > 0).length;
     } else if (activeTab === 'disponibilidad') {
       let count = 0;
@@ -2391,15 +2401,17 @@ export default function SurgicalDashboard({ onBack }) {
       return count;
     }
     return 0;
-  }, [activeTab, tipoCirugia, tipoPaciente, procedencia, tipoGestor, formaPago, nombreIq, primerCirujano, segundoCirujano, anestesiologo, reintervencion, tablaFechaProg, tablaTipoCirugia, tablaTipoPaciente, tablaPriorizacion, tablaPabellonCrr, tablaIntervencion, tablaCirujano, tablaAnestesista, tablaPabellon, tablaModalidad, dateRangeIndicadores, indicadorPabellon, indicadorCumplimiento, indicadorTipoDia, indicadorSearch]);
+  }, [activeTab, tipoCirugia, tipoPaciente, procedencia, tipoGestor, formaPago, nombreIq, primerCirujano, segundoCirujano, anestesiologo, reintervencion, libroPabellonTabla, libroPabellonCrr, tablaFechaProg, tablaTipoCirugia, tablaTipoPaciente, tablaPriorizacion, tablaPabellonCrr, tablaIntervencion, tablaCirujano, tablaAnestesista, tablaPabellon, tablaModalidad, tablaCausaSuspension, tablaMotivoSuspension, dateRangeIndicadores, indicadorPabellon, indicadorCumplimiento, indicadorTipoDia, indicadorSearch]);
 
   const clearAllFilters = () => {
     if (activeTab === 'libro') {
       setTipoCirugia([]); setTipoPaciente([]); setProcedencia([]); setTipoGestor([]); setFormaPago([]);
       setNombreIq([]); setPrimerCirujano([]); setSegundoCirujano([]); setAnestesiologo([]); setReintervencion([]);
+      setLibroPabellonTabla([]); setLibroPabellonCrr([]);
     } else if (activeTab === 'tabla') {
       setTablaFechaProg([]); setTablaTipoCirugia([]); setTablaTipoPaciente([]); setTablaPriorizacion([]); setTablaPabellonCrr([]);
       setTablaIntervencion([]); setTablaCirujano([]); setTablaAnestesista([]); setTablaPabellon([]); setTablaModalidad([]);
+      setTablaCausaSuspension([]); setTablaMotivoSuspension([]);
     } else if (activeTab === 'disponibilidad') {
       setDateRangeIndicadores({ start: '2026-01-01', end: '2026-12-31' });
       setIndicadorPabellon(['1', '2', '3', '4', '5']);
@@ -2444,18 +2456,118 @@ export default function SurgicalDashboard({ onBack }) {
         const normalizeDate = (dStr) => {
           if (!dStr) return null;
           if (/^\d{4}-\d{2}-\d{2}/.test(dStr)) return dStr.substring(0, 10);
-          const d = new Date(dStr);
-          if (isNaN(d.getTime())) return null;
-          const y = d.getFullYear();
-          const m = String(d.getMonth() + 1).padStart(2, '0');
-          const day = String(d.getDate()).padStart(2, '0');
+          const parts = String(dStr).trim().split('/');
+          if (parts.length === 3) {
+            let [m, d, y] = parts;
+            if (y.length === 2) y = '20' + y;
+            return `${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}`;
+          }
+          const dt = new Date(dStr);
+          if (isNaN(dt.getTime())) return null;
+          const y = dt.getFullYear();
+          const m = String(dt.getMonth() + 1).padStart(2, '0');
+          const day = String(dt.getDate()).padStart(2, '0');
           return `${y}-${m}-${day}`;
         };
 
-        const normalizedLibro = (libroJson.records || []).map(r => ({
-          ...r,
-          fecha_cirugia: normalizeDate(r.fecha_cirugia)
-        }));
+        // Clean RUT helper for matching
+        const cleanRut = (r) => String(r || '').replace(/[^0-9kK]/g, '').toUpperCase();
+        const getRutBody = (r) => {
+          const c = cleanRut(r);
+          return c.length > 1 ? c.slice(0, -1) : c;
+        };
+        const cleanStr = (s) => String(s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]/g, '');
+
+        // Build lookup index from tablaData
+        const tablaByLeFecha = new Map();
+        const tablaByRutFecha = new Map();
+        const tablaByRutBodyFecha = new Map();
+        const tablaByLe = new Map();
+        const tablaByRutList = new Map();
+        const tablaByDate = new Map();
+
+        (tablaJson.records || []).forEach(t => {
+          if (t.eliminada === true || t.eliminada === 'true') return;
+          const le = String(t.id_lista_espera || '').trim();
+          const f = (t.fecha_programacion || '').substring(0, 10);
+          const r = cleanRut(t.rut);
+          const rBody = getRutBody(t.rut);
+
+          if (le && le !== '0' && le !== 'null' && le !== 'undefined') {
+            if (f) tablaByLeFecha.set(le + '_' + f, t);
+            if (!tablaByLe.has(le)) tablaByLe.set(le, t);
+          }
+          if (r && f) {
+            tablaByRutFecha.set(r + '_' + f, t);
+          }
+          if (rBody && f && rBody.length >= 6) {
+            tablaByRutBodyFecha.set(rBody + '_' + f, t);
+          }
+          if (r && r.length >= 6) {
+            if (!tablaByRutList.has(r)) tablaByRutList.set(r, []);
+            tablaByRutList.get(r).push(t);
+          }
+          if (f) {
+            if (!tablaByDate.has(f)) tablaByDate.set(f, []);
+            tablaByDate.get(f).push(t);
+          }
+        });
+
+        const normalizedLibro = (libroJson.records || []).map(r => {
+          const fNorm = normalizeDate(r.fecha_cirugia);
+          const le = String(r.num_le || '').trim();
+          const rClean = cleanRut(r._rut_raw || r.rut);
+          const rBody = getRutBody(r._rut_raw || r.rut);
+
+          let match = null;
+          // Estrategia 1: ID Lista de Espera + Fecha
+          if (le && fNorm && tablaByLeFecha.has(le + '_' + fNorm)) {
+            match = tablaByLeFecha.get(le + '_' + fNorm);
+          // Estrategia 2: RUT Exacto + Fecha
+          } else if (rClean && fNorm && tablaByRutFecha.has(rClean + '_' + fNorm)) {
+            match = tablaByRutFecha.get(rClean + '_' + fNorm);
+          // Estrategia 3: Cuerpo del RUT (ignora errores de dígito verificador) + Fecha
+          } else if (rBody && fNorm && tablaByRutBodyFecha.has(rBody + '_' + fNorm)) {
+            match = tablaByRutBodyFecha.get(rBody + '_' + fNorm);
+          // Estrategia 4: Emparejamiento Clínico Independiente de LE: RUT + ventana temporal (+/- 7 días de reprogramación)
+          } else if (rClean && rClean.length >= 6 && fNorm && tablaByRutList.has(rClean)) {
+            const cands = tablaByRutList.get(rClean);
+            const near = cands.find(c => {
+              const cf = (c.fecha_programacion || '').substring(0, 10);
+              return Math.abs(new Date(cf) - new Date(fNorm)) <= 7 * 86400000;
+            });
+            if (near) match = near;
+          // Estrategia 5: ID Lista de Espera transversal
+          } else if (le && tablaByLe.has(le)) {
+            match = tablaByLe.get(le);
+          // Estrategia 6: Coincidencia fonética/apellidos en la misma fecha (corrige errores tipográficos de digitación en Tabla)
+          } else if (fNorm && tablaByDate.has(fNorm)) {
+            const lName = cleanStr(r.paciente);
+            const candidates = tablaByDate.get(fNorm);
+            for (const c of candidates) {
+              const cPat = cleanStr(c.apellido_paterno);
+              const cMat = cleanStr(c.apellido_materno);
+              if (cPat && cPat.length >= 4 && lName.includes(cPat)) {
+                if (!cMat || cMat.length < 4 || lName.includes(cMat)) {
+                  match = c;
+                  break;
+                }
+              }
+            }
+          }
+
+          const pabellonTabla = match ? String(match.pabellon || '').trim() : 'Fuera de Pabellón Central';
+          const pabellonCrr = match
+            ? (match.pabellon_crr === 'Si' ? 'CRR' : (match.pabellon_crr === 'No' ? 'No CRR' : 'Sin Clasificar'))
+            : 'Fuera de Pabellón Central';
+
+          return {
+            ...r,
+            fecha_cirugia: fNorm,
+            pabellon_tabla: pabellonTabla,
+            pabellon_crr: pabellonCrr
+          };
+        });
 
         setTablaData(tablaJson.records || []);
         setTablaLastUpdated(tablaJson.lastUpdated || null);
@@ -2546,6 +2658,8 @@ export default function SurgicalDashboard({ onBack }) {
     const ciru2 = new Set();
     const anestes = new Set();
     const reints = new Set();
+    const pabTabla = new Set();
+    const crrSet = new Set();
 
     rawDataLibro.forEach(r => {
       if (r.tipo_cirugia) tipos.add(r.tipo_cirugia);
@@ -2558,6 +2672,18 @@ export default function SurgicalDashboard({ onBack }) {
       if (r.segundo_cirujano) ciru2.add(r.segundo_cirujano);
       if (r.anestesiologo) anestes.add(r.anestesiologo);
       if (r.reintervencion_no_prog) reints.add(r.reintervencion_no_prog);
+      if (r.pabellon_tabla) pabTabla.add(r.pabellon_tabla);
+      if (r.pabellon_crr) crrSet.add(r.pabellon_crr);
+    });
+
+    const customPabOrder = ['1', '2', '3', '4', '5', '6', '7', 'Fuera de Pabellón Central'];
+    const sortedPabs = Array.from(pabTabla).sort((a, b) => {
+      const idxA = customPabOrder.indexOf(a);
+      const idxB = customPabOrder.indexOf(b);
+      if (idxA !== -1 && idxB !== -1) return idxA - idxB;
+      if (idxA !== -1) return -1;
+      if (idxB !== -1) return 1;
+      return a.localeCompare(b);
     });
 
     return {
@@ -2570,7 +2696,9 @@ export default function SurgicalDashboard({ onBack }) {
       ciru1: Array.from(ciru1).sort(),
       cirus2: Array.from(ciru2).sort().filter(Boolean),
       anestes: Array.from(anestes).sort().filter(Boolean),
-      reints: Array.from(reints).sort().filter(Boolean)
+      reints: Array.from(reints).sort().filter(Boolean),
+      pabellonesTabla: sortedPabs,
+      crrOptions: Array.from(crrSet).sort()
     };
   }, [rawDataLibro]);
 
@@ -2585,6 +2713,8 @@ export default function SurgicalDashboard({ onBack }) {
     const anestesistas = new Set();
     const pabs = new Set();
     const mods = new Set();
+    const causas = new Set();
+    const motivos = new Set();
 
     tablaData.forEach(r => {
       if (r.fecha_programacion) fechas.add(r.fecha_programacion.split('-')[0]);
@@ -2598,6 +2728,17 @@ export default function SurgicalDashboard({ onBack }) {
       if (ane && ane !== '0' && ane !== '.') anestesistas.add(ane);
       if (r.pabellon) pabs.add(String(r.pabellon));
       if (r.modalidad) mods.add(r.modalidad);
+
+      if (r.estado === 'Suspendido' || r.motivo_suspension || r.causa_suspension) {
+        const gc = resolverGranCausa(r.causa_suspension, r.motivo_suspension);
+        if (gc) causas.add(gc);
+        const mot = (r.motivo_suspension || '').trim();
+        if (mot) {
+          if (tablaCausaSuspension.length === 0 || tablaCausaSuspension.includes(gc)) {
+            motivos.add(mot);
+          }
+        }
+      }
     });
 
     return {
@@ -2611,8 +2752,10 @@ export default function SurgicalDashboard({ onBack }) {
       anestesistas: Array.from(anestesistas).sort().filter(Boolean),
       pabs: Array.from(pabs).sort((a, b) => a.localeCompare(b)).filter(Boolean),
       mods: Array.from(mods).sort().filter(Boolean),
+      causas: Array.from(causas).sort().filter(Boolean),
+      motivos: Array.from(motivos).sort().filter(Boolean),
     };
-  }, [tablaData]);
+  }, [tablaData, tablaCausaSuspension]);
 
   // Dropdowns for Indicadores de Gestión
   const indicadorDropdowns = useMemo(() => {
@@ -2656,10 +2799,18 @@ export default function SurgicalDashboard({ onBack }) {
       if (tablaAnestesista.length > 0 && !tablaAnestesista.includes(ane)) return false;
       if (tablaPabellon.length > 0 && !tablaPabellon.includes(String(r.pabellon))) return false;
       if (tablaModalidad.length > 0 && !tablaModalidad.includes(r.modalidad)) return false;
+      if (tablaCausaSuspension.length > 0) {
+        const gc = resolverGranCausa(r.causa_suspension, r.motivo_suspension);
+        if (!tablaCausaSuspension.includes(gc)) return false;
+      }
+      if (tablaMotivoSuspension.length > 0) {
+        const mot = (r.motivo_suspension || '').trim();
+        if (!tablaMotivoSuspension.includes(mot)) return false;
+      }
 
       return true;
     });
-  }, [tablaData, dateRange, tablaFechaProg, tablaTipoCirugia, tablaTipoPaciente, tablaPriorizacion, tablaPabellonCrr, tablaIntervencion, tablaCirujano, tablaAnestesista, tablaPabellon, tablaModalidad]);
+  }, [tablaData, dateRange, tablaFechaProg, tablaTipoCirugia, tablaTipoPaciente, tablaPriorizacion, tablaPabellonCrr, tablaIntervencion, tablaCirujano, tablaAnestesista, tablaPabellon, tablaModalidad, tablaCausaSuspension, tablaMotivoSuspension]);
 
   // Compute stats and YoY for Tabla
   const getTablaYoYStats = (key) => {
@@ -3053,15 +3204,45 @@ export default function SurgicalDashboard({ onBack }) {
       if (segundoCirujano.length > 0 && !segundoCirujano.includes(r.segundo_cirujano)) return false;
       if (anestesiologo.length > 0 && !anestesiologo.includes(r.anestesiologo)) return false;
       if (reintervencion.length > 0 && !reintervencion.includes(r.reintervencion_no_prog)) return false;
+      if (libroPabellonTabla.length > 0 && !libroPabellonTabla.includes(r.pabellon_tabla)) return false;
+      if (libroPabellonCrr.length > 0 && !libroPabellonCrr.includes(r.pabellon_crr)) return false;
 
       return true;
     });
-  }, [rawDataLibro, dateRange, tipoCirugia, tipoPaciente, procedencia, tipoGestor, formaPago, nombreIq, primerCirujano, segundoCirujano, anestesiologo, reintervencion]);
+  }, [rawDataLibro, dateRange, tipoCirugia, tipoPaciente, procedencia, tipoGestor, formaPago, nombreIq, primerCirujano, segundoCirujano, anestesiologo, reintervencion, libroPabellonTabla, libroPabellonCrr]);
 
-  // Comparative Year-Over-Year logic for KPI cards
+  // View Mode: 'cirugias' (totalidad de intervenciones) vs 'pacientes' (1 caso / evento quirúrgico por paciente)
+  // Al ver por paciente, se deduplica por evento (num_le) priorizando siempre la cirugía principal (marcada al 100%)
+  const displayLibro = useMemo(() => {
+    if (viewMode === 'cirugias') return filteredLibro;
+    const map = new Map();
+    filteredLibro.forEach(r => {
+      const existing = map.get(r.num_le);
+      if (!existing) {
+        map.set(r.num_le, r);
+      } else if (!existing.es_intervencion_principal && r.es_intervencion_principal) {
+        map.set(r.num_le, r);
+      }
+    });
+    return Array.from(map.values());
+  }, [filteredLibro, viewMode]);
+
+  // Surgical Density Ratio (Promedio de Cirugías por Paciente/Evento Quirúrgico)
+  const surgicalDensity = useMemo(() => {
+    const totalCir = filteredLibro.length;
+    const uniqueEvents = new Set(filteredLibro.map(r => r.num_le)).size;
+    if (uniqueEvents === 0) return { ratio: '1.00', totalCir: 0, totalPac: 0, multiEvents: 0 };
+    return {
+      ratio: (totalCir / uniqueEvents).toFixed(2),
+      totalCir,
+      totalPac: uniqueEvents
+    };
+  }, [filteredLibro]);
+
+  // Comparative Year-Over-Year logic for KPI cards (dynamically adapts to viewMode)
   const getYoYStats = (key) => {
     let currentCount = 0;
-    filteredLibro.forEach(r => {
+    displayLibro.forEach(r => {
       if (key === 'total') currentCount++;
       if (key === 'mayor' && (r.tipo_cirugia === 'Cirugía Mayor' || r.tipo_cirugia === 'Cirugía Mayor Ambulatoria')) currentCount++;
       if (key === 'urgencia' && r.urgencia === 'SI') currentCount++;
@@ -3077,33 +3258,53 @@ export default function SurgicalDashboard({ onBack }) {
     const priorStart = new Date(startYear - 1, startMonth, startDay).toISOString().substring(0, 10);
     const priorEnd = new Date(endYear - 1, endMonth, endDay).toISOString().substring(0, 10);
 
-    let priorCount = 0;
-    rawDataLibro.forEach(r => {
-      if (!r.fecha_cirugia) return;
+    const priorList = rawDataLibro.filter(r => {
+      if (!r.fecha_cirugia) return false;
       const dateOnly = r.fecha_cirugia.substring(0, 10);
+      if (dateOnly < priorStart || dateOnly > priorEnd) return false;
 
-      if (tipoCirugia.length > 0 && !tipoCirugia.includes(r.tipo_cirugia)) return;
-      if (tipoPaciente.length > 0 && !tipoPaciente.includes(r.tipo_paciente)) return;
-      if (procedencia.length > 0 && !procedencia.includes(r.procedencia)) return;
-      if (tipoGestor.length > 0 && !tipoGestor.includes(r.tipo_gestor)) return;
-      if (formaPago.length > 0 && !formaPago.includes(r.forma_pago)) return;
-      if (nombreIq.length > 0 && !nombreIq.includes(r.intervencion)) return;
-      if (primerCirujano.length > 0 && !primerCirujano.includes(r.cirujano)) return;
-      if (segundoCirujano.length > 0 && !segundoCirujano.includes(r.segundo_cirujano)) return;
-      if (anestesiologo.length > 0 && !anestesiologo.includes(r.anestesiologo)) return;
-      if (reintervencion.length > 0 && !reintervencion.includes(r.reintervencion_no_prog)) return;
+      if (tipoCirugia.length > 0 && !tipoCirugia.includes(r.tipo_cirugia)) return false;
+      if (tipoPaciente.length > 0 && !tipoPaciente.includes(r.tipo_paciente)) return false;
+      if (procedencia.length > 0 && !procedencia.includes(r.procedencia)) return false;
+      if (tipoGestor.length > 0 && !tipoGestor.includes(r.tipo_gestor)) return false;
+      if (formaPago.length > 0 && !formaPago.includes(r.forma_pago)) return false;
+      if (nombreIq.length > 0 && !nombreIq.includes(r.intervencion)) return false;
+      if (primerCirujano.length > 0 && !primerCirujano.includes(r.cirujano)) return false;
+      if (segundoCirujano.length > 0 && !segundoCirujano.includes(r.segundo_cirujano)) return false;
+      if (anestesiologo.length > 0 && !anestesiologo.includes(r.anestesiologo)) return false;
+      if (reintervencion.length > 0 && !reintervencion.includes(r.reintervencion_no_prog)) return false;
+      if (libroPabellonTabla.length > 0 && !libroPabellonTabla.includes(r.pabellon_tabla)) return false;
+      if (libroPabellonCrr.length > 0 && !libroPabellonCrr.includes(r.pabellon_crr)) return false;
 
-      if (dateOnly >= priorStart && dateOnly <= priorEnd) {
-        if (key === 'total') priorCount++;
-        if (key === 'mayor' && (r.tipo_cirugia === 'Cirugía Mayor' || r.tipo_cirugia === 'Cirugía Mayor Ambulatoria')) priorCount++;
-        if (key === 'urgencia' && r.urgencia === 'SI') priorCount++;
-      }
+      return true;
+    });
+
+    const priorDisplay = (() => {
+      if (viewMode === 'cirugias') return priorList;
+      const map = new Map();
+      priorList.forEach(r => {
+        const existing = map.get(r.num_le);
+        if (!existing) {
+          map.set(r.num_le, r);
+        } else if (!existing.es_intervencion_principal && r.es_intervencion_principal) {
+          map.set(r.num_le, r);
+        }
+      });
+      return Array.from(map.values());
+    })();
+
+    let priorCount = 0;
+    priorDisplay.forEach(r => {
+      if (key === 'total') priorCount++;
+      if (key === 'mayor' && (r.tipo_cirugia === 'Cirugía Mayor' || r.tipo_cirugia === 'Cirugía Mayor Ambulatoria')) priorCount++;
+      if (key === 'urgencia' && r.urgencia === 'SI') priorCount++;
     });
 
     if (priorCount === 0) return { val: currentCount, diff: 0, text: '0.0% vs año ant.', trend: 'neutral' };
     const pctDiff = ((currentCount - priorCount) / priorCount) * 100;
     return {
       val: currentCount,
+      prior: priorCount,
       diff: pctDiff,
       text: `${pctDiff >= 0 ? '↑' : '↓'} ${Math.abs(pctDiff).toFixed(1)}% vs año ant.`,
       trend: pctDiff >= 0 ? 'positive' : 'negative'
@@ -3116,31 +3317,32 @@ export default function SurgicalDashboard({ onBack }) {
 
   const procedenciaStats = useMemo(() => {
     let urg = 0, elec = 0, urgDiferida = 0;
-    filteredLibro.forEach(r => {
+    let tUrg = 0, tUrgDif = 0, tElec = 0;
+
+    displayLibro.forEach(r => {
       if (r.urgencia === 'SI') urg++;
       else elec++;
 
       const t = String(r.tipo_iq || '').toUpperCase();
-      if (t.includes('DIFERIDA')) urgDiferida++;
-    });
-    // Adjust Urgencia and Electiva from tipo_iq if we want exact counts:
-    let tUrg = 0, tUrgDif = 0, tElec = 0;
-    filteredLibro.forEach(r => {
-      const t = String(r.tipo_iq || '').toUpperCase();
-      if (t.includes('DIFERIDA')) tUrgDif++;
-      else if (t.includes('URGENCIA')) tUrg++;
-      else tElec++; // Treat rest as electiva
+      if (t.includes('DIFERIDA')) {
+        urgDiferida++;
+        tUrgDif++;
+      } else if (t.includes('URGENCIA')) {
+        tUrg++;
+      } else {
+        tElec++;
+      }
     });
 
     return { urgencia: urg, electiva: elec, tUrg, tUrgDif, tElec };
-  }, [filteredLibro]);
+  }, [displayLibro]);
 
   // Chart Data Processing
   const monthlyChartData = useMemo(() => {
     const monthlyMap = {};
     const monthNames = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
 
-    filteredLibro.forEach(r => {
+    displayLibro.forEach(r => {
       const dOnly = r.fecha_cirugia.substring(0, 10);
       const monthKey = dOnly.substring(0, 7); // 'YYYY-MM'
       const year = parseInt(monthKey.split('-')[0], 10);
@@ -3174,12 +3376,12 @@ export default function SurgicalDashboard({ onBack }) {
     });
 
     return sortedData;
-  }, [filteredLibro]);
+  }, [displayLibro]);
 
   // Donut Chart 1: Distribución según cirugía realizada
   const distribucionCirugia = useMemo(() => {
     const dist = { 'Cirugía Mayor Ambulatoria': 0, 'Cirugía Mayor': 0, 'Cirugía Menor': 0, 'Procedimientos': 0 };
-    filteredLibro.forEach(r => {
+    displayLibro.forEach(r => {
       let tipo = r.tipo_cirugia;
       if (!['Cirugía Mayor', 'Cirugía Mayor Ambulatoria', 'Cirugía Menor', 'Procedimientos'].includes(tipo)) {
         if (tipo?.toLowerCase().includes('procedimiento')) tipo = 'Procedimientos';
@@ -3189,12 +3391,12 @@ export default function SurgicalDashboard({ onBack }) {
       dist[tipo]++;
     });
     return Object.entries(dist).map(([name, value]) => ({ name, value })).filter(d => d.value > 0);
-  }, [filteredLibro]);
+  }, [displayLibro]);
 
   // Donut Chart 2: Familia IQ
   const distribucionFamilia = useMemo(() => {
     const dist = {};
-    filteredLibro.forEach(r => {
+    displayLibro.forEach(r => {
       const fam = r.familia_iq || 'OTRAS';
       dist[fam] = (dist[fam] || 0) + 1;
     });
@@ -3202,7 +3404,7 @@ export default function SurgicalDashboard({ onBack }) {
       .sort((a, b) => b[1] - a[1])
       .slice(0, 10)
       .map(([name, value]) => ({ name, value }));
-  }, [filteredLibro]);
+  }, [displayLibro]);
 
   // Insights Clínicos (Ambulatorización, GES, Espera, Gestor)
   const insights = useMemo(() => {
@@ -3217,7 +3419,7 @@ export default function SurgicalDashboard({ onBack }) {
       if (item.name === 'Cirugía Mayor') cm = item.value;
     });
 
-    filteredLibro.forEach(r => {
+    displayLibro.forEach(r => {
       total++;
       if (r.ges && r.ges !== 'NO GES' && r.ges !== 'NO' && r.ges !== '') ges++;
       if (r.dias_espera && !isNaN(parseInt(r.dias_espera))) {
@@ -3245,7 +3447,109 @@ export default function SurgicalDashboard({ onBack }) {
     const promedioEspera = diasCount > 0 ? Math.round(diasTotal / diasCount) : 0;
 
     return { cma, cm, indiceAmbulatorizacion, porcentajeCMA, porcentajeGES, promedioEspera, porcentajeInst, gestorComp, topCMA, topCM };
-  }, [distribucionCirugia, filteredLibro]);
+  }, [distribucionCirugia, displayLibro]);
+
+  // Auditoría Crítica: Casos registrados como 'Intervenido' en Tabla de Pabellón que NO figuran cerrados en Discoverer
+  const auditoriaCasos = useMemo(() => {
+    if (!tablaData.length || !rawDataLibro.length) return [];
+
+    const cleanRut = (r) => String(r || '').replace(/[^0-9kK]/g, '').toUpperCase();
+    const getRutBody = (r) => {
+      const c = cleanRut(r);
+      return c.length > 1 ? c.slice(0, -1) : c;
+    };
+    const cleanStr = (s) => String(s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]/g, '');
+
+    // Indizar Libro por múltiples llaves
+    const lByLe = new Set();
+    const lByRutFecha = new Set();
+    const lByRutBodyFecha = new Set();
+    const lByRutList = new Map();
+    const lByFecha = new Map();
+
+    rawDataLibro.forEach(l => {
+      const le = String(l.num_le || '').trim();
+      const f = (l.fecha_cirugia || '').substring(0, 10);
+      const r = cleanRut(l._rut_raw || l.rut);
+      const rb = getRutBody(l._rut_raw || l.rut);
+
+      if (le && le !== '0') lByLe.add(le);
+      if (r && f) lByRutFecha.add(r + '_' + f);
+      if (rb && rb.length >= 6 && f) lByRutBodyFecha.add(rb + '_' + f);
+      if (r && r.length >= 6) {
+        if (!lByRutList.has(r)) lByRutList.set(r, []);
+        lByRutList.get(r).push(l);
+      }
+      if (f) {
+        if (!lByFecha.has(f)) lByFecha.set(f, []);
+        lByFecha.get(f).push({ ...l, pNorm: cleanStr(l.paciente) });
+      }
+    });
+
+    const discrepancias = [];
+
+    tablaData.forEach(t => {
+      if (t.eliminada === true || t.eliminada === 'true') return;
+      const f = (t.fecha_programacion || '').substring(0, 10);
+      if (f < dateRange.start || f > dateRange.end) return;
+      const est = (t.estado || '').toLowerCase();
+      if (!est.includes('intervenido')) return;
+
+      const le = String(t.id_lista_espera || '').trim();
+      const r = cleanRut(t.rut);
+      const rb = getRutBody(t.rut);
+
+      // Evaluar coincidencia
+      let match = false;
+      // 1. LE exacta
+      if (le && le !== '0' && lByLe.has(le)) match = true;
+      // 2. RUT exacto en misma fecha
+      else if (r && f && lByRutFecha.has(r + '_' + f)) match = true;
+      // 3. Cuerpo de RUT en misma fecha
+      else if (rb && rb.length >= 6 && f && lByRutBodyFecha.has(rb + '_' + f)) match = true;
+      // 4. RUT en ventana temporal de reprogramación (+/- 7 días)
+      else if (r && r.length >= 6 && lByRutList.has(r)) {
+        const cands = lByRutList.get(r);
+        const near = cands.some(c => {
+          const cf = (c.fecha_cirugia || '').substring(0, 10);
+          return Math.abs(new Date(cf) - new Date(f)) <= 7 * 86400000;
+        });
+        if (near) match = true;
+      }
+      // 5. Apellidos coincidentes en la misma fecha
+      else if (f && lByFecha.has(f)) {
+        const tPat = cleanStr(t.apellido_paterno);
+        const tMat = cleanStr(t.apellido_materno);
+        const cands = lByFecha.get(f);
+        for (const c of cands) {
+          if (tPat && tPat.length >= 4 && c.pNorm.includes(tPat)) {
+            if (!tMat || tMat.length < 4 || c.pNorm.includes(tMat)) {
+              match = true;
+              break;
+            }
+          }
+        }
+      }
+
+      if (!match) {
+        discrepancias.push({
+          id: t.id,
+          fecha: f,
+          pabellon: t.pabellon || 'S/I',
+          rut: t.rut || 'S/RUT',
+          paciente: [t.nombre_paciente, t.apellido_paterno, t.apellido_materno].filter(Boolean).join(' ') || 'SIN NOMBRE',
+          id_lista_espera: le || '0',
+          procedencia: t.procedencia || 'Electiva',
+          tipo_cirugia: t.tipo_cirugia || 'Mayor',
+          especialidad: t.especialidad || 'Sin Especialidad',
+          cirujano: t.cirujano || 'Sin Cirujano',
+          intervencion: t.intervencion_propuesta || t.diagnostico || 'Sin Detalle'
+        });
+      }
+    });
+
+    return discrepancias;
+  }, [tablaData, rawDataLibro, dateRange]);
 
   const renderCustomizedLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent }) => {
     const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
@@ -3264,7 +3568,7 @@ export default function SurgicalDashboard({ onBack }) {
     return (
       <text x={cx} y={cy} textAnchor="middle" dominantBaseline="central">
         <tspan x={cx} dy="-8" fontSize="1.8rem" fontWeight="900" fill="#0f172a">{totalKPI.val.toLocaleString()}</tspan>
-        <tspan x={cx} dy="20" fontSize="0.85rem" fontWeight="500" fill="#64748b">Cirugías</tspan>
+        <tspan x={cx} dy="20" fontSize="0.82rem" fontWeight="600" fill="#64748b">{viewMode === 'cirugias' ? 'Cirugías' : 'Pacientes'}</tspan>
       </text>
     );
   };
@@ -3311,15 +3615,20 @@ export default function SurgicalDashboard({ onBack }) {
     if (!rawDate) return null;
 
     const d = new Date(rawDate);
-    const formatted = !isNaN(d.getTime())
-      ? d.toLocaleString('es-CL', {
-          day: '2-digit',
-          month: '2-digit',
-          year: 'numeric',
-          hour: '2-digit',
-          minute: '2-digit'
-        })
-      : String(rawDate);
+    let formatted = String(rawDate);
+    if (!isNaN(d.getTime())) {
+      const pad = n => String(n).padStart(2, '0');
+      const day = pad(d.getDate());
+      const month = pad(d.getMonth() + 1);
+      const year = d.getFullYear();
+      let hours = d.getHours();
+      const minutes = pad(d.getMinutes());
+      const ampm = hours >= 12 ? 'p. m.' : 'a. m.';
+      hours = hours % 12;
+      hours = hours ? hours : 12;
+      const hoursStr = pad(hours);
+      formatted = `${day}-${month}-${year}, ${hoursStr}:${minutes} ${ampm}`;
+    }
 
     return { formatted, label };
   }, [activeTab, tablaLastUpdated, dispLastUpdated, libroLastUpdated, insumosLastUpdated]);
@@ -3570,6 +3879,8 @@ export default function SurgicalDashboard({ onBack }) {
                   {activeTab === 'libro' && (
                     <>
                       {[
+                        { label: 'N° Pabellón (Tabla Quirúrgica)', val: libroPabellonTabla, set: setLibroPabellonTabla, options: dropdowns.pabellonesTabla },
+                        { label: 'Pabellón CRR (Tabla)', val: libroPabellonCrr, set: setLibroPabellonCrr, options: dropdowns.crrOptions },
                         { label: 'Tipo de Cirugía', val: tipoCirugia, set: setTipoCirugia, options: dropdowns.tipos },
                         { label: 'Tipo de Paciente', val: tipoPaciente, set: setTipoPaciente, options: dropdowns.tipoPacientes },
                         { label: 'Procedencia', val: procedencia, set: setProcedencia, options: dropdowns.procedencias },
@@ -3593,6 +3904,8 @@ export default function SurgicalDashboard({ onBack }) {
                     <>
                       {[
                         { label: 'Fecha de programación', val: tablaFechaProg, set: setTablaFechaProg, options: tablaDropdowns.fechas },
+                        { label: 'Gran Causa de Suspensión', val: tablaCausaSuspension, set: setTablaCausaSuspension, options: tablaDropdowns.causas },
+                        { label: 'Causa Específica (Motivo)', val: tablaMotivoSuspension, set: setTablaMotivoSuspension, options: tablaDropdowns.motivos },
                         { label: 'Tipo de cirugía', val: tablaTipoCirugia, set: setTablaTipoCirugia, options: tablaDropdowns.tipos },
                         { label: 'Tipo de paciente', val: tablaTipoPaciente, set: setTablaTipoPaciente, options: tablaDropdowns.tipoPacientes },
                         { label: 'Tipo de priorización', val: tablaPriorizacion, set: setTablaPriorizacion, options: tablaDropdowns.prios },
@@ -3697,184 +4010,738 @@ export default function SurgicalDashboard({ onBack }) {
 
                 {activeTab === 'libro' && (
                   <>
-                    {/* KPI ROW */}
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px', marginBottom: '32px' }}>
-                      <div style={{ background: 'white', padding: '24px', borderRadius: '24px', border: '1px solid rgba(30, 64, 175, 0.2)', borderLeft: '6px solid #1e40af', boxShadow: '0 10px 30px rgba(30, 64, 175, 0.05)' }}>
-                        <p style={{ margin: 0, fontSize: '0.8rem', color: '#64748b', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Producción Total</p>
-                        <h2 style={{ margin: '8px 0', fontSize: '2.8rem', color: '#1e40af', fontWeight: 900 }}>{totalKPI.val.toLocaleString()}</h2>
-                        <p style={{ margin: 0, fontSize: '0.85rem', color: '#64748b', fontWeight: 500 }}>Cirugías registradas</p>
-                        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '0.75rem', background: totalKPI.trend === 'positive' ? 'rgba(30, 64, 175, 0.1)' : 'rgba(239, 68, 68, 0.1)', color: totalKPI.trend === 'positive' ? '#1e40af' : '#ef4444', padding: '4px 10px', borderRadius: '12px', fontWeight: 800, marginTop: '12px' }}>
-                          <Activity size={14} /> {totalKPI.text}
+                    {/* TOP ACTION & CONTEXT BANNER */}
+                    <div style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      flexWrap: 'wrap',
+                      gap: '16px',
+                      background: 'linear-gradient(135deg, #f8fafc 0%, #ffffff 100%)',
+                      padding: '16px 20px',
+                      borderRadius: '18px',
+                      border: '1px solid #e2e8f0',
+                      boxShadow: '0 2px 10px rgba(0,0,0,0.03)',
+                      marginBottom: '20px'
+                    }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flexWrap: 'wrap' }}>
+                        <div style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                          background: '#eff6ff',
+                          color: '#1e40af',
+                          padding: '6px 14px',
+                          borderRadius: '999px',
+                          fontSize: '0.78rem',
+                          fontWeight: 800,
+                          border: '1px solid #bfdbfe'
+                        }}>
+                          <Award size={14} /> Hospital de Villarrica · Mediana Complejidad
+                        </div>
+                        <span style={{ color: '#64748b', fontSize: '0.82rem', fontWeight: 600 }}>
+                          Período activo: <strong style={{ color: '#0f172a' }}>{dateRange.start}</strong> a <strong style={{ color: '#0f172a' }}>{dateRange.end}</strong>
+                        </span>
+                        <span style={{ color: '#94a3b8', fontSize: '0.8rem' }}>•</span>
+                        <span style={{
+                          color: '#047857',
+                          fontSize: '0.8rem',
+                          fontWeight: 700,
+                          background: '#ecfdf5',
+                          padding: '4px 10px',
+                          borderRadius: '8px',
+                          border: '1px solid #a7f3d0'
+                        }}>
+                          Tasa de Concentración: {surgicalDensity.ratio} cx/caso
+                        </span>
+                        {libroPabellonTabla.length > 0 && (
+                          <span style={{
+                            color: '#1d4ed8',
+                            fontSize: '0.78rem',
+                            fontWeight: 700,
+                            background: '#eff6ff',
+                            padding: '4px 10px',
+                            borderRadius: '8px',
+                            border: '1px solid #bfdbfe'
+                          }}>
+                            Pabellón Tabla: {libroPabellonTabla.join(', ')}
+                          </span>
+                        )}
+                        {libroPabellonCrr.length > 0 && (
+                          <span style={{
+                            color: '#7c3aed',
+                            fontSize: '0.78rem',
+                            fontWeight: 700,
+                            background: '#f5f3ff',
+                            padding: '4px 10px',
+                            borderRadius: '8px',
+                            border: '1px solid #ddd6fe'
+                          }}>
+                            CRR: {libroPabellonCrr.join(', ')}
+                          </span>
+                        )}
+                      </div>
+
+                      {/* TOGGLE MODO DE ANÁLISIS: CIRUGÍAS VS PACIENTES (EVENTOS QUIRÚRGICOS) */}
+                      <div style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        background: '#0f172a',
+                        padding: '4px',
+                        borderRadius: '14px',
+                        boxShadow: '0 4px 12px rgba(15, 23, 42, 0.15)'
+                      }}>
+                        <button
+                          onClick={() => setViewMode('cirugias')}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            padding: '8px 18px',
+                            borderRadius: '10px',
+                            border: 'none',
+                            cursor: 'pointer',
+                            fontSize: '0.82rem',
+                            fontWeight: 800,
+                            background: viewMode === 'cirugias' ? 'linear-gradient(135deg, #2563eb, #1d4ed8)' : 'transparent',
+                            color: viewMode === 'cirugias' ? '#ffffff' : '#94a3b8',
+                            boxShadow: viewMode === 'cirugias' ? '0 2px 8px rgba(37, 99, 235, 0.5)' : 'none',
+                            transition: 'all 0.2s ease'
+                          }}
+                          title="Cuenta cada procedimiento e intervención quirúrgica registrada (1 paciente puede tener múltiples cirugías)"
+                        >
+                          <Activity size={15} />
+                          <span>Por Cirugías</span>
+                          <span style={{
+                            background: viewMode === 'cirugias' ? 'rgba(255,255,255,0.25)' : 'rgba(255,255,255,0.08)',
+                            padding: '2px 7px',
+                            borderRadius: '8px',
+                            fontSize: '0.72rem'
+                          }}>
+                            {filteredLibro.length.toLocaleString()}
+                          </span>
+                        </button>
+
+                        <button
+                          onClick={() => setViewMode('pacientes')}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            padding: '8px 18px',
+                            borderRadius: '10px',
+                            border: 'none',
+                            cursor: 'pointer',
+                            fontSize: '0.82rem',
+                            fontWeight: 800,
+                            background: viewMode === 'pacientes' ? 'linear-gradient(135deg, #0d9488, #0f766e)' : 'transparent',
+                            color: viewMode === 'pacientes' ? '#ffffff' : '#94a3b8',
+                            boxShadow: viewMode === 'pacientes' ? '0 2px 8px rgba(13, 148, 136, 0.5)' : 'none',
+                            transition: 'all 0.2s ease'
+                          }}
+                          title="Cuenta 1 caso por evento quirúrgico / paciente, catalogado por la cirugía principal (marcada al 100%)"
+                        >
+                          <Users size={15} />
+                          <span>Por Paciente / Evento</span>
+                          <span style={{
+                            background: viewMode === 'pacientes' ? 'rgba(255,255,255,0.25)' : 'rgba(255,255,255,0.08)',
+                            padding: '2px 7px',
+                            borderRadius: '8px',
+                            fontSize: '0.72rem'
+                          }}>
+                            {surgicalDensity.totalPac.toLocaleString()}
+                          </span>
+                        </button>
+
+                        {/* BOTÓN AUDITORÍA CRÍTICA DE CASOS PENDIENTES */}
+                        {auditoriaCasos.length > 0 && (
+                          <button
+                            onClick={() => setShowAuditoriaModal(true)}
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '8px',
+                              padding: '8px 16px',
+                              borderRadius: '10px',
+                              border: '1px solid rgba(239, 68, 68, 0.4)',
+                              cursor: 'pointer',
+                              fontSize: '0.8rem',
+                              fontWeight: 800,
+                              background: 'linear-gradient(135deg, #ef4444, #b91c1c)',
+                              color: '#ffffff',
+                              boxShadow: '0 2px 10px rgba(239, 68, 68, 0.45)',
+                              transition: 'all 0.2s ease',
+                              marginLeft: '6px'
+                            }}
+                            title="Ver casos intervenidos en Tabla que NO registran cierre en Discoverer"
+                          >
+                            <AlertCircle size={15} />
+                            <span>Auditoría de Cierres</span>
+                            <span style={{
+                              background: 'rgba(255,255,255,0.3)',
+                              padding: '2px 8px',
+                              borderRadius: '999px',
+                              fontSize: '0.72rem',
+                              fontWeight: 900
+                            }}>
+                              {auditoriaCasos.length}
+                            </span>
+                          </button>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* KPI ROW: 4 TARJETAS EJECUTIVAS */}
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(230px, 1fr))', gap: '16px', marginBottom: '20px' }}>
+                      {/* CARD 1: PRODUCCION TOTAL */}
+                      <div style={{
+                        background: 'white',
+                        padding: '18px 20px',
+                        borderRadius: '18px',
+                        border: '1px solid #e2e8f0',
+                        borderLeft: '5px solid #1e40af',
+                        boxShadow: '0 4px 14px rgba(30, 64, 175, 0.05)',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        justifyContent: 'space-between'
+                      }}>
+                        <div>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <p style={{ margin: 0, fontSize: '0.72rem', color: '#64748b', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                              {viewMode === 'cirugias' ? 'Producción Total (Cirugías)' : 'Pacientes Intervenidos (Casos)'}
+                            </p>
+                            <span style={{ fontSize: '0.7rem', color: '#94a3b8', fontWeight: 600 }}>YoY vs año ant.</span>
+                          </div>
+                          <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', marginTop: '6px' }}>
+                            <h2 style={{ margin: 0, fontSize: '2.3rem', color: '#1e40af', fontWeight: 900, lineHeight: 1 }}>
+                              {totalKPI.val.toLocaleString()}
+                            </h2>
+                            <span style={{ fontSize: '0.75rem', color: '#64748b', fontWeight: 600 }}>
+                              {viewMode === 'cirugias' ? 'intervenciones' : 'casos únicos'}
+                            </span>
+                          </div>
+                        </div>
+                        <div style={{ marginTop: '12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                          <span style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '4px',
+                            fontSize: '0.72rem',
+                            background: totalKPI.trend === 'positive' ? 'rgba(30, 64, 175, 0.1)' : 'rgba(239, 68, 68, 0.1)',
+                            color: totalKPI.trend === 'positive' ? '#1e40af' : '#ef4444',
+                            padding: '3px 8px',
+                            borderRadius: '8px',
+                            fontWeight: 800
+                          }}>
+                            {totalKPI.trend === 'positive' ? <TrendingUp size={13} /> : <TrendingDown size={13} />} {totalKPI.text}
+                          </span>
+                          <span style={{ fontSize: '0.7rem', color: '#94a3b8' }}>
+                            Base ant: {totalKPI.prior?.toLocaleString()}
+                          </span>
                         </div>
                       </div>
 
-                      <div style={{ background: 'white', padding: '24px', borderRadius: '24px', border: '1px solid rgba(223, 109, 5, 0.2)', borderLeft: '6px solid #DF6D05', boxShadow: '0 10px 30px rgba(223, 109, 5, 0.05)' }}>
-                        <p style={{ margin: 0, fontSize: '0.8rem', color: '#64748b', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Cirugías Mayores Totales</p>
-                        <h2 style={{ margin: '8px 0', fontSize: '2.8rem', color: '#DF6D05', fontWeight: 900 }}>{mayorKPI.val.toLocaleString()}</h2>
-                        <p style={{ margin: 0, fontSize: '0.85rem', color: '#64748b', fontWeight: 500 }}>Alta complejidad</p>
-                        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '0.75rem', background: mayorKPI.trend === 'positive' ? 'rgba(223, 109, 5, 0.1)' : 'rgba(148, 163, 184, 0.1)', color: mayorKPI.trend === 'positive' ? '#DF6D05' : '#64748b', padding: '4px 10px', borderRadius: '12px', fontWeight: 800, marginTop: '12px' }}>
-                          <TrendingUp size={14} /> {mayorKPI.text}
+                      {/* CARD 2: CIRUGIA MAYOR Y AMBULATORIZACION */}
+                      <div style={{
+                        background: 'white',
+                        padding: '18px 20px',
+                        borderRadius: '18px',
+                        border: '1px solid #e2e8f0',
+                        borderLeft: '5px solid #DF6D05',
+                        boxShadow: '0 4px 14px rgba(223, 109, 5, 0.05)',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        justifyContent: 'space-between'
+                      }}>
+                        <div>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <p style={{ margin: 0, fontSize: '0.72rem', color: '#64748b', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                              Cirugías Mayores (CM + CMA)
+                            </p>
+                            <span style={{
+                              fontSize: '0.68rem',
+                              background: '#fff7ed',
+                              color: '#c2410c',
+                              padding: '2px 6px',
+                              borderRadius: '6px',
+                              fontWeight: 700,
+                              border: '1px solid #ffedd5'
+                            }}>
+                              {totalKPI.val > 0 ? ((mayorKPI.val / totalKPI.val) * 100).toFixed(1) : 0}% del total
+                            </span>
+                          </div>
+                          <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', marginTop: '6px' }}>
+                            <h2 style={{ margin: 0, fontSize: '2.3rem', color: '#DF6D05', fontWeight: 900, lineHeight: 1 }}>
+                              {mayorKPI.val.toLocaleString()}
+                            </h2>
+                            <span style={{ fontSize: '0.75rem', color: '#64748b', fontWeight: 600 }}>
+                              Mayor complejidad
+                            </span>
+                          </div>
+                        </div>
+                        <div style={{ marginTop: '12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                          <span style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '4px',
+                            fontSize: '0.72rem',
+                            background: mayorKPI.trend === 'positive' ? 'rgba(223, 109, 5, 0.12)' : 'rgba(239, 68, 68, 0.1)',
+                            color: mayorKPI.trend === 'positive' ? '#DF6D05' : '#ef4444',
+                            padding: '3px 8px',
+                            borderRadius: '8px',
+                            fontWeight: 800
+                          }}>
+                            {mayorKPI.trend === 'positive' ? <TrendingUp size={13} /> : <TrendingDown size={13} />} {mayorKPI.text}
+                          </span>
+                          <span style={{ fontSize: '0.7rem', color: '#94a3b8' }}>
+                            CMA: {insights.indiceAmbulatorizacion}%
+                          </span>
                         </div>
                       </div>
 
-                      <div style={{ background: 'white', padding: '24px', borderRadius: '24px', border: '1px solid rgba(242, 164, 0, 0.3)', borderLeft: '6px solid #F2A400', boxShadow: '0 10px 30px rgba(242, 164, 0, 0.05)' }}>
-                        <p style={{ margin: 0, fontSize: '0.8rem', color: '#64748b', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Procedencia Urgencia vs Electiva</p>
-                        <div style={{ display: 'flex', alignItems: 'flex-end', gap: '12px', margin: '8px 0' }}>
-                          <h2 style={{ margin: 0, fontSize: '2.8rem', color: '#cc8a00', fontWeight: 900 }}>{procedenciaStats.urgencia.toLocaleString()}</h2>
-                          <span style={{ fontSize: '1rem', color: '#64748b', fontWeight: 700, paddingBottom: '8px' }}>/ {procedenciaStats.electiva.toLocaleString()}</span>
+                      {/* CARD 3: URGENCIA VS ELECTIVA */}
+                      <div style={{
+                        background: 'white',
+                        padding: '18px 20px',
+                        borderRadius: '18px',
+                        border: '1px solid #e2e8f0',
+                        borderLeft: '5px solid #F2A400',
+                        boxShadow: '0 4px 14px rgba(242, 164, 0, 0.05)',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        justifyContent: 'space-between'
+                      }}>
+                        <div>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <p style={{ margin: 0, fontSize: '0.72rem', color: '#64748b', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                              Urgencias vs Electivas
+                            </p>
+                            <span style={{
+                              fontSize: '0.68rem',
+                              background: '#fefce8',
+                              color: '#a16207',
+                              padding: '2px 6px',
+                              borderRadius: '6px',
+                              fontWeight: 700,
+                              border: '1px solid #fef08a'
+                            }}>
+                              {totalKPI.val > 0 ? ((procedenciaStats.urgencia / totalKPI.val) * 100).toFixed(1) : 0}% tasa urg.
+                            </span>
+                          </div>
+                          <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', marginTop: '6px' }}>
+                            <h2 style={{ margin: 0, fontSize: '2.3rem', color: '#b45309', fontWeight: 900, lineHeight: 1 }}>
+                              {procedenciaStats.urgencia.toLocaleString()}
+                            </h2>
+                            <span style={{ fontSize: '0.9rem', color: '#64748b', fontWeight: 700 }}>
+                              / {procedenciaStats.electiva.toLocaleString()} elec.
+                            </span>
+                          </div>
                         </div>
-                        <p style={{ margin: 0, fontSize: '0.85rem', color: '#64748b', fontWeight: 500 }}>Urgencias vs Electivas (incl. diferidas)</p>
-                        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '0.75rem', background: urgenciaKPI.trend === 'positive' ? 'rgba(242, 164, 0, 0.15)' : 'rgba(148, 163, 184, 0.1)', color: urgenciaKPI.trend === 'positive' ? '#cc8a00' : '#64748b', padding: '4px 10px', borderRadius: '12px', fontWeight: 800, marginTop: '12px' }}>
-                          <AlertCircle size={14} /> Urgencias {urgenciaKPI.text}
+                        <div style={{ marginTop: '12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                          <span style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '4px',
+                            fontSize: '0.72rem',
+                            background: urgenciaKPI.trend === 'positive' ? 'rgba(242, 164, 0, 0.15)' : 'rgba(148, 163, 184, 0.12)',
+                            color: urgenciaKPI.trend === 'positive' ? '#b45309' : '#64748b',
+                            padding: '3px 8px',
+                            borderRadius: '8px',
+                            fontWeight: 800
+                          }}>
+                            <AlertCircle size={13} /> Urg. {urgenciaKPI.text}
+                          </span>
+                          <span style={{ fontSize: '0.7rem', color: '#94a3b8' }}>
+                            Diferidas: {procedenciaStats.tUrgDif}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* CARD 4: DENSIDAD QUIRÚRGICA Y GES */}
+                      <div style={{
+                        background: 'white',
+                        padding: '18px 20px',
+                        borderRadius: '18px',
+                        border: '1px solid #e2e8f0',
+                        borderLeft: '5px solid #0d9488',
+                        boxShadow: '0 4px 14px rgba(13, 148, 136, 0.05)',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        justifyContent: 'space-between'
+                      }}>
+                        <div>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <p style={{ margin: 0, fontSize: '0.72rem', color: '#64748b', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                              Efectividad y Garantías GES
+                            </p>
+                            <span style={{
+                              fontSize: '0.68rem',
+                              background: '#f0fdfa',
+                              color: '#0f766e',
+                              padding: '2px 6px',
+                              borderRadius: '6px',
+                              fontWeight: 700,
+                              border: '1px solid #ccfbf1'
+                            }}>
+                              Espera: {insights.promedioEspera}d
+                            </span>
+                          </div>
+                          <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', marginTop: '6px' }}>
+                            <h2 style={{ margin: 0, fontSize: '2.3rem', color: '#0f766e', fontWeight: 900, lineHeight: 1 }}>
+                              {insights.porcentajeGES}%
+                            </h2>
+                            <span style={{ fontSize: '0.75rem', color: '#64748b', fontWeight: 600 }}>
+                              Cobertura GES
+                            </span>
+                          </div>
+                        </div>
+                        <div style={{ marginTop: '12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                          <span style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '4px',
+                            fontSize: '0.72rem',
+                            background: '#f0fdfa',
+                            color: '#0f766e',
+                            padding: '3px 8px',
+                            borderRadius: '8px',
+                            fontWeight: 800
+                          }}>
+                            <CheckCircle size={13} /> {viewMode === 'cirugias' ? `1 caso = ${(1/parseFloat(surgicalDensity.ratio || 1)).toFixed(2)} pac.` : '1 caso = 1 pac. (100%)'}
+                          </span>
+                          <span style={{ fontSize: '0.7rem', color: '#94a3b8' }}>
+                            Inst: {insights.porcentajeInst}%
+                          </span>
                         </div>
                       </div>
                     </div>
 
-                    {/* MAIN SPLIT LAYOUT */}
-                    <div style={{ display: 'grid', gridTemplateColumns: '2.5fr 1fr', gap: '24px', marginBottom: '24px' }}>
-
-                      {/* LEFT: COMPOSED BAR CHART */}
-                      <div style={{ background: 'white', padding: '24px', borderRadius: '16px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px rgba(0,0,0,0.02)', display: 'flex', flexDirection: 'column' }}>
-                        <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', color: '#0f172a', padding: '16px 24px', borderRadius: '12px', marginBottom: '24px' }}>
-                          <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 700, textAlign: 'center' }}>Producción de cirugías y Proyección (Media Móvil)</h3>
+                    {/* MAIN VISUAL SPLIT (FITS IN SINGLE EXECUTIVE VIEW) */}
+                    <div style={{
+                      display: 'grid',
+                      gridTemplateColumns: '1.8fr 1fr',
+                      gap: '20px',
+                      marginBottom: '20px'
+                    }}>
+                      {/* LEFT: COMPOSED MONTHLY EVOLUTION & MOVING AVERAGE */}
+                      <div style={{
+                        background: 'white',
+                        padding: '20px 22px',
+                        borderRadius: '20px',
+                        border: '1px solid #e2e8f0',
+                        boxShadow: '0 4px 12px rgba(0,0,0,0.02)',
+                        display: 'flex',
+                        flexDirection: 'column'
+                      }}>
+                        <div style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          marginBottom: '14px',
+                          borderBottom: '1px solid #f1f5f9',
+                          paddingBottom: '12px'
+                        }}>
+                          <div>
+                            <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 800, color: '#0f172a' }}>
+                              Evolución Mensual de Producción y Tendencia Móvil
+                            </h3>
+                            <p style={{ margin: '2px 0 0 0', fontSize: '0.74rem', color: '#64748b' }}>
+                              Desagregación según tipología clínica ({viewMode === 'cirugias' ? 'total cirugías' : 'casos de pacientes'})
+                            </p>
+                          </div>
+                          <div style={{
+                            fontSize: '0.72rem',
+                            background: '#f8fafc',
+                            color: '#475569',
+                            padding: '4px 10px',
+                            borderRadius: '8px',
+                            border: '1px solid #e2e8f0',
+                            fontWeight: 700
+                          }}>
+                            Proyección: Media Móvil 3m
+                          </div>
                         </div>
-                        <div style={{ flex: 1, minHeight: '450px' }}>
+
+                        <div style={{ flex: 1, minHeight: '340px' }}>
                           <ResponsiveContainer width="100%" height="100%">
-                            <ComposedChart data={monthlyChartData} margin={{ top: 30, right: 10, left: -20, bottom: 0 }}>
+                            <ComposedChart data={monthlyChartData} margin={{ top: 20, right: 10, left: -20, bottom: 0 }}>
                               <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.3} />
-                              <XAxis dataKey="label" axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12 }} />
-                              <YAxis yAxisId="left" axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12 }} />
-                              <YAxis yAxisId="right" orientation="right" axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12 }} />
-                              <RechartsTooltip cursor={{ fill: '#f1f5f9' }} contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 25px rgba(0,0,0,0.1)' }} />
-                              <Legend wrapperStyle={{ paddingTop: '10px' }} />
+                              <XAxis dataKey="label" axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 11 }} />
+                              <YAxis yAxisId="left" axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 11 }} />
+                              <YAxis yAxisId="right" orientation="right" axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 11 }} />
+                              <RechartsTooltip
+                                cursor={{ fill: '#f8fafc' }}
+                                contentStyle={{ borderRadius: '12px', border: '1px solid #e2e8f0', boxShadow: '0 8px 20px rgba(0,0,0,0.08)', fontSize: '0.8rem' }}
+                              />
+                              <Legend wrapperStyle={{ paddingTop: '8px', fontSize: '0.78rem' }} />
 
                               <Bar yAxisId="left" dataKey="Cirugía Mayor" stackId="a" fill={PIE_COLORS['Cirugía Mayor']}>
-                                <LabelList dataKey="Cirugía Mayor" position="inside" fill="#fff" fontSize={11} fontWeight={600} formatter={v => v > 0 ? v : ''} />
+                                <LabelList dataKey="Cirugía Mayor" position="inside" fill="#fff" fontSize={10} fontWeight={700} formatter={v => v > 40 ? v : ''} />
                               </Bar>
                               <Bar yAxisId="left" dataKey="Cirugía Mayor Ambulatoria" stackId="a" fill={PIE_COLORS['Cirugía Mayor Ambulatoria']}>
-                                <LabelList dataKey="Cirugía Mayor Ambulatoria" position="inside" fill="#fff" fontSize={11} fontWeight={600} formatter={v => v > 0 ? v : ''} />
+                                <LabelList dataKey="Cirugía Mayor Ambulatoria" position="inside" fill="#fff" fontSize={10} fontWeight={700} formatter={v => v > 40 ? v : ''} />
                               </Bar>
                               <Bar yAxisId="left" dataKey="Cirugía Menor" stackId="a" fill={PIE_COLORS['Cirugía Menor']}>
-                                <LabelList dataKey="Cirugía Menor" position="inside" fill="#fff" fontSize={11} fontWeight={600} formatter={v => v > 0 ? v : ''} />
+                                <LabelList dataKey="Cirugía Menor" position="inside" fill="#fff" fontSize={10} fontWeight={700} formatter={v => v > 30 ? v : ''} />
                               </Bar>
                               <Bar yAxisId="left" dataKey="Procedimientos" stackId="a" fill={PIE_COLORS['Procedimientos']}>
-                                <LabelList dataKey="Procedimientos" position="inside" fill="#fff" fontSize={11} fontWeight={600} formatter={v => v > 0 ? v : ''} />
-                                <LabelList dataKey="total" position="top" fill="#0f172a" fontSize={12} fontWeight={800} />
+                                <LabelList dataKey="Procedimientos" position="inside" fill="#fff" fontSize={10} fontWeight={700} formatter={v => v > 30 ? v : ''} />
+                                <LabelList dataKey="total" position="top" fill="#0f172a" fontSize={11} fontWeight={800} />
                               </Bar>
 
-                              <Line yAxisId="right" type="monotone" dataKey="proyeccion" stroke="#e11d48" strokeWidth={3} dot={{ r: 4, fill: '#e11d48' }} activeDot={{ r: 6 }} name="Proyección Prod." />
+                              <Line
+                                yAxisId="right"
+                                type="monotone"
+                                dataKey="proyeccion"
+                                stroke="#e11d48"
+                                strokeWidth={2.5}
+                                dot={{ r: 3, fill: '#e11d48' }}
+                                activeDot={{ r: 5 }}
+                                name="Tendencia Móvil"
+                              />
                             </ComposedChart>
                           </ResponsiveContainer>
                         </div>
                       </div>
 
-                      {/* RIGHT: TIPO IQ + PIES */}
-                      <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+                      {/* RIGHT: DONUT BREAKDOWN (CIRUGÍA / FAMILIA) */}
+                      <div style={{
+                        background: 'white',
+                        padding: '20px 22px',
+                        borderRadius: '20px',
+                        border: '1px solid #e2e8f0',
+                        boxShadow: '0 4px 12px rgba(0,0,0,0.02)',
+                        display: 'flex',
+                        flexDirection: 'column'
+                      }}>
+                        <div style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          marginBottom: '14px',
+                          borderBottom: '1px solid #f1f5f9',
+                          paddingBottom: '12px'
+                        }}>
+                          <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 800, color: '#0f172a' }}>
+                            Composición
+                          </h3>
+                          <div style={{ display: 'flex', gap: '4px', background: '#f1f5f9', padding: '3px', borderRadius: '10px' }}>
+                            <button
+                              onClick={() => setPieMode('cirugia')}
+                              style={{
+                                padding: '5px 12px',
+                                fontSize: '0.75rem',
+                                fontWeight: 800,
+                                borderRadius: '7px',
+                                border: 'none',
+                                background: pieMode === 'cirugia' ? '#1e40af' : 'transparent',
+                                color: pieMode === 'cirugia' ? 'white' : '#64748b',
+                                cursor: 'pointer',
+                                transition: 'all 0.2s'
+                              }}
+                            >
+                              Por Tipo
+                            </button>
+                            <button
+                              onClick={() => setPieMode('familia')}
+                              style={{
+                                padding: '5px 12px',
+                                fontSize: '0.75rem',
+                                fontWeight: 800,
+                                borderRadius: '7px',
+                                border: 'none',
+                                background: pieMode === 'familia' ? '#1e40af' : 'transparent',
+                                color: pieMode === 'familia' ? 'white' : '#64748b',
+                                cursor: 'pointer',
+                                transition: 'all 0.2s'
+                              }}
+                            >
+                              Por Familia
+                            </button>
+                          </div>
+                        </div>
 
-                        <div style={{ background: 'white', padding: '24px', borderRadius: '16px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px rgba(0,0,0,0.02)', display: 'flex', flexDirection: 'column', flex: 1 }}>
-                          <div style={{ display: 'flex', justifyContent: 'center', gap: '8px', marginBottom: '24px' }}>
-                            <button onClick={() => setPieMode('cirugia')} style={{ padding: '8px 16px', fontSize: '0.85rem', fontWeight: 800, borderRadius: '8px', border: 'none', background: pieMode === 'cirugia' ? '#1e40af' : '#f1f5f9', color: pieMode === 'cirugia' ? 'white' : '#64748b', cursor: 'pointer' }}>Por Cirugía</button>
-                            <button onClick={() => setPieMode('familia')} style={{ padding: '8px 16px', fontSize: '0.85rem', fontWeight: 800, borderRadius: '8px', border: 'none', background: pieMode === 'familia' ? '#1e40af' : '#f1f5f9', color: pieMode === 'familia' ? 'white' : '#64748b', cursor: 'pointer' }}>Por Familia</button>
+                        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: '340px' }}>
+                          <div style={{ flex: 1, minHeight: '190px' }}>
+                            <ResponsiveContainer width="100%" height="100%">
+                              <RechartsPieChart>
+                                <Pie
+                                  data={pieMode === 'cirugia' ? distribucionCirugia : distribucionFamilia}
+                                  cy="50%"
+                                  innerRadius={55}
+                                  outerRadius={85}
+                                  paddingAngle={2}
+                                  dataKey="value"
+                                  labelLine={false}
+                                  label={renderCustomizedLabel}
+                                >
+                                  <Label content={renderCenterLabel} />
+                                  {(pieMode === 'cirugia' ? distribucionCirugia : distribucionFamilia).map((entry, index) => (
+                                    <Cell key={`cell-${index}`} fill={pieMode === 'cirugia' ? (PIE_COLORS[entry.name] || COLORS[index % COLORS.length]) : COLORS[index % COLORS.length]} />
+                                  ))}
+                                </Pie>
+                                <RechartsTooltip contentStyle={{ borderRadius: '10px', fontSize: '0.78rem' }} />
+                              </RechartsPieChart>
+                            </ResponsiveContainer>
                           </div>
 
-                          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: '450px' }}>
-                            <div style={{ flex: 1, minHeight: '220px' }}>
-                              <ResponsiveContainer width="100%" height="100%">
-                                <RechartsPieChart>
-                                  <Pie
-                                    data={pieMode === 'cirugia' ? distribucionCirugia : distribucionFamilia}
-                                    cy="50%"
-                                    innerRadius={70}
-                                    outerRadius={105}
-                                    paddingAngle={2}
-                                    dataKey="value"
-                                    labelLine={false}
-                                    label={renderCustomizedLabel}
-                                  >
-                                    <Label content={renderCenterLabel} />
-                                    {(pieMode === 'cirugia' ? distribucionCirugia : distribucionFamilia).map((entry, index) => (
-                                      <Cell key={`cell-${index}`} fill={pieMode === 'cirugia' ? (PIE_COLORS[entry.name] || COLORS[index % COLORS.length]) : COLORS[index % COLORS.length]} />
-                                    ))}
-                                  </Pie>
-                                  <RechartsTooltip />
-                                </RechartsPieChart>
-                              </ResponsiveContainer>
-                            </div>
-                            {/* Legend Renderizado de forma nativa por fuera para evitar que Recharts desplace el centro geométrico */}
+                          <div style={{ marginTop: '8px', maxHeight: '110px', overflowY: 'auto' }}>
                             {renderCustomLegend({ payload: (pieMode === 'cirugia' ? distribucionCirugia : distribucionFamilia).map((entry, index) => ({ color: pieMode === 'cirugia' ? (PIE_COLORS[entry.name] || COLORS[index % COLORS.length]) : COLORS[index % COLORS.length], value: entry.name })) })}
                           </div>
                         </div>
-
                       </div>
                     </div>
 
-                    {/* FULL WIDTH INSIGHTS PANEL */}
-                    <div style={{ background: 'linear-gradient(135deg, #1e40af, #1e3a8a)', padding: '24px', borderRadius: '16px', color: 'white', display: 'flex', flexDirection: 'column', boxShadow: '0 4px 6px rgba(0,0,0,0.05)' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '24px' }}>
-                        <TrendingUp size={18} color="#F2A400" />
-                        <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 700 }}>Insights Operativos y Procedencia</h3>
+                    {/* COMPACT EXECUTIVE INSIGHTS GRID */}
+                    <div style={{
+                      background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)',
+                      padding: '18px 22px',
+                      borderRadius: '20px',
+                      color: 'white',
+                      boxShadow: '0 8px 24px rgba(15, 23, 42, 0.12)',
+                      marginBottom: '20px'
+                    }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '10px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <TrendingUp size={17} color="#F2A400" />
+                          <h4 style={{ margin: 0, fontSize: '0.92rem', fontWeight: 800, letterSpacing: '0.3px', textTransform: 'uppercase', color: '#f8fafc' }}>
+                            Principales Insights de Producción y Gestión Quirúrgica
+                          </h4>
+                        </div>
+                        <span style={{ fontSize: '0.72rem', color: '#94a3b8' }}>
+                          Análisis activo: <strong style={{ color: '#38bdf8' }}>{viewMode === 'cirugias' ? 'Cirugías Totales' : 'Pacientes Únicos (Cirugía Principal al 100%)'}</strong>
+                        </span>
                       </div>
 
-                      {/* ROW 1: Procedencia */}
-                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px', marginBottom: '20px' }}>
-                        <div style={{ background: 'rgba(255,255,255,0.08)', padding: '16px', borderRadius: '12px', borderLeft: '4px solid #fcd34d' }}>
-                          <p style={{ margin: '0 0 4px 0', fontSize: '0.65rem', opacity: 0.9, textTransform: 'uppercase', fontWeight: 800, color: '#fcd34d' }}>Ingresos por Urgencia</p>
-                          <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
-                            <h4 style={{ margin: 0, fontSize: '1.8rem', fontWeight: 900 }}>{procedenciaStats.tUrg}</h4>
-                            <span style={{ fontSize: '0.75rem', color: urgenciaKPI.trend === 'positive' ? '#ef4444' : '#10b981' }}>{urgenciaKPI.text}</span>
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '14px' }}>
+                        {/* Insight 1: Ambulatorizacion */}
+                        <div style={{ background: 'rgba(255,255,255,0.05)', padding: '12px 14px', borderRadius: '12px', borderLeft: '3px solid #F2A400' }}>
+                          <p style={{ margin: '0 0 3px 0', fontSize: '0.66rem', textTransform: 'uppercase', color: '#F2A400', fontWeight: 800 }}>
+                            Índice Ambulatorización
+                          </p>
+                          <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px' }}>
+                            <h4 style={{ margin: 0, fontSize: '1.45rem', fontWeight: 900, color: '#ffffff' }}>
+                              {insights.indiceAmbulatorizacion}%
+                            </h4>
+                            <span style={{ fontSize: '0.7rem', color: '#cbd5e1' }}>CMA s/ Mayor</span>
                           </div>
-                          <p style={{ margin: '4px 0 0 0', fontSize: '0.75rem', opacity: 0.7 }}>Casos priorizados e ingresados directo de UEH.</p>
+                          <p style={{ margin: '4px 0 0 0', fontSize: '0.7rem', color: '#94a3b8', lineHeight: 1.3 }}>
+                            Eficiencia en uso de camas quirúrgicas del establecimiento.
+                          </p>
                         </div>
-                        <div style={{ background: 'rgba(255,255,255,0.08)', padding: '16px', borderRadius: '12px', borderLeft: '4px solid #fb923c' }}>
-                          <p style={{ margin: '0 0 4px 0', fontSize: '0.65rem', opacity: 0.9, textTransform: 'uppercase', fontWeight: 800, color: '#fb923c' }}>Urgencia Diferida</p>
-                          <h4 style={{ margin: 0, fontSize: '1.8rem', fontWeight: 900 }}>{procedenciaStats.tUrgDif}</h4>
-                          <p style={{ margin: '4px 0 0 0', fontSize: '0.75rem', opacity: 0.7 }}>Pacientes compensados que esperan turno quirúrgico.</p>
-                        </div>
-                        <div style={{ background: 'rgba(255,255,255,0.08)', padding: '16px', borderRadius: '12px', borderLeft: '4px solid #94a3b8' }}>
-                          <p style={{ margin: '0 0 4px 0', fontSize: '0.65rem', opacity: 0.9, textTransform: 'uppercase', fontWeight: 800, color: '#94a3b8' }}>Producción Electiva</p>
-                          <h4 style={{ margin: 0, fontSize: '1.8rem', fontWeight: 900 }}>{procedenciaStats.tElec}</h4>
-                          <p style={{ margin: '4px 0 0 0', fontSize: '0.75rem', opacity: 0.7 }}>Programación desde lista de espera regular.</p>
-                        </div>
-                      </div>
 
-                      {/* ROW 2: Clinicos */}
-                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px' }}>
-                        <div style={{ background: 'rgba(255,255,255,0.08)', padding: '16px', borderRadius: '12px' }}>
-                          <p style={{ margin: '0 0 4px 0', fontSize: '0.65rem', opacity: 0.9, textTransform: 'uppercase', color: '#F2A400', fontWeight: 800 }}>Índice de Ambulatorización</p>
-                          <h4 style={{ margin: 0, fontSize: '1.8rem', fontWeight: 900, color: '#F2A400' }}>{insights.indiceAmbulatorizacion}%</h4>
-                          <p style={{ margin: '4px 0 0 0', fontSize: '0.75rem', opacity: 0.7 }}>Cálculo: CMA / (CMA + CM)</p>
-                          <p style={{ margin: '4px 0 0 0', fontSize: '0.7rem', opacity: 0.5, fontStyle: 'italic' }}>Estrategia Minsal de optimización de camas.</p>
+                        {/* Insight 2: Top Familias */}
+                        <div style={{ background: 'rgba(255,255,255,0.05)', padding: '12px 14px', borderRadius: '12px', borderLeft: '3px solid #60a5fa' }}>
+                          <p style={{ margin: '0 0 3px 0', fontSize: '0.66rem', textTransform: 'uppercase', color: '#60a5fa', fontWeight: 800 }}>
+                            Polos de Mayor Volumen
+                          </p>
+                          <p style={{ margin: 0, fontSize: '0.72rem', fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                            CMA: <span style={{ fontWeight: 500, color: '#e2e8f0' }}>{insights.topCMA[0]}</span> <strong style={{ color: '#60a5fa' }}>({insights.topCMA[1]})</strong>
+                          </p>
+                          <p style={{ margin: '3px 0 0 0', fontSize: '0.72rem', fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                            CM: <span style={{ fontWeight: 500, color: '#e2e8f0' }}>{insights.topCM[0]}</span> <strong style={{ color: '#60a5fa' }}>({insights.topCM[1]})</strong>
+                          </p>
                         </div>
-                        <div style={{ background: 'rgba(255,255,255,0.08)', padding: '16px', borderRadius: '12px' }}>
-                          <p style={{ margin: '0 0 4px 0', fontSize: '0.65rem', opacity: 0.9, textTransform: 'uppercase', color: '#6366f1', fontWeight: 800 }}>Top Familias Mayores</p>
-                          <div style={{ marginTop: '4px' }}>
-                            <p style={{ margin: 0, fontSize: '0.75rem', fontWeight: 700 }}>CMA: <span style={{ fontWeight: 400, opacity: 0.9 }}>{insights.topCMA[0]} ({insights.topCMA[1]})</span></p>
-                            <p style={{ margin: '4px 0 0 0', fontSize: '0.75rem', fontWeight: 700 }}>CM: <span style={{ fontWeight: 400, opacity: 0.9 }}>{insights.topCM[0]} ({insights.topCM[1]})</span></p>
+
+                        {/* Insight 3: Urgencias y Oportunidad */}
+                        <div style={{ background: 'rgba(255,255,255,0.05)', padding: '12px 14px', borderRadius: '12px', borderLeft: '3px solid #f87171' }}>
+                          <p style={{ margin: '0 0 3px 0', fontSize: '0.66rem', textTransform: 'uppercase', color: '#f87171', fontWeight: 800 }}>
+                            Demanda no programada
+                          </p>
+                          <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px' }}>
+                            <h4 style={{ margin: 0, fontSize: '1.45rem', fontWeight: 900, color: '#ffffff' }}>
+                              {procedenciaStats.tUrg.toLocaleString()}
+                            </h4>
+                            <span style={{ fontSize: '0.7rem', color: '#fca5a5' }}>urg. directas</span>
                           </div>
+                          <p style={{ margin: '4px 0 0 0', fontSize: '0.7rem', color: '#94a3b8', lineHeight: 1.3 }}>
+                            Más <strong>{procedenciaStats.tUrgDif}</strong> diferidas compensadas en sala.
+                          </p>
                         </div>
-                        <div style={{ background: 'rgba(255,255,255,0.08)', padding: '16px', borderRadius: '12px' }}>
-                          <p style={{ margin: '0 0 4px 0', fontSize: '0.65rem', opacity: 0.9, textTransform: 'uppercase', color: '#38bdf8', fontWeight: 800 }}>Cobertura GES & Espera</p>
-                          <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
-                            <h4 style={{ margin: 0, fontSize: '1.8rem', fontWeight: 900, color: '#38bdf8' }}>{insights.porcentajeGES}%</h4>
-                            <span style={{ fontSize: '0.75rem', opacity: 0.7 }}>Garantizadas</span>
+
+                        {/* Insight 4: Concentración Quirúrgica */}
+                        <div style={{ background: 'rgba(255,255,255,0.05)', padding: '12px 14px', borderRadius: '12px', borderLeft: '3px solid #34d399' }}>
+                          <p style={{ margin: '0 0 3px 0', fontSize: '0.66rem', textTransform: 'uppercase', color: '#34d399', fontWeight: 800 }}>
+                            Multi-intervención
+                          </p>
+                          <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px' }}>
+                            <h4 style={{ margin: 0, fontSize: '1.45rem', fontWeight: 900, color: '#ffffff' }}>
+                              {surgicalDensity.ratio}
+                            </h4>
+                            <span style={{ fontSize: '0.7rem', color: '#a7f3d0' }}>cx / paciente</span>
                           </div>
-                          <p style={{ margin: '4px 0 0 0', fontSize: '0.75rem', opacity: 0.7 }}>T. Espera Promedio: <strong>{insights.promedioEspera} días</strong></p>
-                        </div>
-                        <div style={{ background: 'rgba(255,255,255,0.08)', padding: '16px', borderRadius: '12px' }}>
-                          <p style={{ margin: '0 0 4px 0', fontSize: '0.65rem', opacity: 0.9, textTransform: 'uppercase', color: '#EAE6E1', fontWeight: 800 }}>Capacidad Productiva</p>
-                          <h4 style={{ margin: 0, fontSize: '1.5rem', fontWeight: 900, color: '#EAE6E1' }}>{insights.porcentajeInst}% Inst.</h4>
-                          <p style={{ margin: '4px 0 0 0', fontSize: '0.75rem', opacity: 0.7 }}>Oferta Complementaria: <strong>{(100 - insights.porcentajeInst).toFixed(1)}%</strong> ({insights.gestorComp} cx)</p>
+                          <p style={{ margin: '4px 0 0 0', fontSize: '0.7rem', color: '#94a3b8', lineHeight: 1.3 }}>
+                            {viewMode === 'pacientes' ? 'Vista agrupada por evento principal (100%)' : 'Contando cada procedimiento secundario'}
+                          </p>
                         </div>
                       </div>
                     </div>
 
-                    {/* PIVOT TABLE ROW */}
-                    <div style={{ marginTop: '32px' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
-                        <Users size={22} color="#1e40af" />
-                        <h3 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 700, color: '#0f172a' }}>Despliegue Detallado de Producción (Tabla Dinámica)</h3>
+                    {/* COLLAPSIBLE DETAILED PIVOT TABLE */}
+                    <div style={{
+                      background: 'white',
+                      borderRadius: '18px',
+                      border: '1px solid #e2e8f0',
+                      boxShadow: '0 4px 14px rgba(0,0,0,0.03)',
+                      overflow: 'hidden'
+                    }}>
+                      <div
+                        onClick={() => setShowPivotTable(!showPivotTable)}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          padding: '16px 22px',
+                          cursor: 'pointer',
+                          background: showPivotTable ? '#f8fafc' : 'white',
+                          transition: 'background 0.2s ease',
+                          borderBottom: showPivotTable ? '1px solid #e2e8f0' : 'none'
+                        }}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                          <div style={{
+                            width: '32px',
+                            height: '32px',
+                            borderRadius: '10px',
+                            background: '#eff6ff',
+                            color: '#1e40af',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center'
+                          }}>
+                            <Users size={18} />
+                          </div>
+                          <div>
+                            <h4 style={{ margin: 0, fontSize: '0.95rem', fontWeight: 800, color: '#0f172a' }}>
+                              Despliegue Detallado de Producción (Matriz Dinámica por Familia / Intervención / Cirujano)
+                            </h4>
+                            <p style={{ margin: '2px 0 0 0', fontSize: '0.75rem', color: '#64748b' }}>
+                              {showPivotTable ? 'Haz clic para plegar la matriz' : 'Haz clic para desplegar la tabla analítica completa con aperturas mensuales e históricas'}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <span style={{
+                            fontSize: '0.78rem',
+                            fontWeight: 700,
+                            color: '#1e40af',
+                            background: '#eff6ff',
+                            padding: '4px 12px',
+                            borderRadius: '8px',
+                            border: '1px solid #bfdbfe'
+                          }}>
+                            {showPivotTable ? 'Ocultar Matriz' : 'Desplegar Matriz'}
+                          </span>
+                          {showPivotTable ? <ChevronDown size={18} color="#1e40af" /> : <ChevronRight size={18} color="#64748b" />}
+                        </div>
                       </div>
-                      <PivotTable data={filteredLibro} totalCirugias={totalKPI.val} />
+
+                      {showPivotTable && (
+                        <div style={{ padding: '20px' }}>
+                          <PivotTable data={displayLibro} totalCirugias={totalKPI.val} />
+                        </div>
+                      )}
                     </div>
 
                   </>
@@ -4035,6 +4902,12 @@ export default function SurgicalDashboard({ onBack }) {
                             </div>
                           </div>
                         </div>
+
+                        {/* MATRIZ COLAPSABLE DE GRANDES CAUSAS Y CAUSAS ESPECÍFICAS DE SUSPENSIÓN */}
+                        <TablaCausasSuspensionColapsable data={filteredTabla} />
+
+                        {/* MATRIZ COLAPSABLE DE ESPECIALIDADES E INTERVENCIONES PROPUESTAS (IQ) */}
+                        <TablaEspecialidadesSuspensionColapsable data={filteredTabla} />
                       </motion.div>
                     )}
 
@@ -4067,7 +4940,13 @@ export default function SurgicalDashboard({ onBack }) {
                             </div>
                           </div>
 
-                          {/* TABLA DINÁMICA JERÁRQUICA COLAPSABLE */}
+                          {/* MATRIZ DINÁMICA DE GRANDES CAUSAS Y CAUSAS ESPECÍFICAS DE SUSPENSIÓN */}
+                          <TablaCausasSuspensionColapsable data={filteredTabla} />
+
+                          {/* MATRIZ COLAPSABLE DE ESPECIALIDADES E INTERVENCIONES PROPUESTAS (IQ) */}
+                          <TablaEspecialidadesSuspensionColapsable data={filteredTabla} />
+
+                          {/* TABLA DINÁMICA JERÁRQUICA COLAPSABLE (POR ESPECIALIDAD Y MÉDICO) */}
                           <TablaDinamicaSuspensiones data={filteredTabla} />
 
                           {/* PANEL DE ANÁLISIS DE HALLAZGOS ESTADÍSTICOS DEL PACIENTE SUSPENDIDO */}
@@ -4351,6 +5230,187 @@ export default function SurgicalDashboard({ onBack }) {
           setInsumosDrillOpen={setInsumosDrillOpen}
         />
       )}
+
+      {/* MODAL AUDITORÍA CRÍTICA DE CIERRES DISCOVERER */}
+      <AnimatePresence>
+        {showAuditoriaModal && (
+          <div style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            width: '100vw',
+            height: '100vh',
+            background: 'rgba(15, 23, 42, 0.7)',
+            backdropFilter: 'blur(8px)',
+            zIndex: 9999,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '24px'
+          }}>
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              style={{
+                background: 'white',
+                borderRadius: '24px',
+                width: '100%',
+                maxWidth: '1200px',
+                maxHeight: '90vh',
+                display: 'flex',
+                flexDirection: 'column',
+                boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+                overflow: 'hidden',
+                border: '1px solid #e2e8f0'
+              }}
+            >
+              {/* Header Modal */}
+              <div style={{
+                padding: '20px 28px',
+                borderBottom: '1px solid #f1f5f9',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                background: 'linear-gradient(135deg, #fef2f2 0%, #fff1f2 100%)'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                  <div style={{ width: '42px', height: '42px', borderRadius: '14px', background: '#ef4444', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', boxShadow: '0 4px 12px rgba(239, 68, 68, 0.3)' }}>
+                    <AlertCircle size={22} />
+                  </div>
+                  <div>
+                    <h2 style={{ margin: 0, fontSize: '1.25rem', color: '#991b1b', fontWeight: 800 }}>
+                      Auditoría de Cierres Quirúrgicos — Tabla vs Discoverer
+                    </h2>
+                    <p style={{ margin: '2px 0 0 0', fontSize: '0.82rem', color: '#7f1d1d' }}>
+                      {auditoriaCasos.length} cirugías figuran como <strong>Intervenidas</strong> en Tabla de Pabellón pero <strong>no registran cierre o protocolo en Discoverer DWH</strong>
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setShowAuditoriaModal(false)}
+                  style={{
+                    background: 'white',
+                    border: '1px solid #fecaca',
+                    borderRadius: '12px',
+                    width: '36px',
+                    height: '36px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    cursor: 'pointer',
+                    color: '#991b1b',
+                    fontWeight: 800,
+                    fontSize: '1rem'
+                  }}
+                >
+                  ✕
+                </button>
+              </div>
+
+              {/* Banner de Impacto en Facturación */}
+              <div style={{ padding: '14px 28px', background: '#fffbeb', borderBottom: '1px solid #fef3c7', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <span style={{ fontSize: '1.2rem' }}>⚠️</span>
+                <span style={{ fontSize: '0.8rem', color: '#92400e', lineHeight: 1.4 }}>
+                  <strong>Impacto en Gestión y Facturación:</strong> Estos pacientes fueron intervenidos en los quirófanos pero su evento no ha completado el ciclo administrativo en la base central institucional (LE abierta, RUT incompleto o protocolo pendiente). Es urgente su revisión por Control de Gestión, SOME y Pabellón para regularizar su valorización.
+                </span>
+              </div>
+
+              {/* Tabla de Casos */}
+              <div style={{ flex: 1, overflowY: 'auto', padding: '20px 28px' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8rem', textAlign: 'left' }}>
+                  <thead>
+                    <tr style={{ background: '#f8fafc', borderBottom: '2px solid #e2e8f0', color: '#475569', textTransform: 'uppercase', fontSize: '0.7rem', letterSpacing: '0.5px' }}>
+                      <th style={{ padding: '10px 12px' }}>#</th>
+                      <th style={{ padding: '10px 12px' }}>Fecha</th>
+                      <th style={{ padding: '10px 12px' }}>Pabellón</th>
+                      <th style={{ padding: '10px 12px' }}>RUT Paciente</th>
+                      <th style={{ padding: '10px 12px' }}>Nombre Paciente</th>
+                      <th style={{ padding: '10px 12px' }}>ID Lista Espera</th>
+                      <th style={{ padding: '10px 12px' }}>Procedencia</th>
+                      <th style={{ padding: '10px 12px' }}>Especialidad</th>
+                      <th style={{ padding: '10px 12px' }}>Cirujano</th>
+                      <th style={{ padding: '10px 12px' }}>Intervención Propuesta</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {auditoriaCasos.map((c, i) => (
+                      <tr key={c.id || i} style={{ borderBottom: '1px solid #f1f5f9', background: i % 2 === 0 ? 'white' : '#fafafa' }}>
+                        <td style={{ padding: '10px 12px', color: '#94a3b8', fontWeight: 700 }}>{i + 1}</td>
+                        <td style={{ padding: '10px 12px', fontWeight: 600, color: '#0f172a', whiteSpace: 'nowrap' }}>{c.fecha}</td>
+                        <td style={{ padding: '10px 12px' }}>
+                          <span style={{
+                            background: c.pabellon === '6' ? '#fee2e2' : '#eff6ff',
+                            color: c.pabellon === '6' ? '#991b1b' : '#1e40af',
+                            padding: '3px 8px',
+                            borderRadius: '6px',
+                            fontWeight: 800,
+                            fontSize: '0.72rem'
+                          }}>
+                            Pab {c.pabellon}
+                          </span>
+                        </td>
+                        <td style={{ padding: '10px 12px', fontFamily: 'monospace', fontWeight: 700, color: c.rut.includes('-') && !c.rut.includes('--') ? '#1e293b' : '#dc2626' }}>
+                          {c.rut}
+                        </td>
+                        <td style={{ padding: '10px 12px', fontWeight: 700, color: '#0f172a' }}>{c.paciente}</td>
+                        <td style={{ padding: '10px 12px' }}>
+                          {c.id_lista_espera !== '0' ? (
+                            <span style={{ background: '#ecfdf5', color: '#065f46', padding: '3px 8px', borderRadius: '6px', fontWeight: 800, fontSize: '0.72rem' }}>
+                              LE: {c.id_lista_espera}
+                            </span>
+                          ) : (
+                            <span style={{ color: '#94a3b8', fontStyle: 'italic', fontSize: '0.72rem' }}>Sin LE (0)</span>
+                          )}
+                        </td>
+                        <td style={{ padding: '10px 12px' }}>
+                          <span style={{
+                            background: c.procedencia === 'Urgencia' ? '#fee2e2' : '#f1f5f9',
+                            color: c.procedencia === 'Urgencia' ? '#b91c1c' : '#475569',
+                            padding: '2px 6px',
+                            borderRadius: '6px',
+                            fontSize: '0.7rem',
+                            fontWeight: 700
+                          }}>
+                            {c.procedencia}
+                          </span>
+                        </td>
+                        <td style={{ padding: '10px 12px', color: '#475569' }}>{c.especialidad}</td>
+                        <td style={{ padding: '10px 12px', color: '#0f172a', fontWeight: 600 }}>{c.cirujano}</td>
+                        <td style={{ padding: '10px 12px', color: '#64748b', maxWidth: '240px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={c.intervencion}>
+                          {c.intervencion}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Footer Modal */}
+              <div style={{ padding: '16px 28px', borderTop: '1px solid #f1f5f9', background: '#f8fafc', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontSize: '0.75rem', color: '#64748b' }}>
+                  Total casos detectados: <strong>{auditoriaCasos.length}</strong> (No sumados forzadamente en Libro Electrónico para resguardar la validez de la auditoría)
+                </span>
+                <button
+                  onClick={() => setShowAuditoriaModal(false)}
+                  style={{
+                    background: '#0f172a',
+                    color: 'white',
+                    border: 'none',
+                    padding: '8px 20px',
+                    borderRadius: '10px',
+                    fontWeight: 700,
+                    fontSize: '0.82rem',
+                    cursor: 'pointer'
+                  }}
+                >
+                  Cerrar Auditoría
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
