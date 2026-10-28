@@ -132,13 +132,33 @@ export default function ListaEsperaDashboard({ onBack, tipo, initialTab }) {
     : '0 4px 14px rgba(99,102,241,0.45)';
   const accentSub = isOdonto ? '#2dd4bf' : '#818cf8';
 
-  const loadData = () => {
+  const loadData = async () => {
     setLoading(true);
     setError(null);
-    fetch('/data/lista_espera_cached.json?' + Date.now())
-      .then(r => { if (!r.ok) throw new Error('Archivo no encontrado'); return r.json(); })
-      .then(d => { setData(d); setLoading(false); })
-      .catch(e => { setError(e.message); setLoading(false); });
+    try {
+      const resGz = await fetch('data/lista_espera_cached.json.gz?' + Date.now());
+      if (resGz.ok && typeof DecompressionStream !== 'undefined') {
+        const ds = new DecompressionStream('gzip');
+        const decompressed = resGz.body.pipeThrough(ds);
+        const d = await new Response(decompressed).json();
+        setData(d);
+        setLoading(false);
+        return;
+      }
+    } catch (e) {
+      console.warn('Fallback a .json sin comprimir para Lista de Espera:', e);
+    }
+
+    try {
+      const r = await fetch('data/lista_espera_cached.json?' + Date.now());
+      if (!r.ok) throw new Error('Archivo no encontrado');
+      const d = await r.json();
+      setData(d);
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => { loadData(); }, []);

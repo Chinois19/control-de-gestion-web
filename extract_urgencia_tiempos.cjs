@@ -160,6 +160,7 @@ async function extractUrgenciaAtencionData() {
   } catch (e) {
     console.error('Error durante la extracción:', e.message);
     if (conn) await conn.close();
+    process.exit(1);
   }
 }
 

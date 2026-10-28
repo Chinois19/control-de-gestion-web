@@ -701,7 +701,7 @@ export default function ActividadesMedicinaDashboard({ onBack }) {
           </button>
           <div>
             <h1 style={{ fontSize: '1.65rem', fontWeight: 900, color: '#1e293b', margin: 0, display: 'flex', alignItems: 'center', gap: 10 }}>
-              <Stethoscope color="#6366f1" size={28} /> Actividades Medicina de Especialidad
+              <Stethoscope color="#6366f1" size={28} /> Consultas Especialidades Médicas
             </h1>
             <p style={{ fontSize: '0.82rem', color: '#94a3b8', margin: '2px 0 0', fontWeight: 500 }}>
               Hospital de Villarrica · Fuente: HOJA_DIARIA Oracle DWH ·

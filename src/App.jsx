@@ -108,7 +108,6 @@ const menuStructure = [
         label: 'Atención Abierta',
         nested: [
           { id: 'esp_medicas', label: 'Consultas Especialidades Médicas' },
-          { id: 'actividades_medicina', label: 'Actividades Medicina de Especialidad' },
           { id: 'prof_no_medicos', label: 'Consultas Profesionales No Médicos' },
           { id: 'esp_odontologicas', label: 'Consultas Odontológicas' }
         ]
@@ -264,11 +263,11 @@ const searchIndex = [
     action: { view: 'atencion_abierta' }
   },
   {
-    keys: ['actividades medicina', 'actividades medicina de especialidad', 'hoja diaria', 'medicina de especialidad', 'actividades medicas', 'consultas especialidad', 'sobrecupos medicina', 'videoconsultas medicina'],
-    title: 'Actividades Medicina de Especialidad',
-    path: 'Estadísticas Generales ➔ Atención Abierta ➔ Actividades Medicina',
-    desc: 'Análisis asistencial de medicina de especialidad extraído desde HOJA_DIARIA de Oracle (sobrecupos, pertinencia, prestadores y diagnósticos).',
-    action: { view: 'actividades_medicina' }
+    keys: ['consultas especialidades medicas', 'actividades medicina', 'actividades medicina de especialidad', 'hoja diaria', 'medicina de especialidad', 'actividades medicas', 'consultas especialidad', 'sobrecupos medicina', 'videoconsultas medicina'],
+    title: 'Consultas Especialidades Médicas',
+    path: 'Estadísticas Generales ➔ Atención Abierta ➔ Consultas Especialidades Médicas',
+    desc: 'Gestión y análisis asistencial de consultas de especialidades médicas extraído desde HOJA_DIARIA de Oracle (sobrecupos, pertinencia, prestadores y diagnósticos).',
+    action: { view: 'esp_medicas' }
   },
   {
     keys: ['nsp', 'inasistencias', 'ausentismo', 'no se presento', 'mamografias nsp', 'perdidas', 'horas mamografia', 'inasistencia mamografia'],
@@ -1115,8 +1114,7 @@ function App() {
                   onBack={() => navigateToView('produccion_general')}
                   onNavigate={(id) => navigateToView(id)}
                   cases={[
-                    { id: 'esp_medicas', title: 'Consultas Especialidades Médicas', icon: <Stethoscope size={24} />, image: imgConsultation, desc: 'Gestión y control de la actividad de especialidades médicas.', color: '#2ecc71' },
-                    { id: 'actividades_medicina', title: 'Actividades Medicina de Especialidad', icon: <Activity size={24} />, image: imgStats, desc: 'Análisis asistencial de medicina de especialidad directo desde HOJA_DIARIA Oracle.', color: '#6366f1' },
+                    { id: 'esp_medicas', title: 'Consultas Especialidades Médicas', icon: <Stethoscope size={24} />, image: imgConsultation, desc: 'Gestión y control de la actividad de especialidades médicas directo desde HOJA_DIARIA Oracle.', color: '#2ecc71' },
                     { id: 'prof_no_medicos', title: 'Consultas Profesionales No Médicos', icon: <User size={24} />, image: imgConsultation, desc: 'Atención de profesionales no médicos (Enfermería, Matonería, etc).', color: '#3498db' },
                     { id: 'esp_odontologicas', title: 'Consultas Odontológicas', icon: <Stethoscope size={24} />, image: imgConsultation, desc: 'Producción de la especialidad odontológica y urgencias dentales.', color: '#f1c40f' }
                   ]}

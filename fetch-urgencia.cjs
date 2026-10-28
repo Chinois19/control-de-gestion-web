@@ -264,6 +264,7 @@ async function fetchFromODBC() {
   } catch (err) {
     console.error("Error durante la conexión ODBC o ejecución de consulta:", err.message);
     console.log("Asegúrate de estar conectado a la VPN institucional del Servicio de Salud Araucanía Sur.");
+    process.exit(1);
   } finally {
     if (connection) {
       await connection.close();

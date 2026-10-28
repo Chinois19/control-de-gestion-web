@@ -16,6 +16,7 @@
 const odbc = require('odbc');
 const fs   = require('fs');
 const path = require('path');
+const zlib = require('zlib');
 
 // ─── Configuración de conexión ────────────────────────────────────────────────
 // DSN configurado en el sistema (Panel de control → ODBC de Windows)
@@ -252,12 +253,18 @@ async function run() {
       records
     };
 
+    const jsonBuffer = Buffer.from(JSON.stringify(output), 'utf-8');
     const outPath = path.join(cacheDir, 'lista_espera_cached.json');
-    fs.writeFileSync(outPath, JSON.stringify(output), 'utf-8');
+    fs.writeFileSync(outPath, jsonBuffer);
 
-    const sizeKB = Math.round(fs.statSync(outPath).size / 1024);
-    console.log(`      ✓ Archivo guardado: ${outPath}`);
-    console.log(`      ✓ Tamaño: ${sizeKB.toLocaleString('es-CL')} KB`);
+    const outPathGz = path.join(cacheDir, 'lista_espera_cached.json.gz');
+    const gzipped = zlib.gzipSync(jsonBuffer, { level: 9 });
+    fs.writeFileSync(outPathGz, gzipped);
+
+    const sizeKB = Math.round(jsonBuffer.length / 1024);
+    const sizeGzKB = Math.round(gzipped.length / 1024);
+    console.log(`      ✓ Archivo guardado: ${outPath} (${sizeKB.toLocaleString('es-CL')} KB)`);
+    console.log(`      ✓ Archivo comprimido: ${outPathGz} (${sizeGzKB.toLocaleString('es-CL')} KB)`);
 
     console.log('\n═══════════════════════════════════════════════════════════');
     console.log(' Extracción completada exitosamente.');

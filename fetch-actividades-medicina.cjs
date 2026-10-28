@@ -15,6 +15,7 @@ const odbc = require('odbc');
 const fs   = require('fs');
 const path = require('path');
 const zlib = require('zlib');
+const { execFileSync } = require('child_process');
 
 const DSN      = 'dwh.dssasur.cl';
 const USER     = 'ghperez';
@@ -184,7 +185,18 @@ async function run() {
     console.log('\n═══════════════════════════════════════════════════════════\n');
 
   } catch (err) {
-    console.error('\n❌ ERROR en la extracción:', err.message || err);
+    console.warn('\n⚠️ Conexión ODBC directa bloqueada o con timeout:', err.message || err);
+    const fallbackPy = path.join(__dirname, 'sync_actividades_from_excel.py');
+    if (fs.existsSync(fallbackPy)) {
+      console.log('🔄 Ejecutando respaldo automático desde Excel Discoverer en Escritorio (sync_actividades_from_excel.py)...');
+      try {
+        execFileSync('python', [fallbackPy], { stdio: 'inherit' });
+        return;
+      } catch (pyErr) {
+        console.error('\n❌ ERROR en respaldo Excel:', pyErr.message || pyErr);
+        process.exit(1);
+      }
+    }
     process.exit(1);
   } finally {
     if (connection) {
