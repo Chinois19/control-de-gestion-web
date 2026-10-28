@@ -1,12 +1,12 @@
 export const LEY18834_META = {
   law: "Ley 18.834",
   title: "Metas Sanitarias Ley N° 18.834 - Año 2026",
-  subtitle: "Cumplimiento Institucional del Hospital de Villarrica regulado por la Res. Exenta N° 649 (MINSAL, 2026). Datos oficializados a Agosto 2026.",
+  subtitle: "Cumplimiento Institucional del Hospital de Villarrica regulado por la Res. Exenta N° 649 (MINSAL, 2026). Datos oficializados a Septiembre 2026.",
   resolution: "RES. EXENTA N° 649 (2026)",
   hospital: "Hospital de Villarrica",
   year: "2026",
-  lastUpdatedMonth: "Agosto",
-  totalScore: 70.0
+  lastUpdatedMonth: "Septiembre",
+  totalScore: 90.0
 };
 
 export const LEY18834_INDICATORS = [
@@ -24,8 +24,8 @@ export const LEY18834_INDICATORS = [
     "definition": "Mide el porcentaje de cumplimiento de las garantías explícitas en salud (GES) otorgadas a los usuarios de la red asistencial del Hospital de Villarrica.",
     "objective": "Asegurar la atención médica oportuna y dentro de los plazos legales establecidos en el decreto supremo vigente sobre garantías explícitas en salud.",
     "formula": {
-      "numerator": "N° de garantías GES cumplidas dentro del plazo legal en el establecimiento (7.628 a Julio).",
-      "denominator": "N° total de garantías GES vencidas y abiertas evaluadas en el periodo (8.345 a Julio).",
+      "numerator": "N° de garantías GES cumplidas dentro del plazo legal en el establecimiento (9.817 a Septiembre).",
+      "denominator": "N° total de garantías GES vencidas y abiertas evaluadas en el periodo (10.487 a Septiembre).",
       "expression": "(Garantías GES Cumplidas / Total Garantías GES Evaluadas) × 100"
     },
     "evalRules": "Evaluación mensual acumulada. Para obtener el 10% de ponderación, el establecimiento debe alcanzar un porcentaje de cumplimiento igual o superior al 99,5%.",
@@ -88,19 +88,19 @@ export const LEY18834_INDICATORS = [
       },
       {
         "month": "Agosto",
-        "numerator": 0,
-        "denominator": 0,
-        "result": null,
-        "resultFormatted": "-",
-        "status": "Pendiente Actualización"
+        "numerator": 8731,
+        "denominator": 9446,
+        "result": 92.43,
+        "resultFormatted": "92.43%",
+        "status": "No Cumple"
       },
       {
         "month": "Septiembre",
-        "numerator": 0,
-        "denominator": 0,
-        "result": null,
-        "resultFormatted": "-",
-        "status": "Pendiente Actualización"
+        "numerator": 9817,
+        "denominator": 10487,
+        "result": 93.61,
+        "resultFormatted": "93.61%",
+        "status": "No Cumple"
       },
       {
         "month": "Octubre",
@@ -128,13 +128,13 @@ export const LEY18834_INDICATORS = [
       }
     ],
     "summaryYTD": {
-      "numerator": 7628,
-      "denominator": 8345,
-      "result": 91.41,
-      "resultFormatted": "91.41%",
+      "numerator": 9817,
+      "denominator": 10487,
+      "result": 93.61,
+      "resultFormatted": "93.61%",
       "scoreObtained": 0,
       "status": "No Cumple",
-      "observation": "Acumulado a Julio 2026: 91.41% de cumplimiento GES (7.628 garantías cumplidas de 8.345 totales evaluadas vs Meta ≥ 99.5%)."
+      "observation": "Acumulado a Septiembre 2026: 93.61% de cumplimiento GES (9.817 garantías cumplidas de 10.487 totales evaluadas vs Meta ≥ 99.5%)."
     }
   },
   {
@@ -159,67 +159,67 @@ export const LEY18834_INDICATORS = [
     "monthlyData": [
       {
         "month": "Enero",
-        "numerator": 45,
-        "denominator": 45,
+        "numerator": 30,
+        "denominator": 30,
         "result": 100,
-        "resultFormatted": "100.0%",
+        "resultFormatted": "100.00%",
         "status": "Cumple"
       },
       {
         "month": "Febrero",
-        "numerator": 45,
-        "denominator": 45,
-        "result": 100,
-        "resultFormatted": "100.0%",
-        "status": "Cumple"
+        "numerator": 125,
+        "denominator": 125,
+        "result": 89.49,
+        "resultFormatted": "89.49%",
+        "status": "En Riesgo"
       },
       {
         "month": "Marzo",
-        "numerator": 50,
-        "denominator": 50,
-        "result": 100,
-        "resultFormatted": "100.0%",
+        "numerator": 344,
+        "denominator": 346,
+        "result": 94.53,
+        "resultFormatted": "94.53%",
         "status": "Cumple"
       },
       {
         "month": "Abril",
-        "numerator": 48,
-        "denominator": 48,
-        "result": 100,
-        "resultFormatted": "100.0%",
+        "numerator": 266,
+        "denominator": 269,
+        "result": 98.42,
+        "resultFormatted": "98.42%",
         "status": "Cumple"
       },
       {
         "month": "Mayo",
-        "numerator": 52,
-        "denominator": 52,
-        "result": 100,
-        "resultFormatted": "100.0%",
+        "numerator": 109,
+        "denominator": 108,
+        "result": 97.25,
+        "resultFormatted": "97.25%",
         "status": "Cumple"
       },
       {
         "month": "Junio",
-        "numerator": 45,
-        "denominator": 45,
-        "result": 100,
-        "resultFormatted": "100.0%",
+        "numerator": 238,
+        "denominator": 264,
+        "result": 96.54,
+        "resultFormatted": "96.54%",
         "status": "Cumple"
       },
       {
         "month": "Julio",
-        "numerator": 46,
-        "denominator": 46,
-        "result": 100,
-        "resultFormatted": "100.0%",
+        "numerator": 40,
+        "denominator": 25,
+        "result": 91.74,
+        "resultFormatted": "91.74%",
         "status": "Cumple"
       },
       {
         "month": "Agosto",
-        "numerator": 48,
-        "denominator": 48,
-        "result": 100,
-        "resultFormatted": "100.0%",
-        "status": "Cumple"
+        "numerator": 60,
+        "denominator": 75,
+        "result": 78.83,
+        "resultFormatted": "78.83%",
+        "status": "En Riesgo"
       },
       {
         "month": "Septiembre",
@@ -255,13 +255,13 @@ export const LEY18834_INDICATORS = [
       }
     ],
     "summaryYTD": {
-      "numerator": 379,
-      "denominator": 379,
-      "result": 100,
-      "resultFormatted": "100.0%",
+      "numerator": 1212,
+      "denominator": 1242,
+      "result": 96.04,
+      "resultFormatted": "96.04%",
       "scoreObtained": 10,
       "status": "Cumple",
-      "observation": "Acumulado a Agosto 2026: 100.0% de cumplimiento en trazadoras de mantenimiento e infraestructura (379 actividades ejecutadas de 379 programadas)."
+      "observation": "Acumulado a Agosto 2026: 96.04% de cumplimiento ponderado en las 5 trazadoras de mantenimiento preventivo e infraestructura (1.212 mantenciones ejecutadas de 1.242 programadas + ejecución SIGFE)."
     }
   },
   {
@@ -343,18 +343,18 @@ export const LEY18834_INDICATORS = [
       {
         "month": "Agosto",
         "numerator": 0,
-        "denominator": 0,
-        "result": null,
-        "resultFormatted": "-",
-        "status": "Pendiente Actualización"
+        "denominator": 896,
+        "result": 0,
+        "resultFormatted": "0.00%",
+        "status": "No Cumple"
       },
       {
         "month": "Septiembre",
-        "numerator": 0,
-        "denominator": 0,
-        "result": null,
-        "resultFormatted": "-",
-        "status": "Pendiente Actualización"
+        "numerator": 48,
+        "denominator": 896,
+        "result": 5.36,
+        "resultFormatted": "5.36%",
+        "status": "Cumple"
       },
       {
         "month": "Octubre",
@@ -382,13 +382,13 @@ export const LEY18834_INDICATORS = [
       }
     ],
     "summaryYTD": {
-      "numerator": 0,
+      "numerator": 48,
       "denominator": 896,
-      "result": 0,
-      "resultFormatted": "0.00%",
-      "scoreObtained": 0,
-      "status": "No Cumple",
-      "observation": "Acumulado a Agosto 2026: 0.00% de avance (0 de 896 funcionarios capacitados en temáticas transversales). Requiere ejecución urgente del plan de capacitación."
+      "result": 5.36,
+      "resultFormatted": "5.36%",
+      "scoreObtained": 20,
+      "status": "Cumple",
+      "observation": "Acumulado a Septiembre 2026: 5.36% de avance (48 de 896 funcionarios capacitados en temáticas transversales vs Meta ≥ 5.0%). Adjudica el 20% de ponderación."
     }
   },
   {
@@ -405,7 +405,7 @@ export const LEY18834_INDICATORS = [
     "definition": "Porcentaje de funcionarios y funcionarias con atención o soporte en salud capacitados con curso vigente de Reanimación Cardiopulmonar (RCP).",
     "objective": "Asegurar la capacidad de respuesta inmediata y soporte vital básico/avanzado ante emergencias cardiorrespiratorias en el establecimiento.",
     "formula": {
-      "numerator": "N° de funcionarios/as Ley 18.834 con capacitación vigente en Reanimación Cardiopulmonar (RCP) (564 a Julio/Agosto).",
+      "numerator": "N° de funcionarios/as Ley 18.834 con capacitación vigente en Reanimación Cardiopulmonar (RCP) (632 a Septiembre).",
       "denominator": "N° total de funcionarios/as Ley 18.834 de la dotación objetivo del establecimiento (896 funcionarios).",
       "expression": "(Funcionarios Capacitados en RCP / Total Dotación Objetivo Ley 18.834) × 100"
     },
@@ -413,43 +413,43 @@ export const LEY18834_INDICATORS = [
     "monthlyData": [
       {
         "month": "Enero",
-        "numerator": 510,
-        "denominator": 896,
-        "result": 56.92,
-        "resultFormatted": "56.92%",
-        "status": "En Riesgo"
+        "numerator": 0.2,
+        "denominator": 0.13,
+        "result": 153.85,
+        "resultFormatted": "153.85%",
+        "status": "Cumple"
       },
       {
         "month": "Febrero",
-        "numerator": 525,
-        "denominator": 896,
-        "result": 58.59,
-        "resultFormatted": "58.59%",
-        "status": "En Riesgo"
+        "numerator": 0,
+        "denominator": 0,
+        "result": null,
+        "resultFormatted": "-",
+        "status": "Pendiente Actualización"
       },
       {
         "month": "Marzo",
-        "numerator": 540,
-        "denominator": 896,
-        "result": 60.27,
-        "resultFormatted": "60.27%",
-        "status": "Cumple"
+        "numerator": 0,
+        "denominator": 0,
+        "result": null,
+        "resultFormatted": "-",
+        "status": "Pendiente Actualización"
       },
       {
         "month": "Abril",
-        "numerator": 552,
-        "denominator": 896,
-        "result": 61.61,
-        "resultFormatted": "61.61%",
-        "status": "Cumple"
+        "numerator": 0,
+        "denominator": 0,
+        "result": null,
+        "resultFormatted": "-",
+        "status": "Pendiente Actualización"
       },
       {
         "month": "Mayo",
-        "numerator": 564,
-        "denominator": 896,
-        "result": 62.95,
-        "resultFormatted": "62.95%",
-        "status": "Cumple"
+        "numerator": 0,
+        "denominator": 0,
+        "result": null,
+        "resultFormatted": "-",
+        "status": "Pendiente Actualización"
       },
       {
         "month": "Junio",
@@ -469,19 +469,19 @@ export const LEY18834_INDICATORS = [
       },
       {
         "month": "Agosto",
-        "numerator": 0,
-        "denominator": 0,
-        "result": null,
-        "resultFormatted": "-",
-        "status": "Pendiente Actualización"
+        "numerator": 632,
+        "denominator": 896,
+        "result": 70.54,
+        "resultFormatted": "70.54%",
+        "status": "Cumple"
       },
       {
         "month": "Septiembre",
-        "numerator": 0,
-        "denominator": 0,
-        "result": null,
-        "resultFormatted": "-",
-        "status": "Pendiente Actualización"
+        "numerator": 632,
+        "denominator": 896,
+        "result": 70.54,
+        "resultFormatted": "70.54%",
+        "status": "Cumple"
       },
       {
         "month": "Octubre",
@@ -509,13 +509,13 @@ export const LEY18834_INDICATORS = [
       }
     ],
     "summaryYTD": {
-      "numerator": 564,
+      "numerator": 632,
       "denominator": 896,
-      "result": 62.95,
-      "resultFormatted": "62.95%",
+      "result": 70.54,
+      "resultFormatted": "70.54%",
       "scoreObtained": 30,
       "status": "Cumple",
-      "observation": "Acumulado a Agosto 2026: 62.95% de funcionarios vigentes en RCP (564 de 896 funcionarios objetivo vs Meta ≥ 60.0%). Cumplimiento del 30% de ponderación."
+      "observation": "Acumulado a Septiembre 2026: 70.54% de funcionarios vigentes en RCP (632 de 896 funcionarios objetivo vs Meta ≥ 60.0%). Cumplimiento del 30% de ponderación."
     }
   },
   {
@@ -532,7 +532,7 @@ export const LEY18834_INDICATORS = [
     "definition": "Porcentaje de personal de salud con atención clínica directa capacitado en prevención y control de Infecciones Asociadas a la Atención de Salud (IAAS).",
     "objective": "Minimizar los riesgos de infecciones intrahospitalarias y reforzar las medidas de bioseguridad en la atención directa de pacientes.",
     "formula": {
-      "numerator": "N° de funcionarios/as clínicos directos capacitados en Prevención y Control de IAAS con antigüedad < 5 años (551 a Julio/Agosto).",
+      "numerator": "N° de funcionarios/as clínicos directos capacitados en Prevención y Control de IAAS con antigüedad < 5 años (551 a Agosto).",
       "denominator": "N° total de funcionarios/as clínicos de atención directa Ley 18.834 del establecimiento (706 funcionarios).",
       "expression": "(Funcionarios Clínicos Capacitados en IAAS / Total Dotación Clínica Directa) × 100"
     },
@@ -540,43 +540,43 @@ export const LEY18834_INDICATORS = [
     "monthlyData": [
       {
         "month": "Enero",
-        "numerator": 494,
-        "denominator": 706,
-        "result": 69.97,
-        "resultFormatted": "69.97%",
-        "status": "En Riesgo"
+        "numerator": 0,
+        "denominator": 0,
+        "result": null,
+        "resultFormatted": "-",
+        "status": "Pendiente Actualización"
       },
       {
         "month": "Febrero",
-        "numerator": 508,
-        "denominator": 706,
-        "result": 71.95,
-        "resultFormatted": "71.95%",
+        "numerator": 1,
+        "denominator": 0.6,
+        "result": 166.67,
+        "resultFormatted": "166.67%",
         "status": "Cumple"
       },
       {
         "month": "Marzo",
-        "numerator": 529,
-        "denominator": 706,
-        "result": 74.93,
-        "resultFormatted": "74.93%",
-        "status": "Cumple"
+        "numerator": 0,
+        "denominator": 0,
+        "result": null,
+        "resultFormatted": "-",
+        "status": "Pendiente Actualización"
       },
       {
         "month": "Abril",
-        "numerator": 537,
-        "denominator": 706,
-        "result": 76.06,
-        "resultFormatted": "76.06%",
-        "status": "Cumple"
+        "numerator": 0,
+        "denominator": 0,
+        "result": null,
+        "resultFormatted": "-",
+        "status": "Pendiente Actualización"
       },
       {
         "month": "Mayo",
-        "numerator": 551,
-        "denominator": 706,
-        "result": 78.05,
-        "resultFormatted": "78.05%",
-        "status": "Cumple"
+        "numerator": 0,
+        "denominator": 0,
+        "result": null,
+        "resultFormatted": "-",
+        "status": "Pendiente Actualización"
       },
       {
         "month": "Junio",
@@ -596,11 +596,11 @@ export const LEY18834_INDICATORS = [
       },
       {
         "month": "Agosto",
-        "numerator": 0,
-        "denominator": 0,
-        "result": null,
-        "resultFormatted": "-",
-        "status": "Pendiente Actualización"
+        "numerator": 551,
+        "denominator": 706,
+        "result": 78.05,
+        "resultFormatted": "78.05%",
+        "status": "Cumple"
       },
       {
         "month": "Septiembre",

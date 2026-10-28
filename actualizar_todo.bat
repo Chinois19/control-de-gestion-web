@@ -21,9 +21,17 @@ echo [4/7] Compilando Acuerdo de Programacion...
 node compile-acuerdo.js
 if %errorlevel% neq 0 echo Error en compile-acuerdo.js
 
-echo [5/7] Compilando Ley 18834...
+echo [5/7] Compilando Metas Sanitarias (Ley 18.834, Ley 19.664, Ley 20.707) y COMGES 2026...
 node parse_ley18834.js
 if %errorlevel% neq 0 echo Error en parse_ley18834.js
+node scripts/update_comges.js
+if %errorlevel% neq 0 echo Error en update_comges.js
+node scripts/update_ley18834.js
+if %errorlevel% neq 0 echo Error en update_ley18834.js
+node scripts/update_ley19664.js
+if %errorlevel% neq 0 echo Error en update_ley19664.js
+node scripts/update_ley20707.js
+if %errorlevel% neq 0 echo Error en update_ley20707.js
 
 echo [6/7] Obteniendo Produccion Quirurgica desde ODBC (Discoverer)...
 node fetch-produccion-quirurgica.cjs

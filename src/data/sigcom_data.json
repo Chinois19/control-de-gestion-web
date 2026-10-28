@@ -1,5 +1,5 @@
 {
-  "lastUpdated": "2026-10-19T11:00:09.184Z",
+  "lastUpdated": "2026-10-28T17:34:34.737Z",
   "groupings": {
     "Hospitalización": [
       {
@@ -50022,6 +50022,2838 @@
         "SERVICIO DE LAVANDERÍA": 1835218,
         "SERVICIO DE MENSAJERIA Y/O CORREO": 377084,
         "SERVICIO DE VIGILANCIA Y SEGURIDAD": 83252400.00000003,
+        "SERVICIOS GENERALES": 17470846
+      }
+    },
+    {
+      "id": "2026-8-2",
+      "year": 2026,
+      "month": 8,
+      "costCenter": "HOSPITALIZACIÓN MEDICINA INTERNA",
+      "rrhh": 325385219.09546775,
+      "gastosGenerales": 19842094.681890517,
+      "insumos": 63728448,
+      "directos": 408955761.7773583,
+      "indirectos": 326788021.2831387,
+      "total": 735743783.060497,
+      "productionDetails": {
+        "Egreso": 198,
+        "DCO": 2049,
+        "N. Camas": 71
+      },
+      "productionTotal": 198,
+      "insumosBreakdown": {
+        "GASES MEDICINALES": 2934654,
+        "MEDICAMENTOS": 60793794
+      },
+      "rrhhBreakdown": {
+        "REMUNERACIÓN": 286737291.61637735,
+        "Horas Extras": 15776594.43301283,
+        "Asignación de Zona": 22871333.046077542
+      },
+      "ggBreakdown": {
+        "SERVICIO DE AGUA": 796928.5461327793,
+        "SERVICIO DE ENERGÍA": 877596.2319388045,
+        "GAS PROPANO": 608143.0807704835,
+        "SERVICIO DE ASEO": 8708557.51676268,
+        "SERVICIO DE VIGILANCIA Y SEGURIDAD": 8850869.306285769
+      }
+    },
+    {
+      "id": "2026-8-3",
+      "year": 2026,
+      "month": 8,
+      "costCenter": "HOSPITALIZACIÓN QUIRÚRGICA",
+      "rrhh": 129828166.92327319,
+      "gastosGenerales": 8761782.728239618,
+      "insumos": 15486265,
+      "directos": 154076214.6515128,
+      "indirectos": 129748507.32419822,
+      "total": 283824721.975711,
+      "productionDetails": {
+        "Egreso": 125,
+        "DCO": 783,
+        "N. Camas": 16
+      },
+      "productionTotal": 125,
+      "insumosBreakdown": {
+        "EQUIPOS MENORES": 290951,
+        "GASES MEDICINALES": 1124950,
+        "LIBROS, TEXTOS, UTILES DE ENSEÑANZA Y PUBLICACIONES": 25687,
+        "MATERIAL MEDICO QUIRURGICO": 4527358,
+        "MATERIALES DE CURACIÓN": 2093967,
+        "MATERIALES DE OFICINA, PRODUCTOS DE PAPEL E IMPRESOS": 329342,
+        "MATERIALES Y ELEMENTOS DE ASEO": 834394,
+        "MEDICAMENTOS": 5361301,
+        "OTROS INSUMOS Y MATERIALES": 898315
+      },
+      "rrhhBreakdown": {
+        "REMUNERACIÓN": 114641253.92920461,
+        "Horas Extras": 6020814.755085467,
+        "Asignación de Zona": 9166098.238983113
+      },
+      "ggBreakdown": {
+        "SERVICIO DE AGUA": 351904.1151194636,
+        "SERVICIO DE ENERGÍA": 387524.988195297,
+        "GAS PROPANO": 268541.08030521567,
+        "SERVICIO DE ASEO": 3845485.573047502,
+        "SERVICIO DE VIGILANCIA Y SEGURIDAD": 3908326.9715721398
+      }
+    },
+    {
+      "id": "2026-8-4",
+      "year": 2026,
+      "month": 8,
+      "costCenter": "HOSPITALIZACIÓN OBSTETRICIA",
+      "rrhh": 125889493.76,
+      "gastosGenerales": 3525553.8034343757,
+      "insumos": 4585824,
+      "directos": 134000871.56343438,
+      "indirectos": 122259476.87849534,
+      "total": 256260348.4419297,
+      "productionDetails": {
+        "Egreso": 86,
+        "DCO": 280,
+        "N. Camas": 10
+      },
+      "productionTotal": 86,
+      "insumosBreakdown": {
+        "EQUIPOS MENORES": 18718,
+        "GASES MEDICINALES": 391287,
+        "MATERIAL MEDICO QUIRURGICO": 860383,
+        "MATERIALES DE OFICINA, PRODUCTOS DE PAPEL E IMPRESOS": 154489,
+        "MATERIALES Y ELEMENTOS DE ASEO": 123327,
+        "MEDICAMENTOS": 3037620
+      },
+      "rrhhBreakdown": {
+        "REMUNERACIÓN": 111549316.18,
+        "Horas Extras": 5674834.659999999,
+        "Asignación de Zona": 8665342.92
+      },
+      "ggBreakdown": {
+        "SERVICIO DE AGUA": 141598.68259514592,
+        "SERVICIO DE ENERGÍA": 155931.75937293418,
+        "GAS PROPANO": 108055.18196622156,
+        "SERVICIO DE ASEO": 1547341.0730002834,
+        "SERVICIO DE VIGILANCIA Y SEGURIDAD": 1572627.1064997907
+      }
+    },
+    {
+      "id": "2026-8-5",
+      "year": 2026,
+      "month": 8,
+      "costCenter": "HOSPITALIZACIÓN GINECOLOGÍA",
+      "rrhh": 35556421.400782116,
+      "gastosGenerales": 729424.9248484916,
+      "insumos": 2913138,
+      "directos": 39198984.325630605,
+      "indirectos": 33599620.30551049,
+      "total": 72798604.6311411,
+      "productionDetails": {
+        "Egreso": 29,
+        "DCO": 72,
+        "N. Camas": 6
+      },
+      "productionTotal": 29,
+      "insumosBreakdown": {
+        "EQUIPOS MENORES": 18718,
+        "GASES MEDICINALES": 97821,
+        "MATERIAL MEDICO QUIRURGICO": 860383,
+        "MATERIALES DE OFICINA, PRODUCTOS DE PAPEL E IMPRESOS": 154489,
+        "MATERIALES Y ELEMENTOS DE ASEO": 123328,
+        "MEDICAMENTOS": 1599400,
+        "OTROS INSUMOS Y MATERIALES": 58999
+      },
+      "rrhhBreakdown": {
+        "REMUNERACIÓN": 31485135.04972066,
+        "Horas Extras": 1595775.0107262572,
+        "Asignación de Zona": 2475511.340335196
+      },
+      "ggBreakdown": {
+        "SERVICIO DE AGUA": 29296.279157616395,
+        "SERVICIO DE ENERGÍA": 32261.743318538105,
+        "GAS PROPANO": 22356.244544735495,
+        "SERVICIO DE ASEO": 320139.5323448862,
+        "SERVICIO DE VIGILANCIA Y SEGURIDAD": 325371.1254827153
+      }
+    },
+    {
+      "id": "2026-8-6",
+      "year": 2026,
+      "month": 8,
+      "costCenter": "HOSPITALIZACIÓN PEDIATRÍA",
+      "rrhh": 42736204.98307261,
+      "gastosGenerales": 9837566.76298703,
+      "insumos": 796893,
+      "directos": 53370664.74605964,
+      "indirectos": 38792854.86618648,
+      "total": 92163519.61224613,
+      "productionDetails": {
+        "Egreso": 43,
+        "DCO": 231,
+        "N. Camas": 10
+      },
+      "productionTotal": 43,
+      "insumosBreakdown": {
+        "GASES MEDICINALES": 342376,
+        "MEDICAMENTOS": 395518,
+        "OTROS INSUMOS Y MATERIALES": 58999
+      },
+      "rrhhBreakdown": {
+        "REMUNERACIÓN": 37748281.06793295,
+        "Horas Extras": 1659471.002067039,
+        "Asignación de Zona": 3328452.913072625
+      },
+      "ggBreakdown": {
+        "SERVICIO DE AGUA": 78472.17631504391,
+        "ARRENDAMIENTOS": 7883750,
+        "SERVICIO DE ENERGÍA": 86415.38388894135,
+        "GAS PROPANO": 59882.79788768436,
+        "SERVICIO DE ASEO": 857516.6044952308,
+        "SERVICIO DE VIGILANCIA Y SEGURIDAD": 871529.8004001303
+      }
+    },
+    {
+      "id": "2026-8-9",
+      "year": 2026,
+      "month": 8,
+      "costCenter": "QUIRÓFANOS DIGESTIVA",
+      "rrhh": 15883114.268488307,
+      "gastosGenerales": 3550569.1271572965,
+      "insumos": 5634666,
+      "directos": 25068349.395645604,
+      "indirectos": 13482832.144642059,
+      "total": 38551181.54028766,
+      "productionDetails": {
+        "Intervencion quirurgica": 66
+      },
+      "productionTotal": 66,
+      "insumosBreakdown": {
+        "EQUIPOS MENORES": 24556,
+        "MATERIAL MEDICO QUIRURGICO": 4126857,
+        "MATERIALES DE CURACIÓN": 40285,
+        "MATERIALES DE OFICINA, PRODUCTOS DE PAPEL E IMPRESOS": 43859,
+        "MATERIALES Y ELEMENTOS DE ASEO": 42946,
+        "MEDICAMENTOS": 1193784,
+        "OTROS INSUMOS Y MATERIALES": 162379
+      },
+      "rrhhBreakdown": {
+        "REMUNERACIÓN": 13915167.300735665,
+        "Horas Extras": 692594.3210907686,
+        "Asignación de Zona": 1275352.6466618727
+      },
+      "ggBreakdown": {
+        "SERVICIO DE AGUA": 43246.88828029087,
+        "ARRENDAMIENTOS": 2473799,
+        "SERVICIO DE ENERGÍA": 47624.47823212768,
+        "GAS PROPANO": 33002.07528032383,
+        "SERVICIO DE ASEO": 472586.92869959393,
+        "SERVICIO DE VIGILANCIA Y SEGURIDAD": 480309.7566649607
+      }
+    },
+    {
+      "id": "2026-8-10",
+      "year": 2026,
+      "month": 8,
+      "costCenter": "QUIRÓFANOS GINECOLOGÍA",
+      "rrhh": 13769252.681172889,
+      "gastosGenerales": 2740186.127157297,
+      "insumos": 4042692,
+      "directos": 20552130.808330186,
+      "indirectos": 8536269.365358803,
+      "total": 29088400.17368899,
+      "productionDetails": {
+        "Intervencion quirurgica": 32
+      },
+      "productionTotal": 32,
+      "insumosBreakdown": {
+        "EQUIPOS MENORES": 19154,
+        "MATERIAL MEDICO QUIRURGICO": 3218948,
+        "MATERIALES DE CURACIÓN": 31422,
+        "MATERIALES DE OFICINA, PRODUCTOS DE PAPEL E IMPRESOS": 34210,
+        "MATERIALES Y ELEMENTOS DE ASEO": 33498,
+        "MEDICAMENTOS": 578804,
+        "OTROS INSUMOS Y MATERIALES": 126656
+      },
+      "rrhhBreakdown": {
+        "REMUNERACIÓN": 12096382.254423125,
+        "Horas Extras": 545690.7061152953,
+        "Asignación de Zona": 1127179.7206344688
+      },
+      "ggBreakdown": {
+        "SERVICIO DE AGUA": 43246.88828029087,
+        "ARRENDAMIENTOS": 1663416,
+        "SERVICIO DE ENERGÍA": 47624.47823212768,
+        "GAS PROPANO": 33002.07528032383,
+        "SERVICIO DE ASEO": 472586.92869959393,
+        "SERVICIO DE VIGILANCIA Y SEGURIDAD": 480309.7566649607
+      }
+    },
+    {
+      "id": "2026-8-11",
+      "year": 2026,
+      "month": 8,
+      "costCenter": "QUIRÓFANOS OBSTETRICIA",
+      "rrhh": 8898786.534175105,
+      "gastosGenerales": 3294658.1271572965,
+      "insumos": 3246574,
+      "directos": 15440018.661332402,
+      "indirectos": 9292552.035917528,
+      "total": 24732570.69724993,
+      "productionDetails": {
+        "Intervencion quirurgica": 42
+      },
+      "productionTotal": 42,
+      "insumosBreakdown": {
+        "EQUIPOS MENORES": 13751,
+        "MATERIAL MEDICO QUIRURGICO": 2311040,
+        "MATERIALES DE CURACIÓN": 22559,
+        "MATERIALES DE OFICINA, PRODUCTOS DE PAPEL E IMPRESOS": 24561,
+        "MATERIALES Y ELEMENTOS DE ASEO": 24050,
+        "MEDICAMENTOS": 759681,
+        "OTROS INSUMOS Y MATERIALES": 90932
+      },
+      "rrhhBreakdown": {
+        "REMUNERACIÓN": 7807846.843619982,
+        "Horas Extras": 348331.5430637447,
+        "Asignación de Zona": 742608.1474913784
+      },
+      "ggBreakdown": {
+        "SERVICIO DE AGUA": 43246.88828029087,
+        "ARRENDAMIENTOS": 2217888,
+        "SERVICIO DE ENERGÍA": 47624.47823212768,
+        "GAS PROPANO": 33002.07528032383,
+        "SERVICIO DE ASEO": 472586.92869959393,
+        "SERVICIO DE VIGILANCIA Y SEGURIDAD": 480309.7566649607
+      }
+    },
+    {
+      "id": "2026-8-13",
+      "year": 2026,
+      "month": 8,
+      "costCenter": "QUIRÓFANOS OFTALMOLOGÍA",
+      "rrhh": 255801.5377001565,
+      "gastosGenerales": 1162073.127157297,
+      "insumos": 54263,
+      "directos": 1472137.6648574534,
+      "indirectos": 398849.2203933494,
+      "total": 1870986.8852508029,
+      "productionDetails": {
+        "Intervencion quirurgica": 3
+      },
+      "productionTotal": 3,
+      "insumosBreakdown": {
+        "MEDICAMENTOS": 54263
+      },
+      "rrhhBreakdown": {
+        "REMUNERACIÓN": 225072.7948132863,
+        "Horas Extras": 11370.970850229402,
+        "Asignación de Zona": 19357.772036640792
+      },
+      "ggBreakdown": {
+        "SERVICIO DE AGUA": 43246.88828029087,
+        "ARRENDAMIENTOS": 85303,
+        "SERVICIO DE ENERGÍA": 47624.47823212768,
+        "GAS PROPANO": 33002.07528032383,
+        "SERVICIO DE ASEO": 472586.92869959393,
+        "SERVICIO DE VIGILANCIA Y SEGURIDAD": 480309.7566649607
+      }
+    },
+    {
+      "id": "2026-8-14",
+      "year": 2026,
+      "month": 8,
+      "costCenter": "QUIRÓFANOS OTORRINOLARINGOLOGÍA",
+      "rrhh": 1660455.2475247527,
+      "gastosGenerales": 1162073.127157297,
+      "insumos": 481884,
+      "directos": 3304412.3746820497,
+      "indirectos": 1373861.7940580049,
+      "total": 4678274.168740055,
+      "productionDetails": {
+        "Intervencion quirurgica": 7
+      },
+      "productionTotal": 7,
+      "insumosBreakdown": {
+        "EQUIPOS MENORES": 1964,
+        "MATERIAL MEDICO QUIRURGICO": 330149,
+        "MATERIALES DE CURACIÓN": 3223,
+        "MATERIALES DE OFICINA, PRODUCTOS DE PAPEL E IMPRESOS": 3509,
+        "MATERIALES Y ELEMENTOS DE ASEO": 3436,
+        "MEDICAMENTOS": 126613,
+        "OTROS INSUMOS Y MATERIALES": 12990
+      },
+      "rrhhBreakdown": {
+        "REMUNERACIÓN": 1452395.168316832,
+        "Horas Extras": 72685.57425742576,
+        "Asignación de Zona": 135374.50495049506
+      },
+      "ggBreakdown": {
+        "SERVICIO DE AGUA": 43246.88828029087,
+        "ARRENDAMIENTOS": 85303,
+        "SERVICIO DE ENERGÍA": 47624.47823212768,
+        "GAS PROPANO": 33002.07528032383,
+        "SERVICIO DE ASEO": 472586.92869959393,
+        "SERVICIO DE VIGILANCIA Y SEGURIDAD": 480309.7566649607
+      }
+    },
+    {
+      "id": "2026-8-15",
+      "year": 2026,
+      "month": 8,
+      "costCenter": "QUIRÓFANOS PROCTOLOGÍA",
+      "rrhh": 1607183.3465346538,
+      "gastosGenerales": 1162073.127157297,
+      "insumos": 90438,
+      "directos": 2859694.4736919506,
+      "indirectos": 762557.3497450176,
+      "total": 3622251.823436968,
+      "productionDetails": {
+        "Intervencion quirurgica": 5
+      },
+      "productionTotal": 5,
+      "insumosBreakdown": {
+        "MEDICAMENTOS": 90438
+      },
+      "rrhhBreakdown": {
+        "REMUNERACIÓN": 1394108.4950495053,
+        "Horas Extras": 102190.57425742575,
+        "Asignación de Zona": 110884.27722772276
+      },
+      "ggBreakdown": {
+        "SERVICIO DE AGUA": 43246.88828029087,
+        "ARRENDAMIENTOS": 85303,
+        "SERVICIO DE ENERGÍA": 47624.47823212768,
+        "GAS PROPANO": 33002.07528032383,
+        "SERVICIO DE ASEO": 472586.92869959393,
+        "SERVICIO DE VIGILANCIA Y SEGURIDAD": 480309.7566649607
+      }
+    },
+    {
+      "id": "2026-8-16",
+      "year": 2026,
+      "month": 8,
+      "costCenter": "QUIRÓFANOS TRAUMATOLOGÍA Y ORTOPEDIA",
+      "rrhh": 14077663.762351498,
+      "gastosGenerales": 2740186.127157297,
+      "insumos": 20944672,
+      "directos": 37762521.8895088,
+      "indirectos": 14292899.260068985,
+      "total": 52055421.14957778,
+      "productionDetails": {
+        "Intervencion quirurgica": 34
+      },
+      "productionTotal": 34,
+      "insumosBreakdown": {
+        "EQUIPOS MENORES": 18171,
+        "MATERIAL DE OSTEOSÍNTESIS Y PRÓTESIS": 17043439,
+        "MATERIAL MEDICO QUIRURGICO": 3053874,
+        "MATERIALES DE CURACIÓN": 29811,
+        "MATERIALES DE OFICINA, PRODUCTOS DE PAPEL E IMPRESOS": 32456,
+        "MATERIALES Y ELEMENTOS DE ASEO": 31780,
+        "MEDICAMENTOS": 614980,
+        "OTROS INSUMOS Y MATERIALES": 120161
+      },
+      "rrhhBreakdown": {
+        "REMUNERACIÓN": 12651544.350409962,
+        "Horas Extras": 402518.3841584157,
+        "Asignación de Zona": 1023601.0277831191
+      },
+      "ggBreakdown": {
+        "SERVICIO DE AGUA": 43246.88828029087,
+        "ARRENDAMIENTOS": 1663416,
+        "SERVICIO DE ENERGÍA": 47624.47823212768,
+        "GAS PROPANO": 33002.07528032383,
+        "SERVICIO DE ASEO": 472586.92869959393,
+        "SERVICIO DE VIGILANCIA Y SEGURIDAD": 480309.7566649607
+      }
+    },
+    {
+      "id": "2026-8-17",
+      "year": 2026,
+      "month": 8,
+      "costCenter": "QUIRÓFANOS UROLOGÍA",
+      "rrhh": 6951100.920515514,
+      "gastosGenerales": 1801849.127157297,
+      "insumos": 1797682,
+      "directos": 10550632.047672812,
+      "indirectos": 4166323.7104702904,
+      "total": 14716955.758143103,
+      "productionDetails": {
+        "Intervencion quirurgica": 11
+      },
+      "productionTotal": 11,
+      "insumosBreakdown": {
+        "EQUIPOS MENORES": 8840,
+        "MATERIAL MEDICO QUIRURGICO": 1485669,
+        "MATERIALES DE CURACIÓN": 14503,
+        "MATERIALES DE OFICINA, PRODUCTOS DE PAPEL E IMPRESOS": 15789,
+        "MATERIALES Y ELEMENTOS DE ASEO": 15461,
+        "MEDICAMENTOS": 198964,
+        "OTROS INSUMOS Y MATERIALES": 58456
+      },
+      "rrhhBreakdown": {
+        "REMUNERACIÓN": 6148747.406770285,
+        "Horas Extras": 243188.07920792073,
+        "Asignación de Zona": 559165.4345373086
+      },
+      "ggBreakdown": {
+        "SERVICIO DE AGUA": 43246.88828029087,
+        "ARRENDAMIENTOS": 725079,
+        "SERVICIO DE ENERGÍA": 47624.47823212768,
+        "GAS PROPANO": 33002.07528032383,
+        "SERVICIO DE ASEO": 472586.92869959393,
+        "SERVICIO DE VIGILANCIA Y SEGURIDAD": 480309.7566649607
+      }
+    },
+    {
+      "id": "2026-8-18",
+      "year": 2026,
+      "month": 8,
+      "costCenter": "QUIRÓFANOS CIRUGÍA PLÁSTICA",
+      "rrhh": 5602492.009900989,
+      "gastosGenerales": 1673894.127157297,
+      "insumos": 2067375,
+      "directos": 9343761.137058286,
+      "indirectos": 4184811.2071355483,
+      "total": 13528572.344193835,
+      "productionDetails": {
+        "Intervencion quirurgica": 21
+      },
+      "productionTotal": 21,
+      "insumosBreakdown": {
+        "EQUIPOS MENORES": 9331,
+        "MATERIAL MEDICO QUIRURGICO": 1568206,
+        "MATERIALES DE CURACIÓN": 15308,
+        "MATERIALES DE OFICINA, PRODUCTOS DE PAPEL E IMPRESOS": 16666,
+        "MATERIALES Y ELEMENTOS DE ASEO": 16320,
+        "MEDICAMENTOS": 379840,
+        "OTROS INSUMOS Y MATERIALES": 61704
+      },
+      "rrhhBreakdown": {
+        "REMUNERACIÓN": 4905686.138613861,
+        "Horas Extras": 243188.07920792073,
+        "Asignación de Zona": 453617.79207920795
+      },
+      "ggBreakdown": {
+        "SERVICIO DE AGUA": 43246.88828029087,
+        "ARRENDAMIENTOS": 597124,
+        "SERVICIO DE ENERGÍA": 47624.47823212768,
+        "GAS PROPANO": 33002.07528032383,
+        "SERVICIO DE ASEO": 472586.92869959393,
+        "SERVICIO DE VIGILANCIA Y SEGURIDAD": 480309.7566649607
+      }
+    },
+    {
+      "id": "2026-8-19",
+      "year": 2026,
+      "month": 8,
+      "costCenter": "UNIDAD DE CUIDADOS INTENSIVOS ADULTOS",
+      "rrhh": 60522938.71089651,
+      "gastosGenerales": 8045000.416161639,
+      "insumos": 7000716,
+      "directos": 75568655.12705815,
+      "indirectos": 48392151.29334052,
+      "total": 123960806.42039867,
+      "productionDetails": {
+        "Transferencia": 14,
+        "DCO": 323,
+        "Egreso": 3,
+        "N. Camas": 5
+      },
+      "productionTotal": 3,
+      "insumosBreakdown": {
+        "EQUIPOS MENORES": 867567,
+        "MATERIAL DE ODONTOLOGÍA": 33415,
+        "MATERIAL MEDICO QUIRURGICO": 3021183,
+        "MATERIALES DE CURACIÓN": 186586,
+        "MATERIALES DE OFICINA, PRODUCTOS DE PAPEL E IMPRESOS": 272230,
+        "MATERIALES Y ELEMENTOS DE ASEO": 111428,
+        "MEDICAMENTOS": 2300835,
+        "OTROS INSUMOS Y MATERIALES": 207472
+      },
+      "rrhhBreakdown": {
+        "REMUNERACIÓN": 53330633.86396935,
+        "Horas Extras": 2033345.9224581006,
+        "Asignación de Zona": 5158958.924469064
+      },
+      "ggBreakdown": {
+        "SERVICIO DE AGUA": 97654.26385872132,
+        "ARRENDAMIENTOS": 5613584,
+        "SERVICIO DE ENERGÍA": 107539.14439512702,
+        "GAS PROPANO": 74520.81514911832,
+        "SERVICIO DE ASEO": 1067131.774482954,
+        "SERVICIO DE VIGILANCIA Y SEGURIDAD": 1084570.4182757176
+      }
+    },
+    {
+      "id": "2026-8-20",
+      "year": 2026,
+      "month": 8,
+      "costCenter": "UNIDAD DE TRATAMIENTO INTENSIVO ADULTO",
+      "rrhh": 55697807.556591764,
+      "gastosGenerales": 10888661.023059223,
+      "insumos": 6462198,
+      "directos": 73048666.57965098,
+      "indirectos": 45218523.0158305,
+      "total": 118267189.59548149,
+      "productionDetails": {
+        "Transferencia": 50,
+        "DCO": 304,
+        "Egreso": 5,
+        "N. Camas": 7
+      },
+      "productionTotal": 5,
+      "insumosBreakdown": {
+        "EQUIPOS MENORES": 800831,
+        "MATERIAL DE ODONTOLOGÍA": 30845,
+        "MATERIAL MEDICO QUIRURGICO": 2788784,
+        "MATERIALES DE CURACIÓN": 172233,
+        "MATERIALES DE OFICINA, PRODUCTOS DE PAPEL E IMPRESOS": 251289,
+        "MATERIALES Y ELEMENTOS DE ASEO": 102856,
+        "MEDICAMENTOS": 2123848,
+        "OTROS INSUMOS Y MATERIALES": 191512
+      },
+      "rrhhBreakdown": {
+        "REMUNERACIÓN": 49071119.028164804,
+        "Horas Extras": 1907791.7199999997,
+        "Asignación de Zona": 4718896.808426965
+      },
+      "ggBreakdown": {
+        "SERVICIO DE AGUA": 260178.86013787895,
+        "ARRENDAMIENTOS": 4410673,
+        "SERVICIO DE ENERGÍA": 286515.0061384456,
+        "GAS PROPANO": 198544.74321872237,
+        "SERVICIO DE ASEO": 2843143.942015299,
+        "SERVICIO DE VIGILANCIA Y SEGURIDAD": 2889605.4715488767
+      }
+    },
+    {
+      "id": "2026-8-21",
+      "year": 2026,
+      "month": 8,
+      "costCenter": "EMERGENCIAS GINECO OBSTÉTRICAS",
+      "rrhh": 37263888.006143294,
+      "gastosGenerales": 2214325.6647186354,
+      "insumos": 1286121,
+      "directos": 40764334.67086193,
+      "indirectos": 15982273.170845317,
+      "total": 56746607.841707245,
+      "productionDetails": {
+        "Atención": 650
+      },
+      "productionTotal": 650,
+      "insumosBreakdown": {
+        "MATERIAL MEDICO QUIRURGICO": 32686,
+        "MEDICAMENTOS": 1253435
+      },
+      "rrhhBreakdown": {
+        "REMUNERACIÓN": 32891833.84767145,
+        "Horas Extras": 1328759.6840223463,
+        "Asignación de Zona": 3043294.4744494986
+      },
+      "ggBreakdown": {
+        "SERVICIO DE AGUA": 88935.13315704977,
+        "SERVICIO DE ENERGÍA": 97937.43507413354,
+        "GAS PROPANO": 67867.17093937562,
+        "SERVICIO DE ASEO": 971852.1517612617,
+        "SERVICIO DE VIGILANCIA Y SEGURIDAD": 987733.7737868144
+      }
+    },
+    {
+      "id": "2026-8-23",
+      "year": 2026,
+      "month": 8,
+      "costCenter": "EMERGENCIAS",
+      "rrhh": 243644489.1583864,
+      "gastosGenerales": 10802435.791803852,
+      "insumos": 37256137,
+      "directos": 291703061.95019025,
+      "indirectos": 203756906.5039662,
+      "total": 495459968.45415646,
+      "productionDetails": {
+        "Atención": 2996
+      },
+      "productionTotal": 2996,
+      "insumosBreakdown": {
+        "EQUIPOS MENORES": 171822,
+        "MATERIAL MEDICO QUIRURGICO": 10940748,
+        "MATERIALES DE CURACIÓN": 733344,
+        "MATERIALES DE OFICINA, PRODUCTOS DE PAPEL E IMPRESOS": 368766,
+        "MATERIALES Y ELEMENTOS DE ASEO": 286638,
+        "MEDICAMENTOS": 22838084,
+        "OTROS INSUMOS Y MATERIALES": 1916735
+      },
+      "rrhhBreakdown": {
+        "REMUNERACIÓN": 214033489.29477838,
+        "Horas Extras": 10361611.062318748,
+        "Asignación de Zona": 19249388.801289305
+      },
+      "ggBreakdown": {
+        "SERVICIO DE AGUA": 433863.94371517614,
+        "SERVICIO DE ENERGÍA": 477781.05581263575,
+        "GAS PROPANO": 331085.3358767971,
+        "SERVICIO DE ASEO": 4741114.02663141,
+        "SERVICIO DE VIGILANCIA Y SEGURIDAD": 4818591.429767831
+      }
+    },
+    {
+      "id": "2026-8-25",
+      "year": 2026,
+      "month": 8,
+      "costCenter": "CONSULTA MEDICINA INTERNA",
+      "rrhh": 6178709.956921169,
+      "gastosGenerales": 356028.83236652566,
+      "insumos": 123526615.30211061,
+      "directos": 130061354.09139831,
+      "indirectos": 73761237.21007402,
+      "total": 203822591.30147234,
+      "productionDetails": {
+        "Consulta": 681
+      },
+      "productionTotal": 681,
+      "insumosBreakdown": {
+        "EQUIPOS MENORES": 7654,
+        "MATERIAL MEDICO QUIRURGICO": 274634,
+        "MATERIALES DE CURACIÓN": 124019,
+        "MATERIALES DE OFICINA, PRODUCTOS DE PAPEL E IMPRESOS": 32093.26460679858,
+        "MATERIALES Y ELEMENTOS DE ASEO": 50136.195489599195,
+        "MEDICAMENTOS": 122874156,
+        "OTROS INSUMOS Y MATERIALES": 163922.84201420596
+      },
+      "rrhhBreakdown": {
+        "REMUNERACIÓN": 5615873.060459343,
+        "Horas Extras": 87164.74860335197,
+        "Asignación de Zona": 475672.14785847306
+      },
+      "ggBreakdown": {
+        "SERVICIO DE AGUA": 14299.374350741336,
+        "SERVICIO DE ENERGÍA": 15746.803286429315,
+        "GAS PROPANO": 10911.97650397804,
+        "SERVICIO DE ASEO": 156258.5812635754,
+        "SERVICIO DE VIGILANCIA Y SEGURIDAD": 158812.09696180152
+      }
+    },
+    {
+      "id": "2026-8-26",
+      "year": 2026,
+      "month": 8,
+      "costCenter": "CONSULTA NEUROLOGÍA",
+      "rrhh": 3390044.826815642,
+      "gastosGenerales": 356028.83236652566,
+      "insumos": 24753775.595870115,
+      "directos": 28499849.255052283,
+      "indirectos": 23289756.363553695,
+      "total": 51789605.61860598,
+      "productionDetails": {
+        "Consulta": 231
+      },
+      "productionTotal": 231,
+      "insumosBreakdown": {
+        "EQUIPOS MENORES": 2596,
+        "MATERIAL MEDICO QUIRURGICO": 93158,
+        "MATERIALES DE CURACIÓN": 42068,
+        "MATERIALES DE OFICINA, PRODUCTOS DE PAPEL E IMPRESOS": 10886.261562658548,
+        "MATERIALES Y ELEMENTOS DE ASEO": 17006.550892947744,
+        "MEDICAMENTOS": 24532457,
+        "OTROS INSUMOS Y MATERIALES": 55603.78341451039
+      },
+      "rrhhBreakdown": {
+        "REMUNERACIÓN": 3113155.8379888264,
+        "Asignación de Zona": 276888.9888268156
+      },
+      "ggBreakdown": {
+        "SERVICIO DE AGUA": 14299.374350741336,
+        "SERVICIO DE ENERGÍA": 15746.803286429315,
+        "GAS PROPANO": 10911.97650397804,
+        "SERVICIO DE ASEO": 156258.5812635754,
+        "SERVICIO DE VIGILANCIA Y SEGURIDAD": 158812.09696180152
+      }
+    },
+    {
+      "id": "2026-8-27",
+      "year": 2026,
+      "month": 8,
+      "costCenter": "CONSULTA CARDIOLOGÍA",
+      "rrhh": 522925.43575418997,
+      "gastosGenerales": 356028.83236652566,
+      "insumos": 4875718.513874513,
+      "directos": 5754672.7819952285,
+      "indirectos": 6937974.831411335,
+      "total": 12692647.613406563,
+      "productionDetails": {
+        "Consulta": 23
+      },
+      "productionTotal": 23,
+      "insumosBreakdown": {
+        "EQUIPOS MENORES": 259,
+        "MATERIAL MEDICO QUIRURGICO": 9275,
+        "MATERIALES DE CURACIÓN": 4189,
+        "MATERIALES DE OFICINA, PRODUCTOS DE PAPEL E IMPRESOS": 1083.9134889227128,
+        "MATERIALES Y ELEMENTOS DE ASEO": 1693.292946051074,
+        "MEDICAMENTOS": 4853682,
+        "OTROS INSUMOS Y MATERIALES": 5536.307439539996
+      },
+      "rrhhBreakdown": {
+        "REMUNERACIÓN": 468298.6368715084,
+        "Asignación de Zona": 54626.79888268156
+      },
+      "ggBreakdown": {
+        "SERVICIO DE AGUA": 14299.374350741336,
+        "SERVICIO DE ENERGÍA": 15746.803286429315,
+        "GAS PROPANO": 10911.97650397804,
+        "SERVICIO DE ASEO": 156258.5812635754,
+        "SERVICIO DE VIGILANCIA Y SEGURIDAD": 158812.09696180152
+      }
+    },
+    {
+      "id": "2026-8-28",
+      "year": 2026,
+      "month": 8,
+      "costCenter": "CONSULTA DERMATOLOGÍA",
+      "rrhh": 1768116.415181067,
+      "gastosGenerales": 356028.83236652566,
+      "insumos": 3417512.941998985,
+      "directos": 5541658.189546578,
+      "indirectos": 6158548.997047649,
+      "total": 11700207.186594225,
+      "productionDetails": {
+        "Consulta": 48
+      },
+      "productionTotal": 48,
+      "insumosBreakdown": {
+        "EQUIPOS MENORES": 540,
+        "MATERIAL MEDICO QUIRURGICO": 19357,
+        "MATERIALES DE CURACIÓN": 8741,
+        "MATERIALES DE OFICINA, PRODUCTOS DE PAPEL E IMPRESOS": 2262.08032470827,
+        "MATERIALES Y ELEMENTOS DE ASEO": 3533.8287569761546,
+        "MEDICAMENTOS": 3371525,
+        "OTROS INSUMOS Y MATERIALES": 11554.032917300861
+      },
+      "rrhhBreakdown": {
+        "REMUNERACIÓN": 1633016.9591086342,
+        "Horas Extras": 14091.365313653136,
+        "Asignación de Zona": 121008.09075877974
+      },
+      "ggBreakdown": {
+        "SERVICIO DE AGUA": 14299.374350741336,
+        "SERVICIO DE ENERGÍA": 15746.803286429315,
+        "GAS PROPANO": 10911.97650397804,
+        "SERVICIO DE ASEO": 156258.5812635754,
+        "SERVICIO DE VIGILANCIA Y SEGURIDAD": 158812.09696180152
+      }
+    },
+    {
+      "id": "2026-8-29",
+      "year": 2026,
+      "month": 8,
+      "costCenter": "CONSULTA PSIQUIATRÍA",
+      "rrhh": 84740646.84916201,
+      "gastosGenerales": 6851384.115541188,
+      "insumos": 41497133.044860475,
+      "directos": 133089164.00956368,
+      "indirectos": 44850585.2780653,
+      "total": 177939749.28762898,
+      "productionDetails": {
+        "Consulta": 687
+      },
+      "productionTotal": 687,
+      "insumosBreakdown": {
+        "EQUIPOS MENORES": 7722,
+        "MATERIAL MEDICO QUIRURGICO": 277054,
+        "MATERIALES DE CURACIÓN": 125112,
+        "MATERIALES DE OFICINA, PRODUCTOS DE PAPEL E IMPRESOS": 32376.024647387112,
+        "MATERIALES Y ELEMENTOS DE ASEO": 50577.92408422122,
+        "MEDICAMENTOS": 40838924,
+        "OTROS INSUMOS Y MATERIALES": 165367.09612886858
+      },
+      "rrhhBreakdown": {
+        "REMUNERACIÓN": 76664094.41899441,
+        "Horas Extras": 2013085.2067039106,
+        "Asignación de Zona": 6063467.223463686
+      },
+      "ggBreakdown": {
+        "SERVICIO DE AGUA": 275175.76494475396,
+        "SERVICIO DE ENERGÍA": 303029.9461705543,
+        "GAS PROPANO": 209989.01125947983,
+        "SERVICIO DE ASEO": 3007024.8930966095,
+        "SERVICIO DE VIGILANCIA Y SEGURIDAD": 3056164.5000697905
+      }
+    },
+    {
+      "id": "2026-8-30",
+      "year": 2026,
+      "month": 8,
+      "costCenter": "CONSULTA ENDOCRINOLOGÍA",
+      "rrhh": 1878298.2640449437,
+      "gastosGenerales": 356028.83236652566,
+      "insumos": 1936019.370123457,
+      "directos": 4170346.466534926,
+      "indirectos": 1283361.9582720592,
+      "total": 5453708.424806985,
+      "productionDetails": {
+        "Consulta": 73
+      },
+      "productionTotal": 73,
+      "insumosBreakdown": {
+        "EQUIPOS MENORES": 821,
+        "MATERIAL MEDICO QUIRURGICO": 29439,
+        "MATERIALES DE CURACIÓN": 13294,
+        "MATERIALES DE OFICINA, PRODUCTOS DE PAPEL E IMPRESOS": 3440.2471604938273,
+        "MATERIALES Y ELEMENTOS DE ASEO": 5374.364567901235,
+        "MEDICAMENTOS": 1866079,
+        "OTROS INSUMOS Y MATERIALES": 17571.758395061726
+      },
+      "rrhhBreakdown": {
+        "REMUNERACIÓN": 1610866.2191011235,
+        "Asignación de Zona": 267432.0449438202
+      },
+      "ggBreakdown": {
+        "SERVICIO DE AGUA": 14299.374350741336,
+        "SERVICIO DE ENERGÍA": 15746.803286429315,
+        "GAS PROPANO": 10911.97650397804,
+        "SERVICIO DE ASEO": 156258.5812635754,
+        "SERVICIO DE VIGILANCIA Y SEGURIDAD": 158812.09696180152
+      }
+    },
+    {
+      "id": "2026-8-31",
+      "year": 2026,
+      "month": 8,
+      "costCenter": "CONSULTA NEFROLOGÍA",
+      "rrhh": 839664.8435754189,
+      "gastosGenerales": 356028.83236652566,
+      "insumos": 1230432.3139996617,
+      "directos": 2426125.9899416063,
+      "indirectos": 833222.6981078255,
+      "total": 3259348.688049432,
+      "productionDetails": {
+        "Consulta": 16
+      },
+      "productionTotal": 16,
+      "insumosBreakdown": {
+        "EQUIPOS MENORES": 180,
+        "MATERIAL MEDICO QUIRURGICO": 6452,
+        "MATERIALES DE CURACIÓN": 2914,
+        "MATERIALES DE OFICINA, PRODUCTOS DE PAPEL E IMPRESOS": 754.0267749027566,
+        "MATERIALES Y ELEMENTOS DE ASEO": 1177.9429189920515,
+        "MEDICAMENTOS": 1215103,
+        "OTROS INSUMOS Y MATERIALES": 3851.3443057669538
+      },
+      "rrhhBreakdown": {
+        "REMUNERACIÓN": 773631.0167597765,
+        "Asignación de Zona": 66033.82681564246
+      },
+      "ggBreakdown": {
+        "SERVICIO DE AGUA": 14299.374350741336,
+        "SERVICIO DE ENERGÍA": 15746.803286429315,
+        "GAS PROPANO": 10911.97650397804,
+        "SERVICIO DE ASEO": 156258.5812635754,
+        "SERVICIO DE VIGILANCIA Y SEGURIDAD": 158812.09696180152
+      }
+    },
+    {
+      "id": "2026-8-33",
+      "year": 2026,
+      "month": 8,
+      "costCenter": "PROGRAMA MANEJO DEL DOLOR",
+      "rrhh": 6604753,
+      "gastosGenerales": 677323.1445021706,
+      "insumos": 4205628.253495688,
+      "directos": 11487704.397997858,
+      "indirectos": 4741055.234823742,
+      "total": 16228759.6328216,
+      "productionDetails": {
+        "Consulta": 204
+      },
+      "productionTotal": 204,
+      "insumosBreakdown": {
+        "EQUIPOS MENORES": 2293,
+        "MATERIAL MEDICO QUIRURGICO": 82269,
+        "MATERIALES DE CURACIÓN": 37151,
+        "MATERIALES DE OFICINA, PRODUCTOS DE PAPEL E IMPRESOS": 9613.841380010148,
+        "MATERIALES Y ELEMENTOS DE ASEO": 15018.772217148657,
+        "MEDICAMENTOS": 4010178,
+        "OTROS INSUMOS Y MATERIALES": 49104.63989852866
+      },
+      "rrhhBreakdown": {
+        "REMUNERACIÓN": 5940065,
+        "Horas Extras": 113069,
+        "Asignación de Zona": 551619
+      },
+      "ggBreakdown": {
+        "SERVICIO DE AGUA": 27203.687789215222,
+        "SERVICIO DE ENERGÍA": 29957.33308149967,
+        "GAS PROPANO": 20759.369934397248,
+        "SERVICIO DE ASEO": 297272.42289168003,
+        "SERVICIO DE VIGILANCIA Y SEGURIDAD": 302130.3308053785
+      }
+    },
+    {
+      "id": "2026-8-34",
+      "year": 2026,
+      "month": 8,
+      "costCenter": "CONSULTA SALUD OCUPACIONAL",
+      "rrhh": 11029298.636363637,
+      "gastosGenerales": 356028.83236652566,
+      "insumos": 906349.6198647049,
+      "directos": 12291677.088594867,
+      "indirectos": 5945946.249112895,
+      "total": 18237623.33770776,
+      "productionDetails": {
+        "Consulta": 487
+      },
+      "productionTotal": 487,
+      "insumosBreakdown": {
+        "EQUIPOS MENORES": 5474,
+        "MATERIAL MEDICO QUIRURGICO": 196398,
+        "MATERIALES DE CURACIÓN": 88689,
+        "MATERIALES DE OFICINA, PRODUCTOS DE PAPEL E IMPRESOS": 22950.689961102657,
+        "MATERIALES Y ELEMENTOS DE ASEO": 35853.63759682057,
+        "MEDICAMENTOS": 439759,
+        "OTROS INSUMOS Y MATERIALES": 117225.29230678166
+      },
+      "rrhhBreakdown": {
+        "REMUNERACIÓN": 10024854.490118578,
+        "Horas Extras": 130272,
+        "Asignación de Zona": 874172.1462450593
+      },
+      "ggBreakdown": {
+        "SERVICIO DE AGUA": 14299.374350741336,
+        "SERVICIO DE ENERGÍA": 15746.803286429315,
+        "GAS PROPANO": 10911.97650397804,
+        "SERVICIO DE ASEO": 156258.5812635754,
+        "SERVICIO DE VIGILANCIA Y SEGURIDAD": 158812.09696180152
+      }
+    },
+    {
+      "id": "2026-8-35",
+      "year": 2026,
+      "month": 8,
+      "costCenter": "CONSULTA ANESTESIOLOGIA",
+      "rrhh": 1601133.4525139667,
+      "gastosGenerales": 356028.83236652566,
+      "insumos": 336792.1424995772,
+      "directos": 2293954.4273800696,
+      "indirectos": 587387.8037484701,
+      "total": 2881342.23112854,
+      "productionDetails": {
+        "Consulta": 20
+      },
+      "productionTotal": 20,
+      "insumosBreakdown": {
+        "EQUIPOS MENORES": 225,
+        "MATERIAL MEDICO QUIRURGICO": 8066,
+        "MATERIALES DE CURACIÓN": 3642,
+        "MATERIALES DE OFICINA, PRODUCTOS DE PAPEL E IMPRESOS": 942.5334686284458,
+        "MATERIALES Y ELEMENTOS DE ASEO": 1472.4286487400645,
+        "MEDICAMENTOS": 317630,
+        "OTROS INSUMOS Y MATERIALES": 4814.180382208692
+      },
+      "rrhhBreakdown": {
+        "REMUNERACIÓN": 1455025,
+        "Horas Extras": 41450.0279329609,
+        "Asignación de Zona": 104658.42458100559
+      },
+      "ggBreakdown": {
+        "SERVICIO DE AGUA": 14299.374350741336,
+        "SERVICIO DE ENERGÍA": 15746.803286429315,
+        "GAS PROPANO": 10911.97650397804,
+        "SERVICIO DE ASEO": 156258.5812635754,
+        "SERVICIO DE VIGILANCIA Y SEGURIDAD": 158812.09696180152
+      }
+    },
+    {
+      "id": "2026-8-37",
+      "year": 2026,
+      "month": 8,
+      "costCenter": "CONSULTA DE INMUNOLOGÍA",
+      "rrhh": 2945712.1229050276,
+      "gastosGenerales": 356028.83236652566,
+      "insumos": 7215989.3972467445,
+      "directos": 10517730.352518298,
+      "indirectos": 3731322.553707447,
+      "total": 14249052.906225745,
+      "productionDetails": {
+        "Consulta": 154
+      },
+      "productionTotal": 154,
+      "insumosBreakdown": {
+        "EQUIPOS MENORES": 1731,
+        "MATERIAL MEDICO QUIRURGICO": 62105,
+        "MATERIALES DE CURACIÓN": 28045,
+        "MATERIALES DE OFICINA, PRODUCTOS DE PAPEL E IMPRESOS": 7257.507708439032,
+        "MATERIALES Y ELEMENTOS DE ASEO": 11337.700595298496,
+        "MEDICAMENTOS": 7068444,
+        "OTROS INSUMOS Y MATERIALES": 37069.18894300693
+      },
+      "rrhhBreakdown": {
+        "REMUNERACIÓN": 2505173.0614525136,
+        "Horas Extras": 230273.13966480448,
+        "Asignación de Zona": 210265.9217877095
+      },
+      "ggBreakdown": {
+        "SERVICIO DE AGUA": 14299.374350741336,
+        "SERVICIO DE ENERGÍA": 15746.803286429315,
+        "GAS PROPANO": 10911.97650397804,
+        "SERVICIO DE ASEO": 156258.5812635754,
+        "SERVICIO DE VIGILANCIA Y SEGURIDAD": 158812.09696180152
+      }
+    },
+    {
+      "id": "2026-8-38",
+      "year": 2026,
+      "month": 8,
+      "costCenter": "CONSULTA MEDICINA FAMILIAR",
+      "rrhh": 512062,
+      "gastosGenerales": 356028.83236652566,
+      "insumos": 2430140.99874852,
+      "directos": 3298231.8311150456,
+      "indirectos": 1754816.334106099,
+      "total": 5053048.165221144,
+      "productionDetails": {
+        "Consulta": 70
+      },
+      "productionTotal": 70,
+      "insumosBreakdown": {
+        "EQUIPOS MENORES": 787,
+        "MATERIAL MEDICO QUIRURGICO": 28230,
+        "MATERIALES DE CURACIÓN": 12748,
+        "MATERIALES DE OFICINA, PRODUCTOS DE PAPEL E IMPRESOS": 3298.8671401995603,
+        "MATERIALES Y ELEMENTOS DE ASEO": 5153.500270590225,
+        "MEDICAMENTOS": 2363074,
+        "OTROS INSUMOS Y MATERIALES": 16849.63133773042
+      },
+      "rrhhBreakdown": {
+        "REMUNERACIÓN": 406325.5,
+        "Horas Extras": 72985,
+        "Asignación de Zona": 32751.5
+      },
+      "ggBreakdown": {
+        "SERVICIO DE AGUA": 14299.374350741336,
+        "SERVICIO DE ENERGÍA": 15746.803286429315,
+        "GAS PROPANO": 10911.97650397804,
+        "SERVICIO DE ASEO": 156258.5812635754,
+        "SERVICIO DE VIGILANCIA Y SEGURIDAD": 158812.09696180152
+      }
+    },
+    {
+      "id": "2026-8-39",
+      "year": 2026,
+      "month": 8,
+      "costCenter": "CONSULTA CIRUGÍA GENERAL",
+      "rrhh": 1680454.289464398,
+      "gastosGenerales": 356028.83236652566,
+      "insumos": 948459.2213664807,
+      "directos": 2984942.3431974044,
+      "indirectos": 3076942.11184402,
+      "total": 6061884.455041424,
+      "productionDetails": {
+        "Consulta": 403
+      },
+      "productionTotal": 403,
+      "insumosBreakdown": {
+        "EQUIPOS MENORES": 4530,
+        "MATERIAL MEDICO QUIRURGICO": 162522,
+        "MATERIALES DE CURACIÓN": 73392,
+        "MATERIALES DE OFICINA, PRODUCTOS DE PAPEL E IMPRESOS": 18992.049392863184,
+        "MATERIALES Y ELEMENTOS DE ASEO": 29669.4372721123,
+        "MEDICAMENTOS": 562348,
+        "OTROS INSUMOS Y MATERIALES": 97005.73470150515
+      },
+      "rrhhBreakdown": {
+        "REMUNERACIÓN": 1506972.3824428378,
+        "Horas Extras": 1777.056179775281,
+        "Asignación de Zona": 171704.85084178485
+      },
+      "ggBreakdown": {
+        "SERVICIO DE AGUA": 14299.374350741336,
+        "SERVICIO DE ENERGÍA": 15746.803286429315,
+        "GAS PROPANO": 10911.97650397804,
+        "SERVICIO DE ASEO": 156258.5812635754,
+        "SERVICIO DE VIGILANCIA Y SEGURIDAD": 158812.09696180152
+      }
+    },
+    {
+      "id": "2026-8-40",
+      "year": 2026,
+      "month": 8,
+      "costCenter": "CONSULTA UROLOGÍA",
+      "rrhh": 2043372.720670391,
+      "gastosGenerales": 356028.83236652566,
+      "insumos": 7799217.967870793,
+      "directos": 10198619.52090771,
+      "indirectos": 16695125.365677971,
+      "total": 26893744.886585683,
+      "productionDetails": {
+        "Consulta": 199
+      },
+      "productionTotal": 199,
+      "insumosBreakdown": {
+        "EQUIPOS MENORES": 2237,
+        "MATERIAL MEDICO QUIRURGICO": 80253,
+        "MATERIALES DE CURACIÓN": 36241,
+        "MATERIALES DE OFICINA, PRODUCTOS DE PAPEL E IMPRESOS": 9378.208012853036,
+        "MATERIALES Y ELEMENTOS DE ASEO": 14650.665054963642,
+        "MEDICAMENTOS": 7608557,
+        "OTROS INSUMOS Y MATERIALES": 47901.094802976484
+      },
+      "rrhhBreakdown": {
+        "REMUNERACIÓN": 1883182.9776536312,
+        "Asignación de Zona": 160189.74301675978
+      },
+      "ggBreakdown": {
+        "SERVICIO DE AGUA": 14299.374350741336,
+        "SERVICIO DE ENERGÍA": 15746.803286429315,
+        "GAS PROPANO": 10911.97650397804,
+        "SERVICIO DE ASEO": 156258.5812635754,
+        "SERVICIO DE VIGILANCIA Y SEGURIDAD": 158812.09696180152
+      }
+    },
+    {
+      "id": "2026-8-41",
+      "year": 2026,
+      "month": 8,
+      "costCenter": "CONSULTA OFTALMOLOGÍA",
+      "rrhh": 5442304.240223465,
+      "gastosGenerales": 356028.83236652566,
+      "insumos": 3722518.393492305,
+      "directos": 9520851.466082295,
+      "indirectos": 11599350.199313179,
+      "total": 21120201.665395476,
+      "productionDetails": {
+        "Consulta": 364
+      },
+      "productionTotal": 364,
+      "insumosBreakdown": {
+        "EQUIPOS MENORES": 4091,
+        "MATERIAL MEDICO QUIRURGICO": 146794,
+        "MATERIALES DE CURACIÓN": 66289,
+        "MATERIALES DE OFICINA, PRODUCTOS DE PAPEL E IMPRESOS": 17154.109129037715,
+        "MATERIALES Y ELEMENTOS DE ASEO": 26798.201407069173,
+        "MEDICAMENTOS": 3373774,
+        "OTROS INSUMOS Y MATERIALES": 87618.0829561982
+      },
+      "rrhhBreakdown": {
+        "REMUNERACIÓN": 4936784.787709498,
+        "Horas Extras": 118349.70391061454,
+        "Asignación de Zona": 387169.74860335194
+      },
+      "ggBreakdown": {
+        "SERVICIO DE AGUA": 14299.374350741336,
+        "SERVICIO DE ENERGÍA": 15746.803286429315,
+        "GAS PROPANO": 10911.97650397804,
+        "SERVICIO DE ASEO": 156258.5812635754,
+        "SERVICIO DE VIGILANCIA Y SEGURIDAD": 158812.09696180152
+      }
+    },
+    {
+      "id": "2026-8-42",
+      "year": 2026,
+      "month": 8,
+      "costCenter": "CONSULTA OTORRINOLARINGOLOGÍA",
+      "rrhh": 4296630.340740741,
+      "gastosGenerales": 356028.83236652566,
+      "insumos": 600213.4546220193,
+      "directos": 5252872.627729286,
+      "indirectos": 8017935.1899801735,
+      "total": 13270807.81770946,
+      "productionDetails": {
+        "Consulta": 141
+      },
+      "productionTotal": 141,
+      "insumosBreakdown": {
+        "EQUIPOS MENORES": 1585,
+        "MATERIAL MEDICO QUIRURGICO": 56863,
+        "MATERIALES DE CURACIÓN": 25678,
+        "MATERIALES DE OFICINA, PRODUCTOS DE PAPEL E IMPRESOS": 6644.860953830543,
+        "MATERIALES Y ELEMENTOS DE ASEO": 10380.621973617453,
+        "MEDICAMENTOS": 465122,
+        "OTROS INSUMOS Y MATERIALES": 33939.97169457128
+      },
+      "rrhhBreakdown": {
+        "REMUNERACIÓN": 3807173.437037037,
+        "Horas Extras": 51475.18518518518,
+        "Asignación de Zona": 437981.71851851855
+      },
+      "ggBreakdown": {
+        "SERVICIO DE AGUA": 14299.374350741336,
+        "SERVICIO DE ENERGÍA": 15746.803286429315,
+        "GAS PROPANO": 10911.97650397804,
+        "SERVICIO DE ASEO": 156258.5812635754,
+        "SERVICIO DE VIGILANCIA Y SEGURIDAD": 158812.09696180152
+      }
+    },
+    {
+      "id": "2026-8-43",
+      "year": 2026,
+      "month": 8,
+      "costCenter": "CONSULTA CIRUGÍA PROCTOLOGÍA",
+      "rrhh": 608772.3519553073,
+      "gastosGenerales": 356028.83236652566,
+      "insumos": 76617.77049890072,
+      "directos": 1041418.9548207338,
+      "indirectos": 254200.0140022816,
+      "total": 1295618.9688230152,
+      "productionDetails": {
+        "Consulta": 52
+      },
+      "productionTotal": 52,
+      "insumosBreakdown": {
+        "EQUIPOS MENORES": 584,
+        "MATERIAL MEDICO QUIRURGICO": 20971,
+        "MATERIALES DE CURACIÓN": 9470,
+        "MATERIALES DE OFICINA, PRODUCTOS DE PAPEL E IMPRESOS": 2450.587018433959,
+        "MATERIALES Y ELEMENTOS DE ASEO": 3828.3144867241676,
+        "MEDICAMENTOS": 26797,
+        "OTROS INSUMOS Y MATERIALES": 12516.868993742599
+      },
+      "rrhhBreakdown": {
+        "REMUNERACIÓN": 574591.7932960894,
+        "Asignación de Zona": 34180.55865921787
+      },
+      "ggBreakdown": {
+        "SERVICIO DE AGUA": 14299.374350741336,
+        "SERVICIO DE ENERGÍA": 15746.803286429315,
+        "GAS PROPANO": 10911.97650397804,
+        "SERVICIO DE ASEO": 156258.5812635754,
+        "SERVICIO DE VIGILANCIA Y SEGURIDAD": 158812.09696180152
+      }
+    },
+    {
+      "id": "2026-8-45",
+      "year": 2026,
+      "month": 8,
+      "costCenter": "CONSULTA DE TRAUMATOLOGÍA",
+      "rrhh": 6226374.503051777,
+      "gastosGenerales": 356028.83236652566,
+      "insumos": 922393.5366176222,
+      "directos": 7504796.872035925,
+      "indirectos": 6306485.323782494,
+      "total": 13811282.19581842,
+      "productionDetails": {
+        "Consulta": 349
+      },
+      "productionTotal": 349,
+      "insumosBreakdown": {
+        "EQUIPOS MENORES": 3923,
+        "MATERIAL MEDICO QUIRURGICO": 140745,
+        "MATERIALES DE CURACIÓN": 63558,
+        "MATERIALES DE OFICINA, PRODUCTOS DE PAPEL E IMPRESOS": 16447.20902756638,
+        "MATERIALES Y ELEMENTOS DE ASEO": 25693.879920514126,
+        "MEDICAMENTOS": 588019,
+        "OTROS INSUMOS Y MATERIALES": 84007.44766954168
+      },
+      "rrhhBreakdown": {
+        "REMUNERACIÓN": 5893919.625896475,
+        "Horas Extras": 21685.717874396134,
+        "Asignación de Zona": 310769.15928090556
+      },
+      "ggBreakdown": {
+        "SERVICIO DE AGUA": 14299.374350741336,
+        "SERVICIO DE ENERGÍA": 15746.803286429315,
+        "GAS PROPANO": 10911.97650397804,
+        "SERVICIO DE ASEO": 156258.5812635754,
+        "SERVICIO DE VIGILANCIA Y SEGURIDAD": 158812.09696180152
+      }
+    },
+    {
+      "id": "2026-8-46",
+      "year": 2026,
+      "month": 8,
+      "costCenter": "CONSULTA PEDIATRÍA GENERAL",
+      "rrhh": 2264968.3463687147,
+      "gastosGenerales": 356028.83236652566,
+      "insumos": 3349456.8512430238,
+      "directos": 5970454.029978264,
+      "indirectos": 3932076.292785421,
+      "total": 9902530.322763685,
+      "productionDetails": {
+        "Consulta": 330
+      },
+      "productionTotal": 330,
+      "insumosBreakdown": {
+        "EQUIPOS MENORES": 3709,
+        "MATERIAL MEDICO QUIRURGICO": 133083,
+        "MATERIALES DE CURACIÓN": 60097,
+        "MATERIALES DE OFICINA, PRODUCTOS DE PAPEL E IMPRESOS": 15551.802232369355,
+        "MATERIALES Y ELEMENTOS DE ASEO": 24295.072704211063,
+        "MEDICAMENTOS": 3033287,
+        "OTROS INSUMOS Y MATERIALES": 79433.97630644342
+      },
+      "rrhhBreakdown": {
+        "REMUNERACIÓN": 2106773.9608938545,
+        "Asignación de Zona": 158194.38547486032
+      },
+      "ggBreakdown": {
+        "SERVICIO DE AGUA": 14299.374350741336,
+        "SERVICIO DE ENERGÍA": 15746.803286429315,
+        "GAS PROPANO": 10911.97650397804,
+        "SERVICIO DE ASEO": 156258.5812635754,
+        "SERVICIO DE VIGILANCIA Y SEGURIDAD": 158812.09696180152
+      }
+    },
+    {
+      "id": "2026-8-47",
+      "year": 2026,
+      "month": 8,
+      "costCenter": "CONSULTA NEUROLOGÍA PEDIÁTRICA",
+      "rrhh": 835891.2402234636,
+      "gastosGenerales": 356028.83236652566,
+      "insumos": 4384074.0264975475,
+      "directos": 5575994.099087536,
+      "indirectos": 2412963.7495324626,
+      "total": 7988957.848619999,
+      "productionDetails": {
+        "Consulta": 116
+      },
+      "productionTotal": 116,
+      "insumosBreakdown": {
+        "EQUIPOS MENORES": 1304,
+        "MATERIAL MEDICO QUIRURGICO": 46781,
+        "MATERIALES DE CURACIÓN": 21125,
+        "MATERIALES DE OFICINA, PRODUCTOS DE PAPEL E IMPRESOS": 5466.694118044986,
+        "MATERIALES Y ELEMENTOS DE ASEO": 8540.086162692374,
+        "MEDICAMENTOS": 4272935,
+        "OTROS INSUMOS Y MATERIALES": 27922.246216810414
+      },
+      "rrhhBreakdown": {
+        "REMUNERACIÓN": 743547.9497206704,
+        "Asignación de Zona": 92343.29050279329
+      },
+      "ggBreakdown": {
+        "SERVICIO DE AGUA": 14299.374350741336,
+        "SERVICIO DE ENERGÍA": 15746.803286429315,
+        "GAS PROPANO": 10911.97650397804,
+        "SERVICIO DE ASEO": 156258.5812635754,
+        "SERVICIO DE VIGILANCIA Y SEGURIDAD": 158812.09696180152
+      }
+    },
+    {
+      "id": "2026-8-48",
+      "year": 2026,
+      "month": 8,
+      "costCenter": "CONSULTA TRAUMATOLOGÍA PEDIÁTRICA",
+      "rrhh": 2537869.7318435754,
+      "gastosGenerales": 356028.83236652566,
+      "insumos": 208292.82474547604,
+      "directos": 3102191.3889555773,
+      "indirectos": 6965342.652980339,
+      "total": 10067534.041935917,
+      "productionDetails": {
+        "Consulta": 214
+      },
+      "productionTotal": 214,
+      "insumosBreakdown": {
+        "EQUIPOS MENORES": 2405,
+        "MATERIAL MEDICO QUIRURGICO": 86302,
+        "MATERIALES DE CURACIÓN": 38972,
+        "MATERIALES DE OFICINA, PRODUCTOS DE PAPEL E IMPRESOS": 10085.10811432437,
+        "MATERIALES Y ELEMENTOS DE ASEO": 15754.986541518689,
+        "MEDICAMENTOS": 3262,
+        "OTROS INSUMOS Y MATERIALES": 51511.730089633005
+      },
+      "rrhhBreakdown": {
+        "REMUNERACIÓN": 2327008.6424581003,
+        "Asignación de Zona": 210861.08938547486
+      },
+      "ggBreakdown": {
+        "SERVICIO DE AGUA": 14299.374350741336,
+        "SERVICIO DE ENERGÍA": 15746.803286429315,
+        "GAS PROPANO": 10911.97650397804,
+        "SERVICIO DE ASEO": 156258.5812635754,
+        "SERVICIO DE VIGILANCIA Y SEGURIDAD": 158812.09696180152
+      }
+    },
+    {
+      "id": "2026-8-49",
+      "year": 2026,
+      "month": 8,
+      "costCenter": "CONSULTA CIRUGÍA PEDIÁTRICA",
+      "rrhh": 5283797.883008379,
+      "gastosGenerales": 356028.83236652566,
+      "insumos": 89755.5119972941,
+      "directos": 5729582.227372198,
+      "indirectos": 1408598.9745238032,
+      "total": 7138181.201896002,
+      "productionDetails": {
+        "Consulta": 128
+      },
+      "productionTotal": 128,
+      "insumosBreakdown": {
+        "EQUIPOS MENORES": 1439,
+        "MATERIAL MEDICO QUIRURGICO": 6856,
+        "MATERIALES DE CURACIÓN": 23311,
+        "MATERIALES DE OFICINA, PRODUCTOS DE PAPEL E IMPRESOS": 6032.214199222053,
+        "MATERIALES Y ELEMENTOS DE ASEO": 9423.543351936412,
+        "MEDICAMENTOS": 11883,
+        "OTROS INSUMOS Y MATERIALES": 30810.75444613563
+      },
+      "rrhhBreakdown": {
+        "REMUNERACIÓN": 4765136.883237045,
+        "Horas Extras": 14113.150837988826,
+        "Asignación de Zona": 504547.8489333445
+      },
+      "ggBreakdown": {
+        "SERVICIO DE AGUA": 14299.374350741336,
+        "SERVICIO DE ENERGÍA": 15746.803286429315,
+        "GAS PROPANO": 10911.97650397804,
+        "SERVICIO DE ASEO": 156258.5812635754,
+        "SERVICIO DE VIGILANCIA Y SEGURIDAD": 158812.09696180152
+      }
+    },
+    {
+      "id": "2026-8-50",
+      "year": 2026,
+      "month": 8,
+      "costCenter": "CONSULTA GINECOLOGICA",
+      "rrhh": 6676287.581670956,
+      "gastosGenerales": 356028.83236652566,
+      "insumos": 2607251.4773651278,
+      "directos": 9639567.89140261,
+      "indirectos": 12148423.151256518,
+      "total": 21787991.042659126,
+      "productionDetails": {
+        "Consulta": 467
+      },
+      "productionTotal": 467,
+      "insumosBreakdown": {
+        "EQUIPOS MENORES": 5249,
+        "MATERIAL MEDICO QUIRURGICO": 188332,
+        "MATERIALES DE CURACIÓN": 85047,
+        "MATERIALES DE OFICINA, PRODUCTOS DE PAPEL E IMPRESOS": 22008.15649247421,
+        "MATERIALES Y ELEMENTOS DE ASEO": 34381.20894808051,
+        "MEDICAMENTOS": 2159823,
+        "OTROS INSUMOS Y MATERIALES": 112411.11192457296
+      },
+      "rrhhBreakdown": {
+        "REMUNERACIÓN": 6061534.882392819,
+        "Horas Extras": 65369.06966292135,
+        "Asignación de Zona": 549383.6296152155
+      },
+      "ggBreakdown": {
+        "SERVICIO DE AGUA": 14299.374350741336,
+        "SERVICIO DE ENERGÍA": 15746.803286429315,
+        "GAS PROPANO": 10911.97650397804,
+        "SERVICIO DE ASEO": 156258.5812635754,
+        "SERVICIO DE VIGILANCIA Y SEGURIDAD": 158812.09696180152
+      }
+    },
+    {
+      "id": "2026-8-51",
+      "year": 2026,
+      "month": 8,
+      "costCenter": "CONSULTA CIRUGÍA DIGESTIVA",
+      "rrhh": 3235095.618212932,
+      "gastosGenerales": 356028.83236652566,
+      "insumos": 105665.77112464063,
+      "directos": 3696790.221704098,
+      "indirectos": 943446.0716640829,
+      "total": 4640236.293368181,
+      "productionDetails": {
+        "Consulta": 17
+      },
+      "productionTotal": 17,
+      "insumosBreakdown": {
+        "EQUIPOS MENORES": 191,
+        "MATERIAL MEDICO QUIRURGICO": 6856,
+        "MATERIALES DE CURACIÓN": 3096,
+        "MATERIALES DE OFICINA, PRODUCTOS DE PAPEL E IMPRESOS": 801.153448334179,
+        "MATERIALES Y ELEMENTOS DE ASEO": 1251.5643514290548,
+        "MEDICAMENTOS": 89378,
+        "OTROS INSUMOS Y MATERIALES": 4092.053324877388
+      },
+      "rrhhBreakdown": {
+        "REMUNERACIÓN": 2938202.22153039,
+        "Asignación de Zona": 296893.3966825418
+      },
+      "ggBreakdown": {
+        "SERVICIO DE AGUA": 14299.374350741336,
+        "SERVICIO DE ENERGÍA": 15746.803286429315,
+        "GAS PROPANO": 10911.97650397804,
+        "SERVICIO DE ASEO": 156258.5812635754,
+        "SERVICIO DE VIGILANCIA Y SEGURIDAD": 158812.09696180152
+      }
+    },
+    {
+      "id": "2026-8-52",
+      "year": 2026,
+      "month": 8,
+      "costCenter": "CONSULTA OBSTETRICIA",
+      "rrhh": 3269521.368715084,
+      "gastosGenerales": 356028.83236652566,
+      "insumos": 1125338.5958701165,
+      "directos": 4750888.796951726,
+      "indirectos": 9806780.722459232,
+      "total": 14557669.519410959,
+      "productionDetails": {
+        "Consulta": 231
+      },
+      "productionTotal": 231,
+      "insumosBreakdown": {
+        "EQUIPOS MENORES": 2596,
+        "MATERIAL MEDICO QUIRURGICO": 93158,
+        "MATERIALES DE CURACIÓN": 42068,
+        "MATERIALES DE OFICINA, PRODUCTOS DE PAPEL E IMPRESOS": 10886.261562658548,
+        "MATERIALES Y ELEMENTOS DE ASEO": 17006.550892947744,
+        "MEDICAMENTOS": 904020,
+        "OTROS INSUMOS Y MATERIALES": 55603.78341451039
+      },
+      "rrhhBreakdown": {
+        "REMUNERACIÓN": 3024038.4860335197,
+        "Asignación de Zona": 245482.88268156425
+      },
+      "ggBreakdown": {
+        "SERVICIO DE AGUA": 14299.374350741336,
+        "SERVICIO DE ENERGÍA": 15746.803286429315,
+        "GAS PROPANO": 10911.97650397804,
+        "SERVICIO DE ASEO": 156258.5812635754,
+        "SERVICIO DE VIGILANCIA Y SEGURIDAD": 158812.09696180152
+      }
+    },
+    {
+      "id": "2026-8-53",
+      "year": 2026,
+      "month": 8,
+      "costCenter": "CONSULTA DE MASTOLOGÍA",
+      "rrhh": 2267529.436883317,
+      "gastosGenerales": 356028.83236652566,
+      "insumos": 771636.0819956028,
+      "directos": 3395194.351245445,
+      "indirectos": 1425016.9316803757,
+      "total": 4820211.282925821,
+      "productionDetails": {
+        "Consulta": 208
+      },
+      "productionTotal": 208,
+      "insumosBreakdown": {
+        "EQUIPOS MENORES": 2338,
+        "MATERIAL MEDICO QUIRURGICO": 83882,
+        "MATERIALES DE CURACIÓN": 37880,
+        "MATERIALES DE OFICINA, PRODUCTOS DE PAPEL E IMPRESOS": 9802.348073735837,
+        "MATERIALES Y ELEMENTOS DE ASEO": 15313.25794689667,
+        "MEDICAMENTOS": 572353,
+        "OTROS INSUMOS Y MATERIALES": 50067.475974970395
+      },
+      "rrhhBreakdown": {
+        "REMUNERACIÓN": 1999704.664732533,
+        "Horas Extras": 96937.77653631286,
+        "Asignación de Zona": 170886.99561447112
+      },
+      "ggBreakdown": {
+        "SERVICIO DE AGUA": 14299.374350741336,
+        "SERVICIO DE ENERGÍA": 15746.803286429315,
+        "GAS PROPANO": 10911.97650397804,
+        "SERVICIO DE ASEO": 156258.5812635754,
+        "SERVICIO DE VIGILANCIA Y SEGURIDAD": 158812.09696180152
+      }
+    },
+    {
+      "id": "2026-8-54",
+      "year": 2026,
+      "month": 8,
+      "costCenter": "QUIRÓFANO AMBULATORIO DE EMERGENCIA",
+      "rrhh": 19080345.604902577,
+      "gastosGenerales": 2654883.127157297,
+      "insumos": 3741683,
+      "directos": 25476911.732059874,
+      "indirectos": 9024825.766106654,
+      "total": 34501737.49816653,
+      "productionDetails": {
+        "Intervencion quirurgica": 35
+      },
+      "productionTotal": 35,
+      "insumosBreakdown": {
+        "EQUIPOS MENORES": 17189,
+        "MATERIAL MEDICO QUIRURGICO": 2888800,
+        "MATERIALES DE CURACIÓN": 28199,
+        "MATERIALES DE OFICINA, PRODUCTOS DE PAPEL E IMPRESOS": 30701,
+        "MATERIALES Y ELEMENTOS DE ASEO": 30062,
+        "MEDICAMENTOS": 633067,
+        "OTROS INSUMOS Y MATERIALES": 113665
+      },
+      "rrhhBreakdown": {
+        "REMUNERACIÓN": 16735074.082559947,
+        "Horas Extras": 771379.4586167078,
+        "Asignación de Zona": 1573892.0637259223
+      },
+      "ggBreakdown": {
+        "SERVICIO DE AGUA": 43246.88828029087,
+        "ARRENDAMIENTOS": 1578113,
+        "SERVICIO DE ENERGÍA": 47624.47823212768,
+        "GAS PROPANO": 33002.07528032383,
+        "SERVICIO DE ASEO": 472586.92869959393,
+        "SERVICIO DE VIGILANCIA Y SEGURIDAD": 480309.7566649607
+      }
+    },
+    {
+      "id": "2026-8-55",
+      "year": 2026,
+      "month": 8,
+      "costCenter": "QUIRÓFANOS MAYOR AMBULATORIA",
+      "rrhh": 59310397.65506748,
+      "gastosGenerales": 26397914.127157297,
+      "insumos": 28129810,
+      "directos": 113838121.78222477,
+      "indirectos": 44298605.49756665,
+      "total": 158136727.2797914,
+      "productionDetails": {
+        "Intervencion quirurgica": 181
+      },
+      "productionTotal": 181,
+      "insumosBreakdown": {
+        "EQUIPOS MENORES": 88893,
+        "MATERIAL DE OSTEOSÍNTESIS Y PRÓTESIS": 8779953,
+        "MATERIAL MEDICO QUIRURGICO": 14939223,
+        "MATERIALES DE CURACIÓN": 145831,
+        "MATERIALES DE OFICINA, PRODUCTOS DE PAPEL E IMPRESOS": 158769,
+        "MATERIALES Y ELEMENTOS DE ASEO": 155466,
+        "MEDICAMENTOS": 3273862,
+        "OTROS INSUMOS Y MATERIALES": 587813
+      },
+      "rrhhBreakdown": {
+        "REMUNERACIÓN": 52180152.286486775,
+        "Horas Extras": 2378293.6194463125,
+        "Asignación de Zona": 4751951.749134393
+      },
+      "ggBreakdown": {
+        "SERVICIO DE AGUA": 43246.88828029087,
+        "ARRENDAMIENTOS": 6909575,
+        "COMPRA DE OTROS SERVICIOS": 18411569,
+        "SERVICIO DE ENERGÍA": 47624.47823212768,
+        "GAS PROPANO": 33002.07528032383,
+        "SERVICIO DE ASEO": 472586.92869959393,
+        "SERVICIO DE VIGILANCIA Y SEGURIDAD": 480309.7566649607
+      }
+    },
+    {
+      "id": "2026-8-56",
+      "year": 2026,
+      "month": 8,
+      "costCenter": "QUIROFANO MAYOR AMBULATORIO OFTALMOLOGÍA",
+      "rrhh": 41469046.20338514,
+      "gastosGenerales": 5384592.127157297,
+      "insumos": 13897685,
+      "directos": 60751323.33054243,
+      "indirectos": 25246044.30189427,
+      "total": 85997367.6324367,
+      "productionDetails": {
+        "Intervencion quirurgica": 130
+      },
+      "productionTotal": 130,
+      "insumosBreakdown": {
+        "EQUIPOS MENORES": 63845,
+        "MATERIAL MEDICO QUIRURGICO": 10729828,
+        "MATERIALES DE CURACIÓN": 104740,
+        "MATERIALES DE OFICINA, PRODUCTOS DE PAPEL E IMPRESOS": 114033,
+        "MATERIALES Y ELEMENTOS DE ASEO": 111661,
+        "MEDICAMENTOS": 2351392,
+        "OTROS INSUMOS Y MATERIALES": 422186
+      },
+      "rrhhBreakdown": {
+        "REMUNERACIÓN": 36369150.29990596,
+        "Horas Extras": 1749053.861718015,
+        "Asignación de Zona": 3350842.04176116
+      },
+      "ggBreakdown": {
+        "SERVICIO DE AGUA": 43246.88828029087,
+        "ARRENDAMIENTOS": 4307822,
+        "SERVICIO DE ENERGÍA": 47624.47823212768,
+        "GAS PROPANO": 33002.07528032383,
+        "SERVICIO DE ASEO": 472586.92869959393,
+        "SERVICIO DE VIGILANCIA Y SEGURIDAD": 480309.7566649607
+      }
+    },
+    {
+      "id": "2026-8-57",
+      "year": 2026,
+      "month": 8,
+      "costCenter": "QUIROFANO MAYOR AMBULATORIO OTORRINOLARINGOLOGÍA",
+      "rrhh": 9899122.35064173,
+      "gastosGenerales": 2526928.127157297,
+      "insumos": 2031200,
+      "directos": 14457250.477799026,
+      "indirectos": 4837674.971412456,
+      "total": 19294925.449211482,
+      "productionDetails": {
+        "Intervencion quirurgica": 19
+      },
+      "productionTotal": 19,
+      "insumosBreakdown": {
+        "EQUIPOS MENORES": 9331,
+        "MATERIAL MEDICO QUIRURGICO": 1568206,
+        "MATERIALES DE CURACIÓN": 15308,
+        "MATERIALES DE OFICINA, PRODUCTOS DE PAPEL E IMPRESOS": 16666,
+        "MATERIALES Y ELEMENTOS DE ASEO": 16320,
+        "MEDICAMENTOS": 343665,
+        "OTROS INSUMOS Y MATERIALES": 61704
+      },
+      "rrhhBreakdown": {
+        "REMUNERACIÓN": 8712859.575650897,
+        "Horas Extras": 294663.264393106,
+        "Asignación de Zona": 891599.5105977266
+      },
+      "ggBreakdown": {
+        "SERVICIO DE AGUA": 43246.88828029087,
+        "ARRENDAMIENTOS": 1450158,
+        "SERVICIO DE ENERGÍA": 47624.47823212768,
+        "GAS PROPANO": 33002.07528032383,
+        "SERVICIO DE ASEO": 472586.92869959393,
+        "SERVICIO DE VIGILANCIA Y SEGURIDAD": 480309.7566649607
+      }
+    },
+    {
+      "id": "2026-8-58",
+      "year": 2026,
+      "month": 8,
+      "costCenter": "QUIROFANO MAYOR AMBULATORIO GINECOLOGÍA",
+      "rrhh": 22643685.854242653,
+      "gastosGenerales": 3593220.1271572965,
+      "insumos": 7269559,
+      "directos": 33506464.98139995,
+      "indirectos": 13178511.518459376,
+      "total": 46684976.499859326,
+      "productionDetails": {
+        "Intervencion quirurgica": 68
+      },
+      "productionTotal": 68,
+      "insumosBreakdown": {
+        "EQUIPOS MENORES": 33396,
+        "MATERIAL MEDICO QUIRURGICO": 5612526,
+        "MATERIALES DE CURACIÓN": 54787,
+        "MATERIALES DE OFICINA, PRODUCTOS DE PAPEL E IMPRESOS": 59648,
+        "MATERIALES Y ELEMENTOS DE ASEO": 58407,
+        "MEDICAMENTOS": 1229959,
+        "OTROS INSUMOS Y MATERIALES": 220836
+      },
+      "rrhhBreakdown": {
+        "REMUNERACIÓN": 19819250.621169865,
+        "Horas Extras": 962571.3394462632,
+        "Asignación de Zona": 1861863.893626525
+      },
+      "ggBreakdown": {
+        "SERVICIO DE AGUA": 43246.88828029087,
+        "ARRENDAMIENTOS": 2516450,
+        "SERVICIO DE ENERGÍA": 47624.47823212768,
+        "GAS PROPANO": 33002.07528032383,
+        "SERVICIO DE ASEO": 472586.92869959393,
+        "SERVICIO DE VIGILANCIA Y SEGURIDAD": 480309.7566649607
+      }
+    },
+    {
+      "id": "2026-8-59",
+      "year": 2026,
+      "month": 8,
+      "costCenter": "CONSULTA NUTRICIÓN",
+      "rrhh": 2831779.681564246,
+      "gastosGenerales": 130254.45086580206,
+      "insumos": 2563145,
+      "directos": 5525179.132430048,
+      "indirectos": 51788858.451906405,
+      "total": 57314037.58433645,
+      "productionDetails": {
+        "Consulta": 127
+      },
+      "productionTotal": 127,
+      "insumosBreakdown": {
+        "MEDICAMENTOS": 2563145
+      },
+      "rrhhBreakdown": {
+        "REMUNERACIÓN": 2544534.9217877095,
+        "Asignación de Zona": 287244.75977653626
+      },
+      "ggBreakdown": {
+        "SERVICIO DE AGUA": 5231.4784210029275,
+        "SERVICIO DE ENERGÍA": 5761.02559259609,
+        "GAS PROPANO": 3992.186525845624,
+        "SERVICIO DE ASEO": 57167.77363301539,
+        "SERVICIO DE VIGILANCIA Y SEGURIDAD": 58101.98669334202
+      }
+    },
+    {
+      "id": "2026-8-60",
+      "year": 2026,
+      "month": 8,
+      "costCenter": "CONSULTA OTROS PROFESIONALES",
+      "rrhh": 8758414,
+      "gastosGenerales": 130254.45086580206,
+      "insumos": 534432,
+      "directos": 9423100.450865801,
+      "indirectos": 43023145.5919464,
+      "total": 52446246.0428122,
+      "productionDetails": {
+        "Consulta": 1294
+      },
+      "productionTotal": 1294,
+      "insumosBreakdown": {
+        "MATERIALES DE OFICINA, PRODUCTOS DE PAPEL E IMPRESOS": 8166,
+        "MEDICAMENTOS": 526266
+      },
+      "rrhhBreakdown": {
+        "REMUNERACIÓN": 8171552,
+        "Horas Extras": 15183,
+        "Asignación de Zona": 571679
+      },
+      "ggBreakdown": {
+        "SERVICIO DE AGUA": 5231.4784210029275,
+        "SERVICIO DE ENERGÍA": 5761.02559259609,
+        "GAS PROPANO": 3992.186525845624,
+        "SERVICIO DE ASEO": 57167.77363301539,
+        "SERVICIO DE VIGILANCIA Y SEGURIDAD": 58101.98669334202
+      }
+    },
+    {
+      "id": "2026-8-61",
+      "year": 2026,
+      "month": 8,
+      "costCenter": "CONSULTA ODONTOLOGÍA",
+      "rrhh": 54237958.335195534,
+      "gastosGenerales": 3421350.242741734,
+      "insumos": 1651751,
+      "directos": 59311059.57793727,
+      "indirectos": 71454040.26966298,
+      "total": 130765099.84760025,
+      "productionDetails": {
+        "Consulta": 1703
+      },
+      "productionTotal": 1703,
+      "insumosBreakdown": {
+        "MATERIAL DE ODONTOLOGÍA": 178916,
+        "MATERIAL MEDICO QUIRURGICO": 462493,
+        "MATERIALES DE OFICINA, PRODUCTOS DE PAPEL E IMPRESOS": 20781,
+        "MATERIALES Y ELEMENTOS DE ASEO": 143495,
+        "MEDICAMENTOS": 793946,
+        "OTROS INSUMOS Y MATERIALES": 52120
+      },
+      "rrhhBreakdown": {
+        "REMUNERACIÓN": 46832128.391061455,
+        "Horas Extras": 2786183.5363128493,
+        "Asignación de Zona": 4619646.407821229
+      },
+      "ggBreakdown": {
+        "SERVICIO DE AGUA": 137413.49985834357,
+        "SERVICIO DE ENERGÍA": 151322.9388988573,
+        "GAS PROPANO": 104861.43274554507,
+        "SERVICIO DE ASEO": 1501606.854093871,
+        "SERVICIO DE VIGILANCIA Y SEGURIDAD": 1526145.517145117
+      }
+    },
+    {
+      "id": "2026-8-62",
+      "year": 2026,
+      "month": 8,
+      "costCenter": "HOSPITALIZACIÓN EN CASA",
+      "rrhh": 27364289,
+      "gastosGenerales": 3000000,
+      "insumos": 1442535,
+      "directos": 31806824,
+      "indirectos": 8180936.796547816,
+      "total": 39987760.796547815,
+      "productionDetails": {
+        "Visita": 1013
+      },
+      "productionTotal": 1013,
+      "insumosBreakdown": {
+        "EQUIPOS MENORES": 126664,
+        "MATERIALES Y ELEMENTOS DE ASEO": 301671,
+        "MEDICAMENTOS": 1014200
+      },
+      "rrhhBreakdown": {
+        "REMUNERACIÓN": 24388427,
+        "Horas Extras": 161392,
+        "Asignación de Zona": 2814470
+      },
+      "ggBreakdown": {
+        "PASAJES Y TRASLADOS DE PACIENTES": 3000000
+      }
+    },
+    {
+      "id": "2026-8-63",
+      "year": 2026,
+      "month": 8,
+      "costCenter": "CENTRO DE COSTOS EXTERNO",
+      "rrhh": 35035472.89025043,
+      "gastosGenerales": 61414175,
+      "insumos": 0,
+      "directos": 96449647.89025043,
+      "indirectos": 54365988.31087748,
+      "total": 150815636.20112792,
+      "productionDetails": {},
+      "productionTotal": 0,
+      "insumosBreakdown": {},
+      "rrhhBreakdown": {
+        "REMUNERACIÓN": 31323714.450897384,
+        "Horas Extras": 528625.8174506788,
+        "Asignación de Zona": 3183132.621902365
+      },
+      "ggBreakdown": {
+        "SERVICIO DE LABORATORIO": 61414175
+      }
+    },
+    {
+      "id": "2026-8-65",
+      "year": 2026,
+      "month": 8,
+      "costCenter": "PROCEDIMIENTOS DE CARDIOLOGÍA",
+      "rrhh": 1620754,
+      "gastosGenerales": 1363329.9190620615,
+      "insumos": 95314,
+      "directos": 3079397.9190620612,
+      "indirectos": 746237.6138249402,
+      "total": 3825635.5328870015,
+      "productionDetails": {},
+      "productionTotal": 0,
+      "insumosBreakdown": {
+        "MATERIAL MEDICO QUIRURGICO": 95314
+      },
+      "rrhhBreakdown": {
+        "REMUNERACIÓN": 1512586,
+        "Asignación de Zona": 108168
+      },
+      "ggBreakdown": {
+        "SERVICIO DE AGUA": 54756.14080649731,
+        "SERVICIO DE ENERGÍA": 60298.734535839074,
+        "GAS PROPANO": 41784.8856371842,
+        "SERVICIO DE ASEO": 598356.0306922278,
+        "SERVICIO DE VIGILANCIA Y SEGURIDAD": 608134.1273903132
+      }
+    },
+    {
+      "id": "2026-8-66",
+      "year": 2026,
+      "month": 8,
+      "costCenter": "PROCEDIMIENTOS DE DERMATOLOGÍA",
+      "rrhh": 1427156.4469273745,
+      "gastosGenerales": 1363329.9190620615,
+      "insumos": 95314,
+      "directos": 2885800.365989436,
+      "indirectos": 1572129.8562571362,
+      "total": 4457930.222246572,
+      "productionDetails": {},
+      "productionTotal": 0,
+      "insumosBreakdown": {
+        "MATERIAL MEDICO QUIRURGICO": 95314
+      },
+      "rrhhBreakdown": {
+        "REMUNERACIÓN": 1320160.156424581,
+        "Asignación de Zona": 106996.2905027933
+      },
+      "ggBreakdown": {
+        "SERVICIO DE AGUA": 54756.14080649731,
+        "SERVICIO DE ENERGÍA": 60298.734535839074,
+        "GAS PROPANO": 41784.8856371842,
+        "SERVICIO DE ASEO": 598356.0306922278,
+        "SERVICIO DE VIGILANCIA Y SEGURIDAD": 608134.1273903132
+      }
+    },
+    {
+      "id": "2026-8-67",
+      "year": 2026,
+      "month": 8,
+      "costCenter": "PROCEDIMIENTOS DE GINECO-OBSTETRICIA",
+      "rrhh": 4003054.7384357536,
+      "gastosGenerales": 2911435.9190620612,
+      "insumos": 271135,
+      "directos": 7185625.657497815,
+      "indirectos": 1807209.146009346,
+      "total": 8992834.80350716,
+      "productionDetails": {},
+      "productionTotal": 0,
+      "insumosBreakdown": {
+        "MATERIAL MEDICO QUIRURGICO": 95314,
+        "MEDICAMENTOS": 175821
+      },
+      "rrhhBreakdown": {
+        "REMUNERACIÓN": 3653190.6400558655,
+        "Horas Extras": 12481.559999999998,
+        "Asignación de Zona": 337382.5383798882
+      },
+      "ggBreakdown": {
+        "SERVICIO DE AGUA": 54756.14080649731,
+        "ARRENDAMIENTOS": 1548106,
+        "SERVICIO DE ENERGÍA": 60298.734535839074,
+        "GAS PROPANO": 41784.8856371842,
+        "SERVICIO DE ASEO": 598356.0306922278,
+        "SERVICIO DE VIGILANCIA Y SEGURIDAD": 608134.1273903132
+      }
+    },
+    {
+      "id": "2026-8-68",
+      "year": 2026,
+      "month": 8,
+      "costCenter": "PROCEDIMIENTOS DE ODONTOLOGÍA",
+      "rrhh": 2363381.664804469,
+      "gastosGenerales": 1363329.9190620615,
+      "insumos": 95314,
+      "directos": 3822025.58386653,
+      "indirectos": 4020698.4927792116,
+      "total": 7842724.076645741,
+      "productionDetails": {},
+      "productionTotal": 0,
+      "insumosBreakdown": {
+        "MATERIAL MEDICO QUIRURGICO": 95314
+      },
+      "rrhhBreakdown": {
+        "REMUNERACIÓN": 2102654.6089385473,
+        "Horas Extras": 92938.46368715083,
+        "Asignación de Zona": 167788.59217877092
+      },
+      "ggBreakdown": {
+        "SERVICIO DE AGUA": 54756.14080649731,
+        "SERVICIO DE ENERGÍA": 60298.734535839074,
+        "GAS PROPANO": 41784.8856371842,
+        "SERVICIO DE ASEO": 598356.0306922278,
+        "SERVICIO DE VIGILANCIA Y SEGURIDAD": 608134.1273903132
+      }
+    },
+    {
+      "id": "2026-8-69",
+      "year": 2026,
+      "month": 8,
+      "costCenter": "PROCEDIMIENTOS DE OFTALMOLOGÍA",
+      "rrhh": 3334794.7961207707,
+      "gastosGenerales": 1363329.9190620615,
+      "insumos": 95314,
+      "directos": 4793438.715182832,
+      "indirectos": 1161605.0808801088,
+      "total": 5955043.796062941,
+      "productionDetails": {},
+      "productionTotal": 0,
+      "insumosBreakdown": {
+        "MATERIAL MEDICO QUIRURGICO": 95314
+      },
+      "rrhhBreakdown": {
+        "REMUNERACIÓN": 2820660.7393132886,
+        "Horas Extras": 300502.9441340782,
+        "Asignación de Zona": 213631.11267340404
+      },
+      "ggBreakdown": {
+        "SERVICIO DE AGUA": 54756.14080649731,
+        "SERVICIO DE ENERGÍA": 60298.734535839074,
+        "GAS PROPANO": 41784.8856371842,
+        "SERVICIO DE ASEO": 598356.0306922278,
+        "SERVICIO DE VIGILANCIA Y SEGURIDAD": 608134.1273903132
+      }
+    },
+    {
+      "id": "2026-8-70",
+      "year": 2026,
+      "month": 8,
+      "costCenter": "PROCEDIMIENTOS DE OTORRINOLARINGOLOGÍA",
+      "rrhh": 3705429.3280423284,
+      "gastosGenerales": 1363329.9190620615,
+      "insumos": 95314,
+      "directos": 5164073.24710439,
+      "indirectos": 1251421.8034901277,
+      "total": 6415495.050594517,
+      "productionDetails": {},
+      "productionTotal": 0,
+      "insumosBreakdown": {
+        "MATERIAL MEDICO QUIRURGICO": 95314
+      },
+      "rrhhBreakdown": {
+        "REMUNERACIÓN": 3443384.9735449734,
+        "Horas Extras": 2941.4391534391534,
+        "Asignación de Zona": 259102.91534391535
+      },
+      "ggBreakdown": {
+        "SERVICIO DE AGUA": 54756.14080649731,
+        "SERVICIO DE ENERGÍA": 60298.734535839074,
+        "GAS PROPANO": 41784.8856371842,
+        "SERVICIO DE ASEO": 598356.0306922278,
+        "SERVICIO DE VIGILANCIA Y SEGURIDAD": 608134.1273903132
+      }
+    },
+    {
+      "id": "2026-8-71",
+      "year": 2026,
+      "month": 8,
+      "costCenter": "PROCEDIMIENTOS DE TRAUMATOLOGÍA",
+      "rrhh": 3062201,
+      "gastosGenerales": 1363329.9190620615,
+      "insumos": 95314,
+      "directos": 4520844.919062061,
+      "indirectos": 1095546.7963364194,
+      "total": 5616391.715398481,
+      "productionDetails": {},
+      "productionTotal": 0,
+      "insumosBreakdown": {
+        "MATERIAL MEDICO QUIRURGICO": 95314
+      },
+      "rrhhBreakdown": {
+        "REMUNERACIÓN": 2876803,
+        "Asignación de Zona": 185398
+      },
+      "ggBreakdown": {
+        "SERVICIO DE AGUA": 54756.14080649731,
+        "SERVICIO DE ENERGÍA": 60298.734535839074,
+        "GAS PROPANO": 41784.8856371842,
+        "SERVICIO DE ASEO": 598356.0306922278,
+        "SERVICIO DE VIGILANCIA Y SEGURIDAD": 608134.1273903132
+      }
+    },
+    {
+      "id": "2026-8-72",
+      "year": 2026,
+      "month": 8,
+      "costCenter": "PROCEDIMIENTOS DE UROLOGÍA",
+      "rrhh": 1579164.2402234639,
+      "gastosGenerales": 2571179.9190620612,
+      "insumos": 95314,
+      "directos": 4245658.159285525,
+      "indirectos": 1028860.1529180178,
+      "total": 5274518.312203542,
+      "productionDetails": {},
+      "productionTotal": 0,
+      "insumosBreakdown": {
+        "MATERIAL MEDICO QUIRURGICO": 95314
+      },
+      "rrhhBreakdown": {
+        "REMUNERACIÓN": 1451557.899441341,
+        "Asignación de Zona": 127606.3407821229
+      },
+      "ggBreakdown": {
+        "SERVICIO DE AGUA": 54756.14080649731,
+        "ARRENDAMIENTOS": 1207850,
+        "SERVICIO DE ENERGÍA": 60298.734535839074,
+        "GAS PROPANO": 41784.8856371842,
+        "SERVICIO DE ASEO": 598356.0306922278,
+        "SERVICIO DE VIGILANCIA Y SEGURIDAD": 608134.1273903132
+      }
+    },
+    {
+      "id": "2026-8-73",
+      "year": 2026,
+      "month": 8,
+      "costCenter": "PROCEDIMIENTOS ENDOSCÓPICOS",
+      "rrhh": 9530411.315717107,
+      "gastosGenerales": 10603194.693621952,
+      "insumos": 8635040,
+      "directos": 28768646.009339057,
+      "indirectos": 9206749.15796519,
+      "total": 37975395.16730425,
+      "productionDetails": {},
+      "productionTotal": 0,
+      "insumosBreakdown": {
+        "MATERIAL MEDICO QUIRURGICO": 1048460,
+        "MATERIALES DE CURACIÓN": 57715,
+        "MATERIALES DE OFICINA, PRODUCTOS DE PAPEL E IMPRESOS": 14637,
+        "MATERIALES Y ELEMENTOS DE ASEO": 2105,
+        "MEDICAMENTOS": 7236875,
+        "OTROS INSUMOS Y MATERIALES": 61048,
+        "PRODUCTOS QUÍMICOS": 214200
+      },
+      "rrhhBreakdown": {
+        "REMUNERACIÓN": 8688720.69860844,
+        "Horas Extras": 84896.23595505618,
+        "Asignación de Zona": 756794.381153612
+      },
+      "ggBreakdown": {
+        "SERVICIO DE AGUA": 82308.59382377939,
+        "ARRENDAMIENTOS": 8553858,
+        "SERVICIO DE ENERGÍA": 90640.13599017847,
+        "GAS PROPANO": 62810.401339971155,
+        "SERVICIO DE ASEO": 899439.6384927755,
+        "SERVICIO DE VIGILANCIA Y SEGURIDAD": 914137.9239752478
+      }
+    },
+    {
+      "id": "2026-8-74",
+      "year": 2026,
+      "month": 8,
+      "costCenter": "PROCEDIMIENTOS DE NEUROLOGÍA",
+      "rrhh": 4393923.586592179,
+      "gastosGenerales": 1363329.9190620615,
+      "insumos": 95314,
+      "directos": 5852567.50565424,
+      "indirectos": 1418266.2081875568,
+      "total": 7270833.713841797,
+      "productionDetails": {},
+      "productionTotal": 0,
+      "insumosBreakdown": {
+        "MATERIAL MEDICO QUIRURGICO": 95314
+      },
+      "rrhhBreakdown": {
+        "REMUNERACIÓN": 4016132.0167597765,
+        "Asignación de Zona": 377791.5698324022
+      },
+      "ggBreakdown": {
+        "SERVICIO DE AGUA": 54756.14080649731,
+        "SERVICIO DE ENERGÍA": 60298.734535839074,
+        "GAS PROPANO": 41784.8856371842,
+        "SERVICIO DE ASEO": 598356.0306922278,
+        "SERVICIO DE VIGILANCIA Y SEGURIDAD": 608134.1273903132
+      }
+    },
+    {
+      "id": "2026-8-75",
+      "year": 2026,
+      "month": 8,
+      "costCenter": "QUIRÓFANOS MENOR AMBULATORIA",
+      "rrhh": 1758386.9728377587,
+      "gastosGenerales": 1363329.9190620615,
+      "insumos": 259862,
+      "directos": 3381578.8918998204,
+      "indirectos": 2609052.2404643474,
+      "total": 5990631.132364168,
+      "productionDetails": {},
+      "productionTotal": 0,
+      "insumosBreakdown": {
+        "MATERIAL MEDICO QUIRURGICO": 259862
+      },
+      "rrhhBreakdown": {
+        "REMUNERACIÓN": 1574945.9875436556,
+        "Horas Extras": 62002.007380073796,
+        "Asignación de Zona": 121438.97791402932
+      },
+      "ggBreakdown": {
+        "SERVICIO DE AGUA": 54756.14080649731,
+        "SERVICIO DE ENERGÍA": 60298.734535839074,
+        "GAS PROPANO": 41784.8856371842,
+        "SERVICIO DE ASEO": 598356.0306922278,
+        "SERVICIO DE VIGILANCIA Y SEGURIDAD": 608134.1273903132
+      }
+    },
+    {
+      "id": "2026-8-76",
+      "year": 2026,
+      "month": 8,
+      "costCenter": "SALAS DE PARTO",
+      "rrhh": 3694217.159999999,
+      "gastosGenerales": 4793363.7918615155,
+      "insumos": 2908989,
+      "directos": 11396569.951861516,
+      "indirectos": 8114138.120536875,
+      "total": 19510708.07239839,
+      "productionDetails": {},
+      "productionTotal": 0,
+      "insumosBreakdown": {
+        "MATERIAL MEDICO QUIRURGICO": 2558383,
+        "MATERIALES DE CURACIÓN": 13168,
+        "MATERIALES DE OFICINA, PRODUCTOS DE PAPEL E IMPRESOS": 19821,
+        "MATERIALES Y ELEMENTOS DE ASEO": 203964,
+        "OTROS INSUMOS Y MATERIALES": 113653
+      },
+      "rrhhBreakdown": {
+        "REMUNERACIÓN": 3410253.839999999,
+        "Horas Extras": 74737.2,
+        "Asignación de Zona": 209226.11999999997
+      },
+      "ggBreakdown": {
+        "SERVICIO DE AGUA": 192518.40589290773,
+        "SERVICIO DE ENERGÍA": 212005.74180753613,
+        "GAS PROPANO": 146912.46415111897,
+        "SERVICIO DE ASEO": 2103774.0696949665,
+        "SERVICIO DE VIGILANCIA Y SEGURIDAD": 2138153.110314986
+      }
+    },
+    {
+      "id": "2026-8-77",
+      "year": 2026,
+      "month": 8,
+      "costCenter": "LABORATORIO CLÍNICO",
+      "rrhh": 51648069,
+      "gastosGenerales": 5766419.919062062,
+      "insumos": 35036578,
+      "directos": 92451066.91906206,
+      "indirectos": 24324507.142716542,
+      "total": 116775574.0617786,
+      "productionDetails": {},
+      "productionTotal": 0,
+      "insumosBreakdown": {
+        "EQUIPOS MENORES": 1097304,
+        "MATERIAL MEDICO QUIRURGICO": 2092586,
+        "MATERIALES DE CURACIÓN": 120869,
+        "MATERIALES DE OFICINA, PRODUCTOS DE PAPEL E IMPRESOS": 87774,
+        "MATERIALES Y ELEMENTOS DE ASEO": 43269,
+        "OTROS INSUMOS Y MATERIALES": 80801,
+        "PRODUCTOS QUÍMICOS": 31513975
+      },
+      "rrhhBreakdown": {
+        "REMUNERACIÓN": 48239262,
+        "Horas Extras": 264210,
+        "Asignación de Zona": 3144597
+      },
+      "ggBreakdown": {
+        "SERVICIO DE AGUA": 54756.14080649731,
+        "ARRENDAMIENTOS": 4403090,
+        "SERVICIO DE ENERGÍA": 60298.734535839074,
+        "GAS PROPANO": 41784.8856371842,
+        "SERVICIO DE ASEO": 598356.0306922278,
+        "SERVICIO DE VIGILANCIA Y SEGURIDAD": 608134.1273903132
+      }
+    },
+    {
+      "id": "2026-8-80",
+      "year": 2026,
+      "month": 8,
+      "costCenter": "MAMOGRAFÍA",
+      "rrhh": 4577105.340782123,
+      "gastosGenerales": 1363329.9190620615,
+      "insumos": 204772,
+      "directos": 6145207.259844184,
+      "indirectos": 1489182.2760738195,
+      "total": 7634389.535918003,
+      "productionDetails": {},
+      "productionTotal": 0,
+      "insumosBreakdown": {
+        "MATERIAL MEDICO QUIRURGICO": 204772
+      },
+      "rrhhBreakdown": {
+        "REMUNERACIÓN": 4026196.189944134,
+        "Horas Extras": 262287.6480446927,
+        "Asignación de Zona": 288621.50279329607
+      },
+      "ggBreakdown": {
+        "SERVICIO DE AGUA": 54756.14080649731,
+        "SERVICIO DE ENERGÍA": 60298.734535839074,
+        "GAS PROPANO": 41784.8856371842,
+        "SERVICIO DE ASEO": 598356.0306922278,
+        "SERVICIO DE VIGILANCIA Y SEGURIDAD": 608134.1273903132
+      }
+    },
+    {
+      "id": "2026-8-81",
+      "year": 2026,
+      "month": 8,
+      "costCenter": "IMAGENOLOGÍA",
+      "rrhh": 55514284.2771954,
+      "gastosGenerales": 5479370.566421406,
+      "insumos": 2063104,
+      "directos": 63056758.843616806,
+      "indirectos": 17169699.17670456,
+      "total": 80226458.02032137,
+      "productionDetails": {},
+      "productionTotal": 0,
+      "insumosBreakdown": {
+        "MATERIAL MEDICO QUIRURGICO": 819090,
+        "MATERIALES DE CURACIÓN": 279042,
+        "MATERIALES DE OFICINA, PRODUCTOS DE PAPEL E IMPRESOS": 298320,
+        "MATERIALES Y ELEMENTOS DE ASEO": 505643,
+        "MEDICAMENTOS": 10157,
+        "OTROS INSUMOS Y MATERIALES": 150852
+      },
+      "rrhhBreakdown": {
+        "REMUNERACIÓN": 50024644.88870755,
+        "Horas Extras": 1167391.3519553072,
+        "Asignación de Zona": 4322248.036532546
+      },
+      "ggBreakdown": {
+        "SERVICIO DE AGUA": 220070.8589101898,
+        "SERVICIO DE ENERGÍA": 242347.14326187552,
+        "GAS PROPANO": 167937.9798539059,
+        "SERVICIO DE ASEO": 2404857.677495514,
+        "SERVICIO DE VIGILANCIA Y SEGURIDAD": 2444156.906899921
+      }
+    },
+    {
+      "id": "2026-8-82",
+      "year": 2026,
+      "month": 8,
+      "costCenter": "REHABILITACIÓN",
+      "rrhh": 56597579,
+      "gastosGenerales": 2735343.468181843,
+      "insumos": 224713,
+      "directos": 59557635.46818184,
+      "indirectos": 14432739.433157982,
+      "total": 73990374.90133983,
+      "productionDetails": {},
+      "productionTotal": 0,
+      "insumosBreakdown": {
+        "MATERIAL MEDICO QUIRURGICO": 90600,
+        "MATERIALES DE OFICINA, PRODUCTOS DE PAPEL E IMPRESOS": 71826,
+        "OTROS INSUMOS Y MATERIALES": 62287
+      },
+      "rrhhBreakdown": {
+        "REMUNERACIÓN": 50807849,
+        "Horas Extras": 955887,
+        "Asignación de Zona": 4833843
+      },
+      "ggBreakdown": {
+        "SERVICIO DE AGUA": 109861.04684106147,
+        "SERVICIO DE ENERGÍA": 120981.53744451789,
+        "GAS PROPANO": 83835.91704275811,
+        "SERVICIO DE ASEO": 1200523.246293323,
+        "SERVICIO DE VIGILANCIA Y SEGURIDAD": 1220141.7205601824
+      }
+    },
+    {
+      "id": "2026-8-84",
+      "year": 2026,
+      "month": 8,
+      "costCenter": "DIALISIS PERITONEAL",
+      "rrhh": 30978303.938547485,
+      "gastosGenerales": 9694359.537518088,
+      "insumos": 11999103,
+      "directos": 52671766.476065576,
+      "indirectos": 20281630.556393936,
+      "total": 72953397.03245951,
+      "productionDetails": {},
+      "productionTotal": 0,
+      "insumosBreakdown": {
+        "MATERIAL MEDICO QUIRURGICO": 9486575,
+        "MATERIALES DE CURACIÓN": 9758,
+        "MATERIALES DE OFICINA, PRODUCTOS DE PAPEL E IMPRESOS": 20755,
+        "MEDICAMENTOS": 2158674,
+        "OTROS INSUMOS Y MATERIALES": 323341
+      },
+      "rrhhBreakdown": {
+        "REMUNERACIÓN": 28583980.89944134,
+        "Horas Extras": 668672,
+        "Asignación de Zona": 1725651.0391061453
+      },
+      "ggBreakdown": {
+        "SERVICIO DE AGUA": 226697.3982434602,
+        "ARRENDAMIENTOS": 1600000,
+        "SERVICIO DE ENERGÍA": 249644.44234583055,
+        "GAS PROPANO": 172994.7494533104,
+        "PASAJES, FLETES Y BODEGAJE": 2450000,
+        "SERVICIO DE ASEO": 2477270.190764,
+        "SERVICIO DE VIGILANCIA Y SEGURIDAD": 2517752.7567114877
+      }
+    },
+    {
+      "id": "2026-8-85",
+      "year": 2026,
+      "month": 8,
+      "costCenter": "SERVICIO FARMACEUTICO",
+      "rrhh": 66226959,
+      "gastosGenerales": 24851941.242741734,
+      "insumos": 15969275,
+      "directos": 107048175.24274173,
+      "indirectos": 29302327.974996768,
+      "total": 136350503.2177385,
+      "productionDetails": {},
+      "productionTotal": 0,
+      "insumosBreakdown": {
+        "MATERIAL MEDICO QUIRURGICO": 4624144,
+        "MATERIALES DE CURACIÓN": 1095,
+        "MATERIALES DE OFICINA, PRODUCTOS DE PAPEL E IMPRESOS": 107086,
+        "MATERIALES Y ELEMENTOS DE ASEO": 680482,
+        "OTROS INSUMOS Y MATERIALES": 24062,
+        "PRODUCTOS QUÍMICOS": 3611738,
+        "VÍVERES": 6920668
+      },
+      "rrhhBreakdown": {
+        "REMUNERACIÓN": 59743885,
+        "Horas Extras": 1461269,
+        "Asignación de Zona": 5021805
+      },
+      "ggBreakdown": {
+        "SERVICIO DE AGUA": 137413.49985834357,
+        "ARRENDAMIENTOS": 21430591,
+        "SERVICIO DE ENERGÍA": 151322.9388988573,
+        "GAS PROPANO": 104861.43274554507,
+        "SERVICIO DE ASEO": 1501606.854093871,
+        "SERVICIO DE VIGILANCIA Y SEGURIDAD": 1526145.517145117
+      }
+    },
+    {
+      "id": "2026-8-86",
+      "year": 2026,
+      "month": 8,
+      "costCenter": "AMBULANCIA",
+      "rrhh": 46946110,
+      "gastosGenerales": 67379491.00577201,
+      "insumos": 3086960,
+      "directos": 117412561.00577201,
+      "indirectos": 33301910.349431083,
+      "total": 150714471.3552031,
+      "productionDetails": {},
+      "productionTotal": 0,
+      "insumosBreakdown": {
+        "EQUIPOS MENORES": 633818,
+        "MATERIAL MEDICO QUIRURGICO": 2192929,
+        "MATERIALES DE CURACIÓN": 70112,
+        "MATERIALES DE OFICINA, PRODUCTOS DE PAPEL E IMPRESOS": 24571,
+        "MATERIALES Y ELEMENTOS DE ASEO": 51638,
+        "OTROS INSUMOS Y MATERIALES": 113892
+      },
+      "rrhhBreakdown": {
+        "REMUNERACIÓN": 40930416,
+        "Horas Extras": 2262891,
+        "Asignación de Zona": 3752803
+      },
+      "ggBreakdown": {
+        "SERVICIO DE AGUA": 34876.52280668618,
+        "ARRENDAMIENTOS": 1963036,
+        "SERVICIO DE ENERGÍA": 38406.83728397393,
+        "GAS PROPANO": 26614.57683897083,
+        "MANTENIMIENTO Y REPARACION DE VEHICULOS": 6867292,
+        "PASAJES Y TRASLADOS DE PACIENTES": 50000000,
+        "PASAJES, FLETES Y BODEGAJE": 7680800,
+        "SERVICIO DE ASEO": 381118.49088676926,
+        "SERVICIO DE VIGILANCIA Y SEGURIDAD": 387346.5779556135
+      }
+    },
+    {
+      "id": "2026-8-87",
+      "year": 2026,
+      "month": 8,
+      "costCenter": "CENTRAL DE ESTERILIZACIÓN",
+      "rrhh": 55830612.945279256,
+      "gastosGenerales": 6464533.872799454,
+      "insumos": 12366484,
+      "directos": 74661630.81807871,
+      "indirectos": 21454021.823365286,
+      "total": 96115652.641444,
+      "productionDetails": {},
+      "productionTotal": 0,
+      "insumosBreakdown": {
+        "MATERIAL MEDICO QUIRURGICO": 9353155,
+        "MATERIALES DE CURACIÓN": 132647,
+        "MATERIALES DE OFICINA, PRODUCTOS DE PAPEL E IMPRESOS": 143330,
+        "MATERIALES INFORMATICOS": 140396,
+        "MATERIALES Y ELEMENTOS DE ASEO": 831404,
+        "OTROS INSUMOS Y MATERIALES": 1435955,
+        "PRODUCTOS QUÍMICOS": 329597
+      },
+      "rrhhBreakdown": {
+        "REMUNERACIÓN": 48955147.302891284,
+        "Horas Extras": 3105596,
+        "Asignación de Zona": 3769869.6423879704
+      },
+      "ggBreakdown": {
+        "SERVICIO DE AGUA": 137762.26508641042,
+        "ARRENDAMIENTOS": 3034500,
+        "SERVICIO DE ENERGÍA": 151707.00727169705,
+        "GAS PROPANO": 105127.57851393477,
+        "SERVICIO DE ASEO": 1505418.0390027387,
+        "SERVICIO DE VIGILANCIA Y SEGURIDAD": 1530018.9829246732
+      }
+    },
+    {
+      "id": "2026-8-89",
+      "year": 2026,
+      "month": 8,
+      "costCenter": "SERVICIO DE ALIMENTACIÓN",
+      "rrhh": 103685085.31843576,
+      "gastosGenerales": 8900720.80916314,
+      "insumos": 11813714,
+      "directos": 124399520.1275989,
+      "indirectos": 38308685.61148529,
+      "total": 162708205.73908418,
+      "productionDetails": {},
+      "productionTotal": 0,
+      "insumosBreakdown": {
+        "MATERIAL MEDICO QUIRURGICO": 1025250,
+        "MATERIALES DE OFICINA, PRODUCTOS DE PAPEL E IMPRESOS": 219433,
+        "MATERIALES Y ELEMENTOS DE ASEO": 618585,
+        "OTROS INSUMOS Y MATERIALES": 44091,
+        "VÍVERES": 9906355
+      },
+      "rrhhBreakdown": {
+        "REMUNERACIÓN": 93494871.07821229,
+        "Horas Extras": 1247655,
+        "Asignación de Zona": 8942559.240223464
+      },
+      "ggBreakdown": {
+        "SERVICIO DE AGUA": 357484.3587685334,
+        "SERVICIO DE ENERGÍA": 393670.0821607328,
+        "GAS PROPANO": 272799.41259945097,
+        "SERVICIO DE ASEO": 3906464.531589385,
+        "SERVICIO DE VIGILANCIA Y SEGURIDAD": 3970302.424045038
+      }
+    },
+    {
+      "id": "2026-8-90",
+      "year": 2026,
+      "month": 8,
+      "costCenter": "LAVANDERIA Y ROPERIA",
+      "rrhh": 12281671,
+      "gastosGenerales": 3421350.242741734,
+      "insumos": 259689,
+      "directos": 15962710.242741734,
+      "indirectos": 3868280.4609255353,
+      "total": 19830990.70366727,
+      "productionDetails": {},
+      "productionTotal": 0,
+      "insumosBreakdown": {
+        "MATERIAL MEDICO QUIRURGICO": 259689
+      },
+      "rrhhBreakdown": {
+        "REMUNERACIÓN": 10993640,
+        "Horas Extras": 362583,
+        "Asignación de Zona": 925448
+      },
+      "ggBreakdown": {
+        "SERVICIO DE AGUA": 137413.49985834357,
+        "SERVICIO DE ENERGÍA": 151322.9388988573,
+        "GAS PROPANO": 104861.43274554507,
+        "SERVICIO DE ASEO": 1501606.854093871,
+        "SERVICIO DE VIGILANCIA Y SEGURIDAD": 1526145.517145117
+      }
+    },
+    {
+      "id": "2026-8-91",
+      "year": 2026,
+      "month": 8,
+      "costCenter": "TRANSPORTE GENERAL",
+      "rrhh": 1950425,
+      "gastosGenerales": 217090.75144300342,
+      "insumos": 6084030,
+      "directos": 8251545.751443003,
+      "indirectos": 1999616.150224479,
+      "total": 10251161.901667483,
+      "productionDetails": {},
+      "productionTotal": 0,
+      "insumosBreakdown": {
+        "COMBUSTIBLES Y LUBRICANTES": 5824341,
+        "MATERIAL MEDICO QUIRURGICO": 259689
+      },
+      "rrhhBreakdown": {
+        "REMUNERACIÓN": 1850289,
+        "Asignación de Zona": 100136
+      },
+      "ggBreakdown": {
+        "SERVICIO DE AGUA": 8719.130701671545,
+        "SERVICIO DE ENERGÍA": 9601.709320993483,
+        "GAS PROPANO": 6653.644209742707,
+        "SERVICIO DE ASEO": 95279.62272169231,
+        "SERVICIO DE VIGILANCIA Y SEGURIDAD": 96836.64448890337
+      }
+    },
+    {
+      "id": "2026-8-92",
+      "year": 2026,
+      "month": 8,
+      "costCenter": "MANTENIMIENTO",
+      "rrhh": 52329152,
+      "gastosGenerales": 6931560.919062062,
+      "insumos": 259689,
+      "directos": 59520401.91906206,
+      "indirectos": 14423716.541157769,
+      "total": 73944118.46021983,
+      "productionDetails": {},
+      "productionTotal": 0,
+      "insumosBreakdown": {
+        "MATERIAL MEDICO QUIRURGICO": 259689
+      },
+      "rrhhBreakdown": {
+        "REMUNERACIÓN": 46680961,
+        "Horas Extras": 1225940,
+        "Asignación de Zona": 4422251
+      },
+      "ggBreakdown": {
+        "SERVICIO DE AGUA": 54756.14080649731,
+        "COMPRA DE OTROS SERVICIOS": 5568231,
+        "SERVICIO DE ENERGÍA": 60298.734535839074,
+        "GAS PROPANO": 41784.8856371842,
+        "SERVICIO DE ASEO": 598356.0306922278,
+        "SERVICIO DE VIGILANCIA Y SEGURIDAD": 608134.1273903132
+      }
+    },
+    {
+      "id": "2026-8-94",
+      "year": 2026,
+      "month": 8,
+      "costCenter": "ADMINISTRACIÓN",
+      "rrhh": 605400570.9955617,
+      "gastosGenerales": 121990911.47366554,
+      "insumos": 11669135,
+      "directos": 739060617.4692273,
+      "indirectos": 22255077.23611799,
+      "total": 761315694.7053453,
+      "productionDetails": {},
+      "productionTotal": 0,
+      "insumosBreakdown": {
+        "EQUIPOS MENORES": 529940,
+        "LIBROS, TEXTOS, UTILES DE ENSEÑANZA Y PUBLICACIONES": 13960,
+        "MATERIAL MEDICO QUIRURGICO": 1817829,
+        "MATERIALES DE OFICINA, PRODUCTOS DE PAPEL E IMPRESOS": 1001026,
+        "MATERIALES INFORMATICOS": 39150,
+        "MATERIALES Y ELEMENTOS DE ASEO": 5918366,
+        "OTROS INSUMOS Y MATERIALES": 1601527,
+        "PRODUCTOS TEXTILES, VESTUARIO Y CALZADO": 622745,
+        "REPUESTOS Y ACCESORIOS PARA MANTENIMIENTO Y REPARACIONES DE VEHICULOS": 16650,
+        "VÍVERES": 107942
+      },
+      "rrhhBreakdown": {
+        "REMUNERACIÓN": 515509365.9241914,
+        "Honorarios": 22450425,
+        "Horas Extras": 22827011.622000452,
+        "Asignación de Zona": 44613768.449369825
+      },
+      "ggBreakdown": {
+        "SERVICIO DE AGUA": 1351465.2587590895,
+        "ARRENDAMIENTOS": 5017209,
+        "COMPRA DE OTROS SERVICIOS": 18411569,
+        "SERVICIO DE ENERGÍA": 1488264.9447539898,
+        "ENLACES DE TELECOMUNICACIONES": 2203824,
+        "GAS PROPANO": 1031314.8525101196,
+        "MANTENIMIENTO DE PRADOS Y JARDINES": 2332400,
+        "MANTENIMIENTO PLANTA FÍSICA": 14884520,
+        "MANTENIMIENTO Y REPARACION DE VEHICULOS": 13233305,
+        "OTROS GASTOS GENERALES": 1233790,
+        "OTROS MANTENIMIENTOS": 145180,
+        "PASAJES Y TRASLADOS DE PACIENTES": 1754390,
+        "PASAJES, FLETES Y BODEGAJE": 8217510,
+        "SALA CUNAS Y/O SERVICIOS INFANTILES": 1225000,
+        "SERVICIO DE ASEO": 14768341.52186231,
+        "SERVICIO DE LAVANDERÍA": 1835218,
+        "SERVICIO DE MENSAJERIA Y/O CORREO": 377084,
+        "SERVICIO DE VIGILANCIA Y SEGURIDAD": 15009679.895780021,
+        "SERVICIOS GENERALES": 17470846
+      }
+    },
+    {
+      "id": "2026-8-95",
+      "year": 2026,
+      "month": 8,
+      "costCenter": "TOTAL",
+      "rrhh": 2758980030,
+      "gastosGenerales": 515643616.36239696,
+      "insumos": 606055568.98,
+      "directos": 3880679215.342396,
+      "indirectos": 1881939133.8715954,
+      "total": 5762618349.213991,
+      "productionDetails": {},
+      "productionTotal": 0,
+      "insumosBreakdown": {
+        "COMBUSTIBLES Y LUBRICANTES": 5824341,
+        "EQUIPOS MENORES": 4931217,
+        "GASES MEDICINALES": 4891088,
+        "LIBROS, TEXTOS, UTILES DE ENSEÑANZA Y PUBLICACIONES": 39647,
+        "MATERIAL DE ODONTOLOGÍA": 243176,
+        "MATERIAL DE OSTEOSÍNTESIS Y PRÓTESIS": 25823392,
+        "MATERIAL MEDICO QUIRURGICO": 114877707,
+        "MATERIALES DE CURACIÓN": 5453348,
+        "MATERIALES DE OFICINA, PRODUCTOS DE PAPEL E IMPRESOS": 4397658.0200000005,
+        "MATERIALES INFORMATICOS": 179546,
+        "MATERIALES Y ELEMENTOS DE ASEO": 11857323.530000001,
+        "MEDICAMENTOS": 363434800,
+        "OTROS INSUMOS Y MATERIALES": 10858455.43,
+        "PRODUCTOS QUÍMICOS": 35669510,
+        "PRODUCTOS TEXTILES, VESTUARIO Y CALZADO": 622745,
+        "REPUESTOS Y ACCESORIOS PARA MANTENIMIENTO Y REPARACIONES DE VEHICULOS": 16650,
+        "VÍVERES": 16934965
+      },
+      "rrhhBreakdown": {
+        "REMUNERACIÓN": 2428652659,
+        "Honorarios": 22450425,
+        "Horas Extras": 98182094.00000001,
+        "Asignación de Zona": 209694852
+      },
+      "ggBreakdown": {
+        "SERVICIO DE AGUA": 7386150.000000001,
+        "ARRENDAMIENTOS": 93024996,
+        "COMPRA DE OTROS SERVICIOS": 42391369,
+        "SERVICIO DE ENERGÍA": 8133800.0000000065,
+        "ENLACES DE TELECOMUNICACIONES": 2203824,
+        "GAS PROPANO": 5636435.08295724,
+        "MANTENIMIENTO DE PRADOS Y JARDINES": 2332400,
+        "MANTENIMIENTO PLANTA FÍSICA": 14884520,
+        "MANTENIMIENTO Y REPARACION DE VEHICULOS": 20100597,
+        "OTROS GASTOS GENERALES": 1233790,
+        "OTROS MANTENIMIENTOS": 145180,
+        "PASAJES Y TRASLADOS DE PACIENTES": 54754390,
+        "PASAJES, FLETES Y BODEGAJE": 18348310,
+        "SALA CUNAS Y/O SERVICIOS INFANTILES": 1225000,
+        "SERVICIO DE ASEO": 80713273.99999994,
+        "SERVICIO DE LABORATORIO": 61414175,
+        "SERVICIO DE LAVANDERÍA": 1835218,
+        "SERVICIO DE MENSAJERIA Y/O CORREO": 377084,
+        "SERVICIO DE VIGILANCIA Y SEGURIDAD": 82032258.27943984,
         "SERVICIOS GENERALES": 17470846
       }
     }

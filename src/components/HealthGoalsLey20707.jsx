@@ -52,6 +52,9 @@ const HealthGoalsLey20707 = ({ onBack }) => {
     const calculateUnitScore = (unitId) => {
       const unitInds = LEY20707_INDICATORS.filter(ind => ind.deptInfo.id === unitId);
       return unitInds.reduce((acc, ind) => {
+        if (typeof ind.summaryYTD?.scoreObtained === 'number') {
+          return acc + ind.summaryYTD.scoreObtained;
+        }
         const weightPct = parseFloat(ind.weight.replace('%', '')) || 0;
         const isCompliance = ind.summaryYTD?.status === 'Cumple';
         return acc + (isCompliance ? weightPct : 0);

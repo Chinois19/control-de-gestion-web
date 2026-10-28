@@ -27,7 +27,7 @@ const HealthGoalsLey19664 = ({ onBack }) => {
 
       // Status filter
       let statusMatch = true;
-      if (selectedStatus === 'cumple') statusMatch = ind.summaryYTD.status === 'Cumple';
+      if (selectedStatus === 'cumple') statusMatch = ind.summaryYTD.status === 'Cumple' || ind.summaryYTD.status === 'Cumple Parcial';
       else if (selectedStatus === 'nocumple') statusMatch = ind.summaryYTD.status === 'No Cumple';
 
       return searchMatch && statusMatch;
@@ -36,6 +36,9 @@ const HealthGoalsLey19664 = ({ onBack }) => {
 
   const totalScore19664 = useMemo(() => {
     return LEY19664_INDICATORS.reduce((acc, ind) => {
+      if (typeof ind.summaryYTD?.scoreObtained === 'number') {
+        return acc + ind.summaryYTD.scoreObtained;
+      }
       const weightPct = (ind.weightVal || 0) * 100;
       const isCompliance = ind.summaryYTD?.status === 'Cumple';
       return acc + (isCompliance ? weightPct : 0);
@@ -45,7 +48,7 @@ const HealthGoalsLey19664 = ({ onBack }) => {
   // Statistics
   const stats = useMemo(() => {
     const total = LEY19664_INDICATORS.length;
-    const cumple = LEY19664_INDICATORS.filter(i => i.summaryYTD.status === 'Cumple').length;
+    const cumple = LEY19664_INDICATORS.filter(i => i.summaryYTD.status === 'Cumple' || i.summaryYTD.status === 'Cumple Parcial').length;
     const noCumple = LEY19664_INDICATORS.filter(i => i.summaryYTD.status === 'No Cumple').length;
 
     return { total, cumple, noCumple };
@@ -55,6 +58,8 @@ const HealthGoalsLey19664 = ({ onBack }) => {
     switch (status) {
       case 'Cumple':
         return <span style={{ background: '#dcfce7', color: '#166534', padding: '4px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: 800, display: 'inline-flex', alignItems: 'center', gap: '4px' }}><CheckCircle2 size={12} /> Cumple</span>;
+      case 'Cumple Parcial':
+        return <span style={{ background: '#fef3c7', color: '#92400e', padding: '4px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: 800, display: 'inline-flex', alignItems: 'center', gap: '4px' }}><Clock size={12} /> Cumple Parcial</span>;
       case 'No Cumple':
         return <span style={{ background: '#fee2e2', color: '#991b1b', padding: '4px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: 800, display: 'inline-flex', alignItems: 'center', gap: '4px' }}><AlertCircle size={12} /> No Cumple</span>;
       default:
