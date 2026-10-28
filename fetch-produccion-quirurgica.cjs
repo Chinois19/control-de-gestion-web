@@ -19,6 +19,7 @@ const odbc = require('odbc');
 const fs   = require('fs');
 const path = require('path');
 const zlib = require('zlib');
+const { execFileSync } = require('child_process');
 
 const DSN      = 'dwh.dssasur.cl';
 const USER     = 'ghperez';
@@ -245,8 +246,18 @@ async function fetchFromODBC() {
     console.log(`🗜️ Archivo comprimido .gz en: ${OUTPUT_GZ} (${(gzipped.length / (1024*1024)).toFixed(2)} MB)`);
 
   } catch (err) {
-    console.error("❌ Error durante la conexión ODBC o ejecución de consulta:", err.message);
-    console.log("Nota: Asegúrate de estar conectado a la VPN institucional del Servicio de Salud Araucanía Sur.");
+    console.warn("⚠️ Conexión ODBC directa bloqueada o con timeout:", err.message);
+    const fallbackPy = path.join(__dirname, 'sync_libro_pabellon_from_excel.py');
+    if (fs.existsSync(fallbackPy)) {
+      console.log("🔄 Ejecutando respaldo automático desde Excel Discoverer en Escritorio (sync_libro_pabellon_from_excel.py)...");
+      try {
+        execFileSync('python', [fallbackPy], { stdio: 'inherit' });
+        return;
+      } catch (pyErr) {
+        console.error("❌ Error en respaldo Excel:", pyErr.message);
+        process.exit(1);
+      }
+    }
     process.exit(1);
   } finally {
     if (connection) {

@@ -605,16 +605,25 @@ function App() {
   }, [activeView]);
 
   useEffect(() => {
-    const handleHashChange = () => {
+    const syncFromHash = () => {
       const hash = window.location.hash.replace('#', '');
-      if (hash && hash !== activeView) {
-        setActiveView(hash);
-        localStorage.setItem('cg_villarrica_active_view', hash);
+      if (hash) {
+        setActiveView(prev => {
+          if (prev !== hash) {
+            localStorage.setItem('cg_villarrica_active_view', hash);
+            return hash;
+          }
+          return prev;
+        });
       }
     };
-    window.addEventListener('hashchange', handleHashChange);
-    return () => window.removeEventListener('hashchange', handleHashChange);
-  }, [activeView]);
+    window.addEventListener('hashchange', syncFromHash);
+    window.addEventListener('popstate', syncFromHash);
+    return () => {
+      window.removeEventListener('hashchange', syncFromHash);
+      window.removeEventListener('popstate', syncFromHash);
+    };
+  }, []);
 
   const navigateToView = (view) => {
     setMammographyInitialTab('summary');
