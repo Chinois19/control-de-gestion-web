@@ -70,7 +70,7 @@ async function fetchAndCache(name, token, cacheFileName) {
     formData.append('rawOrLabel', 'label');
     formData.append('returnFormat', 'json');
 
-    const res = await fetch('https://redcap.araucaniasur.cl/api/', {
+    const res = await fetch('https://redcap.ssasur.cl/api/', {
       method: 'POST',
       body: formData,
       headers: {
