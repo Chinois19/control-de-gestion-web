@@ -32,7 +32,7 @@ jobs:
           git config --global user.email "actions@github.com"
           
           # Check if there are changes in public/data
-          git add public/data/*.json
+          git add public/data/
           
           if git diff --cached --quiet; then
             echo "No changes in clinic cache data. Skipping commit."
