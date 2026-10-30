@@ -233,7 +233,7 @@ async function run() {
   // 5. Fetch Endoscopy (Procedimientos Endoscópicos)
   await fetchAndCache(
     "Endoscopy",
-    "52E9850D1CA5A94014A883632F434EB6",
+    "1926DE43A5EBD333717A1E1662E626A5",
     "endoscopy_cached.json"
   );
 
