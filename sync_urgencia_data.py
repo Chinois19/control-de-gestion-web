@@ -191,3 +191,4 @@ def sync_urgencia_data():
 
 if __name__ == "__main__":
     sync_urgencia_data()
+

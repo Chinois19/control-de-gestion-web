@@ -205,28 +205,28 @@ async function run() {
   // 1. Fetch Mammography
   await fetchAndCache(
     "Mammography",
-    "63A26E06FF58CE5D39023212C60982A9",
+    "EB30192BE832D3E92F986A8D1478A906",
     "mammography_cached.json"
   );
 
   // 2. Fetch Ultrasounds (Ecografías)
   await fetchAndCache(
     "Ultrasound",
-    "121B03A6D600BD61FE94A83A40AA5E48",
+    "7BA4AD386CF539488A31BF4624CC27C6",
     "ultrasound_cached.json"
   );
 
   // 3. Fetch X-rays (Radiografías)
   await fetchAndCache(
     "Radiology",
-    "E9E62174D5E1D60AB3312772AB266774",
+    "8106B1DDF15F2B9D8B2CE1D07C7881F8",
     "radiology_cached.json"
   );
 
   // 4. Fetch TAC (CT Scans)
   await fetchAndCache(
     "Tac",
-    "821D14AF67868803621077A65D30545E",
+    "0957B5863F00E8C40DEE3780C39C54AA",
     "tac_cached.json"
   );
 
@@ -258,7 +258,7 @@ async function run() {
   // 8. Fetch Solicitudes Ciudadanas
   await fetchAndCache(
     "Solicitudes Ciudadanas",
-    "F03C4EE0F08CD8A846F1621332F966CD",
+    "A6E96C6D4C69EEC32B9EB08512171F17",
     "solicitudes_cached.json"
   );
 
