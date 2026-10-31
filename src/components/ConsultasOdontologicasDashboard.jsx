@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+﻿import React, { useState, useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import {
   ArrowLeft, Calendar, Search, Users, Activity, Clock, CheckCircle, XCircle, AlertCircle,
@@ -410,7 +410,7 @@ export default function ConsultasOdontologicasDashboard({ onBack }) {
             <p style={{ color: '#64748b', fontSize: '1.05rem', margin: 0 }}>Especialidades odontológicas · Hospital de Villarrica</p>
             <span id="odo-last-update" style={{ display: 'inline-flex', alignItems: 'center', gap: 7, padding: '4px 14px', borderRadius: 999, background: '#ecfdf5', color: '#065f46', border: '1.5px solid #a7f3d0', fontSize: '0.82rem', fontWeight: 700, boxShadow: '0 2px 6px rgba(16,185,129,0.1)' }}>
               <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#10b981', display: 'inline-block' }} />
-              Actualizado: {updated || 'sin registro'} (Extracción ODBC Discoverer)
+              Actualizado: {updated || 'sin registro'}
             </span>
 
           </div>
