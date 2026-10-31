@@ -69,9 +69,13 @@ echo [10/11] Obteniendo Lista de Espera desde ODBC...
 node fetch-lista-espera.cjs
 if %errorlevel% neq 0 echo Error en fetch-lista-espera.cjs
 
-echo [11/11] Obteniendo Consultas Profesionales No Medicos (RUP APS) desde ODBC...
+echo [11/12] Obteniendo Consultas Profesionales No Medicos (RUP APS) desde ODBC...
 node fetch-profesionales-aps.cjs
 if %errorlevel% neq 0 echo Error en fetch-profesionales-aps.cjs
+
+echo [12/12] Obteniendo Consultas y Controles Odontologicos desde ODBC (Discoverer)...
+node fetch-consultas-odontologicas.cjs
+if %errorlevel% neq 0 echo Error en fetch-consultas-odontologicas.cjs
 
 echo.
 echo ===================================================

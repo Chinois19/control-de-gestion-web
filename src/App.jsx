@@ -50,6 +50,7 @@ import UserManagementPanel from './components/UserManagementPanel';
 import ProgramacionMedicaDashboard from './components/ProgramacionMedicaDashboard';
 import ProgramacionProfesionalesDashboard from './components/ProgramacionProfesionalesDashboard';
 import ProgramacionOdontologiaDashboard from './components/ProgramacionOdontologiaDashboard';
+import ConsultasOdontologicasDashboard from './components/ConsultasOdontologicasDashboard';
 import ListaEsperaDashboard from './components/ListaEsperaDashboard';
 import ActividadesMedicinaDashboard from './components/ActividadesMedicinaDashboard';
 import ProfesionalesApsDashboard from './components/ProfesionalesApsDashboard';
@@ -95,6 +96,7 @@ const imgSurgical = "/surgical_hd.png";
 const imgConsultation = "/consultation_hd.png";
 const imgHero = "/hero_hd.png";
 const imgStats = "/stats_abstract.png";
+const imgOdontologia = "/odontologia_card_img.jpg";
 const imgProduction = "/production_stats_hd.png";
 
 const menuStructure = [
@@ -1125,7 +1127,7 @@ function App() {
                   cases={[
                     { id: 'esp_medicas', title: 'Consultas Especialidades Médicas', icon: <Stethoscope size={24} />, image: imgConsultation, desc: 'Gestión y control de la actividad de especialidades médicas directo desde HOJA_DIARIA Oracle.', color: '#2ecc71' },
                     { id: 'prof_no_medicos', title: 'Consultas Profesionales No Médicos', icon: <User size={24} />, image: imgConsultation, desc: 'Atención de profesionales no médicos (Enfermería, Matonería, etc).', color: '#3498db' },
-                    { id: 'esp_odontologicas', title: 'Consultas Odontológicas', icon: <Stethoscope size={24} />, image: imgConsultation, desc: 'Producción de la especialidad odontológica y urgencias dentales.', color: '#f1c40f' }
+                    { id: 'esp_odontologicas', title: 'Consultas Odontológicas', icon: <Stethoscope size={24} />, image: imgOdontologia, desc: 'Producción de la especialidad odontológica y urgencias dentales.', color: '#f1c40f' }
                   ]}
                 />
               )}
@@ -1220,6 +1222,11 @@ function App() {
               {(activeView === 'actividades_medicina' || activeView === 'esp_medicas') && (
                 <ActividadesMedicinaDashboard 
                   onBack={() => navigateToView('atencion_abierta')} 
+                />
+              )}
+              {activeView === 'esp_odontologicas' && (
+                <ConsultasOdontologicasDashboard
+                  onBack={() => navigateToView('atencion_abierta')}
                 />
               )}
               {activeView === 'prof_no_medicos' && (
