@@ -495,6 +495,13 @@ const searchIndex = [
     action: { view: 'programacion_profesionales' }
   },
   {
+    keys: ['consultas odontologicas', 'controles odontologicos', 'especialidades odontologicas', 'odontologia', 'dental', 'dentista', 'odontologos', 'salud oral', 'endodoncia', 'periodoncia', 'ortodoncia', 'odontopediatria', 'cirugia maxilofacial', 'rehabilitacion oral', 'consultas y controles', 'produccion odontologica', 'atencion odontologica', 'especialidad dental', 'bics odontologia', 'odo espec'],
+    title: 'Consultas y Controles Odontológicos',
+    path: 'Gestión Asistencial ➔ Atención Abierta ➔ Consultas Odontológicas',
+    desc: 'Panel de producción de consultas y controles por especialidades odontológicas (Endodoncia, Ortodoncia, Periodoncia, Cirugía Maxilofacial, Odontopediatría y Rehabilitación Oral) del Hospital de Villarrica.',
+    action: { view: 'esp_odontologicas' }
+  },
+  {
     keys: ['programacion odontologia', 'programacion dental', 'odontologos', 'salud oral', 'endodoncia', 'periodoncia', 'cirugia maxilofacial', 'ortodoncia', 'odontopediatria', 'rehabilitacion oral', 'horas odontologicas', 'rendimiento dental', 'dentista'],
     title: 'Programación Odontológica 2026',
     path: 'Programación Hospital ➔ Odontología',

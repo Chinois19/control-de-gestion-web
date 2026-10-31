@@ -337,20 +337,38 @@ export default function ConsultasOdontologicasDashboard({ onBack }) {
   const insights = useMemo(() => {
     const out = [];
     if (!T.tot) return out;
-    out.push({ icon: <UserX size={16} />, color: nspRate > 12 ? '#fca5a5' : '#86efac', text: `Inasistencia (NSP): ${nspRate}% de las ${fmt(cit)} citas con resultado (${fmt(T.nsp)} horas perdidas). ${T.nspNueva ? `En consultas nuevas el NSP es ${pctS(T.nspNueva, T.citNueva)}% y en controles ${pctS(T.nspCtrl, T.citCtrl)}%.` : ''}` });
+    out.push({ key: 'nsp', icon: <UserX size={16} />, color: nspRate > 12 ? '#fca5a5' : '#86efac', text: `Inasistencia (NSP): ${nspRate}% de las ${fmt(cit)} citas con resultado (${fmt(T.nsp)} horas perdidas). ${T.nspNueva ? `En consultas nuevas el NSP es ${pctS(T.nspNueva, T.citNueva)}% y en controles ${pctS(T.nspCtrl, T.citCtrl)}%.` : ''}` });
     const espNsp = byEsp.filter((g) => citados(g) >= 50).map((g) => ({ n: g.name, p: g.nsp / citados(g), v: g.nsp })).sort((a, b) => b.p - a.p)[0];
-    if (espNsp) out.push({ icon: <AlertCircle size={16} />, color: '#fcd34d', text: `Mayor NSP por especialidad: ${espNsp.n} con ${(espNsp.p * 100).toFixed(1)}% (${fmt(espNsp.v)} horas). Foco prioritario de recordatorio y sobreagendamiento.` });
-    out.push({ icon: <Repeat size={16} />, color: '#93c5fd', text: `Se realizan ${ratioCN.toFixed(2)} controles por cada consulta nueva (${fmt(T.ctrlR)} controles / ${fmt(T.nuevaR)} nuevas): refleja la carga de tratamientos en curso frente al ingreso de nuevos casos.` });
+    if (espNsp) out.push({ key: 'espNsp', icon: <AlertCircle size={16} />, color: '#fcd34d', text: `Mayor NSP por especialidad: ${espNsp.n} con ${(espNsp.p * 100).toFixed(1)}% (${fmt(espNsp.v)} horas). Foco prioritario de recordatorio y sobreagendamiento.` });
+    out.push({ key: 'ratio', icon: <Repeat size={16} />, color: '#93c5fd', text: `Se realizan ${ratioCN.toFixed(2)} controles por cada consulta nueva (${fmt(T.ctrlR)} controles / ${fmt(T.nuevaR)} nuevas): refleja la carga de tratamientos en curso frente al ingreso de nuevos casos.` });
     const espRatio = byEsp.filter((g) => g.nuevaR >= 20).map((g) => ({ n: g.name, r: g.ctrlR / g.nuevaR })).sort((a, b) => b.r - a.r)[0];
-    if (espRatio) out.push({ icon: <TrendingUp size={16} />, color: '#93c5fd', text: `${espRatio.n} concentra la mayor relación control/nueva (${espRatio.r.toFixed(1)}): tratamientos largos que limitan cupos de ingreso.` });
-    if (T.ingreso) out.push({ icon: <ClipboardList size={16} />, color: '#86efac', text: `Flujo clínico: ${fmt(T.ingreso)} ingresos a tratamiento vs ${fmt(T.alta)} altas (altas/ingresos ${pctS(T.alta, T.ingreso, 0)}%). ${T.alta < T.ingreso ? 'Se ingresa más de lo que se egresa: la cartera en tratamiento sigue creciendo.' : 'Se egresa al menos lo que se ingresa: la cartera se estabiliza.'}` });
+    if (espRatio) out.push({ key: 'espRatio', icon: <TrendingUp size={16} />, color: '#93c5fd', text: `${espRatio.n} concentra la mayor relación control/nueva (${espRatio.r.toFixed(1)}): tratamientos largos que limitan cupos de ingreso.` });
+    if (T.ingreso) out.push({ key: 'flujo', icon: <ClipboardList size={16} />, color: '#86efac', text: `Flujo clínico: ${fmt(T.ingreso)} ingresos a tratamiento vs ${fmt(T.alta)} altas (altas/ingresos ${pctS(T.alta, T.ingreso, 0)}%). ${T.alta < T.ingreso ? 'Se ingresa más de lo que se egresa: la cartera en tratamiento sigue creciendo.' : 'Se egresa al menos lo que se ingresa: la cartera se estabiliza.'}` });
     const pe = T.pertSi + T.pertNo;
-    if (pe) out.push({ icon: <ShieldCheck size={16} />, color: T.pertNo ? '#fcd34d' : '#86efac', text: `Pertinencia de la derivación: ${pctS(T.pertSi, pe)}% pertinente (${fmt(T.pertNo)} no pertinentes sobre ${fmt(pe)} evaluadas). Retroalimentar a la red APS de origen.` });
-    if (byComuna.length) { const top = byComuna[0]; const tot = byComuna.reduce((s, g) => s + g.tot, 0); out.push({ icon: <MapPin size={16} />, color: '#93c5fd', text: `Territorio: ${top.name} origina ${pctS(top.tot, tot, 0)}% de las derivaciones con origen informado${byComuna[1] ? `, seguida de ${byComuna[1].name} (${pctS(byComuna[1].tot, tot, 0)}%)` : ''}.` }); }
-    if (T.pend) out.push({ icon: <Clock size={16} />, color: '#fcd34d', text: `Calidad de registro: ${fmt(T.pend)} citas con fecha pasada siguen "asignadas" sin cierre. Se excluyen del cálculo de NSP; conviene regularizarlas en el RCE.` });
-    if (T.noAt) out.push({ icon: <XCircle size={16} />, color: '#fca5a5', text: `${fmt(T.noAt)} citas "no se atendió" (${pctS(T.noAt, cit)}%): pérdida de capacidad atribuible a la gestión institucional (ausencia del profesional, suspensiones).` });
+    if (pe) out.push({ key: 'pert', icon: <ShieldCheck size={16} />, color: T.pertNo ? '#fcd34d' : '#86efac', text: `Pertinencia de la derivación: ${pctS(T.pertSi, pe)}% pertinente (${fmt(T.pertNo)} no pertinentes sobre ${fmt(pe)} evaluadas). Retroalimentar a la red APS de origen.` });
+    if (byComuna.length) { const top = byComuna[0]; const tot = byComuna.reduce((s, g) => s + g.tot, 0); out.push({ key: 'terr', icon: <MapPin size={16} />, color: '#93c5fd', text: `Territorio: ${top.name} origina ${pctS(top.tot, tot, 0)}% de las derivaciones con origen informado${byComuna[1] ? `, seguida de ${byComuna[1].name} (${pctS(byComuna[1].tot, tot, 0)}%)` : ''}.` }); }
+    if (T.pend) out.push({ key: 'pend', icon: <Clock size={16} />, color: '#fcd34d', text: `Calidad de registro: ${fmt(T.pend)} citas con fecha pasada siguen "asignadas" sin cierre. Se excluyen del cálculo de NSP; conviene regularizarlas en el RCE.` });
+    if (T.noAt) out.push({ key: 'noAt', icon: <XCircle size={16} />, color: '#fca5a5', text: `${fmt(T.noAt)} citas "no se atendió" (${pctS(T.noAt, cit)}%): pérdida de capacidad atribuible a la gestión institucional (ausencia del profesional, suspensiones).` });
+    const META = { nsp: ['#dc2626', 'Inasistencia'], espNsp: ['#d97706', 'Foco NSP'], ratio: ['#7c3aed', 'Control / nueva'], espRatio: ['#2563eb', 'Cupos de ingreso'], flujo: ['#059669', 'Flujo clínico'], pert: ['#059669', 'Pertinencia'], terr: ['#2563eb', 'Territorio'], pend: ['#d97706', 'Calidad de registro'], noAt: ['#dc2626', 'Capacidad perdida'] };
+    out.forEach((o) => { const m = META[o.key] || ['#2563eb', 'Insight']; o.accent = m[0]; o.title = m[1]; });
     return out;
   }, [T, byEsp, byComuna, nspRate, cit, ratioCN]);
+
+  /* Tarjetas de insight contextuales: se ubican junto al gráfico que ayudan a leer */
+  const InsRow = ({ keys }) => {
+    const items = keys.map((k) => insights.find((i) => i.key === k)).filter(Boolean);
+    if (!items.length) return null;
+    return (
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 16 }}>
+        {items.map((i) => (
+          <div key={i.key} style={{ display: 'flex', gap: 12, alignItems: 'flex-start', background: 'white', borderRadius: 16, padding: '14px 16px', borderLeft: '5px solid ' + i.accent, boxShadow: '0 4px 14px rgba(15,23,42,0.07)', fontSize: '0.88rem', lineHeight: 1.5, color: '#334155' }}>
+            <span style={{ flexShrink: 0, width: 30, height: 30, borderRadius: 10, background: i.accent + '22', color: i.accent, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{i.icon}</span>
+            <div><div style={{ fontSize: '0.68rem', fontWeight: 800, letterSpacing: 0.6, textTransform: 'uppercase', color: i.accent, marginBottom: 2 }}>{i.title}</div>{i.text}</div>
+          </div>
+        ))}
+      </div>
+    );
+  };
 
   /* ---------- Fecha de actualización (siempre visible) ---------- */
   const updated = useMemo(() => {
@@ -389,12 +407,12 @@ export default function ConsultasOdontologicasDashboard({ onBack }) {
           </button>
           <h1 style={{ fontSize: '2.2rem', color: '#1e293b', margin: 0, fontWeight: 800 }}>Consultas y Controles Odontológicos</h1>
           <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginTop: 8, flexWrap: 'wrap' }}>
-            <p style={{ color: '#64748b', fontSize: '1.05rem', margin: 0 }}>Especialidades odontológicas · Hospital de Villarrica · Discoverer (BICS.DWP_F_RCE_ODO_ESPEC)</p>
+            <p style={{ color: '#64748b', fontSize: '1.05rem', margin: 0 }}>Especialidades odontológicas · Hospital de Villarrica</p>
             <span id="odo-last-update" style={{ display: 'inline-flex', alignItems: 'center', gap: 7, padding: '4px 14px', borderRadius: 999, background: '#ecfdf5', color: '#065f46', border: '1.5px solid #a7f3d0', fontSize: '0.82rem', fontWeight: 700, boxShadow: '0 2px 6px rgba(16,185,129,0.1)' }}>
               <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#10b981', display: 'inline-block' }} />
               Actualizado: {updated || 'sin registro'} (Extracción ODBC Discoverer)
             </span>
-            {maxF && <span style={{ fontSize: '0.8rem', color: '#64748b', fontWeight: 600 }}>Datos con agenda hasta {dmy(maxF)}</span>}
+
           </div>
         </div>
         <div style={{ display: 'flex', gap: 12, background: '#2d334a', padding: 12, borderRadius: 20, border: '1px solid rgba(255,255,255,0.1)', boxShadow: '0 10px 25px rgba(0,0,0,0.1)', flexWrap: 'wrap' }}>
@@ -461,13 +479,7 @@ export default function ConsultasOdontologicasDashboard({ onBack }) {
                 <Kpi icon={<TrendingUp size={15} />} label="Controles por consulta nueva" value={ratioCN.toFixed(2)} sub="Sobre atenciones realizadas" color={C.violet} />
                 <Kpi icon={<UserX size={15} />} label="Tasa NSP" value={`${nspRate}%`} sub={`${fmt(T.nsp)} inasistencias`} color={C.red} />
               </div>
-              <div style={{ background: 'linear-gradient(135deg, #1e3a8a, #0f172a)', borderRadius: 20, padding: 24, color: 'white', boxShadow: '0 10px 30px rgba(15,23,42,0.2)' }}>
-                <h3 style={{ margin: '0 0 14px', display: 'flex', alignItems: 'center', gap: 10, fontSize: '1.15rem' }}><Lightbulb size={20} color={C.amber} /> Insights de gestión (se recalculan con los filtros)</h3>
-                <div style={{ display: 'grid', gap: 10 }}>
-                  {insights.map((i, k) => <div key={k} style={{ display: 'flex', gap: 12, alignItems: 'flex-start', background: 'rgba(255,255,255,0.07)', borderRadius: 12, padding: '10px 14px', fontSize: '0.9rem', lineHeight: 1.45 }}><span style={{ color: i.color, marginTop: 2 }}>{i.icon}</span><span>{i.text}</span></div>)}
-                  {!insights.length && <div>Sin datos para el período y filtros seleccionados.</div>}
-                </div>
-              </div>
+              <InsRow keys={['nsp']} />
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(420px, 1fr))', gap: 24 }}>
                 <Card title="Producción mensual y tasa NSP" sub="Barras: atenciones realizadas por tipo · Línea: % NSP">
                   <ResponsiveContainer width="100%" height={320}>
@@ -490,6 +502,8 @@ export default function ConsultasOdontologicasDashboard({ onBack }) {
                   </ResponsiveContainer>
                 </Card>
               </div>
+              <InsRow keys={['pend', 'noAt']} />
+              <InsRow keys={['espNsp']} />
               <Card title="Resumen por especialidad" sub="Realizadas, relación control/nueva y NSP (naranjo = NSP sobre el promedio)"><RankTable columns={colsEsp} rows={byEsp} max={14} /></Card>
             </>)}
 
@@ -503,6 +517,7 @@ export default function ConsultasOdontologicasDashboard({ onBack }) {
                 <Kpi icon={<Clock size={15} />} label="Pendientes de cierre" value={fmt(T.pend)} sub="Fecha pasada, sin registro de resultado" color={C.slate} />
                 <Kpi icon={<Calendar size={15} />} label="Sobrecupos realizados" value={fmt(T.sobre)} sub={`${pctS(T.sobre, T.real)}% de lo realizado`} color={C.sky} />
               </div>
+              <InsRow keys={['pend']} />
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(420px, 1fr))', gap: 24 }}>
                 <Card title="Evolución mensual del NSP" sub="Barras: horas NSP · Línea: % NSP sobre citas con resultado">
                   <ResponsiveContainer width="100%" height={320}>
@@ -527,6 +542,7 @@ export default function ConsultasOdontologicasDashboard({ onBack }) {
                   </ResponsiveContainer>
                 </Card>
               </div>
+              <InsRow keys={['espNsp', 'noAt']} />
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(420px, 1fr))', gap: 24 }}>
                 <Card title="NSP por especialidad" sub="Ordenado por horas perdidas">
                   <RankTable rows={[...byEsp].sort((a, b) => b.nsp - a.nsp)} columns={[{ key: 'name', label: 'Especialidad' }, { key: 'cit', label: 'Citas', render: (r) => fmt(citados(r)) }, { key: 'nsp', label: 'NSP', render: (r) => fmt(r.nsp) }, { key: 'p', label: '% NSP', render: (r) => `${pctS(r.nsp, citados(r))}%`, hot: (r) => citados(r) >= 30 && r.nsp / citados(r) * 100 > nspRate }, { key: 'na', label: 'No atend.', render: (r) => fmt(r.noAt) }]} />
@@ -546,6 +562,7 @@ export default function ConsultasOdontologicasDashboard({ onBack }) {
                 <Kpi icon={<Activity size={15} />} label="En tratamiento (controles)" value={fmt(T.enTrat)} sub="Atenciones de seguimiento" color={C.amber} />
                 <Kpi icon={<ShieldCheck size={15} />} label="Contrarreferencias" value={fmt(T.contra)} sub={`${pctS(T.contra, T.real)}% de lo realizado`} color={C.sky} />
               </div>
+              <InsRow keys={['ratio']} />
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(420px, 1fr))', gap: 24 }}>
                 <Card title="Relación control / consulta nueva por mes" sub="Barras: nuevas y controles · Línea: controles por cada nueva">
                   <ResponsiveContainer width="100%" height={320}>
@@ -560,6 +577,7 @@ export default function ConsultasOdontologicasDashboard({ onBack }) {
                 </Card>
                 <Card title="Acciones clínicas registradas" sub="Sobre atenciones realizadas"><HBar rows={byAccion} color={C.blue} height={320} /></Card>
               </div>
+              <InsRow keys={['espRatio', 'flujo']} />
               <Card title="Flujo clínico por especialidad" sub="Ingresos, altas, relación control/nueva y contrarreferencia (naranjo = sobre el promedio institucional)">
                 <RankTable rows={byEsp} max={14} columns={[
                   { key: 'name', label: 'Especialidad' },
@@ -582,10 +600,12 @@ export default function ConsultasOdontologicasDashboard({ onBack }) {
                 <Kpi icon={<MapPin size={15} />} label="Con origen informado" value={`${pctS(byComuna.reduce((s, g) => s + g.tot, 0), filtered.reduce((s, r) => s + (r._tipo === 'Consulta Nueva' ? (r.n || 1) : 0), 0), 0)}%`} sub="Sobre consultas nuevas en la vista" color={C.sky} />
                 <Kpi icon={<AlertCircle size={15} />} label="GES" value={fmt(T.ges)} sub={`${pctS(T.ges, T.real)}% de lo realizado`} color={C.orange} />
               </div>
+              <InsRow keys={['pert']} />
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(420px, 1fr))', gap: 24 }}>
                 <Card title="Origen de la demanda por comuna" sub="Establecimiento que deriva (interconsulta), agrupado por comuna"><HBar rows={byComuna.map((g) => ({ name: g.name, value: g.tot }))} color={C.blue} /></Card>
                 <Card title="Origen por establecimiento de la red" sub="Top 12 establecimientos derivadores"><HBar rows={byEstab.slice(0, 12).map((g) => ({ name: g.name, value: g.tot }))} color={C.orange} /></Card>
               </div>
+              <InsRow keys={['terr']} />
               <Card title="Desempeño territorial por establecimiento de origen" sub="Pertinencia, NSP y contrarreferencia de los pacientes según quién deriva">
                 <RankTable rows={byEstab} max={16} columns={[
                   { key: 'name', label: 'Establecimiento de origen' },
