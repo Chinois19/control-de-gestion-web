@@ -35,10 +35,7 @@ if %errorlevel% neq 0 echo Error en update_ley20707.js
 
 echo [6/7] Obteniendo Produccion Quirurgica desde ODBC (Discoverer)...
 node fetch-produccion-quirurgica.cjs
-if %errorlevel% neq 0 (
-    echo [ADVERTENCIA] ODBC no respondio para Produccion Quirurgica. Usando sincronizador local...
-    python sync_libro_pabellon_from_excel.py
-)
+if %errorlevel% neq 0 echo [ADVERTENCIA] Oracle no disponible: Produccion Quirurgica NO se actualizo (sin respaldo de archivos fijos).
 
 echo [7/8] Procesando datos de Laboratorio...
 node scripts/process_lab_excel.cjs
@@ -50,10 +47,7 @@ if %errorlevel% neq 0 echo Error en fetch-actividades-medicina.cjs
 
 echo [9/10] Obteniendo Consultas de Urgencia...
 node fetch-urgencia.cjs
-if %errorlevel% neq 0 (
-    echo [ADVERTENCIA] ODBC no respondio para Urgencia. Sincronizando desde base actualizada local...
-    python sync_urgencia_data.py
-)
+if %errorlevel% neq 0 echo [ADVERTENCIA] Oracle no disponible: Urgencia NO se actualizo (sin respaldo de archivos fijos).
 
 echo [9b/11] Obteniendo Tiempos de Espera C2 de Urgencia...
 node extract_urgencia_tiempos.cjs

@@ -19,7 +19,6 @@ const odbc = require('odbc');
 const fs   = require('fs');
 const path = require('path');
 const zlib = require('zlib');
-const { execFileSync } = require('child_process');
 
 const DSN      = 'dwh.dssasur.cl';
 const USER     = 'ghperez';
@@ -247,17 +246,7 @@ async function fetchFromODBC() {
 
   } catch (err) {
     console.warn("⚠️ Conexión ODBC directa bloqueada o con timeout:", err.message);
-    const fallbackPy = path.join(__dirname, 'sync_libro_pabellon_from_excel.py');
-    if (fs.existsSync(fallbackPy)) {
-      console.log("🔄 Ejecutando respaldo automático desde Excel Discoverer en Escritorio (sync_libro_pabellon_from_excel.py)...");
-      try {
-        execFileSync('python', [fallbackPy], { stdio: 'inherit' });
-        return;
-      } catch (pyErr) {
-        console.error("❌ Error en respaldo Excel:", pyErr.message);
-        process.exit(1);
-      }
-    }
+    console.warn("Oracle/Discoverer no disponible: NO se modifican los datos existentes (sin respaldo desde archivos fijos).");
     process.exit(1);
   } finally {
     if (connection) {
