@@ -24,20 +24,49 @@ const colorPorMin = (min, umbral) => (min >= umbral ? '#ef4444' : min >= umbral 
 function heatBg(min, umbral) {
   if (min === null || min === undefined) return '#f1f5f9';
   const t = Math.min(1, min / (umbral * 1.5));
-  // verde -> amarillo -> rojo
   const r = t < 0.5 ? Math.round(16 + (245 - 16) * (t / 0.5)) : Math.round(245 + (239 - 245) * ((t - 0.5) / 0.5));
   const g = t < 0.5 ? Math.round(185 + (158 - 185) * (t / 0.5)) : Math.round(158 + (68 - 158) * ((t - 0.5) / 0.5));
   const b = t < 0.5 ? Math.round(129 + (11 - 129) * (t / 0.5)) : Math.round(11 + (68 - 11) * ((t - 0.5) / 0.5));
   return `rgba(${r}, ${g}, ${b}, 0.28)`;
 }
 
-const card = { background: 'white', borderRadius: '16px', border: '1px solid #e2e8f0', padding: '20px 22px', boxShadow: '0 2px 10px rgba(15,23,42,0.04)' };
+const card = { background: 'white', borderRadius: '16px', border: '1px solid #e2e8f0', padding: '20px 22px', boxShadow: '0 2px 10px rgba(15,23,42,0.04)', display: 'flex', flexDirection: 'column' };
 const cardTitle = { margin: '0 0 4px 0', fontSize: '1.02rem', fontWeight: 800, color: '#1e293b' };
 const cardSub = { margin: '0 0 14px 0', fontSize: '0.8rem', color: '#64748b' };
 
+const tonoColor = { rojo: '#ef4444', verde: '#10b981', ambar: '#f59e0b', azul: '#6366f1' };
+const tonoBg = { rojo: '#fef2f2', verde: '#ecfdf5', ambar: '#fffbeb', azul: '#eef2ff' };
+
+function ChartInsight({ tono = 'azul', titulo, children }) {
+  if (!children) return null;
+  const c = tonoColor[tono] || '#6366f1';
+  const bg = tonoBg[tono] || '#eef2ff';
+  return (
+    <div style={{
+      marginTop: '14px',
+      padding: '11px 14px',
+      borderRadius: '12px',
+      background: bg,
+      borderLeft: `4px solid ${c}`,
+      display: 'flex',
+      gap: '10px',
+      alignItems: 'flex-start',
+      fontSize: '0.82rem',
+      color: '#1e293b',
+      lineHeight: 1.5
+    }}>
+      <Lightbulb size={16} color={c} style={{ flexShrink: 0, marginTop: '2px' }} />
+      <div>
+        {titulo && <strong style={{ color: '#0f172a', marginRight: '6px' }}>{titulo}:</strong>}
+        {children}
+      </div>
+    </div>
+  );
+}
+
 function KPI({ icon, label, value, sub, color = '#6366f1' }) {
   return (
-    <div style={{ ...card, display: 'flex', flexDirection: 'column', gap: '6px', borderTop: `4px solid ${color}` }}>
+    <div style={{ ...card, gap: '6px', borderTop: `4px solid ${color}` }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color, fontWeight: 700, fontSize: '0.78rem', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
         {icon} {label}
       </div>
@@ -50,6 +79,7 @@ function KPI({ icon, label, value, sub, color = '#6366f1' }) {
 function Chip({ active, onClick, children }) {
   return (
     <button
+      type="button"
       onClick={onClick}
       style={{
         padding: '6px 14px', borderRadius: '999px', cursor: 'pointer', fontWeight: 700, fontSize: '0.82rem',
@@ -91,7 +121,7 @@ export default function SubprogramacionDiaria({ tablaData = [], disponibilidadDa
   const evaluadas = filtradas;
   const kpi = useMemo(() => resumir(filtradas, umbral), [filtradas, umbral]);
 
-  const agrupar = (clave, etiqueta, orden) => {
+  const agrupar = (clave, etiqueta, ordenFn) => {
     const m = new Map();
     for (const f of evaluadas) {
       const k = clave(f);
@@ -102,14 +132,14 @@ export default function SubprogramacionDiaria({ tablaData = [], disponibilidadDa
       const r = resumir(rows, umbral);
       return { key: k, name: etiqueta(k), promedio: Number(r.promedio.toFixed(1)), pctCriticos: Number(r.pctCriticos.toFixed(1)), n: r.n, dias: new Set(rows.map((x) => x.fecha)).size, totalMin: r.totalMin };
     });
-    return orden ? arr.sort(orden) : arr;
+    return ordenFn ? arr.sort(ordenFn) : arr;
   };
 
   const porMes = useMemo(() => agrupar((f) => f.mesKey, labelMes, (a, b) => (a.key < b.key ? -1 : 1)), [evaluadas, umbral]);
   const porPabellon = useMemo(() => agrupar((f) => f.pabellon, (k) => `Pab. ${k}`, (a, b) => a.key - b.key), [evaluadas, umbral]);
   const porDia = useMemo(() => {
-    const orden = [1, 2, 3, 4, 5, 6, 0];
-    return agrupar((f) => f.diaSemana, (k) => DIAS[k], (a, b) => orden.indexOf(a.key) - orden.indexOf(b.key));
+    const ordenDias = [1, 2, 3, 4, 5, 6, 0];
+    return agrupar((f) => f.diaSemana, (k) => DIAS[k], (a, b) => ordenDias.indexOf(a.key) - ordenDias.indexOf(b.key));
   }, [evaluadas, umbral]);
   const porEspecialidad = useMemo(
     () => agrupar((f) => f.especialidad || 'Sin especialidad', (k) => k, (a, b) => b.promedio - a.promedio).filter((e) => e.n >= 8).slice(0, 10),
@@ -143,46 +173,82 @@ export default function SubprogramacionDiaria({ tablaData = [], disponibilidadDa
     return { meses, pabs, valor: (p, m) => { const a = cel.get(`${p}|${m}`); return a ? { v: a.reduce((s, x) => s + x, 0) / a.length, n: a.length } : null; } };
   }, [evaluadas]);
 
-  const insights = useMemo(() => {
-    if (!evaluadas.length) return [];
-    const out = [];
+  // Insights contextualizados para cada gráfica
+  const insightMensual = useMemo(() => {
+    if (porMes.length < 2) return null;
+    const a = porMes[porMes.length - 1];
+    const b = porMes[porMes.length - 2];
+    const delta = a.promedio - b.promedio;
+    const parcial = a.dias < 10;
+    return {
+      tono: parcial ? 'azul' : delta > 0 ? 'rojo' : 'verde',
+      texto: `${labelMesLargo(a.key)}${parcial ? ` (mes en curso, ${a.dias} días evaluados)` : ''} registra ${fmt(a.promedio)} min promedio, ${delta > 0 ? 'peor' : 'mejor'} que ${labelMesLargo(b.key)} (${fmt(b.promedio)} min): ${delta > 0 ? '+' : ''}${fmt(delta)} min (${fmt(a.pctCriticos, 0)}% de días con subprogramación ≥ ${umbral} min).`
+    };
+  }, [porMes, umbral]);
+
+  const insightPabellon = useMemo(() => {
+    if (porPabellon.length < 2) return null;
     const pabOrd = [...porPabellon].sort((a, b) => b.promedio - a.promedio);
-    if (pabOrd.length > 1) {
-      const peor = pabOrd[0]; const mejor = pabOrd[pabOrd.length - 1];
-      out.push({ tono: 'rojo', texto: `${peor.name} presenta la mayor subprogramación: ${fmt(peor.promedio)} min promedio por día y ${fmt(peor.pctCriticos, 0)}% de sus jornadas son Pabellones con Subprogramación (≥ ${umbral} min).` });
-      out.push({ tono: 'verde', texto: `${mejor.name} es el de mejor rendimiento al cierre: ${fmt(mejor.promedio)} min promedio y solo ${fmt(mejor.pctCriticos, 0)}% de días con subprogramación.` });
-    }
+    const peor = pabOrd[0];
+    const mejor = pabOrd[pabOrd.length - 1];
+    return {
+      tono: peor.promedio >= umbral ? 'rojo' : 'ambar',
+      texto: `${peor.name} presenta la mayor subprogramación (${fmt(peor.promedio)} min promedio y ${fmt(peor.pctCriticos, 0)}% de jornadas ≥ ${umbral} min), mientras que ${mejor.name} logra el mejor aprovechamiento al cierre (${fmt(mejor.promedio)} min promedio y solo ${fmt(mejor.pctCriticos, 0)}% con subprogramación).`
+    };
+  }, [porPabellon, umbral]);
+
+  const insightDia = useMemo(() => {
     const diaOrd = [...porDia].filter((d) => d.n >= 5).sort((a, b) => b.promedio - a.promedio);
-    if (diaOrd.length > 1) {
-      out.push({ tono: 'ambar', texto: `El día con mayor subprogramación es el ${DIAS_LARGO[diaOrd[0].key]} (${fmt(diaOrd[0].promedio)} min promedio); el de menor subprogramación es el ${DIAS_LARGO[diaOrd[diaOrd.length - 1].key]} (${fmt(diaOrd[diaOrd.length - 1].promedio)} min).` });
-    }
-    if (porMes.length >= 2) {
-      const a = porMes[porMes.length - 1]; const b = porMes[porMes.length - 2];
-      const delta = a.promedio - b.promedio;
-      const parcial = a.dias < 10;
-      out.push({
-        tono: parcial ? 'azul' : delta > 0 ? 'rojo' : 'verde',
-        texto: `${labelMesLargo(a.key)}${parcial ? ` (mes en curso, solo ${a.dias} días evaluados)` : ''} registra ${fmt(a.promedio)} min promedio, ${delta > 0 ? 'peor' : 'mejor'} que ${labelMesLargo(b.key)} (${fmt(b.promedio)} min): ${delta > 0 ? '+' : ''}${fmt(delta)} min.${parcial ? ' Tomar con cautela hasta completar el mes.' : ''}`
-      });
-    }
-    const horas = kpi.totalMin / 60;
-    out.push({ tono: 'ambar', texto: `En el período se acumularon ${fmt(horas, 0)} horas de pabellón disponibles sin usar al cierre del día, equivalentes a ~${fmt(horas / 8, 0)} jornadas completas de 8 h.` });
+    if (diaOrd.length < 2) return null;
+    return {
+      tono: 'ambar',
+      texto: `El día con mayor brecha al cierre es el ${DIAS_LARGO[diaOrd[0].key]} (${fmt(diaOrd[0].promedio)} min promedio, ${fmt(diaOrd[0].pctCriticos, 0)}% ≥ ${umbral} min), mientras que la menor subprogramación se registra el ${DIAS_LARGO[diaOrd[diaOrd.length - 1].key]} (${fmt(diaOrd[diaOrd.length - 1].promedio)} min).`
+    };
+  }, [porDia, umbral]);
+
+  const insightDistribucion = useMemo(() => {
+    if (!evaluadas.length) return null;
     const sobre = evaluadas.filter((f) => f.sobretiempo > 0);
-    if (sobre.length) {
-      const prom = sobre.reduce((s, f) => s + f.sobretiempo, 0) / sobre.length;
-      out.push({ tono: 'azul', texto: `${fmt((sobre.length / evaluadas.length) * 100, 0)}% de los días el último paciente salió después del cierre de la disponibilidad (${fmt(prom, 0)} min de sobretiempo promedio): la subprogramación convive con sobreuso en otros días.` });
+    const promSobre = sobre.length ? sobre.reduce((s, f) => s + f.sobretiempo, 0) / sobre.length : 0;
+    const horas = kpi.totalMin / 60;
+    return {
+      tono: 'azul',
+      texto: `Se acumularon ${fmt(horas, 0)} h de pabellón sin usar al cierre (~${fmt(horas / 8, 0)} jornadas de 8 h). A la vez, el ${fmt((sobre.length / evaluadas.length) * 100, 0)}% de los días terminó con sobretiempo (${fmt(promSobre, 0)} min promedio), mostrando coexistencia de subprogramación y extensión horaria.`
+    };
+  }, [evaluadas, kpi]);
+
+  const insightHeatmap = useMemo(() => {
+    if (!heat.pabs.length || !heat.meses.length) return null;
+    let maxVal = -1;
+    let maxCell = null;
+    for (const p of heat.pabs) {
+      for (const m of heat.meses) {
+        const c = heat.valor(p, m);
+        if (c && c.n >= 3 && c.v > maxVal) {
+          maxVal = c.v;
+          maxCell = { p, m, v: c.v, n: c.n };
+        }
+      }
     }
-    if (porEspecialidad.length) {
-      const e = porEspecialidad[0];
-      out.push({ tono: 'ambar', texto: `Por especialidad del último paciente, la mayor subprogramación es ${e.name} (${fmt(e.promedio)} min promedio en ${e.n} días).` });
-    }
-    return out;
-  }, [evaluadas, porPabellon, porDia, porMes, porEspecialidad, kpi, umbral]);
+    if (!maxCell) return null;
+    return {
+      tono: maxCell.v >= umbral ? 'rojo' : 'ambar',
+      texto: `El mayor foco mensual en la matriz se observa en Pab. ${maxCell.p} durante ${labelMesLargo(maxCell.m)} con ${fmt(maxCell.v, 0)} min promedio de subprogramación al cierre (${maxCell.n} jornadas evaluadas).`
+    };
+  }, [heat, umbral]);
+
+  const insightEspecialidad = useMemo(() => {
+    if (!porEspecialidad.length) return null;
+    const e = porEspecialidad[0];
+    const mejor = porEspecialidad[porEspecialidad.length - 1];
+    return {
+      tono: 'ambar',
+      texto: `Por especialidad del último paciente, la mayor holgura al cierre corresponde a ${e.name} (${fmt(e.promedio)} min promedio en ${e.n} días, ${fmt(e.pctCriticos, 0)}% ≥ ${umbral} min), frente a ${mejor.name} con ${fmt(mejor.promedio)} min promedio.`
+    };
+  }, [porEspecialidad, umbral]);
 
   const togglePab = (p) => setPabellones((prev) => (prev.includes(p) ? prev.filter((x) => x !== p) : [...prev, p].sort((a, b) => a - b)));
   const limpiar = () => { setTipoDia('habiles'); setPabellones(PABELLONES_VALIDOS); setUmbral(UMBRAL_DEFECTO_MIN); setDesde(''); setHasta(''); };
-
-  const tonoColor = { rojo: '#ef4444', verde: '#10b981', ambar: '#f59e0b', azul: '#6366f1' };
 
   if (loading) {
     return <div style={{ padding: '60px', textAlign: 'center', color: '#64748b', fontWeight: 600 }}>Cargando datos de subprogramación…</div>;
@@ -198,7 +264,7 @@ export default function SubprogramacionDiaria({ tablaData = [], disponibilidadDa
   return (
     <div style={{ padding: '24px 32px 48px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
       {/* DEFINICIÓN */}
-      <div style={{ ...card, background: 'linear-gradient(135deg, #eef2ff, #f5f3ff)', borderColor: '#c7d2fe', display: 'flex', gap: '14px', alignItems: 'flex-start' }}>
+      <div style={{ ...card, background: 'linear-gradient(135deg, #eef2ff, #f5f3ff)', borderColor: '#c7d2fe', flexDirection: 'row', gap: '14px', alignItems: 'flex-start' }}>
         <Info size={22} color="#4f46e5" style={{ flexShrink: 0, marginTop: '2px' }} />
         <div style={{ fontSize: '0.86rem', color: '#312e81', lineHeight: 1.55 }}>
           <strong>Subprogramación diaria</strong> = hora de término de la disponibilidad del pabellón − hora de salida de pabellón del último paciente intervenido ese día (minutos).
@@ -210,7 +276,7 @@ export default function SubprogramacionDiaria({ tablaData = [], disponibilidadDa
       </div>
 
       {/* FILTROS */}
-      <div style={{ ...card, display: 'flex', flexWrap: 'wrap', gap: '20px', alignItems: 'flex-end' }}>
+      <div style={{ ...card, flexDirection: 'row', flexWrap: 'wrap', gap: '20px', alignItems: 'flex-end' }}>
         <div>
           <div style={{ fontSize: '0.72rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', marginBottom: '6px' }}>Pabellón</div>
           <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
@@ -237,7 +303,7 @@ export default function SubprogramacionDiaria({ tablaData = [], disponibilidadDa
           <div style={{ fontSize: '0.72rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', marginBottom: '6px' }}>Umbral Subprogramación (min)</div>
           <input type="number" min={0} step={5} value={umbral} onChange={(e) => setUmbral(Math.max(0, Number(e.target.value) || 0))} style={{ width: '90px', padding: '6px 8px', borderRadius: '8px', border: '1.5px solid #cbd5e1', fontWeight: 700 }} />
         </div>
-        <button onClick={limpiar} style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 14px', borderRadius: '10px', border: '1px solid #e2e8f0', background: 'white', cursor: 'pointer', fontWeight: 700, color: '#64748b' }}>
+        <button type="button" onClick={limpiar} style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 14px', borderRadius: '10px', border: '1px solid #e2e8f0', background: 'white', cursor: 'pointer', fontWeight: 700, color: '#64748b' }}>
           <RotateCcw size={14} /> Restablecer
         </button>
       </div>
@@ -254,25 +320,12 @@ export default function SubprogramacionDiaria({ tablaData = [], disponibilidadDa
             <KPI icon={<CalendarCheck size={16} />} label="Con sobretiempo" value={`${fmt(kpi.n ? (kpi.conSobretiempo / kpi.n) * 100 : 0)}%`} sub={`${fmt(kpi.conSobretiempo, 0)} días terminaron después del cierre`} color="#6366f1" />
           </div>
 
-          {/* INSIGHTS */}
-          <div style={card}>
-            <h3 style={{ ...cardTitle, display: 'flex', alignItems: 'center', gap: '8px' }}><Lightbulb size={18} color="#f59e0b" /> Principales insights</h3>
-            <p style={cardSub}>Calculados automáticamente con los filtros seleccionados.</p>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: '10px' }}>
-              {insights.map((it, i) => (
-                <div key={i} style={{ borderLeft: `4px solid ${tonoColor[it.tono]}`, background: '#f8fafc', padding: '10px 14px', borderRadius: '8px', fontSize: '0.86rem', color: '#334155', lineHeight: 1.5 }}>
-                  {it.texto}
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* TENDENCIA + PABELLÓN */}
+          {/* TENDENCIA + PABELLÓN (con insights integrados) */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(460px, 1fr))', gap: '20px' }}>
             <div style={card}>
               <h3 style={cardTitle}>Evolución mensual</h3>
               <p style={cardSub}>Minutos promedio de subprogramación (barras) y % de pabellones con subprogramación (línea).</p>
-              <ResponsiveContainer width="100%" height={300}>
+              <ResponsiveContainer width="100%" height={280}>
                 <ComposedChart data={porMes} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
                   <XAxis dataKey="name" tick={{ fontSize: 11 }} />
@@ -287,12 +340,17 @@ export default function SubprogramacionDiaria({ tablaData = [], disponibilidadDa
                   <Line yAxisId="r" type="monotone" dataKey="pctCriticos" name="% con subprogramación" stroke="#4f46e5" strokeWidth={2.5} dot={{ r: 3 }} />
                 </ComposedChart>
               </ResponsiveContainer>
+              {insightMensual && (
+                <ChartInsight tono={insightMensual.tono} titulo="Tendencia mensual">
+                  {insightMensual.texto}
+                </ChartInsight>
+              )}
             </div>
 
             <div style={card}>
               <h3 style={cardTitle}>Por pabellón</h3>
               <p style={cardSub}>Minutos promedio de subprogramación por pabellón.</p>
-              <ResponsiveContainer width="100%" height={300}>
+              <ResponsiveContainer width="100%" height={280}>
                 <BarChart data={porPabellon} margin={{ top: 20, right: 10, left: -10, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} />
                   <XAxis dataKey="name" tick={{ fontSize: 11 }} />
@@ -305,6 +363,11 @@ export default function SubprogramacionDiaria({ tablaData = [], disponibilidadDa
                   </Bar>
                 </BarChart>
               </ResponsiveContainer>
+              {insightPabellon && (
+                <ChartInsight tono={insightPabellon.tono} titulo="Desempeño por quirófano">
+                  {insightPabellon.texto}
+                </ChartInsight>
+              )}
             </div>
           </div>
 
@@ -313,7 +376,7 @@ export default function SubprogramacionDiaria({ tablaData = [], disponibilidadDa
             <div style={card}>
               <h3 style={cardTitle}>Por día de la semana</h3>
               <p style={cardSub}>Minutos promedio de subprogramación según el día.</p>
-              <ResponsiveContainer width="100%" height={280}>
+              <ResponsiveContainer width="100%" height={260}>
                 <BarChart data={porDia} margin={{ top: 20, right: 10, left: -10, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} />
                   <XAxis dataKey="name" tick={{ fontSize: 11 }} />
@@ -326,12 +389,17 @@ export default function SubprogramacionDiaria({ tablaData = [], disponibilidadDa
                   </Bar>
                 </BarChart>
               </ResponsiveContainer>
+              {insightDia && (
+                <ChartInsight tono={insightDia.tono} titulo="Patrón semanal">
+                  {insightDia.texto}
+                </ChartInsight>
+              )}
             </div>
 
             <div style={card}>
               <h3 style={cardTitle}>Distribución de pabellón-días</h3>
               <p style={cardSub}>Cuántos días terminaron en cada tramo de subprogramación.</p>
-              <ResponsiveContainer width="100%" height={280}>
+              <ResponsiveContainer width="100%" height={260}>
                 <BarChart data={tramos} margin={{ top: 20, right: 10, left: -10, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} />
                   <XAxis dataKey="name" tick={{ fontSize: 10 }} />
@@ -343,60 +411,76 @@ export default function SubprogramacionDiaria({ tablaData = [], disponibilidadDa
                   </Bar>
                 </BarChart>
               </ResponsiveContainer>
+              {insightDistribucion && (
+                <ChartInsight tono={insightDistribucion.tono} titulo="Balance capacidad vs sobretiempo">
+                  {insightDistribucion.texto}
+                </ChartInsight>
+              )}
             </div>
           </div>
 
-          {/* MAPA DE CALOR */}
-          <div style={card}>
-            <h3 style={cardTitle}>Mapa de calor: pabellón × mes</h3>
-            <p style={cardSub}>Minutos promedio de subprogramación. Más rojo = más tiempo sin usar al cierre.</p>
-            <div style={{ overflowX: 'auto' }}>
-              <table style={{ borderCollapse: 'separate', borderSpacing: '4px', fontSize: '0.8rem', width: '100%' }}>
-                <thead>
-                  <tr>
-                    <th style={{ textAlign: 'left', padding: '6px 10px', color: '#64748b' }}>Pabellón</th>
-                    {heat.meses.map((m) => <th key={m} style={{ padding: '6px 8px', color: '#64748b', fontWeight: 700 }}>{labelMes(m)}</th>)}
-                  </tr>
-                </thead>
-                <tbody>
-                  {heat.pabs.map((p) => (
-                    <tr key={p}>
-                      <td style={{ padding: '6px 10px', fontWeight: 800, color: '#334155' }}>Pab. {p}</td>
-                      {heat.meses.map((m) => {
-                        const c = heat.valor(p, m);
-                        return (
-                          <td key={m} title={c ? `${c.n} días` : 'sin datos'} style={{ textAlign: 'center', padding: '8px 6px', borderRadius: '6px', background: heatBg(c ? c.v : null, umbral), fontWeight: 700, color: '#1e293b' }}>
-                            {c ? fmt(c.v, 0) : '–'}
-                          </td>
-                        );
-                      })}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-
-          {/* ESPECIALIDAD */}
-          {porEspecialidad.length > 0 && (
+          {/* MAPA DE CALOR + ESPECIALIDAD */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(460px, 1fr))', gap: '20px' }}>
             <div style={card}>
-              <h3 style={cardTitle}>Por especialidad del último paciente</h3>
-              <p style={cardSub}>Top 10 con al menos 8 días evaluados. Indica qué especialidad cierra el día con más tiempo sin usar.</p>
-              <ResponsiveContainer width="100%" height={Math.max(220, porEspecialidad.length * 34)}>
-                <BarChart data={porEspecialidad} layout="vertical" margin={{ top: 5, right: 40, left: 20, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" horizontal={false} />
-                  <XAxis type="number" tick={{ fontSize: 11 }} unit=" m" />
-                  <YAxis type="category" dataKey="name" width={170} tick={{ fontSize: 11 }} />
-                  <RechartsTooltip formatter={(v, n, p) => [`${v} min · ${p.payload.pctCriticos}% con subprogramación · ${p.payload.n} días`, 'Promedio']} />
-                  <ReferenceLine x={umbral} stroke="#ef4444" strokeDasharray="4 4" />
-                  <Bar dataKey="promedio" radius={[0, 6, 6, 0]}>
-                    {porEspecialidad.map((e, i) => <Cell key={i} fill={colorPorMin(e.promedio, umbral)} />)}
-                    <LabelList dataKey="promedio" position="right" style={{ fontSize: 11, fontWeight: 700, fill: '#334155' }} />
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
+              <h3 style={cardTitle}>Mapa de calor: pabellón × mes</h3>
+              <p style={cardSub}>Minutos promedio de subprogramación. Más rojo = más tiempo sin usar al cierre.</p>
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ borderCollapse: 'separate', borderSpacing: '4px', fontSize: '0.8rem', width: '100%' }}>
+                  <thead>
+                    <tr>
+                      <th style={{ textAlign: 'left', padding: '6px 10px', color: '#64748b' }}>Pabellón</th>
+                      {heat.meses.map((m) => <th key={m} style={{ padding: '6px 8px', color: '#64748b', fontWeight: 700 }}>{labelMes(m)}</th>)}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {heat.pabs.map((p) => (
+                      <tr key={p}>
+                        <td style={{ padding: '6px 10px', fontWeight: 800, color: '#334155' }}>Pab. {p}</td>
+                        {heat.meses.map((m) => {
+                          const c = heat.valor(p, m);
+                          return (
+                            <td key={m} title={c ? `${c.n} días` : 'sin datos'} style={{ textAlign: 'center', padding: '8px 6px', borderRadius: '6px', background: heatBg(c ? c.v : null, umbral), fontWeight: 700, color: '#1e293b' }}>
+                              {c ? fmt(c.v, 0) : '–'}
+                            </td>
+                          );
+                        })}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              {insightHeatmap && (
+                <ChartInsight tono={insightHeatmap.tono} titulo="Foco crítico mensual">
+                  {insightHeatmap.texto}
+                </ChartInsight>
+              )}
             </div>
-          )}
+
+            {porEspecialidad.length > 0 && (
+              <div style={card}>
+                <h3 style={cardTitle}>Por especialidad del último paciente</h3>
+                <p style={cardSub}>Top 10 con al menos 8 días evaluados. Indica qué especialidad cierra el día con más tiempo sin usar.</p>
+                <ResponsiveContainer width="100%" height={Math.max(220, porEspecialidad.length * 32)}>
+                  <BarChart data={porEspecialidad} layout="vertical" margin={{ top: 5, right: 40, left: 20, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" horizontal={false} />
+                    <XAxis type="number" tick={{ fontSize: 11 }} unit=" m" />
+                    <YAxis type="category" dataKey="name" width={170} tick={{ fontSize: 11 }} />
+                    <RechartsTooltip formatter={(v, n, p) => [`${v} min · ${p.payload.pctCriticos}% con subprogramación · ${p.payload.n} días`, 'Promedio']} />
+                    <ReferenceLine x={umbral} stroke="#ef4444" strokeDasharray="4 4" />
+                    <Bar dataKey="promedio" radius={[0, 6, 6, 0]}>
+                      {porEspecialidad.map((e, i) => <Cell key={i} fill={colorPorMin(e.promedio, umbral)} />)}
+                      <LabelList dataKey="promedio" position="right" style={{ fontSize: 11, fontWeight: 700, fill: '#334155' }} />
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+                {insightEspecialidad && (
+                  <ChartInsight tono={insightEspecialidad.tono} titulo="Foco por especialidad al cierre">
+                    {insightEspecialidad.texto}
+                  </ChartInsight>
+                )}
+              </div>
+            )}
+          </div>
         </>
       )}
     </div>

@@ -3,10 +3,10 @@ import {
   ComposedChart, Line, Bar, BarChart, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip,
   Legend, ResponsiveContainer, ReferenceLine, Cell, LabelList
 } from 'recharts';
-import { RefreshCw, Timer, CheckCircle, AlertTriangle, Clock, Lightbulb, RotateCcw, Info } from 'lucide-react';
+import { RefreshCw, Timer, CheckCircle, AlertTriangle, Lightbulb, RotateCcw, Info } from 'lucide-react';
 import {
   calcularRecambios, resumirRecambios, fechaLocalISO,
-  PABELLONES_VALIDOS, UMBRAL_RECAMBIO_DEFECTO_MIN, TOPE_COLACION_MIN, FECHA_CAMBIO_URGENCIA
+  PABELLONES_VALIDOS, UMBRAL_IDEAL_MIN, UMBRAL_ACEPTABLE_MAX_MIN, TOPE_COLACION_MIN, FECHA_CAMBIO_URGENCIA
 } from '../utils/recambio';
 
 const MESES = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
@@ -29,24 +29,56 @@ const labelMesLargo = (key) => {
   return `${MESES_LARGO[Number(m) - 1]} ${y}`;
 };
 
-const colorPorMin = (min, umbral) => (min > umbral ? '#ef4444' : min > umbral * 0.66 ? '#f59e0b' : '#10b981');
+// Estándar MINSAL: <= 15 min Ideal (verde), 16–20 min Aceptable (ámbar), > 20 min Crítico (rojo)
+const colorPorMin = (min, idealMax = UMBRAL_IDEAL_MIN, aceptableMax = UMBRAL_ACEPTABLE_MAX_MIN) => (
+  min <= idealMax ? '#10b981' : min <= aceptableMax ? '#f59e0b' : '#ef4444'
+);
 
-function heatBg(min, umbral) {
+function heatBg(min, idealMax = UMBRAL_IDEAL_MIN, aceptableMax = UMBRAL_ACEPTABLE_MAX_MIN) {
   if (min === null || min === undefined) return '#f1f5f9';
-  const t = Math.min(1, min / Math.max(1, umbral * 1.5));
-  const r = t < 0.5 ? Math.round(16 + (245 - 16) * (t / 0.5)) : Math.round(245 + (239 - 245) * ((t - 0.5) / 0.5));
-  const g = t < 0.5 ? Math.round(185 + (158 - 185) * (t / 0.5)) : Math.round(158 + (68 - 158) * ((t - 0.5) / 0.5));
-  const b = t < 0.5 ? Math.round(129 + (11 - 129) * (t / 0.5)) : Math.round(11 + (68 - 11) * ((t - 0.5) / 0.5));
-  return `rgba(${r}, ${g}, ${b}, 0.28)`;
+  if (min <= idealMax) return 'rgba(16, 185, 129, 0.24)';
+  if (min <= aceptableMax) return 'rgba(245, 158, 11, 0.26)';
+  const excess = Math.min(1, (min - aceptableMax) / 25);
+  return `rgba(239, 68, 68, ${(0.22 + excess * 0.22).toFixed(2)})`;
 }
 
-const card = { background: 'white', borderRadius: '16px', border: '1px solid #e2e8f0', padding: '20px 22px', boxShadow: '0 2px 10px rgba(15,23,42,0.04)' };
+const card = { background: 'white', borderRadius: '16px', border: '1px solid #e2e8f0', padding: '20px 22px', boxShadow: '0 2px 10px rgba(15,23,42,0.04)', display: 'flex', flexDirection: 'column' };
 const cardTitle = { margin: '0 0 4px 0', fontSize: '1.02rem', fontWeight: 800, color: '#1e293b' };
 const cardSub = { margin: '0 0 14px 0', fontSize: '0.8rem', color: '#64748b' };
 
+const tonoColor = { rojo: '#ef4444', verde: '#10b981', ambar: '#f59e0b', azul: '#6366f1' };
+const tonoBg = { rojo: '#fef2f2', verde: '#ecfdf5', ambar: '#fffbeb', azul: '#eef2ff' };
+
+function ChartInsight({ tono = 'azul', titulo, children }) {
+  if (!children) return null;
+  const c = tonoColor[tono] || '#6366f1';
+  const bg = tonoBg[tono] || '#eef2ff';
+  return (
+    <div style={{
+      marginTop: '14px',
+      padding: '11px 14px',
+      borderRadius: '12px',
+      background: bg,
+      borderLeft: `4px solid ${c}`,
+      display: 'flex',
+      gap: '10px',
+      alignItems: 'flex-start',
+      fontSize: '0.82rem',
+      color: '#1e293b',
+      lineHeight: 1.5
+    }}>
+      <Lightbulb size={16} color={c} style={{ flexShrink: 0, marginTop: '2px' }} />
+      <div>
+        {titulo && <strong style={{ color: '#0f172a', marginRight: '6px' }}>{titulo}:</strong>}
+        {children}
+      </div>
+    </div>
+  );
+}
+
 function KPI({ icon, label, value, sub, color = '#6366f1' }) {
   return (
-    <div style={{ ...card, display: 'flex', flexDirection: 'column', gap: '6px', borderTop: `4px solid ${color}` }}>
+    <div style={{ ...card, gap: '6px', borderTop: `4px solid ${color}` }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color, fontWeight: 700, fontSize: '0.78rem', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
         {icon} {label}
       </div>
@@ -76,9 +108,11 @@ export default function TiempoRecambio({ tablaData = [], disponibilidadData = []
   const [tipoDia, setTipoDia] = useState('habiles'); // habiles | no_habiles | todos
   const [modoTransicion, setModoTransicion] = useState('acotados'); // acotados (<=180m) | misma_jornada | todos
   const [pabellones, setPabellones] = useState(PABELLONES_VALIDOS);
-  const [umbral, setUmbral] = useState(UMBRAL_RECAMBIO_DEFECTO_MIN);
   const [desde, setDesde] = useState('');
   const [hasta, setHasta] = useState('');
+
+  const idealMax = UMBRAL_IDEAL_MIN; // 15 min
+  const aceptableMax = UMBRAL_ACEPTABLE_MAX_MIN; // 20 min
 
   const todosRecambios = useMemo(() => calcularRecambios(tablaData, disponibilidadData), [tablaData, disponibilidadData]);
 
@@ -101,7 +135,7 @@ export default function TiempoRecambio({ tablaData = [], disponibilidadData = []
     return true;
   }), [todosRecambios, pabellones, d1, d2, tipoDia, modoTransicion]);
 
-  const kpi = useMemo(() => resumirRecambios(filtradas, umbral), [filtradas, umbral]);
+  const kpi = useMemo(() => resumirRecambios(filtradas, idealMax, aceptableMax), [filtradas, idealMax, aceptableMax]);
 
   const agrupar = (clave, etiqueta, ordenFn) => {
     const m = new Map();
@@ -111,14 +145,16 @@ export default function TiempoRecambio({ tablaData = [], disponibilidadData = []
       m.get(k).push(f);
     }
     const arr = [...m.entries()].map(([k, rows]) => {
-      const r = resumirRecambios(rows, umbral);
+      const r = resumirRecambios(rows, idealMax, aceptableMax);
       return {
         key: k,
         name: etiqueta(k),
         promedio: Number(r.promedio.toFixed(1)),
         mediana: Number(r.mediana.toFixed(1)),
-        pctSobreUmbral: Number(r.pctSobreUmbral.toFixed(1)),
-        pctDentroMeta: Number(r.pctDentroMeta.toFixed(1)),
+        pctIdeal: Number(r.pctIdeal.toFixed(1)),
+        pctAceptable: Number(r.pctAceptable.toFixed(1)),
+        pctCritico: Number(r.pctCritico.toFixed(1)),
+        pctDentroAceptable: Number(r.pctDentroAceptable.toFixed(1)),
         n: r.n,
         dias: r.diasEvaluados,
         totalMin: r.totalMin
@@ -127,25 +163,25 @@ export default function TiempoRecambio({ tablaData = [], disponibilidadData = []
     return ordenFn ? arr.sort(ordenFn) : arr;
   };
 
-  const porMes = useMemo(() => agrupar((f) => f.mesKey, labelMes, (a, b) => (a.key < b.key ? -1 : 1)), [filtradas, umbral]);
-  const porPabellon = useMemo(() => agrupar((f) => f.pabellon, (k) => `Pab. ${k}`, (a, b) => a.key - b.key), [filtradas, umbral]);
+  const porMes = useMemo(() => agrupar((f) => f.mesKey, labelMes, (a, b) => (a.key < b.key ? -1 : 1)), [filtradas]);
+  const porPabellon = useMemo(() => agrupar((f) => f.pabellon, (k) => `Pab. ${k}`, (a, b) => a.key - b.key), [filtradas]);
   const porDia = useMemo(() => {
     const ordenDias = [1, 2, 3, 4, 5, 6, 0];
     return agrupar((f) => f.diaSemana, (k) => DIAS[k], (a, b) => ordenDias.indexOf(a.key) - ordenDias.indexOf(b.key));
-  }, [filtradas, umbral]);
+  }, [filtradas]);
   const porEspecialidad = useMemo(
     () => agrupar((f) => f.especialidad || 'Sin especialidad', (k) => k, (a, b) => b.promedio - a.promedio).filter((e) => e.n >= 10).slice(0, 10),
-    [filtradas, umbral]
+    [filtradas]
   );
 
   const tramos = useMemo(() => {
     const def = [
-      { name: '0–10 min', f: (f) => f.recambio <= 10, color: '#10b981' },
-      { name: '11–20 min', f: (f) => f.recambio > 10 && f.recambio <= 20, color: '#84cc16' },
-      { name: '21–30 min', f: (f) => f.recambio > 20 && f.recambio <= 30, color: '#eab308' },
-      { name: '31–45 min', f: (f) => f.recambio > 30 && f.recambio <= 45, color: '#f97316' },
-      { name: '46–60 min', f: (f) => f.recambio > 45 && f.recambio <= 60, color: '#ef4444' },
-      { name: '> 60 min', f: (f) => f.recambio > 60, color: '#b91c1c' }
+      { name: '≤ 15 min (Ideal)', f: (f) => f.recambio <= 15, color: '#10b981' },
+      { name: '16–20 min (Aceptable)', f: (f) => f.recambio > 15 && f.recambio <= 20, color: '#f59e0b' },
+      { name: '21–30 min (Crítico mod.)', f: (f) => f.recambio > 20 && f.recambio <= 30, color: '#f97316' },
+      { name: '31–45 min (Crítico)', f: (f) => f.recambio > 30 && f.recambio <= 45, color: '#ef4444' },
+      { name: '46–60 min (Crítico alto)', f: (f) => f.recambio > 45 && f.recambio <= 60, color: '#dc2626' },
+      { name: '> 60 min (Crítico severo)', f: (f) => f.recambio > 60, color: '#991b1b' }
     ];
     return def.map((t) => {
       const n = filtradas.filter(t.f).length;
@@ -172,82 +208,82 @@ export default function TiempoRecambio({ tablaData = [], disponibilidadData = []
     };
   }, [filtradas]);
 
-  const insights = useMemo(() => {
-    if (!filtradas.length) return [];
-    const out = [];
+  // Insights focalizados para cada gráfica
+  const insightMensual = useMemo(() => {
+    if (porMes.length < 2) return null;
+    const a = porMes[porMes.length - 1];
+    const b = porMes[porMes.length - 2];
+    const delta = a.promedio - b.promedio;
+    const parcial = a.dias < 10;
+    return {
+      tono: parcial ? 'azul' : delta > 0 ? 'rojo' : 'verde',
+      texto: `En ${labelMesLargo(a.key)}${parcial ? ` (mes en curso, ${a.n} recambios)` : ''} el recambio promedia ${fmt(a.promedio)} min (${delta > 0 ? '+' : ''}${fmt(delta)} min respecto a ${labelMesLargo(b.key)}, que cerró en ${fmt(b.promedio)} min), con un ${fmt(a.pctCritico, 0)}% de transiciones en rango crítico (> 20 min).`
+    };
+  }, [porMes]);
 
-    out.push({
-      tono: kpi.promedio <= umbral ? 'verde' : 'ambar',
-      texto: `El tiempo promedio de recambio es de ${fmt(kpi.promedio)} min (mediana de ${fmt(kpi.mediana, 0)} min) en ${fmt(kpi.n, 0)} transiciones evaluadas; el ${fmt(kpi.pctDentroMeta, 0)}% de los recambios se realiza en ≤ ${umbral} min.`
-    });
+  const insightPabellon = useMemo(() => {
+    if (porPabellon.length < 2) return null;
+    const ord = [...porPabellon].sort((a, b) => a.promedio - b.promedio);
+    const mejor = ord[0];
+    const peor = ord[ord.length - 1];
+    return {
+      tono: peor.promedio > aceptableMax ? 'rojo' : 'verde',
+      texto: `${mejor.name} lidera la agilidad con ${fmt(mejor.promedio)} min promedio (${fmt(mejor.pctIdeal, 0)}% ideal ≤ 15 min y ${fmt(mejor.pctDentroAceptable, 0)}% ≤ 20 min). En contraste, ${peor.name} registra ${fmt(peor.promedio)} min promedio y ${fmt(peor.pctCritico, 0)}% de recambios críticos (> 20 min).`
+    };
+  }, [porPabellon, aceptableMax]);
 
-    const pabOrd = [...porPabellon].sort((a, b) => a.promedio - b.promedio);
-    if (pabOrd.length > 1) {
-      const masRapido = pabOrd[0];
-      const masLento = pabOrd[pabOrd.length - 1];
-      out.push({
-        tono: 'verde',
-        texto: `${masRapido.name} registra el recambio más ágil: ${fmt(masRapido.promedio)} min promedio (${fmt(masRapido.pctDentroMeta, 0)}% dentro de ≤ ${umbral} min en ${masRapido.n} recambios).`
-      });
-      out.push({
-        tono: 'rojo',
-        texto: `${masLento.name} presenta el mayor tiempo de recambio: ${fmt(masLento.promedio)} min promedio y ${fmt(masLento.pctSobreUmbral, 0)}% de sus transiciones superan los ${umbral} min.`
-      });
-    }
+  const insightDia = useMemo(() => {
+    const valid = porDia.filter((d) => d.n >= 5);
+    if (valid.length < 2) return null;
+    const ord = [...valid].sort((a, b) => b.promedio - a.promedio);
+    const lento = ord[0];
+    const rapido = ord[ord.length - 1];
+    return {
+      tono: 'ambar',
+      texto: `El día con recambios más prolongados es el ${DIAS_LARGO[lento.key]} (${fmt(lento.promedio)} min promedio, ${fmt(lento.pctCritico, 0)}% > 20 min), mientras que el flujo más ágil se logra el ${DIAS_LARGO[rapido.key]} (${fmt(rapido.promedio)} min promedio).`
+    };
+  }, [porDia]);
 
-    const diaOrd = [...porDia].filter((d) => d.n >= 5).sort((a, b) => b.promedio - a.promedio);
-    if (diaOrd.length > 1) {
-      out.push({
-        tono: 'ambar',
-        texto: `Por día de la semana, el recambio más prolongado ocurre el ${DIAS_LARGO[diaOrd[0].key]} (${fmt(diaOrd[0].promedio)} min promedio) y el más rápido el ${DIAS_LARGO[diaOrd[diaOrd.length - 1].key]} (${fmt(diaOrd[diaOrd.length - 1].promedio)} min).`
-      });
-    }
+  const insightDistribucion = useMemo(() => {
+    if (!filtradas.length) return null;
+    return {
+      tono: kpi.pctDentroAceptable >= 60 ? 'verde' : 'ambar',
+      texto: `El ${fmt(kpi.pctIdeal, 1)}% de las transiciones cumple el ideal MINSAL (≤ 15 min) y un ${fmt(kpi.pctAceptable, 1)}% adicional está en el rango mínimo aceptable (16–20 min), sumando ${fmt(kpi.pctDentroAceptable, 1)}% dentro de norma (≤ 20 min) frente a ${fmt(kpi.pctCritico, 1)}% en tramo crítico (> 20 min).`
+    };
+  }, [filtradas.length, kpi]);
 
-    if (porMes.length >= 2) {
-      const a = porMes[porMes.length - 1];
-      const b = porMes[porMes.length - 2];
-      const delta = a.promedio - b.promedio;
-      const parcial = a.dias < 10;
-      out.push({
-        tono: parcial ? 'azul' : delta > 0 ? 'rojo' : 'verde',
-        texto: `${labelMesLargo(a.key)}${parcial ? ` (mes en curso, ${a.n} recambios)` : ''} promedia ${fmt(a.promedio)} min por recambio, ${delta > 0 ? 'mayor' : 'menor'} que ${labelMesLargo(b.key)} (${fmt(b.promedio)} min): ${delta > 0 ? '+' : ''}${fmt(delta)} min.`
-      });
-    }
-
+  const insightHeatmap = useMemo(() => {
     const mismaEsp = filtradas.filter((f) => f.mismaEspecialidad);
     const distintaEsp = filtradas.filter((f) => !f.mismaEspecialidad);
     if (mismaEsp.length >= 10 && distintaEsp.length >= 10) {
       const promMisma = mismaEsp.reduce((s, x) => s + x.recambio, 0) / mismaEsp.length;
       const promDistinta = distintaEsp.reduce((s, x) => s + x.recambio, 0) / distintaEsp.length;
-      out.push({
+      return {
         tono: 'azul',
-        texto: `Cuando se mantiene la misma especialidad entre cirugías consecutivas el recambio promedia ${fmt(promMisma)} min, mientras que al cambiar de especialidad sube a ${fmt(promDistinta)} min.`
-      });
+        texto: `Efecto continuidad de tabla: cuando se mantiene la misma especialidad entre cirugías consecutivas el recambio promedia ${fmt(promMisma)} min, pero al cambiar de especialidad dentro del mismo pabellón sube a ${fmt(promDistinta)} min (+${fmt(promDistinta - promMisma)} min por cambio de equipo/instrumental).`
+      };
     }
+    return null;
+  }, [filtradas]);
 
-    if (porEspecialidad.length > 1) {
-      const masLenta = porEspecialidad[0];
-      const masRapida = porEspecialidad[porEspecialidad.length - 1];
-      out.push({
-        tono: 'ambar',
-        texto: `Por especialidad, los recambios más extensos se observan en ${masLenta.name} (${fmt(masLenta.promedio)} min promedio) y los más breves en ${masRapida.name} (${fmt(masRapida.promedio)} min).`
-      });
-    }
-
-    return out;
-  }, [filtradas, porPabellon, porDia, porMes, porEspecialidad, kpi, umbral]);
+  const insightEspecialidad = useMemo(() => {
+    if (porEspecialidad.length < 2) return null;
+    const masLenta = porEspecialidad[0];
+    const masRapida = porEspecialidad[porEspecialidad.length - 1];
+    return {
+      tono: 'ambar',
+      texto: `Las transiciones más extensas se concentran en ${masLenta.name} (${fmt(masLenta.promedio)} min promedio, ${fmt(masLenta.pctCritico, 0)}% > 20 min), mientras que ${masRapida.name} logra los recambios más breves (${fmt(masRapida.promedio)} min promedio, ${fmt(masRapida.pctDentroAceptable, 0)}% ≤ 20 min).`
+    };
+  }, [porEspecialidad]);
 
   const togglePab = (p) => setPabellones((prev) => (prev.includes(p) ? prev.filter((x) => x !== p) : [...prev, p].sort((a, b) => a - b)));
   const limpiar = () => {
     setTipoDia('habiles');
     setModoTransicion('acotados');
     setPabellones(PABELLONES_VALIDOS);
-    setUmbral(UMBRAL_RECAMBIO_DEFECTO_MIN);
     setDesde('');
     setHasta('');
   };
-
-  const tonoColor = { rojo: '#ef4444', verde: '#10b981', ambar: '#f59e0b', azul: '#6366f1' };
 
   if (loading) {
     return <div style={{ padding: '60px', textAlign: 'center', color: '#64748b', fontWeight: 600 }}>Cargando datos de tiempo de recambio…</div>;
@@ -262,18 +298,22 @@ export default function TiempoRecambio({ tablaData = [], disponibilidadData = []
 
   return (
     <div style={{ padding: '24px 32px 48px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
-      {/* DEFINICIÓN */}
-      <div style={{ ...card, background: 'linear-gradient(135deg, #eef2ff, #f5f3ff)', borderColor: '#c7d2fe', display: 'flex', gap: '14px', alignItems: 'flex-start' }}>
+      {/* DEFINICIÓN Y CRITERIO MINSAL */}
+      <div style={{ ...card, background: 'linear-gradient(135deg, #eef2ff, #f5f3ff)', borderColor: '#c7d2fe', flexDirection: 'row', gap: '14px', alignItems: 'flex-start' }}>
         <Info size={22} color="#4f46e5" style={{ flexShrink: 0, marginTop: '2px' }} />
         <div style={{ fontSize: '0.86rem', color: '#312e81', lineHeight: 1.55 }}>
-          <strong>Tiempo de recambio entre pacientes</strong> = hora de ingreso a pabellón del paciente siguiente (<code>hora_ingreso_cirugia</code>) − hora de salida de pabellón del paciente anterior (<code>hora_salida_cirugia</code>), medido en minutos dentro del mismo pabellón y día.
-          Ej.: si un paciente sale de pabellón a las 14:00 hrs y el siguiente ingresa a las 14:30 hrs, el tiempo de recambio es de <strong>30 minutos</strong>.
-          Se evalúan exclusivamente los <strong>pabellones electivos (1 a 7)</strong> en días cerrados (hasta el {fmtFecha(ayer)}), excluyendo el pabellón de urgencia (pabellón 6 hasta el 30-09-2026 y pabellón 2 desde el {fmtFecha(FECHA_CAMBIO_URGENCIA)}).
+          <strong>Tiempo de recambio entre pacientes</strong> = hora de ingreso a pabellón del paciente siguiente (<code>hora_ingreso_cirugia</code>) − hora de salida de pabellón del paciente anterior (<code>hora_salida_cirugia</code>).
+          <br />
+          <strong>Criterio Ministerial (MINSAL):</strong>{' '}
+          <span style={{ color: '#047857', fontWeight: 800 }}>Ideal: ≤ 15 min</span> ·{' '}
+          <span style={{ color: '#b45309', fontWeight: 800 }}>Mínimo aceptable: 15 a 20 min</span> ·{' '}
+          <span style={{ color: '#b91c1c', fontWeight: 800 }}>Crítico (gestión local): &gt; 20 min</span>.
+          Se evalúan los <strong>pabellones electivos (1 a 7)</strong> hasta el {fmtFecha(ayer)}, excluyendo urgencia (pabellón 6 hasta el 30-09-2026 y pabellón 2 desde el {fmtFecha(FECHA_CAMBIO_URGENCIA)}).
         </div>
       </div>
 
       {/* FILTROS */}
-      <div style={{ ...card, display: 'flex', flexWrap: 'wrap', gap: '20px', alignItems: 'flex-end' }}>
+      <div style={{ ...card, flexDirection: 'row', flexWrap: 'wrap', gap: '20px', alignItems: 'flex-end' }}>
         <div>
           <div style={{ fontSize: '0.72rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', marginBottom: '6px' }}>Pabellón</div>
           <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
@@ -304,10 +344,6 @@ export default function TiempoRecambio({ tablaData = [], disponibilidadData = []
             <input type="date" value={d2} min={rango.min} max={rango.max} onChange={(e) => setHasta(e.target.value)} style={{ padding: '6px 8px', borderRadius: '8px', border: '1.5px solid #cbd5e1' }} />
           </div>
         </div>
-        <div>
-          <div style={{ fontSize: '0.72rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', marginBottom: '6px' }}>Meta Recambio (min)</div>
-          <input type="number" min={5} step={5} value={umbral} onChange={(e) => setUmbral(Math.max(5, Number(e.target.value) || 0))} style={{ width: '90px', padding: '6px 8px', borderRadius: '8px', border: '1.5px solid #cbd5e1', fontWeight: 700 }} />
-        </div>
         <button type="button" onClick={limpiar} style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 14px', borderRadius: '10px', border: '1px solid #e2e8f0', background: 'white', cursor: 'pointer', fontWeight: 700, color: '#64748b' }}>
           <RotateCcw size={14} /> Restablecer
         </button>
@@ -323,51 +359,38 @@ export default function TiempoRecambio({ tablaData = [], disponibilidadData = []
               icon={<RefreshCw size={16} />}
               label="Tiempo promedio de recambio"
               value={`${fmt(kpi.promedio)} min`}
-              sub={`${fmt(kpi.n, 0)} recambios en ${fmt(kpi.diasEvaluados, 0)} pabellón-días`}
-              color={colorPorMin(kpi.promedio, umbral)}
-            />
-            <KPI
-              icon={<Timer size={16} />}
-              label="Mediana de recambio"
-              value={`${fmt(kpi.mediana, 0)} min`}
-              sub="50% de los pacientes ingresa dentro de este tiempo"
-              color="#6366f1"
+              sub={`Mediana ${fmt(kpi.mediana, 0)} min · ${fmt(kpi.n, 0)} transiciones en ${fmt(kpi.diasEvaluados, 0)} pabellón-días`}
+              color={colorPorMin(kpi.promedio, idealMax, aceptableMax)}
             />
             <KPI
               icon={<CheckCircle size={16} />}
-              label={`Recambios oportunos (≤ ${umbral} min)`}
-              value={`${fmt(kpi.pctDentroMeta)}%`}
-              sub={`${fmt(kpi.dentroMeta, 0)} de ${fmt(kpi.n, 0)} transiciones`}
+              label="Recambio Ideal MINSAL (≤ 15 min)"
+              value={`${fmt(kpi.pctIdeal)}%`}
+              sub={`${fmt(kpi.ideales, 0)} de ${fmt(kpi.n, 0)} recambios en estándar óptimo`}
               color="#10b981"
             />
             <KPI
+              icon={<Timer size={16} />}
+              label="Mínimo Aceptable (15–20 min)"
+              value={`${fmt(kpi.pctAceptable)}%`}
+              sub={`${fmt(kpi.aceptables, 0)} casos · Total ≤ 20 min: ${fmt(kpi.pctDentroAceptable)}%`}
+              color="#f59e0b"
+            />
+            <KPI
               icon={<AlertTriangle size={16} />}
-              label={`Recambio prolongado (> ${umbral} min)`}
-              value={`${fmt(kpi.pctSobreUmbral)}%`}
-              sub={`${fmt(kpi.sobreUmbral, 0)} transiciones · ${fmt(kpi.totalMin / 60, 0)} h totales en recambios`}
+              label="Tiempo Crítico (> 20 min)"
+              value={`${fmt(kpi.pctCritico)}%`}
+              sub={`${fmt(kpi.criticos, 0)} recambios requieren gestión local`}
               color="#ef4444"
             />
           </div>
 
-          {/* INSIGHTS */}
-          <div style={card}>
-            <h3 style={{ ...cardTitle, display: 'flex', alignItems: 'center', gap: '8px' }}><Lightbulb size={18} color="#f59e0b" /> Principales insights</h3>
-            <p style={cardSub}>Hallazgos calculados automáticamente según los filtros seleccionados.</p>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: '10px' }}>
-              {insights.map((it, i) => (
-                <div key={i} style={{ borderLeft: `4px solid ${tonoColor[it.tono]}`, background: '#f8fafc', padding: '10px 14px', borderRadius: '8px', fontSize: '0.86rem', color: '#334155', lineHeight: 1.5 }}>
-                  {it.texto}
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* TENDENCIA MENSUAL + POR PABELLÓN */}
+          {/* TENDENCIA MENSUAL + POR PABELLÓN (con insights integrados en cada gráfica) */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(460px, 1fr))', gap: '20px' }}>
             <div style={card}>
               <h3 style={cardTitle}>Evolución mensual del tiempo de recambio</h3>
-              <p style={cardSub}>Minutos promedio de recambio (barras) y % de recambios prolongados &gt; {umbral} min (línea).</p>
-              <ResponsiveContainer width="100%" height={300}>
+              <p style={cardSub}>Minutos promedio de recambio (barras) y % en rango crítico &gt; 20 min (línea).</p>
+              <ResponsiveContainer width="100%" height={280}>
                 <ComposedChart data={porMes} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
                   <XAxis dataKey="name" tick={{ fontSize: 11 }} />
@@ -375,31 +398,43 @@ export default function TiempoRecambio({ tablaData = [], disponibilidadData = []
                   <YAxis yAxisId="r" orientation="right" tick={{ fontSize: 11 }} unit="%" domain={[0, 100]} />
                   <RechartsTooltip formatter={(v, n) => (n.includes('%') ? `${v}%` : `${v} min`)} />
                   <Legend />
-                  <ReferenceLine yAxisId="l" y={umbral} stroke="#ef4444" strokeDasharray="4 4" label={{ value: `meta ${umbral}m`, fontSize: 10, fill: '#ef4444', position: 'insideTopRight' }} />
+                  <ReferenceLine yAxisId="l" y={idealMax} stroke="#10b981" strokeDasharray="4 4" label={{ value: 'Ideal 15m', fontSize: 10, fill: '#059669', position: 'insideBottomRight' }} />
+                  <ReferenceLine yAxisId="l" y={aceptableMax} stroke="#ef4444" strokeDasharray="4 4" label={{ value: 'Crítico >20m', fontSize: 10, fill: '#ef4444', position: 'insideTopRight' }} />
                   <Bar yAxisId="l" dataKey="promedio" name="Min promedio recambio" radius={[6, 6, 0, 0]}>
-                    {porMes.map((e, i) => <Cell key={i} fill={colorPorMin(e.promedio, umbral)} />)}
+                    {porMes.map((e, i) => <Cell key={i} fill={colorPorMin(e.promedio, idealMax, aceptableMax)} />)}
                   </Bar>
-                  <Line yAxisId="r" type="monotone" dataKey="pctSobreUmbral" name={`% > ${umbral} min`} stroke="#4f46e5" strokeWidth={2.5} dot={{ r: 3 }} />
+                  <Line yAxisId="r" type="monotone" dataKey="pctCritico" name="% Crítico (> 20 min)" stroke="#4f46e5" strokeWidth={2.5} dot={{ r: 3 }} />
                 </ComposedChart>
               </ResponsiveContainer>
+              {insightMensual && (
+                <ChartInsight tono={insightMensual.tono} titulo="Análisis de tendencia">
+                  {insightMensual.texto}
+                </ChartInsight>
+              )}
             </div>
 
             <div style={card}>
               <h3 style={cardTitle}>Tiempo promedio de recambio por pabellón</h3>
-              <p style={cardSub}>Comparativa entre pabellones electivos (minutos promedio entre salida e ingreso).</p>
-              <ResponsiveContainer width="100%" height={300}>
+              <p style={cardSub}>Comparativa entre pabellones electivos según umbrales MINSAL (15 y 20 min).</p>
+              <ResponsiveContainer width="100%" height={280}>
                 <BarChart data={porPabellon} margin={{ top: 20, right: 10, left: -10, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} />
                   <XAxis dataKey="name" tick={{ fontSize: 11 }} />
                   <YAxis tick={{ fontSize: 11 }} unit=" m" />
-                  <RechartsTooltip formatter={(v, n, p) => [`${v} min (mediana ${p.payload.mediana}m) · ${p.payload.pctDentroMeta}% ≤ ${umbral}m · ${p.payload.n} recambios`, 'Promedio']} />
-                  <ReferenceLine y={umbral} stroke="#ef4444" strokeDasharray="4 4" />
+                  <RechartsTooltip formatter={(v, n, p) => [`${v} min (mediana ${p.payload.mediana}m) · Ideal ≤15m: ${p.payload.pctIdeal}% · Crítico >20m: ${p.payload.pctCritico}%`, 'Promedio']} />
+                  <ReferenceLine y={idealMax} stroke="#10b981" strokeDasharray="4 4" />
+                  <ReferenceLine y={aceptableMax} stroke="#ef4444" strokeDasharray="4 4" />
                   <Bar dataKey="promedio" radius={[6, 6, 0, 0]}>
-                    {porPabellon.map((e, i) => <Cell key={i} fill={colorPorMin(e.promedio, umbral)} />)}
+                    {porPabellon.map((e, i) => <Cell key={i} fill={colorPorMin(e.promedio, idealMax, aceptableMax)} />)}
                     <LabelList dataKey="promedio" position="top" style={{ fontSize: 11, fontWeight: 700, fill: '#334155' }} />
                   </Bar>
                 </BarChart>
               </ResponsiveContainer>
+              {insightPabellon && (
+                <ChartInsight tono={insightPabellon.tono} titulo="Foco por quirófano">
+                  {insightPabellon.texto}
+                </ChartInsight>
+              )}
             </div>
           </div>
 
@@ -408,28 +443,34 @@ export default function TiempoRecambio({ tablaData = [], disponibilidadData = []
             <div style={card}>
               <h3 style={cardTitle}>Por día de la semana</h3>
               <p style={cardSub}>Minutos promedio de recambio según el día.</p>
-              <ResponsiveContainer width="100%" height={280}>
+              <ResponsiveContainer width="100%" height={260}>
                 <BarChart data={porDia} margin={{ top: 20, right: 10, left: -10, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} />
                   <XAxis dataKey="name" tick={{ fontSize: 11 }} />
                   <YAxis tick={{ fontSize: 11 }} unit=" m" />
-                  <RechartsTooltip formatter={(v, n, p) => [`${v} min (mediana ${p.payload.mediana}m) · ${p.payload.n} recambios`, 'Promedio']} />
-                  <ReferenceLine y={umbral} stroke="#ef4444" strokeDasharray="4 4" />
+                  <RechartsTooltip formatter={(v, n, p) => [`${v} min (mediana ${p.payload.mediana}m) · Crítico >20m: ${p.payload.pctCritico}% · ${p.payload.n} recambios`, 'Promedio']} />
+                  <ReferenceLine y={idealMax} stroke="#10b981" strokeDasharray="4 4" />
+                  <ReferenceLine y={aceptableMax} stroke="#ef4444" strokeDasharray="4 4" />
                   <Bar dataKey="promedio" radius={[6, 6, 0, 0]}>
-                    {porDia.map((e, i) => <Cell key={i} fill={colorPorMin(e.promedio, umbral)} />)}
+                    {porDia.map((e, i) => <Cell key={i} fill={colorPorMin(e.promedio, idealMax, aceptableMax)} />)}
                     <LabelList dataKey="promedio" position="top" style={{ fontSize: 11, fontWeight: 700, fill: '#334155' }} />
                   </Bar>
                 </BarChart>
               </ResponsiveContainer>
+              {insightDia && (
+                <ChartInsight tono={insightDia.tono} titulo="Comportamiento semanal">
+                  {insightDia.texto}
+                </ChartInsight>
+              )}
             </div>
 
             <div style={card}>
-              <h3 style={cardTitle}>Distribución de tiempos de recambio</h3>
-              <p style={cardSub}>Proporción de transiciones entre pacientes según duración en minutos.</p>
-              <ResponsiveContainer width="100%" height={280}>
+              <h3 style={cardTitle}>Distribución según estándar MINSAL</h3>
+              <p style={cardSub}>Proporción de recambios en tramo Ideal (≤ 15m), Aceptable (16–20m) y Crítico (&gt; 20m).</p>
+              <ResponsiveContainer width="100%" height={260}>
                 <BarChart data={tramos} margin={{ top: 20, right: 10, left: -10, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} />
-                  <XAxis dataKey="name" tick={{ fontSize: 10 }} />
+                  <XAxis dataKey="name" tick={{ fontSize: 9.5 }} />
                   <YAxis tick={{ fontSize: 11 }} />
                   <RechartsTooltip formatter={(v, n, p) => [`${v} recambios (${p.payload.pct}%)`, 'Transiciones']} />
                   <Bar dataKey="n" radius={[6, 6, 0, 0]}>
@@ -438,63 +479,79 @@ export default function TiempoRecambio({ tablaData = [], disponibilidadData = []
                   </Bar>
                 </BarChart>
               </ResponsiveContainer>
+              {insightDistribucion && (
+                <ChartInsight tono={insightDistribucion.tono} titulo="Cumplimiento normativo">
+                  {insightDistribucion.texto}
+                </ChartInsight>
+              )}
             </div>
           </div>
 
-          {/* MAPA DE CALOR */}
-          <div style={card}>
-            <h3 style={cardTitle}>Mapa de calor: pabellón × mes</h3>
-            <p style={cardSub}>Minutos promedio de recambio entre pacientes. Más verde = recambio más ágil; más rojo = mayor espera entre cirugías.</p>
-            <div style={{ overflowX: 'auto' }}>
-              <table style={{ borderCollapse: 'separate', borderSpacing: '4px', fontSize: '0.8rem', width: '100%' }}>
-                <thead>
-                  <tr>
-                    <th style={{ textAlign: 'left', padding: '6px 10px', color: '#64748b' }}>Pabellón</th>
-                    {heat.meses.map((m) => <th key={m} style={{ padding: '6px 8px', color: '#64748b', fontWeight: 700 }}>{labelMes(m)}</th>)}
-                  </tr>
-                </thead>
-                <tbody>
-                  {heat.pabs.map((p) => (
-                    <tr key={p}>
-                      <td style={{ padding: '6px 10px', fontWeight: 800, color: '#334155' }}>Pab. {p}</td>
-                      {heat.meses.map((m) => {
-                        const c = heat.valor(p, m);
-                        return (
-                          <td key={m} title={c ? `${c.n} recambios` : 'sin datos'} style={{ textAlign: 'center', padding: '8px 6px', borderRadius: '6px', background: heatBg(c ? c.v : null, umbral), fontWeight: 700, color: '#1e293b' }}>
-                            {c ? fmt(c.v, 0) : '–'}
-                          </td>
-                        );
-                      })}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-
-          {/* POR ESPECIALIDAD */}
-          {porEspecialidad.length > 0 && (
+          {/* MAPA DE CALOR + ESPECIALIDAD */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(460px, 1fr))', gap: '20px' }}>
             <div style={card}>
-              <h3 style={cardTitle}>Tiempo promedio de recambio por especialidad</h3>
-              <p style={cardSub}>Especialidades con al menos 10 transiciones evaluadas en el período.</p>
-              <ResponsiveContainer width="100%" height={Math.max(220, porEspecialidad.length * 34)}>
-                <BarChart data={porEspecialidad} layout="vertical" margin={{ top: 5, right: 45, left: 20, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" horizontal={false} />
-                  <XAxis type="number" tick={{ fontSize: 11 }} unit=" m" />
-                  <YAxis type="category" dataKey="name" width={170} tick={{ fontSize: 11 }} />
-                  <RechartsTooltip formatter={(v, n, p) => [`${v} min (mediana ${p.payload.mediana}m) · ${p.payload.pctDentroMeta}% ≤ ${umbral}m · ${p.payload.n} recambios`, 'Promedio']} />
-                  <ReferenceLine x={umbral} stroke="#ef4444" strokeDasharray="4 4" />
-                  <Bar dataKey="promedio" radius={[0, 6, 6, 0]}>
-                    {porEspecialidad.map((e, i) => <Cell key={i} fill={colorPorMin(e.promedio, umbral)} />)}
-                    <LabelList dataKey="promedio" position="right" style={{ fontSize: 11, fontWeight: 700, fill: '#334155' }} />
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
+              <h3 style={cardTitle}>Mapa de calor: pabellón × mes</h3>
+              <p style={cardSub}>Verde ≤ 15 min (ideal) · Ámbar 16–20 min (aceptable) · Rojo &gt; 20 min (crítico).</p>
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ borderCollapse: 'separate', borderSpacing: '4px', fontSize: '0.8rem', width: '100%' }}>
+                  <thead>
+                    <tr>
+                      <th style={{ textAlign: 'left', padding: '6px 10px', color: '#64748b' }}>Pabellón</th>
+                      {heat.meses.map((m) => <th key={m} style={{ padding: '6px 8px', color: '#64748b', fontWeight: 700 }}>{labelMes(m)}</th>)}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {heat.pabs.map((p) => (
+                      <tr key={p}>
+                        <td style={{ padding: '6px 10px', fontWeight: 800, color: '#334155' }}>Pab. {p}</td>
+                        {heat.meses.map((m) => {
+                          const c = heat.valor(p, m);
+                          return (
+                            <td key={m} title={c ? `${c.n} recambios` : 'sin datos'} style={{ textAlign: 'center', padding: '8px 6px', borderRadius: '6px', background: heatBg(c ? c.v : null, idealMax, aceptableMax), fontWeight: 700, color: '#1e293b' }}>
+                              {c ? fmt(c.v, 0) : '–'}
+                            </td>
+                          );
+                        })}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              {insightHeatmap && (
+                <ChartInsight tono={insightHeatmap.tono} titulo="Continuidad de especialidad">
+                  {insightHeatmap.texto}
+                </ChartInsight>
+              )}
             </div>
-          )}
+
+            {porEspecialidad.length > 0 && (
+              <div style={card}>
+                <h3 style={cardTitle}>Tiempo promedio de recambio por especialidad</h3>
+                <p style={cardSub}>Especialidades con al menos 10 transiciones evaluadas en el período.</p>
+                <ResponsiveContainer width="100%" height={Math.max(220, porEspecialidad.length * 32)}>
+                  <BarChart data={porEspecialidad} layout="vertical" margin={{ top: 5, right: 45, left: 20, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" horizontal={false} />
+                    <XAxis type="number" tick={{ fontSize: 11 }} unit=" m" />
+                    <YAxis type="category" dataKey="name" width={170} tick={{ fontSize: 11 }} />
+                    <RechartsTooltip formatter={(v, n, p) => [`${v} min (mediana ${p.payload.mediana}m) · ≤20m: ${p.payload.pctDentroAceptable}% · Crítico >20m: ${p.payload.pctCritico}%`, 'Promedio']} />
+                    <ReferenceLine x={idealMax} stroke="#10b981" strokeDasharray="4 4" />
+                    <ReferenceLine x={aceptableMax} stroke="#ef4444" strokeDasharray="4 4" />
+                    <Bar dataKey="promedio" radius={[0, 6, 6, 0]}>
+                      {porEspecialidad.map((e, i) => <Cell key={i} fill={colorPorMin(e.promedio, idealMax, aceptableMax)} />)}
+                      <LabelList dataKey="promedio" position="right" style={{ fontSize: 11, fontWeight: 700, fill: '#334155' }} />
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+                {insightEspecialidad && (
+                  <ChartInsight tono={insightEspecialidad.tono} titulo="Foco por especialidad">
+                    {insightEspecialidad.texto}
+                  </ChartInsight>
+                )}
+              </div>
+            )}
+          </div>
         </>
       )}
     </div>
   );
 }
-

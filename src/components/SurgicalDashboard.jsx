@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   ArrowLeft, Calendar, Search, Users, Activity, Clock, CheckCircle, FileText,
-  XCircle, AlertCircle, Filter, PieChart, BarChart2, ChevronRight, ChevronLeft, ChevronDown, TrendingUp, RotateCcw, Pin, DollarSign, Package, TrendingDown, Award, Hash, Timer, RefreshCw
+  XCircle, AlertCircle, Filter, PieChart, BarChart2, ChevronRight, ChevronLeft, ChevronDown, TrendingUp, RotateCcw, Pin, DollarSign, Package, TrendingDown, Award, Hash, Timer, RefreshCw, Lightbulb
 } from 'lucide-react';
 import {
   ComposedChart, Line, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer,
@@ -3737,7 +3737,7 @@ export default function SurgicalDashboard({ onBack }) {
               { id: 'tabla', label: 'Suspensiones de Tabla', icon: <Calendar size={16} />, desc: 'Programación de tabla y causales de suspensión' },
               { id: 'disponibilidad', label: 'Retraso en primera Hora', icon: <Clock size={16} />, desc: 'Cumplimiento de inicio puntual (≤ 15 min)' },
               { id: 'subprogramacion', label: 'Subprogramación Diaria', icon: <Timer size={16} />, desc: 'Brecha al cierre vs disponibilidad (≥ 60 min)' },
-              { id: 'recambio', label: 'Tiempo de Recambio', icon: <RefreshCw size={16} />, desc: 'Minutos entre salida de un paciente e ingreso del siguiente' },
+              { id: 'recambio', label: 'Tiempo de Recambio', icon: <RefreshCw size={16} />, desc: 'Ideal MINSAL ≤ 15 min · Aceptable 15–20 min · Crítico > 20 min' },
               { id: 'pacientes_pabellon', label: 'Pacientes por Pabellón', icon: <Users size={16} />, desc: 'Promedio diario de pacientes intervenidos en pabellones electivos' }
             ];
             const activeSubItem = subItems.find(s => s.id === activeTab);
@@ -5446,19 +5446,34 @@ export default function SurgicalDashboard({ onBack }) {
                           </LineChart>
                         </ResponsiveContainer>
                       </div>
+                      {indicadoresGestionData.monthlyTrend.length >= 2 && (() => {
+                        const arr = indicadoresGestionData.monthlyTrend;
+                        const ultimo = arr[arr.length - 1];
+                        const previo = arr[arr.length - 2];
+                        const diff = (ultimo.promTiempoInicioMin - previo.promTiempoInicioMin).toFixed(1);
+                        const mejora = ultimo.promTiempoInicioMin <= previo.promTiempoInicioMin;
+                        return (
+                          <div style={{ marginTop: '16px', padding: '12px 16px', borderRadius: '12px', background: mejora ? '#ecfdf5' : '#fffbeb', borderLeft: `4px solid ${mejora ? '#10b981' : '#f59e0b'}`, display: 'flex', gap: '10px', alignItems: 'flex-start', fontSize: '0.84rem', color: '#1e293b', lineHeight: 1.5 }}>
+                            <Lightbulb size={17} color={mejora ? '#10b981' : '#f59e0b'} style={{ flexShrink: 0, marginTop: '2px' }} />
+                            <div>
+                              <strong style={{ color: '#0f172a' }}>Análisis de evolución:</strong> En <strong>{ultimo.mes}</strong> el tiempo promedio de inicio fue de <strong>{ultimo.promTiempoInicioMin} min</strong> ({diff > 0 ? `+${diff}` : diff} min respecto a {previo.mes}, que registró {previo.promTiempoInicioMin} min), con una demora neta excedente sobre la tolerancia de <strong>{ultimo.promRetrasoMin} min</strong> por jornada.
+                            </div>
+                          </div>
+                        );
+                      })()}
                     </div>
 
                     {/* GRÁFICOS DINÁMICOS: TENDENCIA TEMPORAL Y COMPARATIVO PABELLONES */}
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(480px, 1fr))', gap: '24px', marginBottom: '24px' }}>
                       {/* Gráfico 1: Tendencia Mensual de Cumplimiento y Retraso */}
-                      <div style={{ background: 'white', padding: '24px', borderRadius: '20px', border: '1px solid #e2e8f0', boxShadow: '0 4px 20px rgba(0,0,0,0.03)' }}>
+                      <div style={{ background: 'white', padding: '24px', borderRadius: '20px', border: '1px solid #e2e8f0', boxShadow: '0 4px 20px rgba(0,0,0,0.03)', display: 'flex', flexDirection: 'column' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
                           <div>
                             <h3 style={{ margin: 0, fontSize: '1.15rem', color: '#0f172a', fontWeight: 800 }}>Evolución Mensual del Retraso de 1ª Hora</h3>
                             <p style={{ margin: '4px 0 0 0', fontSize: '0.8rem', color: '#64748b' }}>% de cumplimiento de norma (≤15 min) vs Minutos promedio de demora</p>
                           </div>
                         </div>
-                        <div style={{ height: '320px', width: '100%' }}>
+                        <div style={{ height: '300px', width: '100%' }}>
                           <ResponsiveContainer width="100%" height="100%">
                             <ComposedChart data={indicadoresGestionData.monthlyTrend}>
                               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
@@ -5478,17 +5493,28 @@ export default function SurgicalDashboard({ onBack }) {
                             </ComposedChart>
                           </ResponsiveContainer>
                         </div>
+                        {indicadoresGestionData.monthlyTrend.length > 0 && (() => {
+                          const mejorMes = [...indicadoresGestionData.monthlyTrend].sort((a, b) => b.pctCumplimiento - a.pctCumplimiento)[0];
+                          return (
+                            <div style={{ marginTop: '14px', padding: '11px 14px', borderRadius: '12px', background: '#eef2ff', borderLeft: '4px solid #6366f1', display: 'flex', gap: '10px', alignItems: 'flex-start', fontSize: '0.82rem', color: '#1e293b', lineHeight: 1.5 }}>
+                              <Lightbulb size={16} color="#6366f1" style={{ flexShrink: 0, marginTop: '2px' }} />
+                              <div>
+                                <strong style={{ color: '#0f172a' }}>Cumplimiento normativo:</strong> El cumplimiento global acumulado es de <strong>{indicadoresGestionData.pctCumplimientoNorma}</strong> ({indicadoresGestionData.cumplenNorma15m} de {indicadoresGestionData.pabellonesEvaluados} jornadas ≤ 15 min). El mejor desempeño se alcanzó en <strong>{mejorMes.mes}</strong> con <strong>{mejorMes.pctCumplimiento}%</strong> de inicios puntuales.
+                              </div>
+                            </div>
+                          );
+                        })()}
                       </div>
 
                       {/* Gráfico 2: Desempeño por Pabellón */}
-                      <div style={{ background: 'white', padding: '24px', borderRadius: '20px', border: '1px solid #e2e8f0', boxShadow: '0 4px 20px rgba(0,0,0,0.03)' }}>
+                      <div style={{ background: 'white', padding: '24px', borderRadius: '20px', border: '1px solid #e2e8f0', boxShadow: '0 4px 20px rgba(0,0,0,0.03)', display: 'flex', flexDirection: 'column' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
                           <div>
                             <h3 style={{ margin: 0, fontSize: '1.15rem', color: '#0f172a', fontWeight: 800 }}>Cumplimiento y Retraso por Quirófano</h3>
                             <p style={{ margin: '4px 0 0 0', fontSize: '0.8rem', color: '#64748b' }}>Comparativa de eficiencia de apertura por pabellón</p>
                           </div>
                         </div>
-                        <div style={{ height: '320px', width: '100%' }}>
+                        <div style={{ height: '300px', width: '100%' }}>
                           <ResponsiveContainer width="100%" height="100%">
                             <BarChart data={indicadoresGestionData.pabellonStats}>
                               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
@@ -5510,6 +5536,19 @@ export default function SurgicalDashboard({ onBack }) {
                             </BarChart>
                           </ResponsiveContainer>
                         </div>
+                        {indicadoresGestionData.pabellonStats.length >= 2 && (() => {
+                          const ord = [...indicadoresGestionData.pabellonStats].sort((a, b) => b.pctCumplimiento - a.pctCumplimiento);
+                          const mejor = ord[0];
+                          const peor = ord[ord.length - 1];
+                          return (
+                            <div style={{ marginTop: '14px', padding: '11px 14px', borderRadius: '12px', background: '#fef2f2', borderLeft: '4px solid #ef4444', display: 'flex', gap: '10px', alignItems: 'flex-start', fontSize: '0.82rem', color: '#1e293b', lineHeight: 1.5 }}>
+                              <Lightbulb size={16} color="#ef4444" style={{ flexShrink: 0, marginTop: '2px' }} />
+                              <div>
+                                <strong style={{ color: '#0f172a' }}>Foco por quirófano:</strong> <strong>{mejor.pabellon}</strong> lidera la puntualidad en primera hora con <strong>{mejor.pctCumplimiento}%</strong> de cumplimiento, mientras que <strong>{peor.pabellon}</strong> registra el menor cumplimiento con <strong>{peor.pctCumplimiento}%</strong> ({peor.promRetrasoMin} min de demora neta promedio).
+                              </div>
+                            </div>
+                          );
+                        })()}
                       </div>
                     </div>
                   </div>

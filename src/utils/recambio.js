@@ -1,12 +1,10 @@
 /**
  * Tiempo de recambio entre pacientes en pabellones electivos.
  *
- * Definición:
- *   Para cada pabellón electivo (1 al 7, excluyendo urgencia) y cada día cerrado,
- *   se ordenan cronológicamente los pacientes efectivamente intervenidos en ese pabellón
- *   según su hora de ingreso a pabellón (`hora_ingreso_cirugia`).
- *   Para cada par consecutivo de pacientes (P_i -> P_{i+1}) en el mismo pabellón y día:
- *     Tiempo de recambio (min) = hora_ingreso_cirugia(P_{i+1}) - hora_salida_cirugia(P_i).
+ * Estándar Ministerial (MINSAL):
+ *   - Ideal: ≤ 15 minutos
+ *   - Mínimo aceptable: 16 a 20 minutos (15–20 min)
+ *   - Crítico (gestión local): > 20 minutos
  *
  * Exclusión de Pabellón de Urgencia (misma regla que Subprogramación Diaria):
  *   - Antes del 01-10-2026: Pabellón 6 es urgencia.
@@ -31,7 +29,9 @@ export {
   fechaLocalISO
 };
 
-export const UMBRAL_RECAMBIO_DEFECTO_MIN = 30;
+export const UMBRAL_IDEAL_MIN = 15;
+export const UMBRAL_ACEPTABLE_MAX_MIN = 20;
+export const UMBRAL_RECAMBIO_DEFECTO_MIN = 20; // > 20 min es crítico
 export const TOPE_COLACION_MIN = 180; // >180 min suele corresponder a bloques separados AM/PM sin actividad intermedia
 
 const esVerdadero = (v) => v === true || v === 'true' || v === 'True' || v === 1;
@@ -47,7 +47,6 @@ const esVerdadero = (v) => v === true || v === 'true' || v === 'True' || v === 1
 export function calcularRecambios(tabla, disponibilidad, opts = {}) {
   const hoy = opts.hoy || fechaLocalISO();
 
-  // Indizar disponibilidad por fecha|pabellon para verificar es_urgencia y horario de apertura
   const dispMap = new Map();
   for (const d of disponibilidad || []) {
     const fecha = (d.fecha || '').substring(0, 10);
@@ -56,7 +55,6 @@ export function calcularRecambios(tabla, disponibilidad, opts = {}) {
     dispMap.set(`${fecha}|${pab}`, d);
   }
 
-  // Agrupar cirugías intervenidas por fecha|pabellon
   const grupos = new Map();
   for (const r of tabla || []) {
     if (r.estado !== 'Intervenido') continue;
@@ -76,11 +74,10 @@ export function calcularRecambios(tabla, disponibilidad, opts = {}) {
     const salidaRaw = aMinutos(r.hora_salida_cirugia);
     if (ingreso === null || salidaRaw === null) continue;
 
-    // Descartar registros de madrugada previos a apertura electiva (< 07:00)
-    if (ingreso < 420) continue;
+    if (ingreso < 420) continue; // descartar registros previos a 07:00
 
     let salida = salidaRaw;
-    if (salida < ingreso) salida += 1440; // cruza medianoche
+    if (salida < ingreso) salida += 1440;
 
     const key = `${fecha}|${pab}`;
     if (!grupos.has(key)) grupos.set(key, []);
@@ -99,7 +96,6 @@ export function calcularRecambios(tabla, disponibilidad, opts = {}) {
   for (const [key, lista] of grupos.entries()) {
     if (lista.length < 2) continue;
 
-    // Ordenar cronológicamente por hora de ingreso (y desempate por salida y orden_cirugia)
     lista.sort((a, b) => a.ingreso - b.ingreso || a.salida - b.salida || a.orden - b.orden);
 
     const [fecha, pabStr] = key.split('|');
@@ -113,7 +109,6 @@ export function calcularRecambios(tabla, disponibilidad, opts = {}) {
       const next = lista[i + 1];
       const minRecambio = next.ingreso - prev.salida;
 
-      // Descartar solapamientos negativos por error de digitación de horas
       if (minRecambio < 0) continue;
 
       const mismaJornada = Boolean(prev.jornada && next.jornada && prev.jornada === next.jornada);
@@ -149,9 +144,12 @@ export function calcularRecambios(tabla, disponibilidad, opts = {}) {
 }
 
 /**
- * Resume un conjunto de eventos de recambio en KPIs principales.
+ * Resume un conjunto de eventos de recambio bajo el criterio MINSAL:
+ *   - Ideal: <= idealMax (15 min)
+ *   - Mínimo aceptable: > idealMax y <= aceptableMax (16 a 20 min)
+ *   - Crítico: > aceptableMax (> 20 min)
  */
-export function resumirRecambios(filas, umbral = UMBRAL_RECAMBIO_DEFECTO_MIN) {
+export function resumirRecambios(filas, idealMax = UMBRAL_IDEAL_MIN, aceptableMax = UMBRAL_ACEPTABLE_MAX_MIN) {
   const n = filas.length;
   if (!n) {
     return {
@@ -159,10 +157,14 @@ export function resumirRecambios(filas, umbral = UMBRAL_RECAMBIO_DEFECTO_MIN) {
       promedio: 0,
       mediana: 0,
       totalMin: 0,
-      dentroMeta: 0,
-      sobreUmbral: 0,
-      pctDentroMeta: 0,
-      pctSobreUmbral: 0,
+      ideales: 0,
+      aceptables: 0,
+      criticos: 0,
+      dentroAceptable: 0,
+      pctIdeal: 0,
+      pctAceptable: 0,
+      pctCritico: 0,
+      pctDentroAceptable: 0,
       diasEvaluados: 0
     };
   }
@@ -170,8 +172,11 @@ export function resumirRecambios(filas, umbral = UMBRAL_RECAMBIO_DEFECTO_MIN) {
   const ordenados = [...filas].map((f) => f.recambio).sort((a, b) => a - b);
   const mid = Math.floor(n / 2);
   const mediana = n % 2 === 0 ? (ordenados[mid - 1] + ordenados[mid]) / 2 : ordenados[mid];
-  const dentroMeta = filas.filter((f) => f.recambio <= umbral).length;
-  const sobreUmbral = n - dentroMeta;
+
+  const ideales = filas.filter((f) => f.recambio <= idealMax).length;
+  const aceptables = filas.filter((f) => f.recambio > idealMax && f.recambio <= aceptableMax).length;
+  const criticos = filas.filter((f) => f.recambio > aceptableMax).length;
+  const dentroAceptable = ideales + aceptables;
   const diasEvaluados = new Set(filas.map((f) => `${f.fecha}|${f.pabellon}`)).size;
 
   return {
@@ -179,11 +184,14 @@ export function resumirRecambios(filas, umbral = UMBRAL_RECAMBIO_DEFECTO_MIN) {
     promedio: suma / n,
     mediana,
     totalMin: suma,
-    dentroMeta,
-    sobreUmbral,
-    pctDentroMeta: (dentroMeta / n) * 100,
-    pctSobreUmbral: (sobreUmbral / n) * 100,
+    ideales,
+    aceptables,
+    criticos,
+    dentroAceptable,
+    pctIdeal: (ideales / n) * 100,
+    pctAceptable: (aceptables / n) * 100,
+    pctCritico: (criticos / n) * 100,
+    pctDentroAceptable: (dentroAceptable / n) * 100,
     diasEvaluados
   };
 }
-
