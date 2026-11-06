@@ -14,6 +14,7 @@ import TablaCausasSuspensionColapsable, { resolverGranCausa } from './TablaCausa
 import TablaEspecialidadesSuspensionColapsable from './TablaEspecialidadesSuspensionColapsable';
 import SubprogramacionDiaria from './SubprogramacionDiaria';
 import TiempoRecambio from './TiempoRecambio';
+import PacientesPorPabellon from './PacientesPorPabellon';
 
 const COLORS = ['#1e40af', '#DF6D05', '#F2A400', '#38bdf8', '#EAE6E1', '#1e3a8a', '#a65103', '#b37800', '#60a5fa'];
 const PIE_COLORS = {
@@ -2318,7 +2319,7 @@ function InsumosCosteoDashboard({
 }
 
 export default function SurgicalDashboard({ onBack }) {
-  const VALID_SURGICAL_TABS = ['libro', 'tabla', 'disponibilidad', 'subprogramacion', 'recambio', 'insumos'];
+  const VALID_SURGICAL_TABS = ['libro', 'tabla', 'disponibilidad', 'subprogramacion', 'recambio', 'pacientes_pabellon', 'insumos'];
   const [activeTab, setActiveTab] = useState(() => {
     const saved = localStorage.getItem('cg_surgical_active_tab');
     return saved && VALID_SURGICAL_TABS.includes(saved) ? saved : 'libro';
@@ -3642,6 +3643,9 @@ export default function SurgicalDashboard({ onBack }) {
     } else if (activeTab === 'recambio') {
       rawDate = tablaLastUpdated || dispLastUpdated;
       label = 'Tiempo de Recambio';
+    } else if (activeTab === 'pacientes_pabellon') {
+      rawDate = tablaLastUpdated || dispLastUpdated;
+      label = 'Pacientes por Pabellón';
     } else if (activeTab === 'insumos') {
       rawDate = insumosLastUpdated;
       label = 'Insumos y Costeo';
@@ -3728,12 +3732,13 @@ export default function SurgicalDashboard({ onBack }) {
 
           {/* 2. Menú con Submenús: Indicadores de Gestión de Pabellón */}
           {(() => {
-            const isIndicadoresActive = activeTab === 'tabla' || activeTab === 'disponibilidad' || activeTab === 'subprogramacion' || activeTab === 'recambio';
+            const isIndicadoresActive = activeTab === 'tabla' || activeTab === 'disponibilidad' || activeTab === 'subprogramacion' || activeTab === 'recambio' || activeTab === 'pacientes_pabellon';
             const subItems = [
               { id: 'tabla', label: 'Suspensiones de Tabla', icon: <Calendar size={16} />, desc: 'Programación de tabla y causales de suspensión' },
               { id: 'disponibilidad', label: 'Retraso en primera Hora', icon: <Clock size={16} />, desc: 'Cumplimiento de inicio puntual (≤ 15 min)' },
               { id: 'subprogramacion', label: 'Subprogramación Diaria', icon: <Timer size={16} />, desc: 'Brecha al cierre vs disponibilidad (≥ 60 min)' },
-              { id: 'recambio', label: 'Tiempo de Recambio', icon: <RefreshCw size={16} />, desc: 'Minutos entre salida de un paciente e ingreso del siguiente' }
+              { id: 'recambio', label: 'Tiempo de Recambio', icon: <RefreshCw size={16} />, desc: 'Minutos entre salida de un paciente e ingreso del siguiente' },
+              { id: 'pacientes_pabellon', label: 'Pacientes por Pabellón', icon: <Users size={16} />, desc: 'Promedio diario de pacientes intervenidos en pabellones electivos' }
             ];
             const activeSubItem = subItems.find(s => s.id === activeTab);
 
@@ -3940,7 +3945,7 @@ export default function SurgicalDashboard({ onBack }) {
       </header>
 
       {/* SUB-BARRA DIRECTA PARA INDICADORES DE GESTIÓN DE PABELLÓN */}
-      {(activeTab === 'tabla' || activeTab === 'disponibilidad' || activeTab === 'subprogramacion' || activeTab === 'recambio') && (
+      {(activeTab === 'tabla' || activeTab === 'disponibilidad' || activeTab === 'subprogramacion' || activeTab === 'recambio' || activeTab === 'pacientes_pabellon') && (
         <div
           style={{
             display: 'flex',
@@ -3962,7 +3967,8 @@ export default function SurgicalDashboard({ onBack }) {
             { id: 'tabla', label: 'Suspensiones de Tabla', icon: <Calendar size={15} /> },
             { id: 'disponibilidad', label: 'Retraso en primera Hora', icon: <Clock size={15} /> },
             { id: 'subprogramacion', label: 'Subprogramación Diaria', icon: <Timer size={15} /> },
-            { id: 'recambio', label: 'Tiempo de Recambio', icon: <RefreshCw size={15} /> }
+            { id: 'recambio', label: 'Tiempo de Recambio', icon: <RefreshCw size={15} /> },
+            { id: 'pacientes_pabellon', label: 'Pacientes por Pabellón', icon: <Users size={15} /> }
           ].map(sub => {
             const isSelected = activeTab === sub.id;
             return (
@@ -5527,6 +5533,15 @@ export default function SurgicalDashboard({ onBack }) {
       {/* TIEMPO DE RECAMBIO TAB */}
       {activeTab === 'recambio' && (
         <TiempoRecambio
+          tablaData={tablaData}
+          disponibilidadData={disponibilidadData}
+          loading={loading}
+        />
+      )}
+
+      {/* PACIENTES POR PABELLÓN TAB */}
+      {activeTab === 'pacientes_pabellon' && (
+        <PacientesPorPabellon
           tablaData={tablaData}
           disponibilidadData={disponibilidadData}
           loading={loading}
