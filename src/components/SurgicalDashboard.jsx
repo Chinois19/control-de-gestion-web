@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   ArrowLeft, Calendar, Search, Users, Activity, Clock, CheckCircle, FileText,
-  XCircle, AlertCircle, Filter, PieChart, BarChart2, ChevronRight, ChevronLeft, ChevronDown, TrendingUp, RotateCcw, Pin, DollarSign, Package, TrendingDown, Award, Hash, Timer
+  XCircle, AlertCircle, Filter, PieChart, BarChart2, ChevronRight, ChevronLeft, ChevronDown, TrendingUp, RotateCcw, Pin, DollarSign, Package, TrendingDown, Award, Hash, Timer, RefreshCw
 } from 'lucide-react';
 import {
   ComposedChart, Line, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer,
@@ -13,6 +13,7 @@ import {
 import TablaCausasSuspensionColapsable, { resolverGranCausa } from './TablaCausasSuspensionColapsable';
 import TablaEspecialidadesSuspensionColapsable from './TablaEspecialidadesSuspensionColapsable';
 import SubprogramacionDiaria from './SubprogramacionDiaria';
+import TiempoRecambio from './TiempoRecambio';
 
 const COLORS = ['#1e40af', '#DF6D05', '#F2A400', '#38bdf8', '#EAE6E1', '#1e3a8a', '#a65103', '#b37800', '#60a5fa'];
 const PIE_COLORS = {
@@ -2317,7 +2318,7 @@ function InsumosCosteoDashboard({
 }
 
 export default function SurgicalDashboard({ onBack }) {
-  const VALID_SURGICAL_TABS = ['libro', 'tabla', 'disponibilidad', 'subprogramacion', 'insumos'];
+  const VALID_SURGICAL_TABS = ['libro', 'tabla', 'disponibilidad', 'subprogramacion', 'recambio', 'insumos'];
   const [activeTab, setActiveTab] = useState(() => {
     const saved = localStorage.getItem('cg_surgical_active_tab');
     return saved && VALID_SURGICAL_TABS.includes(saved) ? saved : 'libro';
@@ -3638,6 +3639,9 @@ export default function SurgicalDashboard({ onBack }) {
     } else if (activeTab === 'subprogramacion') {
       rawDate = tablaLastUpdated || dispLastUpdated;
       label = 'Subprogramación Diaria';
+    } else if (activeTab === 'recambio') {
+      rawDate = tablaLastUpdated || dispLastUpdated;
+      label = 'Tiempo de Recambio';
     } else if (activeTab === 'insumos') {
       rawDate = insumosLastUpdated;
       label = 'Insumos y Costeo';
@@ -3724,11 +3728,12 @@ export default function SurgicalDashboard({ onBack }) {
 
           {/* 2. Menú con Submenús: Indicadores de Gestión de Pabellón */}
           {(() => {
-            const isIndicadoresActive = activeTab === 'tabla' || activeTab === 'disponibilidad' || activeTab === 'subprogramacion';
+            const isIndicadoresActive = activeTab === 'tabla' || activeTab === 'disponibilidad' || activeTab === 'subprogramacion' || activeTab === 'recambio';
             const subItems = [
               { id: 'tabla', label: 'Suspensiones de Tabla', icon: <Calendar size={16} />, desc: 'Programación de tabla y causales de suspensión' },
               { id: 'disponibilidad', label: 'Retraso en primera Hora', icon: <Clock size={16} />, desc: 'Cumplimiento de inicio puntual (≤ 15 min)' },
-              { id: 'subprogramacion', label: 'Subprogramación Diaria', icon: <Timer size={16} />, desc: 'Brecha al cierre vs disponibilidad (≥ 60 min)' }
+              { id: 'subprogramacion', label: 'Subprogramación Diaria', icon: <Timer size={16} />, desc: 'Brecha al cierre vs disponibilidad (≥ 60 min)' },
+              { id: 'recambio', label: 'Tiempo de Recambio', icon: <RefreshCw size={16} />, desc: 'Minutos entre salida de un paciente e ingreso del siguiente' }
             ];
             const activeSubItem = subItems.find(s => s.id === activeTab);
 
@@ -3935,7 +3940,7 @@ export default function SurgicalDashboard({ onBack }) {
       </header>
 
       {/* SUB-BARRA DIRECTA PARA INDICADORES DE GESTIÓN DE PABELLÓN */}
-      {(activeTab === 'tabla' || activeTab === 'disponibilidad' || activeTab === 'subprogramacion') && (
+      {(activeTab === 'tabla' || activeTab === 'disponibilidad' || activeTab === 'subprogramacion' || activeTab === 'recambio') && (
         <div
           style={{
             display: 'flex',
@@ -3956,7 +3961,8 @@ export default function SurgicalDashboard({ onBack }) {
           {[
             { id: 'tabla', label: 'Suspensiones de Tabla', icon: <Calendar size={15} /> },
             { id: 'disponibilidad', label: 'Retraso en primera Hora', icon: <Clock size={15} /> },
-            { id: 'subprogramacion', label: 'Subprogramación Diaria', icon: <Timer size={15} /> }
+            { id: 'subprogramacion', label: 'Subprogramación Diaria', icon: <Timer size={15} /> },
+            { id: 'recambio', label: 'Tiempo de Recambio', icon: <RefreshCw size={15} /> }
           ].map(sub => {
             const isSelected = activeTab === sub.id;
             return (
@@ -5512,6 +5518,15 @@ export default function SurgicalDashboard({ onBack }) {
       {/* SUBPROGRAMACIÓN DIARIA TAB */}
       {activeTab === 'subprogramacion' && (
         <SubprogramacionDiaria
+          tablaData={tablaData}
+          disponibilidadData={disponibilidadData}
+          loading={loading}
+        />
+      )}
+
+      {/* TIEMPO DE RECAMBIO TAB */}
+      {activeTab === 'recambio' && (
+        <TiempoRecambio
           tablaData={tablaData}
           disponibilidadData={disponibilidadData}
           loading={loading}
