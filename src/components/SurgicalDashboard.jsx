@@ -2318,6 +2318,7 @@ function InsumosCosteoDashboard({
 
 export default function SurgicalDashboard({ onBack }) {
   const [activeTab, setActiveTab] = useState('libro');
+  const [indicadoresMenuOpen, setIndicadoresMenuOpen] = useState(false);
   const [tablaSubTab, setTablaSubTab] = useState('resumen');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -3599,13 +3600,13 @@ export default function SurgicalDashboard({ onBack }) {
       label = 'Libro Electrónico';
     } else if (activeTab === 'tabla') {
       rawDate = tablaLastUpdated;
-      label = 'Programación de Tabla';
+      label = 'Suspensiones de Tabla';
     } else if (activeTab === 'disponibilidad') {
       rawDate = dispLastUpdated || tablaLastUpdated;
-      label = 'Indicadores de Gestión';
+      label = 'Retraso en primera Hora';
     } else if (activeTab === 'subprogramacion') {
       rawDate = tablaLastUpdated || dispLastUpdated;
-      label = 'Subprogramación diaria';
+      label = 'Subprogramación Diaria';
     } else if (activeTab === 'insumos') {
       rawDate = insumosLastUpdated;
       label = 'Insumos y Costeo';
@@ -3670,33 +3671,167 @@ export default function SurgicalDashboard({ onBack }) {
         </div>
 
         {/* TABS (Dark Longitudinal Menu) */}
-        <div style={{ display: 'flex', gap: '12px', background: '#2d334a', padding: '12px', borderRadius: '20px', border: '1px solid rgba(255,255,255,0.1)', boxShadow: '0 10px 25px rgba(0,0,0,0.1)', position: 'sticky', top: 0, zIndex: 10 }}>
-          {[
-            { id: 'libro', label: 'Estadística (Libro)', icon: <BarChart2 size={18} /> },
-            { id: 'tabla', label: 'Programación de tabla', icon: <Calendar size={18} /> },
-            { id: 'disponibilidad', label: 'Indicadores de gestión', icon: <Clock size={18} /> },
-            { id: 'subprogramacion', label: 'Subprogramación diaria', icon: <Timer size={18} /> },
-            { id: 'insumos', label: 'Insumos y Costeo', icon: <DollarSign size={18} /> }
-          ].map(tab => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              style={{
-                display: 'flex', alignItems: 'center', gap: '10px',
-                padding: '12px 24px',
-                background: activeTab === tab.id ? 'linear-gradient(135deg, #6366f1, #4f46e5)' : 'transparent',
-                border: 'none',
-                borderRadius: '14px',
-                boxShadow: activeTab === tab.id ? '0 4px 15px rgba(99, 102, 241, 0.4)' : 'none',
-                color: activeTab === tab.id ? 'white' : '#94a3b8',
-                fontWeight: activeTab === tab.id ? 700 : 600,
-                cursor: 'pointer',
-                transition: 'all 0.3s ease'
-              }}
-            >
-              {tab.icon} {tab.label}
-            </button>
-          ))}
+        <div style={{ display: 'flex', gap: '12px', background: '#2d334a', padding: '12px', borderRadius: '20px', border: '1px solid rgba(255,255,255,0.1)', boxShadow: '0 10px 25px rgba(0,0,0,0.1)', position: 'sticky', top: 0, zIndex: 100, alignItems: 'center' }}>
+          {/* 1. Estadística (Libro) */}
+          <button
+            onClick={() => { setActiveTab('libro'); setIndicadoresMenuOpen(false); }}
+            style={{
+              display: 'flex', alignItems: 'center', gap: '10px',
+              padding: '12px 24px',
+              background: activeTab === 'libro' ? 'linear-gradient(135deg, #6366f1, #4f46e5)' : 'transparent',
+              border: 'none',
+              borderRadius: '14px',
+              boxShadow: activeTab === 'libro' ? '0 4px 15px rgba(99, 102, 241, 0.4)' : 'none',
+              color: activeTab === 'libro' ? 'white' : '#94a3b8',
+              fontWeight: activeTab === 'libro' ? 700 : 600,
+              cursor: 'pointer',
+              transition: 'all 0.3s ease'
+            }}
+          >
+            <BarChart2 size={18} /> Estadística (Libro)
+          </button>
+
+          {/* 2. Menú con Submenús: Indicadores de Gestión de Pabellón */}
+          {(() => {
+            const isIndicadoresActive = activeTab === 'tabla' || activeTab === 'disponibilidad' || activeTab === 'subprogramacion';
+            const subItems = [
+              { id: 'tabla', label: 'Suspensiones de Tabla', icon: <Calendar size={16} />, desc: 'Programación de tabla y causales de suspensión' },
+              { id: 'disponibilidad', label: 'Retraso en primera Hora', icon: <Clock size={16} />, desc: 'Cumplimiento de inicio puntual (≤ 15 min)' },
+              { id: 'subprogramacion', label: 'Subprogramación Diaria', icon: <Timer size={16} />, desc: 'Brecha al cierre vs disponibilidad (≥ 60 min)' }
+            ];
+            const activeSubItem = subItems.find(s => s.id === activeTab);
+
+            return (
+              <div
+                style={{ position: 'relative' }}
+                onMouseEnter={() => setIndicadoresMenuOpen(true)}
+                onMouseLeave={() => setIndicadoresMenuOpen(false)}
+              >
+                <button
+                  onClick={() => setIndicadoresMenuOpen(prev => !prev)}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: '10px',
+                    padding: '12px 22px',
+                    background: isIndicadoresActive ? 'linear-gradient(135deg, #6366f1, #4f46e5)' : 'transparent',
+                    border: isIndicadoresActive ? 'none' : '1px solid rgba(255,255,255,0.08)',
+                    borderRadius: '14px',
+                    boxShadow: isIndicadoresActive ? '0 4px 15px rgba(99, 102, 241, 0.4)' : 'none',
+                    color: isIndicadoresActive ? 'white' : '#94a3b8',
+                    fontWeight: isIndicadoresActive ? 700 : 600,
+                    cursor: 'pointer',
+                    transition: 'all 0.3s ease'
+                  }}
+                >
+                  <Activity size={18} />
+                  <span>
+                    Indicadores de Gestión de Pabellón
+                    {activeSubItem ? ` · ${activeSubItem.label}` : ''}
+                  </span>
+                  <ChevronDown
+                    size={16}
+                    style={{
+                      transition: 'transform 0.25s ease',
+                      transform: indicadoresMenuOpen ? 'rotate(180deg)' : 'rotate(0deg)'
+                    }}
+                  />
+                </button>
+
+                <AnimatePresence>
+                  {indicadoresMenuOpen && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 8, scale: 0.98 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: 6, scale: 0.98 }}
+                      transition={{ duration: 0.18 }}
+                      style={{
+                        position: 'absolute',
+                        top: 'calc(100% + 8px)',
+                        left: 0,
+                        minWidth: '310px',
+                        background: '#1e2436',
+                        borderRadius: '16px',
+                        padding: '8px',
+                        border: '1px solid rgba(255,255,255,0.12)',
+                        boxShadow: '0 20px 40px rgba(15, 23, 42, 0.45)',
+                        zIndex: 200,
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '4px'
+                      }}
+                    >
+                      <div style={{ padding: '6px 12px 4px', fontSize: '0.68rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                        Indicadores de Gestión de Pabellón
+                      </div>
+                      {subItems.map(item => {
+                        const selected = activeTab === item.id;
+                        return (
+                          <button
+                            key={item.id}
+                            onClick={() => {
+                              setActiveTab(item.id);
+                              setIndicadoresMenuOpen(false);
+                            }}
+                            style={{
+                              display: 'flex',
+                              alignItems: 'flex-start',
+                              gap: '12px',
+                              width: '100%',
+                              textAlign: 'left',
+                              padding: '10px 14px',
+                              borderRadius: '12px',
+                              border: 'none',
+                              background: selected ? 'linear-gradient(135deg, #6366f1, #4f46e5)' : 'transparent',
+                              color: selected ? 'white' : '#e2e8f0',
+                              cursor: 'pointer',
+                              transition: 'all 0.2s ease'
+                            }}
+                            onMouseEnter={e => { if (!selected) e.currentTarget.style.background = 'rgba(255,255,255,0.07)'; }}
+                            onMouseLeave={e => { if (!selected) e.currentTarget.style.background = 'transparent'; }}
+                          >
+                            <div style={{
+                              marginTop: '2px',
+                              padding: '6px',
+                              borderRadius: '8px',
+                              background: selected ? 'rgba(255,255,255,0.2)' : 'rgba(99, 102, 241, 0.15)',
+                              color: selected ? 'white' : '#818cf8',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center'
+                            }}>
+                              {item.icon}
+                            </div>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                              <span style={{ fontWeight: 700, fontSize: '0.88rem' }}>{item.label}</span>
+                              <span style={{ fontSize: '0.73rem', color: selected ? 'rgba(255,255,255,0.82)' : '#94a3b8' }}>{item.desc}</span>
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            );
+          })()}
+
+          {/* 3. Insumos y Costeo */}
+          <button
+            onClick={() => { setActiveTab('insumos'); setIndicadoresMenuOpen(false); }}
+            style={{
+              display: 'flex', alignItems: 'center', gap: '10px',
+              padding: '12px 24px',
+              background: activeTab === 'insumos' ? 'linear-gradient(135deg, #6366f1, #4f46e5)' : 'transparent',
+              border: 'none',
+              borderRadius: '14px',
+              boxShadow: activeTab === 'insumos' ? '0 4px 15px rgba(99, 102, 241, 0.4)' : 'none',
+              color: activeTab === 'insumos' ? 'white' : '#94a3b8',
+              fontWeight: activeTab === 'insumos' ? 700 : 600,
+              cursor: 'pointer',
+              transition: 'all 0.3s ease'
+            }}
+          >
+            <DollarSign size={18} /> Insumos y Costeo
+          </button>
         </div>
       </header>
 
@@ -4756,7 +4891,7 @@ export default function SurgicalDashboard({ onBack }) {
                     {/* TÍTULO DEL TABLERO */}
                     <div style={{ marginBottom: '24px' }}>
                       <h2 style={{ fontSize: '1.6rem', fontWeight: 800, color: '#1e293b', margin: 0 }}>
-                        Programación de tabla quirúrgica y suspensiones quirúrgicas
+                        Suspensión de Tabla Quirúrgica
                       </h2>
                     </div>
 
