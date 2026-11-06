@@ -3738,7 +3738,7 @@ export default function SurgicalDashboard({ onBack }) {
               { id: 'disponibilidad', label: 'Retraso en primera Hora', icon: <Clock size={16} />, desc: 'Cumplimiento de inicio puntual (≤ 15 min)' },
               { id: 'subprogramacion', label: 'Subprogramación Diaria', icon: <Timer size={16} />, desc: 'Brecha al cierre vs disponibilidad (≥ 60 min)' },
               { id: 'recambio', label: 'Tiempo de Recambio', icon: <RefreshCw size={16} />, desc: 'Ideal MINSAL ≤ 15 min · Aceptable 15–20 min · Crítico > 20 min' },
-              { id: 'pacientes_pabellon', label: 'Pacientes por Pabellón', icon: <Users size={16} />, desc: 'Promedio diario de pacientes intervenidos en pabellones electivos' }
+              { id: 'pacientes_pabellon', label: 'Pacientes por Pabellón', icon: <Users size={16} />, desc: 'Óptimo MINSAL: 5–6 pac (08–17h) · 6–8 casos (08–20h)' }
             ];
             const activeSubItem = subItems.find(s => s.id === activeTab);
 

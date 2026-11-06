@@ -3,10 +3,10 @@ import {
   ComposedChart, Line, Bar, BarChart, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip,
   Legend, ResponsiveContainer, ReferenceLine, Cell, LabelList
 } from 'recharts';
-import { Users, Activity, CheckCircle, AlertTriangle, Lightbulb, RotateCcw, Info } from 'lucide-react';
+import { Users, CheckCircle, AlertTriangle, Award, Lightbulb, RotateCcw, Info } from 'lucide-react';
 import {
   calcularPacientesPorPabellon, resumirPacientesPorPabellon, fechaLocalISO,
-  PABELLONES_VALIDOS, META_PACIENTES_DEFECTO, FECHA_CAMBIO_URGENCIA
+  PABELLONES_VALIDOS, META_PACIENTES_17H, META_PACIENTES_20H, FECHA_CAMBIO_URGENCIA
 } from '../utils/pacientesPorPabellon';
 
 const MESES = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
@@ -29,15 +29,16 @@ const labelMesLargo = (key) => {
   return `${MESES_LARGO[Number(m) - 1]} ${y}`;
 };
 
-const colorPorPacientes = (prom, meta) => (prom >= meta ? '#10b981' : prom >= meta * 0.75 ? '#f59e0b' : '#ef4444');
+// Semaforización según piso óptimo MINSAL (5 pac en 08-17h; 6 pac en 08-20h)
+const colorPorPacientes = (prom, pisoOptimo = 5) => (
+  prom >= pisoOptimo ? '#10b981' : prom >= pisoOptimo - 1 ? '#f59e0b' : '#ef4444'
+);
 
-function heatBg(val, meta) {
+function heatBg(val, pisoOptimo = 5) {
   if (val === null || val === undefined) return '#f1f5f9';
-  const ratio = Math.min(1, Math.max(0, (val - 1.5) / Math.max(1, meta - 1)));
-  const r = ratio < 0.5 ? Math.round(239 + (245 - 239) * (ratio / 0.5)) : Math.round(245 + (16 - 245) * ((ratio - 0.5) / 0.5));
-  const g = ratio < 0.5 ? Math.round(68 + (158 - 68) * (ratio / 0.5)) : Math.round(158 + (185 - 158) * ((ratio - 0.5) / 0.5));
-  const b = ratio < 0.5 ? Math.round(68 + (11 - 68) * (ratio / 0.5)) : Math.round(11 + (129 - 11) * ((ratio - 0.5) / 0.5));
-  return `rgba(${r}, ${g}, ${b}, 0.28)`;
+  if (val >= pisoOptimo) return 'rgba(16, 185, 129, 0.25)';
+  if (val >= pisoOptimo - 1) return 'rgba(245, 158, 11, 0.25)';
+  return 'rgba(239, 68, 68, 0.24)';
 }
 
 const card = { background: 'white', borderRadius: '16px', border: '1px solid #e2e8f0', padding: '20px 22px', boxShadow: '0 2px 10px rgba(15,23,42,0.04)', display: 'flex', flexDirection: 'column' };
@@ -104,10 +105,14 @@ function Chip({ active, onClick, children }) {
 
 export default function PacientesPorPabellon({ tablaData = [], disponibilidadData = [], loading = false }) {
   const [tipoDia, setTipoDia] = useState('habiles'); // habiles | no_habiles | todos
+  const [filtroRegimen, setFiltroRegimen] = useState('todos'); // todos | 17h | 20h
   const [pabellones, setPabellones] = useState(PABELLONES_VALIDOS);
-  const [meta, setMeta] = useState(META_PACIENTES_DEFECTO);
   const [desde, setDesde] = useState('');
   const [hasta, setHasta] = useState('');
+
+  // Piso de referencia visual según filtro de régimen activo (5 pac para 08-17h, 6 pac para 08-20h)
+  const pisoRef = filtroRegimen === '20h' ? META_PACIENTES_20H.min : META_PACIENTES_17H.min;
+  const techoRef = filtroRegimen === '20h' ? META_PACIENTES_20H.max : META_PACIENTES_17H.max;
 
   const todas = useMemo(() => calcularPacientesPorPabellon(tablaData, disponibilidadData), [tablaData, disponibilidadData]);
 
@@ -125,10 +130,11 @@ export default function PacientesPorPabellon({ tablaData = [], disponibilidadDat
     const finde = f.diaSemana === 0 || f.diaSemana === 6;
     if (tipoDia === 'habiles' && finde) return false;
     if (tipoDia === 'no_habiles' && !finde) return false;
+    if (filtroRegimen !== 'todos' && f.regimen !== filtroRegimen) return false;
     return true;
-  }), [todas, pabellones, d1, d2, tipoDia]);
+  }), [todas, pabellones, d1, d2, tipoDia, filtroRegimen]);
 
-  const kpi = useMemo(() => resumirPacientesPorPabellon(filtradas, meta), [filtradas, meta]);
+  const kpi = useMemo(() => resumirPacientesPorPabellon(filtradas), [filtradas]);
 
   const agrupar = (clave, etiqueta, ordenFn) => {
     const m = new Map();
@@ -138,13 +144,17 @@ export default function PacientesPorPabellon({ tablaData = [], disponibilidadDat
       m.get(k).push(f);
     }
     const arr = [...m.entries()].map(([k, rows]) => {
-      const r = resumirPacientesPorPabellon(rows, meta);
+      const r = resumirPacientesPorPabellon(rows);
       return {
         key: k,
         name: etiqueta(k),
         promedio: Number(r.promedio.toFixed(2)),
+        promedioProgramados: Number(r.promedioProgramados.toFixed(2)),
         mediana: Number(r.mediana.toFixed(1)),
-        pctCumplenMeta: Number(r.pctCumplenMeta.toFixed(1)),
+        pctCumplenNorma: Number(r.pctCumplenNorma.toFixed(1)),
+        pctBajo: Number(r.pctBajo.toFixed(1)),
+        pctOptimo: Number(r.pctOptimo.toFixed(1)),
+        pctDestacado: Number(r.pctDestacado.toFixed(1)),
         pctCMA: Number(r.pctCMA.toFixed(1)),
         n: r.nDiasPabellon,
         totalPacientes: r.totalPacientes,
@@ -154,25 +164,26 @@ export default function PacientesPorPabellon({ tablaData = [], disponibilidadDat
     return ordenFn ? arr.sort(ordenFn) : arr;
   };
 
-  const porMes = useMemo(() => agrupar((f) => f.mesKey, labelMes, (a, b) => (a.key < b.key ? -1 : 1)), [filtradas, meta]);
-  const porPabellon = useMemo(() => agrupar((f) => f.pabellon, (k) => `Pab. ${k}`, (a, b) => a.key - b.key), [filtradas, meta]);
+  const porMes = useMemo(() => agrupar((f) => f.mesKey, labelMes, (a, b) => (a.key < b.key ? -1 : 1)), [filtradas]);
+  const porPabellon = useMemo(() => agrupar((f) => f.pabellon, (k) => `Pab. ${k}`, (a, b) => a.key - b.key), [filtradas]);
   const porDia = useMemo(() => {
     const ordenDias = [1, 2, 3, 4, 5, 6, 0];
     return agrupar((f) => f.diaSemana, (k) => DIAS[k], (a, b) => ordenDias.indexOf(a.key) - ordenDias.indexOf(b.key));
-  }, [filtradas, meta]);
+  }, [filtradas]);
   const porEspecialidad = useMemo(
     () => agrupar((f) => f.especialidad || 'Sin especialidad', (k) => k, (a, b) => b.promedio - a.promedio).filter((e) => e.n >= 8).slice(0, 10),
-    [filtradas, meta]
+    [filtradas]
   );
 
+  // Distribución según norma MINSAL de su respectivo bloque horario + desglose por cantidad
   const tramos = useMemo(() => {
     const def = [
-      { name: '1 paciente', f: (f) => f.nPacientes === 1, color: '#ef4444' },
-      { name: '2 pacientes', f: (f) => f.nPacientes === 2, color: '#f97316' },
-      { name: '3 pacientes', f: (f) => f.nPacientes === 3, color: '#eab308' },
-      { name: '4 pacientes', f: (f) => f.nPacientes === 4, color: '#84cc16' },
-      { name: '5 pacientes', f: (f) => f.nPacientes === 5, color: '#10b981' },
-      { name: '6+ pacientes', f: (f) => f.nPacientes >= 6, color: '#059669' }
+      { name: '1–2 pac (Muy bajo)', f: (f) => f.nPacientes <= 2, color: '#dc2626' },
+      { name: '3–4 pac (Bajo 17h)', f: (f) => f.nPacientes >= 3 && f.nPacientes <= 4, color: '#f97316' },
+      { name: '5 pac (Óptimo 17h / Bajo 20h)', f: (f) => f.nPacientes === 5, color: '#eab308' },
+      { name: '6 pac (Óptimo 17h y 20h)', f: (f) => f.nPacientes === 6, color: '#10b981' },
+      { name: '7–8 pac (Destacado 17h / Óptimo 20h)', f: (f) => f.nPacientes >= 7 && f.nPacientes <= 8, color: '#059669' },
+      { name: '9+ pac (Sobresaliente)', f: (f) => f.nPacientes >= 9, color: '#4f46e5' }
     ];
     return def.map((t) => {
       const n = filtradas.filter(t.f).length;
@@ -199,7 +210,7 @@ export default function PacientesPorPabellon({ tablaData = [], disponibilidadDat
     };
   }, [filtradas]);
 
-  // Insights focalizados para cada gráfica
+  // Insights focalizados bajo la norma MINSAL (08:00–17:00 => 5–6 pac; 08:00–20:00 => 6–8 pac)
   const insightMensual = useMemo(() => {
     if (porMes.length < 2) return null;
     const a = porMes[porMes.length - 1];
@@ -207,10 +218,10 @@ export default function PacientesPorPabellon({ tablaData = [], disponibilidadDat
     const delta = a.promedio - b.promedio;
     const parcial = a.dias < 10;
     return {
-      tono: parcial ? 'azul' : delta >= 0 ? 'verde' : 'rojo',
-      texto: `${labelMesLargo(a.key)}${parcial ? ` (mes en curso, ${a.n} pabellón-días)` : ''} promedia ${fmt(a.promedio, 2)} pacientes/pabellón, ${delta >= 0 ? 'superando' : 'por debajo de'} ${labelMesLargo(b.key)} (${fmt(b.promedio, 2)}): ${delta >= 0 ? '+' : ''}${fmt(delta, 2)} pacientes por jornada.`
+      tono: parcial ? 'azul' : a.promedio >= pisoRef ? 'verde' : 'ambar',
+      texto: `En ${labelMesLargo(a.key)}${parcial ? ` (mes en curso, ${a.n} pabellón-días)` : ''} se promedian ${fmt(a.promedio, 2)} pacientes intervenidos (${fmt(a.promedioProgramados, 2)} programados en tabla), ${delta >= 0 ? '+' : ''}${fmt(delta, 2)} pac/día respecto a ${labelMesLargo(b.key)} (${fmt(b.promedio, 2)}). El ${fmt(a.pctCumplenNorma, 0)}% de las jornadas alcanzó la norma MINSAL de su horario.`
     };
-  }, [porMes]);
+  }, [porMes, pisoRef]);
 
   const insightPabellon = useMemo(() => {
     if (porPabellon.length < 2) return null;
@@ -218,47 +229,35 @@ export default function PacientesPorPabellon({ tablaData = [], disponibilidadDat
     const mayor = pabOrd[0];
     const menor = pabOrd[pabOrd.length - 1];
     return {
-      tono: 'verde',
-      texto: `${mayor.name} lidera el rendimiento diario con ${fmt(mayor.promedio, 2)} pacientes/día (${fmt(mayor.pctCumplenMeta, 0)}% de sus jornadas alcanza ≥ ${meta} pacientes), mientras que ${menor.name} registra ${fmt(menor.promedio, 2)} pacientes/día por cirugías de mayor extensión.`
+      tono: mayor.promedio >= pisoRef ? 'verde' : 'ambar',
+      texto: `${mayor.name} lidera el rendimiento con ${fmt(mayor.promedio, 2)} pacientes intervenidos/día (${fmt(mayor.promedioProgramados, 2)} programados; ${fmt(mayor.pctCumplenNorma, 0)}% de días cumple norma MINSAL). En cambio, ${menor.name} promedia ${fmt(menor.promedio, 2)} pacientes/día (${fmt(menor.pctBajo, 0)}% de jornadas bajo el estándar de programación).`
     };
-  }, [porPabellon, meta]);
+  }, [porPabellon, pisoRef]);
 
   const insightDia = useMemo(() => {
     const diaOrd = [...porDia].filter((d) => d.n >= 5).sort((a, b) => b.promedio - a.promedio);
     if (diaOrd.length < 2) return null;
     return {
       tono: 'ambar',
-      texto: `La mayor productividad por quirófano se alcanza los ${DIAS_LARGO[diaOrd[0].key]} (${fmt(diaOrd[0].promedio, 2)} pacientes/pabellón) y la menor los ${DIAS_LARGO[diaOrd[diaOrd.length - 1].key]} (${fmt(diaOrd[diaOrd.length - 1].promedio, 2)} pacientes/pabellón).`
+      texto: `Por día de la semana, el mayor rendimiento se alcanza los ${DIAS_LARGO[diaOrd[0].key]} (${fmt(diaOrd[0].promedio, 2)} pac/pabellón, ${fmt(diaOrd[0].pctCumplenNorma, 0)}% en norma MINSAL) y el menor los ${DIAS_LARGO[diaOrd[diaOrd.length - 1].key]} (${fmt(diaOrd[diaOrd.length - 1].promedio, 2)} pac/pabellón).`
     };
   }, [porDia]);
 
   const insightDistribucion = useMemo(() => {
     if (!kpi.nDiasPabellon) return null;
-    const potencial = (kpi.totalPacientes + kpi.totalSuspendidos) / kpi.nDiasPabellon;
-    const perdidaPorDia = kpi.totalSuspendidos / kpi.nDiasPabellon;
     return {
-      tono: 'azul',
-      texto: `El ${fmt(kpi.pctCumplenMeta, 1)}% de las jornadas resuelve ≥ ${meta} pacientes. En estos pabellón-días hubo ${fmt(kpi.totalSuspendidos, 0)} suspensiones (~${fmt(perdidaPorDia, 2)} pac/día); sin suspensiones el rendimiento potencial alcanzaría ${fmt(potencial, 2)} pacientes/pabellón.`
+      tono: kpi.pctCumplenNorma >= 50 ? 'verde' : 'rojo',
+      texto: `Brecha Programación vs Resolución: en tabla se programaron ${fmt(kpi.promedioProgramados, 2)} pac/día (${fmt(kpi.pctCumplenNormaProgramada, 1)}% de jornadas cumplía la meta MINSAL al programar), pero tras las ${fmt(kpi.totalSuspendidos, 0)} suspensiones el rendimiento efectivo bajó a ${fmt(kpi.promedio, 2)} pac/día (${fmt(kpi.pctCumplenNorma, 1)}% en norma: ${fmt(kpi.pctOptimo, 1)}% óptimo y ${fmt(kpi.pctDestacado, 1)}% sobre el óptimo).`
     };
-  }, [kpi, meta]);
+  }, [kpi]);
 
   const insightHeatmap = useMemo(() => {
-    if (!heat.pabs.length || !heat.meses.length) return null;
-    let best = null;
-    for (const p of heat.pabs) {
-      for (const m of heat.meses) {
-        const c = heat.valor(p, m);
-        if (c && c.n >= 4 && (!best || c.v > best.v)) {
-          best = { p, m, v: c.v, n: c.n, total: c.total };
-        }
-      }
-    }
-    if (!best) return null;
+    if (!kpi.nDiasPabellon) return null;
     return {
-      tono: 'verde',
-      texto: `El pico mensual de productividad en la matriz corresponde a Pab. ${best.p} en ${labelMesLargo(best.m)}, alcanzando ${fmt(best.v, 2)} pacientes/día (${best.total} cirugías en ${best.n} jornadas).`
+      tono: 'azul',
+      texto: `Comparativa por régimen horario MINSAL: en pabellones de 08:00 a 17:00 (${kpi.n17h} jornadas, meta 5–6 pac) el promedio es de ${fmt(kpi.prom17h, 2)} pac/día (${fmt(kpi.pctCumple17h, 1)}% cumple ≥ 5 pac), mientras que en pabellones extendidos de 08:00 a 20:00 (${kpi.n20h} jornadas, meta 6–8 pac) el promedio es de ${fmt(kpi.prom20h, 2)} pac/día (${fmt(kpi.pctCumple20h, 1)}% cumple ≥ 6 pac).`
     };
-  }, [heat]);
+  }, [kpi]);
 
   const insightEspecialidad = useMemo(() => {
     if (porEspecialidad.length < 2) return null;
@@ -266,15 +265,15 @@ export default function PacientesPorPabellon({ tablaData = [], disponibilidadDat
     const lowEsp = porEspecialidad[porEspecialidad.length - 1];
     return {
       tono: 'ambar',
-      texto: `Efecto case-mix: ${topEsp.name} alcanza la mayor rotación con ${fmt(topEsp.promedio, 2)} pacientes/día (${fmt(topEsp.pctCMA, 0)}% ambulatoria), mientras que ${lowEsp.name} promedia ${fmt(lowEsp.promedio, 2)} pacientes/día por mayor duración quirúrgica por caso.`
+      texto: `Efecto case-mix por especialidad: ${topEsp.name} alcanza ${fmt(topEsp.promedio, 2)} pac/día (${fmt(topEsp.pctCumplenNorma, 0)}% de días cumple o supera el óptimo MINSAL, con ${fmt(topEsp.pctCMA, 0)}% CMA), mientras que ${lowEsp.name} promedia ${fmt(lowEsp.promedio, 2)} pac/día debido a cirugías de mayor duración.`
     };
   }, [porEspecialidad]);
 
   const togglePab = (p) => setPabellones((prev) => (prev.includes(p) ? prev.filter((x) => x !== p) : [...prev, p].sort((a, b) => a - b)));
   const limpiar = () => {
     setTipoDia('habiles');
+    setFiltroRegimen('todos');
     setPabellones(PABELLONES_VALIDOS);
-    setMeta(META_PACIENTES_DEFECTO);
     setDesde('');
     setHasta('');
   };
@@ -292,13 +291,17 @@ export default function PacientesPorPabellon({ tablaData = [], disponibilidadDat
 
   return (
     <div style={{ padding: '24px 32px 48px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
-      {/* DEFINICIÓN */}
+      {/* DEFINICIÓN Y NORMA MINISTERIAL */}
       <div style={{ ...card, background: 'linear-gradient(135deg, #eef2ff, #f5f3ff)', borderColor: '#c7d2fe', flexDirection: 'row', gap: '14px', alignItems: 'flex-start' }}>
         <Info size={22} color="#4f46e5" style={{ flexShrink: 0, marginTop: '2px' }} />
         <div style={{ fontSize: '0.86rem', color: '#312e81', lineHeight: 1.55 }}>
-          <strong>Número promedio de pacientes por pabellón</strong> = total de pacientes efectivamente intervenidos dividido por el total de jornadas de pabellón electivo con actividad quirúrgica (<code>pacientes / pabellón-día</code>).
-          Permite evaluar la productividad diaria, la intensidad de rotación de quirófanos y el impacto del tipo de cirugía (ambulatoria vs. mayor complejidad) y de las suspensiones en el rendimiento diario.
-          Se evalúan exclusivamente los <strong>pabellones electivos (1 a 7)</strong> en días cerrados (hasta el {fmtFecha(ayer)}), excluyendo el pabellón de urgencia (pabellón 6 hasta el 30-09-2026 y pabellón 2 desde el {fmtFecha(FECHA_CAMBIO_URGENCIA)}).
+          <strong>Número promedio de pacientes por pabellón</strong> = pacientes intervenidos (y programados) por cada jornada de pabellón electivo.
+          <br />
+          <strong>Norma Ministerial (MINSAL) según horario del pabellón:</strong>{' '}
+          • <strong>Pabellón 08:00 a 17:00 hrs:</strong> <span style={{ color: '#047857', fontWeight: 800 }}>Óptimo 5 a 6 pacientes</span> (<span style={{ color: '#4338ca', fontWeight: 800 }}>&gt; 6 destacado</span> · <span style={{ color: '#b91c1c', fontWeight: 800 }}>&lt; 5 bajo en programación</span>).{' '}
+          • <strong>Pabellón 08:00 a 20:00 hrs:</strong> <span style={{ color: '#047857', fontWeight: 800 }}>Óptimo 6 a 8 casos</span> (<span style={{ color: '#4338ca', fontWeight: 800 }}>&gt; 8 destacado</span> · <span style={{ color: '#b91c1c', fontWeight: 800 }}>&lt; 6 bajo en programación</span>).
+          <br />
+          Se evalúan pabellones electivos (1 a 7) en jornadas completas hasta el {fmtFecha(ayer)}, excluyendo urgencia (pabellón 6 hasta el 30-09-2026 y pabellón 2 desde el {fmtFecha(FECHA_CAMBIO_URGENCIA)}).
         </div>
       </div>
 
@@ -308,6 +311,14 @@ export default function PacientesPorPabellon({ tablaData = [], disponibilidadDat
           <div style={{ fontSize: '0.72rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', marginBottom: '6px' }}>Pabellón</div>
           <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
             {PABELLONES_VALIDOS.map((p) => <Chip key={p} active={pabellones.includes(p)} onClick={() => togglePab(p)}>{p}</Chip>)}
+          </div>
+        </div>
+        <div>
+          <div style={{ fontSize: '0.72rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', marginBottom: '6px' }}>Régimen Horario MINSAL</div>
+          <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+            <Chip active={filtroRegimen === 'todos'} onClick={() => setFiltroRegimen('todos')}>Todos</Chip>
+            <Chip active={filtroRegimen === '17h'} onClick={() => setFiltroRegimen('17h')}>08:00–17:00 (Óptimo 5–6)</Chip>
+            <Chip active={filtroRegimen === '20h'} onClick={() => setFiltroRegimen('20h')}>08:00–20:00 (Óptimo 6–8)</Chip>
           </div>
         </div>
         <div>
@@ -326,10 +337,6 @@ export default function PacientesPorPabellon({ tablaData = [], disponibilidadDat
             <input type="date" value={d2} min={rango.min} max={rango.max} onChange={(e) => setHasta(e.target.value)} style={{ padding: '6px 8px', borderRadius: '8px', border: '1.5px solid #cbd5e1' }} />
           </div>
         </div>
-        <div>
-          <div style={{ fontSize: '0.72rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', marginBottom: '6px' }}>Referencia / Meta (pac/día)</div>
-          <input type="number" min={1} max={12} step={0.5} value={meta} onChange={(e) => setMeta(Math.max(1, Number(e.target.value) || 1))} style={{ width: '90px', padding: '6px 8px', borderRadius: '8px', border: '1.5px solid #cbd5e1', fontWeight: 700 }} />
-        </div>
         <button type="button" onClick={limpiar} style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 14px', borderRadius: '10px', border: '1px solid #e2e8f0', background: 'white', cursor: 'pointer', fontWeight: 700, color: '#64748b' }}>
           <RotateCcw size={14} /> Restablecer
         </button>
@@ -345,29 +352,29 @@ export default function PacientesPorPabellon({ tablaData = [], disponibilidadDat
               icon={<Users size={16} />}
               label="Promedio pacientes / pabellón"
               value={`${fmt(kpi.promedio, 2)}`}
-              sub={`Mediana ${fmt(kpi.mediana, 0)} pac/día · Máx ${kpi.maxPacientes} pac/día`}
-              color={colorPorPacientes(kpi.promedio, meta)}
-            />
-            <KPI
-              icon={<Activity size={16} />}
-              label="Total pacientes intervenidos"
-              value={fmt(kpi.totalPacientes, 0)}
-              sub={`en ${fmt(kpi.nDiasPabellon, 0)} pabellón-días (${fmt(kpi.diasCalendario, 0)} días calendario)`}
-              color="#6366f1"
+              sub={`Programados: ${fmt(kpi.promedioProgramados, 2)} pac/día · ${fmt(kpi.totalPacientes, 0)} cirugías en ${fmt(kpi.nDiasPabellon, 0)} jornadas`}
+              color={colorPorPacientes(kpi.promedio, pisoRef)}
             />
             <KPI
               icon={<CheckCircle size={16} />}
-              label={`Jornadas sobre referencia (≥ ${meta} pac)`}
-              value={`${fmt(kpi.pctCumplenMeta)}%`}
-              sub={`${fmt(kpi.cumplenMeta, 0)} de ${fmt(kpi.nDiasPabellon, 0)} pabellón-días`}
+              label="En Rango Óptimo MINSAL"
+              value={`${fmt(kpi.pctOptimo)}%`}
+              sub={`${fmt(kpi.optimos, 0)} jornadas (5–6 pac en 17h · 6–8 pac en 20h)`}
               color="#10b981"
             />
             <KPI
+              icon={<Award size={16} />}
+              label="Sobre el Óptimo (> 6 / > 8 pac)"
+              value={`${fmt(kpi.pctDestacado)}%`}
+              sub={`${fmt(kpi.destacados, 0)} jornadas destacadas · Total cumple norma: ${fmt(kpi.pctCumplenNorma)}%`}
+              color="#6366f1"
+            />
+            <KPI
               icon={<AlertTriangle size={16} />}
-              label="Jornadas de baja rotación (≤ 2 pac)"
-              value={`${fmt(kpi.pctBajaProduccion)}%`}
-              sub={`${fmt(kpi.bajaProduccion, 0)} pabellón-días con 1 o 2 cirugías`}
-              color="#f59e0b"
+              label="Bajo en Programación (< 5 / < 6 pac)"
+              value={`${fmt(kpi.pctBajo)}%`}
+              sub={`${fmt(kpi.bajos, 0)} de ${fmt(kpi.nDiasPabellon, 0)} jornadas bajo el estándar MINSAL`}
+              color="#ef4444"
             />
           </div>
 
@@ -375,7 +382,7 @@ export default function PacientesPorPabellon({ tablaData = [], disponibilidadDat
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(460px, 1fr))', gap: '20px' }}>
             <div style={card}>
               <h3 style={cardTitle}>Evolución mensual de pacientes por pabellón</h3>
-              <p style={cardSub}>Promedio de pacientes por pabellón-día (barras) y % de jornadas con ≥ {meta} pacientes (línea).</p>
+              <p style={cardSub}>Promedio de pacientes intervenidos (barras) y % de jornadas que cumplen la norma MINSAL de su horario (línea).</p>
               <ResponsiveContainer width="100%" height={280}>
                 <ComposedChart data={porMes} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
@@ -384,11 +391,12 @@ export default function PacientesPorPabellon({ tablaData = [], disponibilidadDat
                   <YAxis yAxisId="r" orientation="right" tick={{ fontSize: 11 }} unit="%" domain={[0, 100]} />
                   <RechartsTooltip formatter={(v, n) => (n.includes('%') ? `${v}%` : `${v} pac/día`)} />
                   <Legend />
-                  <ReferenceLine yAxisId="l" y={meta} stroke="#10b981" strokeDasharray="4 4" label={{ value: `meta ${meta}`, fontSize: 10, fill: '#059669', position: 'insideTopRight' }} />
-                  <Bar yAxisId="l" dataKey="promedio" name="Pacientes promedio / pabellón" radius={[6, 6, 0, 0]}>
-                    {porMes.map((e, i) => <Cell key={i} fill={colorPorPacientes(e.promedio, meta)} />)}
+                  <ReferenceLine yAxisId="l" y={pisoRef} stroke="#10b981" strokeDasharray="4 4" label={{ value: `Mín. óptimo (${pisoRef})`, fontSize: 10, fill: '#059669', position: 'insideBottomRight' }} />
+                  <ReferenceLine yAxisId="l" y={techoRef} stroke="#6366f1" strokeDasharray="4 4" label={{ value: `Tope óptimo (${techoRef})`, fontSize: 10, fill: '#4f46e5', position: 'insideTopRight' }} />
+                  <Bar yAxisId="l" dataKey="promedio" name="Intervenidos prom. / pab" radius={[6, 6, 0, 0]}>
+                    {porMes.map((e, i) => <Cell key={i} fill={colorPorPacientes(e.promedio, pisoRef)} />)}
                   </Bar>
-                  <Line yAxisId="r" type="monotone" dataKey="pctCumplenMeta" name={`% días ≥ ${meta} pac`} stroke="#4f46e5" strokeWidth={2.5} dot={{ r: 3 }} />
+                  <Line yAxisId="r" type="monotone" dataKey="pctCumplenNorma" name="% cumple norma MINSAL" stroke="#4f46e5" strokeWidth={2.5} dot={{ r: 3 }} />
                 </ComposedChart>
               </ResponsiveContainer>
               {insightMensual && (
@@ -400,16 +408,17 @@ export default function PacientesPorPabellon({ tablaData = [], disponibilidadDat
 
             <div style={card}>
               <h3 style={cardTitle}>Promedio de pacientes por pabellón</h3>
-              <p style={cardSub}>Rendimiento diario comparativo entre los pabellones electivos.</p>
+              <p style={cardSub}>Comparativa de pacientes intervenidos vs. piso óptimo MINSAL ({pisoRef}–{techoRef} pac/día).</p>
               <ResponsiveContainer width="100%" height={280}>
                 <BarChart data={porPabellon} margin={{ top: 20, right: 10, left: -10, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} />
                   <XAxis dataKey="name" tick={{ fontSize: 11 }} />
                   <YAxis tick={{ fontSize: 11 }} />
-                  <RechartsTooltip formatter={(v, n, p) => [`${v} pac/día (${p.payload.totalPacientes} cirugías en ${p.payload.n} días · ${p.payload.pctCumplenMeta}% ≥ ${meta} pac)`, 'Promedio']} />
-                  <ReferenceLine y={meta} stroke="#10b981" strokeDasharray="4 4" />
+                  <RechartsTooltip formatter={(v, n, p) => [`${v} intervenidos/día (programados: ${p.payload.promedioProgramados}) · Cumple norma: ${p.payload.pctCumplenNorma}% · Bajo: ${p.payload.pctBajo}%`, 'Promedio']} />
+                  <ReferenceLine y={pisoRef} stroke="#10b981" strokeDasharray="4 4" />
+                  <ReferenceLine y={techoRef} stroke="#6366f1" strokeDasharray="4 4" />
                   <Bar dataKey="promedio" radius={[6, 6, 0, 0]}>
-                    {porPabellon.map((e, i) => <Cell key={i} fill={colorPorPacientes(e.promedio, meta)} />)}
+                    {porPabellon.map((e, i) => <Cell key={i} fill={colorPorPacientes(e.promedio, pisoRef)} />)}
                     <LabelList dataKey="promedio" position="top" style={{ fontSize: 11, fontWeight: 700, fill: '#334155' }} />
                   </Bar>
                 </BarChart>
@@ -432,10 +441,10 @@ export default function PacientesPorPabellon({ tablaData = [], disponibilidadDat
                   <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} />
                   <XAxis dataKey="name" tick={{ fontSize: 11 }} />
                   <YAxis tick={{ fontSize: 11 }} />
-                  <RechartsTooltip formatter={(v, n, p) => [`${v} pac/día (${p.payload.totalPacientes} cirugías en ${p.payload.n} pabellón-días)`, 'Promedio']} />
-                  <ReferenceLine y={meta} stroke="#10b981" strokeDasharray="4 4" />
+                  <RechartsTooltip formatter={(v, n, p) => [`${v} pac/día (programados: ${p.payload.promedioProgramados}) · Cumple norma: ${p.payload.pctCumplenNorma}%`, 'Promedio']} />
+                  <ReferenceLine y={pisoRef} stroke="#10b981" strokeDasharray="4 4" />
                   <Bar dataKey="promedio" radius={[6, 6, 0, 0]}>
-                    {porDia.map((e, i) => <Cell key={i} fill={colorPorPacientes(e.promedio, meta)} />)}
+                    {porDia.map((e, i) => <Cell key={i} fill={colorPorPacientes(e.promedio, pisoRef)} />)}
                     <LabelList dataKey="promedio" position="top" style={{ fontSize: 11, fontWeight: 700, fill: '#334155' }} />
                   </Bar>
                 </BarChart>
@@ -448,12 +457,12 @@ export default function PacientesPorPabellon({ tablaData = [], disponibilidadDat
             </div>
 
             <div style={card}>
-              <h3 style={cardTitle}>Distribución de jornadas según N° de pacientes</h3>
-              <p style={cardSub}>Frecuencia de pabellón-días que resolvieron 1, 2, 3, 4, 5 o 6+ pacientes.</p>
+              <h3 style={cardTitle}>Distribución de jornadas según norma MINSAL</h3>
+              <p style={cardSub}>Frecuencia de pabellón-días por tramo de resolución (Bajo &lt;5, Óptimo 5–6 / 6–8, Destacado &gt;6 / &gt;8).</p>
               <ResponsiveContainer width="100%" height={260}>
                 <BarChart data={tramos} margin={{ top: 20, right: 10, left: -10, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} />
-                  <XAxis dataKey="name" tick={{ fontSize: 10 }} />
+                  <XAxis dataKey="name" tick={{ fontSize: 9.5 }} />
                   <YAxis tick={{ fontSize: 11 }} />
                   <RechartsTooltip formatter={(v, n, p) => [`${v} pabellón-días (${p.payload.pct}%)`, 'Jornadas']} />
                   <Bar dataKey="n" radius={[6, 6, 0, 0]}>
@@ -463,7 +472,7 @@ export default function PacientesPorPabellon({ tablaData = [], disponibilidadDat
                 </BarChart>
               </ResponsiveContainer>
               {insightDistribucion && (
-                <ChartInsight tono={insightDistribucion.tono} titulo="Aprovechamiento y efecto suspensiones">
+                <ChartInsight tono={insightDistribucion.tono} titulo="Programación vs resolución efectiva">
                   {insightDistribucion.texto}
                 </ChartInsight>
               )}
@@ -474,7 +483,7 @@ export default function PacientesPorPabellon({ tablaData = [], disponibilidadDat
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(460px, 1fr))', gap: '20px' }}>
             <div style={card}>
               <h3 style={cardTitle}>Mapa de calor: pabellón × mes</h3>
-              <p style={cardSub}>Promedio de pacientes por pabellón-día en cada mes. Más verde = mayor rotación de pacientes por jornada.</p>
+              <p style={cardSub}>Verde ≥ {pisoRef} pac/día (óptimo) · Ámbar {pisoRef - 1}–{pisoRef - 0.1} pac · Rojo &lt; {pisoRef - 1} pac (bajo en programación).</p>
               <div style={{ overflowX: 'auto' }}>
                 <table style={{ borderCollapse: 'separate', borderSpacing: '4px', fontSize: '0.8rem', width: '100%' }}>
                   <thead>
@@ -490,7 +499,7 @@ export default function PacientesPorPabellon({ tablaData = [], disponibilidadDat
                         {heat.meses.map((m) => {
                           const c = heat.valor(p, m);
                           return (
-                            <td key={m} title={c ? `${c.total} pacientes en ${c.n} días` : 'sin datos'} style={{ textAlign: 'center', padding: '8px 6px', borderRadius: '6px', background: heatBg(c ? c.v : null, meta), fontWeight: 700, color: '#1e293b' }}>
+                            <td key={m} title={c ? `${c.total} pacientes en ${c.n} días` : 'sin datos'} style={{ textAlign: 'center', padding: '8px 6px', borderRadius: '6px', background: heatBg(c ? c.v : null, pisoRef), fontWeight: 700, color: '#1e293b' }}>
                               {c ? fmt(c.v, 1) : '–'}
                             </td>
                           );
@@ -501,7 +510,7 @@ export default function PacientesPorPabellon({ tablaData = [], disponibilidadDat
                 </table>
               </div>
               {insightHeatmap && (
-                <ChartInsight tono={insightHeatmap.tono} titulo="Máxima rotación mensual">
+                <ChartInsight tono={insightHeatmap.tono} titulo="Desempeño según régimen 08–17h vs 08–20h">
                   {insightHeatmap.texto}
                 </ChartInsight>
               )}
@@ -510,16 +519,17 @@ export default function PacientesPorPabellon({ tablaData = [], disponibilidadDat
             {porEspecialidad.length > 0 && (
               <div style={card}>
                 <h3 style={cardTitle}>Promedio de pacientes por pabellón-día según especialidad</h3>
-                <p style={cardSub}>Especialidades con al menos 8 jornadas evaluadas (refleja la rotación propia de cada especialidad).</p>
+                <p style={cardSub}>Especialidades con al menos 8 jornadas evaluadas (comparado con piso óptimo de {pisoRef} pac/día).</p>
                 <ResponsiveContainer width="100%" height={Math.max(220, porEspecialidad.length * 32)}>
                   <BarChart data={porEspecialidad} layout="vertical" margin={{ top: 5, right: 45, left: 20, bottom: 0 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" horizontal={false} />
                     <XAxis type="number" tick={{ fontSize: 11 }} />
                     <YAxis type="category" dataKey="name" width={170} tick={{ fontSize: 11 }} />
-                    <RechartsTooltip formatter={(v, n, p) => [`${v} pac/día (${p.payload.totalPacientes} cirugías en ${p.payload.n} días · ${p.payload.pctCMA}% CMA)`, 'Promedio']} />
-                    <ReferenceLine x={meta} stroke="#10b981" strokeDasharray="4 4" />
+                    <RechartsTooltip formatter={(v, n, p) => [`${v} intervenidos/día (prog: ${p.payload.promedioProgramados}) · Cumple norma: ${p.payload.pctCumplenNorma}% · ${p.payload.pctCMA}% CMA`, 'Promedio']} />
+                    <ReferenceLine x={pisoRef} stroke="#10b981" strokeDasharray="4 4" />
+                    <ReferenceLine x={techoRef} stroke="#6366f1" strokeDasharray="4 4" />
                     <Bar dataKey="promedio" radius={[0, 6, 6, 0]}>
-                      {porEspecialidad.map((e, i) => <Cell key={i} fill={colorPorPacientes(e.promedio, meta)} />)}
+                      {porEspecialidad.map((e, i) => <Cell key={i} fill={colorPorPacientes(e.promedio, pisoRef)} />)}
                       <LabelList dataKey="promedio" position="right" style={{ fontSize: 11, fontWeight: 700, fill: '#334155' }} />
                     </Bar>
                   </BarChart>

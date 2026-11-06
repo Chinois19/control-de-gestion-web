@@ -1,10 +1,15 @@
 /**
  * Rendimiento Quirúrgico: Número promedio de pacientes por pabellón electivo.
  *
- * Definición:
- *   Para cada pabellón electivo (1 al 7, excluyendo el pabellón de urgencia) y cada día cerrado
- *   con actividad quirúrgica electiva, contabiliza el número de pacientes efectivamente intervenidos
- *   (además de los programados y suspendidos para análisis de aprovechamiento de tabla).
+ * Norma Ministerial (MINSAL) según horario de disponibilidad del pabellón:
+ *   1. Pabellón Estándar (08:00 a 17:00 hrs):
+ *      - Óptimo: 5 a 6 pacientes por jornada
+ *      - Destacado / Sobresaliente: > 6 pacientes (7 o más)
+ *      - Bajo en programación / resolución: < 5 pacientes (1 a 4)
+ *   2. Pabellón Extendido (08:00 a 20:00 hrs, cierre >= 19:00 hrs):
+ *      - Óptimo: 6 a 8 pacientes por jornada
+ *      - Destacado / Sobresaliente: > 8 pacientes (9 o más)
+ *      - Bajo en programación / resolución: < 6 pacientes (1 a 5)
  *
  * Exclusión de Pabellón de Urgencia:
  *   - Hasta el 30-09-2026: el pabellón 6 era el de urgencia.
@@ -27,9 +32,24 @@ export {
   fechaLocalISO
 };
 
-export const META_PACIENTES_DEFECTO = 4;
+export const META_PACIENTES_17H = { min: 5, max: 6, label: '08:00–17:00 (5–6 pac)' };
+export const META_PACIENTES_20H = { min: 6, max: 8, label: '08:00–20:00 (6–8 pac)' };
 
 const esVerdadero = (v) => v === true || v === 'true' || v === 'True' || v === 1;
+
+/**
+ * Clasifica un pabellón-día según su bloque horario y número de pacientes.
+ * @param {number} nPacientes
+ * @param {'17h'|'20h'} regimen
+ * @returns {'bajo'|'optimo'|'destacado'}
+ */
+export function clasificarRendimientoMinsal(nPacientes, regimen = '17h') {
+  const minOpt = regimen === '20h' ? META_PACIENTES_20H.min : META_PACIENTES_17H.min;
+  const maxOpt = regimen === '20h' ? META_PACIENTES_20H.max : META_PACIENTES_17H.max;
+  if (nPacientes < minOpt) return 'bajo';
+  if (nPacientes <= maxOpt) return 'optimo';
+  return 'destacado';
+}
 
 /**
  * Calcula las filas por pabellón-día electivo con actividad quirúrgica.
@@ -42,7 +62,6 @@ const esVerdadero = (v) => v === true || v === 'true' || v === 'True' || v === 1
 export function calcularPacientesPorPabellon(tabla, disponibilidad, opts = {}) {
   const hoy = opts.hoy || fechaLocalISO();
 
-  // Indizar disponibilidad por fecha|pabellon
   const dispMap = new Map();
   for (const d of disponibilidad || []) {
     const fecha = (d.fecha || '').substring(0, 10);
@@ -51,7 +70,6 @@ export function calcularPacientesPorPabellon(tabla, disponibilidad, opts = {}) {
     dispMap.set(`${fecha}|${pab}`, d);
   }
 
-  // Agrupar registros de tabla por fecha|pabellon
   const grupos = new Map();
   for (const r of tabla || []) {
     if (esVerdadero(r.eliminada)) continue;
@@ -86,7 +104,7 @@ export function calcularPacientesPorPabellon(tabla, disponibilidad, opts = {}) {
   const filas = [];
   for (const [key, g] of grupos.entries()) {
     const nPacientes = g.intervenidos.length;
-    if (nPacientes === 0) continue; // Día quirúrgico activo (al menos 1 paciente intervenido)
+    if (nPacientes === 0) continue;
 
     const [fecha, pabStr] = key.split('|');
     const pab = Number(pabStr);
@@ -94,7 +112,6 @@ export function calcularPacientesPorPabellon(tabla, disponibilidad, opts = {}) {
     const diaSemana = new Date(y, m - 1, dd).getDay();
     const mesKey = fecha.substring(0, 7);
 
-    // Determinar especialidad predominante del pabellón-día y desglose por jornada y tipo de cirugía
     const conteoEsp = new Map();
     let nAM = 0;
     let nPM = 0;
@@ -103,6 +120,7 @@ export function calcularPacientesPorPabellon(tabla, disponibilidad, opts = {}) {
     let nMenor = 0;
     let duracionMinTotal = 0;
     let conDuracion = 0;
+    let maxSalidaMin = 0;
 
     for (const r of g.intervenidos) {
       const esp = (r.especialidad || '').trim() || 'Sin especialidad';
@@ -122,6 +140,7 @@ export function calcularPacientesPorPabellon(tabla, disponibilidad, opts = {}) {
       if (ing !== null && salRaw !== null) {
         let sal = salRaw;
         if (sal < ing) sal += 1440;
+        if (sal > maxSalidaMin) maxSalidaMin = sal;
         const dur = sal - ing;
         if (dur > 0 && dur <= 720) {
           duracionMinTotal += dur;
@@ -144,7 +163,18 @@ export function calcularPacientesPorPabellon(tabla, disponibilidad, opts = {}) {
     const finPm = d ? aMinutos(d.horario_pm_termino) : null;
     const fines = [finAm, finPm].filter((x) => x !== null);
     const disponibleHasta = fines.length ? Math.max(...fines) : null;
-    const esJornadaCompleta = disponibleHasta ? disponibleHasta > 780 : (nPM > 0);
+
+    // Excluir jornadas que solo operan medio día AM (<= 13:00 / 780 min) para evaluar justamente las normas de 08-17 y 08-20
+    if (disponibleHasta !== null && disponibleHasta <= 780) continue;
+    if (disponibleHasta === null && maxSalidaMin > 0 && maxSalidaMin <= 780 && nPM === 0) continue;
+
+    // Determinar régimen horario: '20h' (08:00 a 20:00, cierre >= 19:00 / 1140 min) vs '17h' (08:00 a 17:00)
+    const regimen = (disponibleHasta !== null && disponibleHasta >= 1140) ? '20h' : '17h';
+    const metaMin = regimen === '20h' ? META_PACIENTES_20H.min : META_PACIENTES_17H.min;
+    const metaMax = regimen === '20h' ? META_PACIENTES_20H.max : META_PACIENTES_17H.max;
+
+    const categoriaRealizada = clasificarRendimientoMinsal(nPacientes, regimen);
+    const categoriaProgramada = clasificarRendimientoMinsal(g.programados, regimen);
 
     filas.push({
       fecha,
@@ -153,9 +183,16 @@ export function calcularPacientesPorPabellon(tabla, disponibilidad, opts = {}) {
       mesKey,
       diaSemana,
       pabellon: pab,
+      regimen, // '17h' | '20h'
+      metaMin,
+      metaMax,
       nPacientes,
       nProgramados: g.programados,
       nSuspendidos: g.suspendidos,
+      categoriaRealizada, // 'bajo' | 'optimo' | 'destacado'
+      categoriaProgramada,
+      cumpleNorma: nPacientes >= metaMin,
+      cumpleNormaProgramada: g.programados >= metaMin,
       nAM,
       nPM,
       nMayor,
@@ -163,7 +200,7 @@ export function calcularPacientesPorPabellon(tabla, disponibilidad, opts = {}) {
       nMenor,
       pctCMA: (nCMA / nPacientes) * 100,
       especialidad: especialidadPrincipal,
-      esJornadaCompleta,
+      disponibleHasta,
       duracionPromedioMin: conDuracion ? duracionMinTotal / conDuracion : null
     });
   }
@@ -173,9 +210,10 @@ export function calcularPacientesPorPabellon(tabla, disponibilidad, opts = {}) {
 }
 
 /**
- * Resume un conjunto de pabellón-días en métricas de rendimiento quirúrgico.
+ * Resume un conjunto de pabellón-días evaluando tanto el estándar 08:00–17:00 (5–6 pac)
+ * como el estándar extendido 08:00–20:00 (6–8 pac).
  */
-export function resumirPacientesPorPabellon(filas, meta = META_PACIENTES_DEFECTO) {
+export function resumirPacientesPorPabellon(filas) {
   const nDiasPabellon = filas.length;
   if (!nDiasPabellon) {
     return {
@@ -185,14 +223,26 @@ export function resumirPacientesPorPabellon(filas, meta = META_PACIENTES_DEFECTO
       totalProgramados: 0,
       totalSuspendidos: 0,
       promedio: 0,
+      promedioProgramados: 0,
       mediana: 0,
       maxPacientes: 0,
-      cumplenMeta: 0,
-      pctCumplenMeta: 0,
-      bajaProduccion: 0,
-      pctBajaProduccion: 0,
+      bajos: 0,
+      optimos: 0,
+      destacados: 0,
+      cumplenNorma: 0,
+      cumplenNormaProgramada: 0,
+      pctBajo: 0,
+      pctOptimo: 0,
+      pctDestacado: 0,
+      pctCumplenNorma: 0,
+      pctCumplenNormaProgramada: 0,
       pctCMA: 0,
-      promedioJornadaCompleta: 0
+      n17h: 0,
+      prom17h: 0,
+      pctCumple17h: 0,
+      n20h: 0,
+      prom20h: 0,
+      pctCumple20h: 0
     };
   }
 
@@ -206,14 +256,19 @@ export function resumirPacientesPorPabellon(filas, meta = META_PACIENTES_DEFECTO
   const mediana = nDiasPabellon % 2 === 0 ? (ordenados[mid - 1] + ordenados[mid]) / 2 : ordenados[mid];
   const maxPacientes = ordenados[nDiasPabellon - 1];
 
-  const cumplenMeta = filas.filter((f) => f.nPacientes >= meta).length;
-  const bajaProduccion = filas.filter((f) => f.nPacientes <= 2).length;
+  const bajos = filas.filter((f) => f.categoriaRealizada === 'bajo').length;
+  const optimos = filas.filter((f) => f.categoriaRealizada === 'optimo').length;
+  const destacados = filas.filter((f) => f.categoriaRealizada === 'destacado').length;
+  const cumplenNorma = optimos + destacados;
+  const cumplenNormaProgramada = filas.filter((f) => f.cumpleNormaProgramada).length;
   const diasCalendario = new Set(filas.map((f) => f.fecha)).size;
 
-  const completas = filas.filter((f) => f.esJornadaCompleta);
-  const promedioJornadaCompleta = completas.length
-    ? completas.reduce((s, f) => s + f.nPacientes, 0) / completas.length
-    : 0;
+  const filas17 = filas.filter((f) => f.regimen === '17h');
+  const filas20 = filas.filter((f) => f.regimen === '20h');
+  const prom17h = filas17.length ? filas17.reduce((s, f) => s + f.nPacientes, 0) / filas17.length : 0;
+  const pctCumple17h = filas17.length ? (filas17.filter((f) => f.cumpleNorma).length / filas17.length) * 100 : 0;
+  const prom20h = filas20.length ? filas20.reduce((s, f) => s + f.nPacientes, 0) / filas20.length : 0;
+  const pctCumple20h = filas20.length ? (filas20.filter((f) => f.cumpleNorma).length / filas20.length) * 100 : 0;
 
   return {
     nDiasPabellon,
@@ -222,13 +277,25 @@ export function resumirPacientesPorPabellon(filas, meta = META_PACIENTES_DEFECTO
     totalProgramados,
     totalSuspendidos,
     promedio: totalPacientes / nDiasPabellon,
+    promedioProgramados: totalProgramados / nDiasPabellon,
     mediana,
     maxPacientes,
-    cumplenMeta,
-    pctCumplenMeta: (cumplenMeta / nDiasPabellon) * 100,
-    bajaProduccion,
-    pctBajaProduccion: (bajaProduccion / nDiasPabellon) * 100,
+    bajos,
+    optimos,
+    destacados,
+    cumplenNorma,
+    cumplenNormaProgramada,
+    pctBajo: (bajos / nDiasPabellon) * 100,
+    pctOptimo: (optimos / nDiasPabellon) * 100,
+    pctDestacado: (destacados / nDiasPabellon) * 100,
+    pctCumplenNorma: (cumplenNorma / nDiasPabellon) * 100,
+    pctCumplenNormaProgramada: (cumplenNormaProgramada / nDiasPabellon) * 100,
     pctCMA: totalPacientes ? (totalCMA / totalPacientes) * 100 : 0,
-    promedioJornadaCompleta
+    n17h: filas17.length,
+    prom17h,
+    pctCumple17h,
+    n20h: filas20.length,
+    prom20h,
+    pctCumple20h
   };
 }
