@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   ArrowLeft, Calendar, Search, Users, Activity, Clock, CheckCircle, FileText,
-  XCircle, AlertCircle, Filter, PieChart, BarChart2, ChevronRight, ChevronLeft, ChevronDown, TrendingUp, RotateCcw, Pin, DollarSign, Package, TrendingDown, Award, Hash
+  XCircle, AlertCircle, Filter, PieChart, BarChart2, ChevronRight, ChevronLeft, ChevronDown, TrendingUp, RotateCcw, Pin, DollarSign, Package, TrendingDown, Award, Hash, Timer
 } from 'lucide-react';
 import {
   ComposedChart, Line, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer,
@@ -12,6 +12,7 @@ import {
 
 import TablaCausasSuspensionColapsable, { resolverGranCausa } from './TablaCausasSuspensionColapsable';
 import TablaEspecialidadesSuspensionColapsable from './TablaEspecialidadesSuspensionColapsable';
+import SubprogramacionDiaria from './SubprogramacionDiaria';
 
 const COLORS = ['#1e40af', '#DF6D05', '#F2A400', '#38bdf8', '#EAE6E1', '#1e3a8a', '#a65103', '#b37800', '#60a5fa'];
 const PIE_COLORS = {
@@ -3602,6 +3603,9 @@ export default function SurgicalDashboard({ onBack }) {
     } else if (activeTab === 'disponibilidad') {
       rawDate = dispLastUpdated || tablaLastUpdated;
       label = 'Indicadores de Gestión';
+    } else if (activeTab === 'subprogramacion') {
+      rawDate = tablaLastUpdated || dispLastUpdated;
+      label = 'Subprogramación diaria';
     } else if (activeTab === 'insumos') {
       rawDate = insumosLastUpdated;
       label = 'Insumos y Costeo';
@@ -3671,6 +3675,7 @@ export default function SurgicalDashboard({ onBack }) {
             { id: 'libro', label: 'Estadística (Libro)', icon: <BarChart2 size={18} /> },
             { id: 'tabla', label: 'Programación de tabla', icon: <Calendar size={18} /> },
             { id: 'disponibilidad', label: 'Indicadores de gestión', icon: <Clock size={18} /> },
+            { id: 'subprogramacion', label: 'Subprogramación diaria', icon: <Timer size={18} /> },
             { id: 'insumos', label: 'Insumos y Costeo', icon: <DollarSign size={18} /> }
           ].map(tab => (
             <button
@@ -5212,6 +5217,15 @@ export default function SurgicalDashboard({ onBack }) {
             )}
           </div>
         </div>
+      )}
+
+      {/* SUBPROGRAMACIÓN DIARIA TAB */}
+      {activeTab === 'subprogramacion' && (
+        <SubprogramacionDiaria
+          tablaData={tablaData}
+          disponibilidadData={disponibilidadData}
+          loading={loading}
+        />
       )}
 
       {/* INSUMOS Y COSTEO TAB */}
