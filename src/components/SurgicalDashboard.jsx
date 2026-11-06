@@ -2381,7 +2381,8 @@ export default function SurgicalDashboard({ onBack }) {
   const [showPivotTable, setShowPivotTable] = useState(false);
   const [showAuditoriaModal, setShowAuditoriaModal] = useState(false);
 
-  // Sidebar Filters for Tabla
+  // Sidebar Filters for Tabla (Suspensiones de Tabla: por defecto año 2026)
+  const [dateRangeTabla, setDateRangeTabla] = useState({ start: '2026-01-01', end: '2026-12-31' });
   const [tablaFechaProg, setTablaFechaProg] = useState([]);
   const [tablaTipoCirugia, setTablaTipoCirugia] = useState([]);
   const [tablaTipoPaciente, setTablaTipoPaciente] = useState([]);
@@ -2424,8 +2425,10 @@ export default function SurgicalDashboard({ onBack }) {
       return [tipoCirugia, tipoPaciente, procedencia, tipoGestor, formaPago, nombreIq, primerCirujano, segundoCirujano, anestesiologo, reintervencion, libroPabellonTabla, libroPabellonCrr]
         .filter(arr => Array.isArray(arr) && arr.length > 0).length;
     } else if (activeTab === 'tabla') {
-      return [tablaFechaProg, tablaTipoCirugia, tablaTipoPaciente, tablaPriorizacion, tablaPabellonCrr, tablaIntervencion, tablaCirujano, tablaAnestesista, tablaPabellon, tablaModalidad, tablaCausaSuspension, tablaMotivoSuspension]
+      let count = [tablaFechaProg, tablaTipoCirugia, tablaTipoPaciente, tablaPriorizacion, tablaPabellonCrr, tablaIntervencion, tablaCirujano, tablaAnestesista, tablaPabellon, tablaModalidad, tablaCausaSuspension, tablaMotivoSuspension]
         .filter(arr => Array.isArray(arr) && arr.length > 0).length;
+      if (dateRangeTabla.start !== '2026-01-01' || dateRangeTabla.end !== '2026-12-31') count++;
+      return count;
     } else if (activeTab === 'disponibilidad') {
       let count = 0;
       if (dateRangeIndicadores.start !== '2026-01-01' || dateRangeIndicadores.end !== '2026-12-31') count++;
@@ -2436,7 +2439,7 @@ export default function SurgicalDashboard({ onBack }) {
       return count;
     }
     return 0;
-  }, [activeTab, tipoCirugia, tipoPaciente, procedencia, tipoGestor, formaPago, nombreIq, primerCirujano, segundoCirujano, anestesiologo, reintervencion, libroPabellonTabla, libroPabellonCrr, tablaFechaProg, tablaTipoCirugia, tablaTipoPaciente, tablaPriorizacion, tablaPabellonCrr, tablaIntervencion, tablaCirujano, tablaAnestesista, tablaPabellon, tablaModalidad, tablaCausaSuspension, tablaMotivoSuspension, dateRangeIndicadores, indicadorPabellon, indicadorCumplimiento, indicadorTipoDia, indicadorSearch]);
+  }, [activeTab, tipoCirugia, tipoPaciente, procedencia, tipoGestor, formaPago, nombreIq, primerCirujano, segundoCirujano, anestesiologo, reintervencion, libroPabellonTabla, libroPabellonCrr, dateRangeTabla, tablaFechaProg, tablaTipoCirugia, tablaTipoPaciente, tablaPriorizacion, tablaPabellonCrr, tablaIntervencion, tablaCirujano, tablaAnestesista, tablaPabellon, tablaModalidad, tablaCausaSuspension, tablaMotivoSuspension, dateRangeIndicadores, indicadorPabellon, indicadorCumplimiento, indicadorTipoDia, indicadorSearch]);
 
   const clearAllFilters = () => {
     if (activeTab === 'libro') {
@@ -2444,6 +2447,7 @@ export default function SurgicalDashboard({ onBack }) {
       setNombreIq([]); setPrimerCirujano([]); setSegundoCirujano([]); setAnestesiologo([]); setReintervencion([]);
       setLibroPabellonTabla([]); setLibroPabellonCrr([]);
     } else if (activeTab === 'tabla') {
+      setDateRangeTabla({ start: '2026-01-01', end: '2026-12-31' });
       setTablaFechaProg([]); setTablaTipoCirugia([]); setTablaTipoPaciente([]); setTablaPriorizacion([]); setTablaPabellonCrr([]);
       setTablaIntervencion([]); setTablaCirujano([]); setTablaAnestesista([]); setTablaPabellon([]); setTablaModalidad([]);
       setTablaCausaSuspension([]); setTablaMotivoSuspension([]);
@@ -2821,7 +2825,7 @@ export default function SurgicalDashboard({ onBack }) {
       if (r.tipo_paciente === 'Condicional' && r.cirugia_realizada !== 'Si') return false; // Exclude condicionales no realizados
       if (!r.fecha_programacion) return false;
       const dateOnly = r.fecha_programacion.substring(0, 10);
-      if (dateOnly < dateRange.start || dateOnly > dateRange.end) return false;
+      if (dateOnly < dateRangeTabla.start || dateOnly > dateRangeTabla.end) return false;
 
       if (tablaFechaProg.length > 0 && !tablaFechaProg.includes(r.fecha_programacion.split('-')[0])) return false;
       if (tablaTipoCirugia.length > 0 && !tablaTipoCirugia.includes(r.tipo_cirugia)) return false;
@@ -2845,7 +2849,7 @@ export default function SurgicalDashboard({ onBack }) {
 
       return true;
     });
-  }, [tablaData, dateRange, tablaFechaProg, tablaTipoCirugia, tablaTipoPaciente, tablaPriorizacion, tablaPabellonCrr, tablaIntervencion, tablaCirujano, tablaAnestesista, tablaPabellon, tablaModalidad, tablaCausaSuspension, tablaMotivoSuspension]);
+  }, [tablaData, dateRangeTabla, tablaFechaProg, tablaTipoCirugia, tablaTipoPaciente, tablaPriorizacion, tablaPabellonCrr, tablaIntervencion, tablaCirujano, tablaAnestesista, tablaPabellon, tablaModalidad, tablaCausaSuspension, tablaMotivoSuspension]);
 
   // Compute stats and YoY for Tabla
   const getTablaYoYStats = (key) => {
@@ -2856,12 +2860,12 @@ export default function SurgicalDashboard({ onBack }) {
       if (key === 'suspendidos' && r.estado === 'Suspendido') currentCount++;
     });
 
-    const startYear = new Date(dateRange.start).getFullYear();
-    const endYear = new Date(dateRange.end).getFullYear();
-    const startMonth = new Date(dateRange.start).getMonth();
-    const endMonth = new Date(dateRange.end).getMonth();
-    const startDay = new Date(dateRange.start).getDate();
-    const endDay = new Date(dateRange.end).getDate();
+    const startYear = new Date(dateRangeTabla.start).getFullYear();
+    const endYear = new Date(dateRangeTabla.end).getFullYear();
+    const startMonth = new Date(dateRangeTabla.start).getMonth();
+    const endMonth = new Date(dateRangeTabla.end).getMonth();
+    const startDay = new Date(dateRangeTabla.start).getDate();
+    const endDay = new Date(dateRangeTabla.end).getDate();
 
     const priorStart = new Date(startYear - 1, startMonth, startDay).toISOString().substring(0, 10);
     const priorEnd = new Date(endYear - 1, endMonth, endDay).toISOString().substring(0, 10);
@@ -4142,7 +4146,7 @@ export default function SurgicalDashboard({ onBack }) {
                   <div style={{ background: '#f8fafc', padding: '14px', borderRadius: '16px', border: '1px solid #f1f5f9' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
                       <label style={{ margin: 0, fontSize: '0.75rem', fontWeight: 800, color: '#1e40af', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Periodo de Monitoreo</label>
-                      {activeTab === 'disponibilidad' && (
+                      {(activeTab === 'disponibilidad' || activeTab === 'tabla') && (
                         <span style={{ fontSize: '0.65rem', background: '#e0e7ff', color: '#3730a3', padding: '2px 6px', borderRadius: '6px', fontWeight: 800 }}>2026</span>
                       )}
                     </div>
@@ -4152,6 +4156,11 @@ export default function SurgicalDashboard({ onBack }) {
                           <input type="date" value={dateRangeIndicadores.start} onChange={e => setDateRangeIndicadores(p => ({ ...p, start: e.target.value }))} style={{ width: '100%', padding: '8px 10px', borderRadius: '10px', border: '1px solid #cbd5e1', background: 'white', color: '#1e293b', fontSize: '0.8rem', outline: 'none', fontWeight: 600 }} />
                           <input type="date" value={dateRangeIndicadores.end} onChange={e => setDateRangeIndicadores(p => ({ ...p, end: e.target.value }))} style={{ width: '100%', padding: '8px 10px', borderRadius: '10px', border: '1px solid #cbd5e1', background: 'white', color: '#1e293b', fontSize: '0.8rem', outline: 'none', fontWeight: 600 }} />
                         </>
+                      ) : activeTab === 'tabla' ? (
+                        <>
+                          <input type="date" value={dateRangeTabla.start} onChange={e => setDateRangeTabla(p => ({ ...p, start: e.target.value }))} style={{ width: '100%', padding: '8px 10px', borderRadius: '10px', border: '1px solid #cbd5e1', background: 'white', color: '#1e293b', fontSize: '0.8rem', outline: 'none', fontWeight: 600 }} />
+                          <input type="date" value={dateRangeTabla.end} onChange={e => setDateRangeTabla(p => ({ ...p, end: e.target.value }))} style={{ width: '100%', padding: '8px 10px', borderRadius: '10px', border: '1px solid #cbd5e1', background: 'white', color: '#1e293b', fontSize: '0.8rem', outline: 'none', fontWeight: 600 }} />
+                        </>
                       ) : (
                         <>
                           <input type="date" defaultValue={dateRange.start} onBlur={e => setDateRange(p => ({ ...p, start: e.target.value }))} style={{ width: '100%', padding: '8px 10px', borderRadius: '10px', border: '1px solid #e2e8f0', background: 'white', color: '#1e293b', fontSize: '0.8rem', outline: 'none', fontWeight: 600 }} />
@@ -4159,28 +4168,32 @@ export default function SurgicalDashboard({ onBack }) {
                         </>
                       )}
                     </div>
-                    {activeTab === 'disponibilidad' && (
-                      <div style={{ display: 'flex', gap: '4px', marginTop: '8px' }}>
-                        <button
-                          onClick={() => setDateRangeIndicadores({ start: '2026-01-01', end: '2026-12-31' })}
-                          style={{ flex: 1, padding: '4px 6px', fontSize: '0.7rem', background: (dateRangeIndicadores.start === '2026-01-01' && dateRangeIndicadores.end === '2026-12-31') ? '#1e40af' : '#f1f5f9', color: (dateRangeIndicadores.start === '2026-01-01' && dateRangeIndicadores.end === '2026-12-31') ? 'white' : '#475569', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 700 }}
-                        >
-                          Año 2026
-                        </button>
-                        <button
-                          onClick={() => setDateRangeIndicadores({ start: '2026-01-01', end: '2026-06-30' })}
-                          style={{ flex: 1, padding: '4px 6px', fontSize: '0.7rem', background: (dateRangeIndicadores.start === '2026-01-01' && dateRangeIndicadores.end === '2026-06-30') ? '#1e40af' : '#f1f5f9', color: (dateRangeIndicadores.start === '2026-01-01' && dateRangeIndicadores.end === '2026-06-30') ? 'white' : '#475569', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 700 }}
-                        >
-                          1er Sem 2026
-                        </button>
-                        <button
-                          onClick={() => setDateRangeIndicadores({ start: '2025-01-01', end: '2026-12-31' })}
-                          style={{ flex: 1, padding: '4px 6px', fontSize: '0.7rem', background: (dateRangeIndicadores.start === '2025-01-01' && dateRangeIndicadores.end === '2026-12-31') ? '#1e40af' : '#f1f5f9', color: (dateRangeIndicadores.start === '2025-01-01' && dateRangeIndicadores.end === '2026-12-31') ? 'white' : '#475569', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 700 }}
-                        >
-                          Histórico
-                        </button>
-                      </div>
-                    )}
+                    {(activeTab === 'disponibilidad' || activeTab === 'tabla') && (() => {
+                      const currentRange = activeTab === 'disponibilidad' ? dateRangeIndicadores : dateRangeTabla;
+                      const setRange = activeTab === 'disponibilidad' ? setDateRangeIndicadores : setDateRangeTabla;
+                      return (
+                        <div style={{ display: 'flex', gap: '4px', marginTop: '8px' }}>
+                          <button
+                            onClick={() => setRange({ start: '2026-01-01', end: '2026-12-31' })}
+                            style={{ flex: 1, padding: '4px 6px', fontSize: '0.7rem', background: (currentRange.start === '2026-01-01' && currentRange.end === '2026-12-31') ? '#1e40af' : '#f1f5f9', color: (currentRange.start === '2026-01-01' && currentRange.end === '2026-12-31') ? 'white' : '#475569', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 700 }}
+                          >
+                            Año 2026
+                          </button>
+                          <button
+                            onClick={() => setRange({ start: '2026-01-01', end: '2026-06-30' })}
+                            style={{ flex: 1, padding: '4px 6px', fontSize: '0.7rem', background: (currentRange.start === '2026-01-01' && currentRange.end === '2026-06-30') ? '#1e40af' : '#f1f5f9', color: (currentRange.start === '2026-01-01' && currentRange.end === '2026-06-30') ? 'white' : '#475569', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 700 }}
+                          >
+                            1er Sem 2026
+                          </button>
+                          <button
+                            onClick={() => setRange({ start: '2025-01-01', end: '2026-12-31' })}
+                            style={{ flex: 1, padding: '4px 6px', fontSize: '0.7rem', background: (currentRange.start === '2025-01-01' && currentRange.end === '2026-12-31') ? '#1e40af' : '#f1f5f9', color: (currentRange.start === '2025-01-01' && currentRange.end === '2026-12-31') ? 'white' : '#475569', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 700 }}
+                          >
+                            Histórico
+                          </button>
+                        </div>
+                      );
+                    })()}
                   </div>
 
                   {activeTab === 'libro' && (

@@ -108,7 +108,7 @@ export default function TiempoRecambio({ tablaData = [], disponibilidadData = []
   const [tipoDia, setTipoDia] = useState('habiles'); // habiles | no_habiles | todos
   const [modoTransicion, setModoTransicion] = useState('acotados'); // acotados (<=180m) | misma_jornada | todos
   const [pabellones, setPabellones] = useState(PABELLONES_VALIDOS);
-  const [desde, setDesde] = useState('');
+  const [desde, setDesde] = useState('2026-01-01');
   const [hasta, setHasta] = useState('');
 
   const idealMax = UMBRAL_IDEAL_MIN; // 15 min
@@ -117,11 +117,11 @@ export default function TiempoRecambio({ tablaData = [], disponibilidadData = []
   const todosRecambios = useMemo(() => calcularRecambios(tablaData, disponibilidadData), [tablaData, disponibilidadData]);
 
   const rango = useMemo(() => {
-    if (!todosRecambios.length) return { min: '', max: '' };
+    if (!todosRecambios.length) return { min: '2026-01-01', max: '2026-12-31' };
     return { min: todosRecambios[0].fecha, max: todosRecambios[todosRecambios.length - 1].fecha };
   }, [todosRecambios]);
 
-  const d1 = desde || rango.min;
+  const d1 = desde || '2026-01-01';
   const d2 = hasta || rango.max;
 
   const filtradas = useMemo(() => todosRecambios.filter((f) => {
@@ -281,7 +281,7 @@ export default function TiempoRecambio({ tablaData = [], disponibilidadData = []
     setTipoDia('habiles');
     setModoTransicion('acotados');
     setPabellones(PABELLONES_VALIDOS);
-    setDesde('');
+    setDesde('2026-01-01');
     setHasta('');
   };
 
@@ -337,7 +337,11 @@ export default function TiempoRecambio({ tablaData = [], disponibilidadData = []
           </div>
         </div>
         <div>
-          <div style={{ fontSize: '0.72rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', marginBottom: '6px' }}>Período</div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
+            <span style={{ fontSize: '0.72rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase' }}>Período</span>
+            <Chip active={d1 === '2026-01-01'} onClick={() => { setDesde('2026-01-01'); setHasta(''); }}>Año 2026</Chip>
+            <Chip active={d1 === rango.min && rango.min < '2026-01-01'} onClick={() => { setDesde(rango.min); setHasta(''); }}>Histórico</Chip>
+          </div>
           <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
             <input type="date" value={d1} min={rango.min} max={rango.max} onChange={(e) => setDesde(e.target.value)} style={{ padding: '6px 8px', borderRadius: '8px', border: '1.5px solid #cbd5e1' }} />
             <span style={{ color: '#94a3b8' }}>→</span>

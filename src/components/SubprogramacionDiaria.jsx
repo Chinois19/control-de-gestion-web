@@ -96,17 +96,17 @@ export default function SubprogramacionDiaria({ tablaData = [], disponibilidadDa
   const [tipoDia, setTipoDia] = useState('habiles'); // habiles | no_habiles | todos
   const [pabellones, setPabellones] = useState(PABELLONES_VALIDOS);
   const [umbral, setUmbral] = useState(UMBRAL_DEFECTO_MIN);
-  const [desde, setDesde] = useState('');
+  const [desde, setDesde] = useState('2026-01-01');
   const [hasta, setHasta] = useState('');
 
   const todas = useMemo(() => calcularSubprogramacion(tablaData, disponibilidadData), [tablaData, disponibilidadData]);
 
   const rango = useMemo(() => {
-    if (!todas.length) return { min: '', max: '' };
+    if (!todas.length) return { min: '2026-01-01', max: '2026-12-31' };
     return { min: todas[0].fecha, max: todas[todas.length - 1].fecha };
   }, [todas]);
 
-  const d1 = desde || rango.min;
+  const d1 = desde || '2026-01-01';
   const d2 = hasta || rango.max;
 
   const filtradas = useMemo(() => todas.filter((f) => {
@@ -248,7 +248,7 @@ export default function SubprogramacionDiaria({ tablaData = [], disponibilidadDa
   }, [porEspecialidad, umbral]);
 
   const togglePab = (p) => setPabellones((prev) => (prev.includes(p) ? prev.filter((x) => x !== p) : [...prev, p].sort((a, b) => a - b)));
-  const limpiar = () => { setTipoDia('habiles'); setPabellones(PABELLONES_VALIDOS); setUmbral(UMBRAL_DEFECTO_MIN); setDesde(''); setHasta(''); };
+  const limpiar = () => { setTipoDia('habiles'); setPabellones(PABELLONES_VALIDOS); setUmbral(UMBRAL_DEFECTO_MIN); setDesde('2026-01-01'); setHasta(''); };
 
   if (loading) {
     return <div style={{ padding: '60px', textAlign: 'center', color: '#64748b', fontWeight: 600 }}>Cargando datos de subprogramación…</div>;
@@ -292,7 +292,11 @@ export default function SubprogramacionDiaria({ tablaData = [], disponibilidadDa
           </div>
         </div>
         <div>
-          <div style={{ fontSize: '0.72rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', marginBottom: '6px' }}>Período</div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
+            <span style={{ fontSize: '0.72rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase' }}>Período</span>
+            <Chip active={d1 === '2026-01-01'} onClick={() => { setDesde('2026-01-01'); setHasta(''); }}>Año 2026</Chip>
+            <Chip active={d1 === rango.min && rango.min < '2026-01-01'} onClick={() => { setDesde(rango.min); setHasta(''); }}>Histórico</Chip>
+          </div>
           <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
             <input type="date" value={d1} min={rango.min} max={rango.max} onChange={(e) => setDesde(e.target.value)} style={{ padding: '6px 8px', borderRadius: '8px', border: '1.5px solid #cbd5e1' }} />
             <span style={{ color: '#94a3b8' }}>→</span>
