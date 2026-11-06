@@ -179,14 +179,6 @@ export default function SubprogramacionDiaria({ tablaData = [], disponibilidadDa
     return out;
   }, [evaluadas, porPabellon, porDia, porMes, porEspecialidad, kpi, umbral]);
 
-  const detalle = useMemo(() => {
-    const base = [...filtradas];
-    if (orden === 'peores') {
-      return base.filter((f) => f.estado === 'evaluado').sort((a, b) => b.subprogramacion - a.subprogramacion);
-    }
-    return base.sort((a, b) => (a.fecha === b.fecha ? a.pabellon - b.pabellon : a.fecha < b.fecha ? 1 : -1));
-  }, [filtradas, orden]);
-
   const togglePab = (p) => setPabellones((prev) => (prev.includes(p) ? prev.filter((x) => x !== p) : [...prev, p].sort((a, b) => a - b)));
   const limpiar = () => { setTipoDia('habiles'); setPabellones(PABELLONES_VALIDOS); setUmbral(UMBRAL_DEFECTO_MIN); setDesde(''); setHasta(''); };
 
