@@ -2317,11 +2317,42 @@ function InsumosCosteoDashboard({
 }
 
 export default function SurgicalDashboard({ onBack }) {
-  const [activeTab, setActiveTab] = useState('libro');
+  const VALID_SURGICAL_TABS = ['libro', 'tabla', 'disponibilidad', 'subprogramacion', 'insumos'];
+  const [activeTab, setActiveTab] = useState(() => {
+    const saved = localStorage.getItem('cg_surgical_active_tab');
+    return saved && VALID_SURGICAL_TABS.includes(saved) ? saved : 'libro';
+  });
   const [indicadoresMenuOpen, setIndicadoresMenuOpen] = useState(false);
-  const [tablaSubTab, setTablaSubTab] = useState('resumen');
+  const [focusedSubIdx, setFocusedSubIdx] = useState(-1);
+  const indicadoresMenuRef = React.useRef(null);
+  const subItemRefs = React.useRef([]);
+  const [tablaSubTab, setTablaSubTab] = useState(() => {
+    return localStorage.getItem('cg_surgical_tabla_subtab') || 'resumen';
+  });
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    localStorage.setItem('cg_surgical_active_tab', activeTab);
+  }, [activeTab]);
+
+  useEffect(() => {
+    localStorage.setItem('cg_surgical_tabla_subtab', tablaSubTab);
+  }, [tablaSubTab]);
+
+  useEffect(() => {
+    if (!indicadoresMenuOpen) {
+      setFocusedSubIdx(-1);
+      return;
+    }
+    const handleClickOutside = (e) => {
+      if (indicadoresMenuRef.current && !indicadoresMenuRef.current.contains(e.target)) {
+        setIndicadoresMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [indicadoresMenuOpen]);
 
   const [tablaData, setTablaData] = useState([]);
   const [disponibilidadData, setDisponibilidadData] = useState([]);
@@ -3701,25 +3732,81 @@ export default function SurgicalDashboard({ onBack }) {
             ];
             const activeSubItem = subItems.find(s => s.id === activeTab);
 
+            const handleMenuKeyDown = (e) => {
+              if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                if (!indicadoresMenuOpen) {
+                  setIndicadoresMenuOpen(true);
+                  const currentIdx = subItems.findIndex(s => s.id === activeTab);
+                  const nextIdx = currentIdx >= 0 ? currentIdx : 0;
+                  setFocusedSubIdx(nextIdx);
+                  setTimeout(() => subItemRefs.current[nextIdx]?.focus(), 30);
+                } else {
+                  setFocusedSubIdx(prev => {
+                    const nextIdx = prev < subItems.length - 1 ? prev + 1 : 0;
+                    subItemRefs.current[nextIdx]?.focus();
+                    return nextIdx;
+                  });
+                }
+              } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                if (!indicadoresMenuOpen) {
+                  setIndicadoresMenuOpen(true);
+                  const lastIdx = subItems.length - 1;
+                  setFocusedSubIdx(lastIdx);
+                  setTimeout(() => subItemRefs.current[lastIdx]?.focus(), 30);
+                } else {
+                  setFocusedSubIdx(prev => {
+                    const nextIdx = prev > 0 ? prev - 1 : subItems.length - 1;
+                    subItemRefs.current[nextIdx]?.focus();
+                    return nextIdx;
+                  });
+                }
+              } else if (e.key === 'Escape') {
+                if (indicadoresMenuOpen) {
+                  e.preventDefault();
+                  setIndicadoresMenuOpen(false);
+                }
+              } else if (e.key === 'Enter' && indicadoresMenuOpen && focusedSubIdx >= 0 && focusedSubIdx < subItems.length) {
+                e.preventDefault();
+                setActiveTab(subItems[focusedSubIdx].id);
+                setIndicadoresMenuOpen(false);
+              }
+            };
+
             return (
               <div
+                ref={indicadoresMenuRef}
                 style={{ position: 'relative' }}
-                onMouseEnter={() => setIndicadoresMenuOpen(true)}
-                onMouseLeave={() => setIndicadoresMenuOpen(false)}
+                onKeyDown={handleMenuKeyDown}
               >
                 <button
-                  onClick={() => setIndicadoresMenuOpen(prev => !prev)}
+                  type="button"
+                  aria-haspopup="menu"
+                  aria-expanded={indicadoresMenuOpen}
+                  onClick={() => {
+                    setIndicadoresMenuOpen(prev => {
+                      const next = !prev;
+                      if (next) {
+                        const currentIdx = subItems.findIndex(s => s.id === activeTab);
+                        setFocusedSubIdx(currentIdx >= 0 ? currentIdx : 0);
+                      }
+                      return next;
+                    });
+                  }}
                   style={{
                     display: 'flex', alignItems: 'center', gap: '10px',
                     padding: '12px 22px',
-                    background: isIndicadoresActive ? 'linear-gradient(135deg, #6366f1, #4f46e5)' : 'transparent',
-                    border: isIndicadoresActive ? 'none' : '1px solid rgba(255,255,255,0.08)',
+                    background: isIndicadoresActive
+                      ? 'linear-gradient(135deg, #6366f1, #4f46e5)'
+                      : (indicadoresMenuOpen ? 'rgba(255,255,255,0.08)' : 'transparent'),
+                    border: isIndicadoresActive ? 'none' : '1px solid rgba(255,255,255,0.12)',
                     borderRadius: '14px',
                     boxShadow: isIndicadoresActive ? '0 4px 15px rgba(99, 102, 241, 0.4)' : 'none',
-                    color: isIndicadoresActive ? 'white' : '#94a3b8',
+                    color: isIndicadoresActive || indicadoresMenuOpen ? 'white' : '#94a3b8',
                     fontWeight: isIndicadoresActive ? 700 : 600,
                     cursor: 'pointer',
-                    transition: 'all 0.3s ease'
+                    transition: 'all 0.25s ease'
                   }}
                 >
                   <Activity size={18} />
@@ -3739,60 +3826,72 @@ export default function SurgicalDashboard({ onBack }) {
                 <AnimatePresence>
                   {indicadoresMenuOpen && (
                     <motion.div
-                      initial={{ opacity: 0, y: 8, scale: 0.98 }}
+                      role="menu"
+                      initial={{ opacity: 0, y: 6, scale: 0.98 }}
                       animate={{ opacity: 1, y: 0, scale: 1 }}
-                      exit={{ opacity: 0, y: 6, scale: 0.98 }}
-                      transition={{ duration: 0.18 }}
+                      exit={{ opacity: 0, y: 4, scale: 0.98 }}
+                      transition={{ duration: 0.16 }}
                       style={{
                         position: 'absolute',
-                        top: 'calc(100% + 8px)',
+                        top: 'calc(100% + 6px)',
                         left: 0,
-                        minWidth: '310px',
+                        minWidth: '330px',
                         background: '#1e2436',
                         borderRadius: '16px',
-                        padding: '8px',
-                        border: '1px solid rgba(255,255,255,0.12)',
-                        boxShadow: '0 20px 40px rgba(15, 23, 42, 0.45)',
+                        padding: '10px',
+                        border: '1px solid rgba(255,255,255,0.15)',
+                        boxShadow: '0 24px 48px rgba(15, 23, 42, 0.55)',
                         zIndex: 200,
                         display: 'flex',
                         flexDirection: 'column',
-                        gap: '4px'
+                        gap: '6px'
                       }}
                     >
-                      <div style={{ padding: '6px 12px 4px', fontSize: '0.68rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                        Indicadores de Gestión de Pabellón
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '4px 10px 6px', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+                        <span style={{ fontSize: '0.68rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                          Seleccione un Indicador
+                        </span>
+                        <span style={{ fontSize: '0.65rem', color: '#64748b', fontWeight: 600 }}>
+                          ↑↓ navegar · Enter
+                        </span>
                       </div>
-                      {subItems.map(item => {
+                      {subItems.map((item, idx) => {
                         const selected = activeTab === item.id;
+                        const isFocused = focusedSubIdx === idx;
                         return (
                           <button
                             key={item.id}
+                            ref={el => { subItemRefs.current[idx] = el; }}
+                            role="menuitem"
+                            type="button"
                             onClick={() => {
                               setActiveTab(item.id);
                               setIndicadoresMenuOpen(false);
                             }}
+                            onMouseEnter={() => setFocusedSubIdx(idx)}
                             style={{
                               display: 'flex',
                               alignItems: 'flex-start',
                               gap: '12px',
                               width: '100%',
                               textAlign: 'left',
-                              padding: '10px 14px',
+                              padding: '12px 14px',
                               borderRadius: '12px',
-                              border: 'none',
-                              background: selected ? 'linear-gradient(135deg, #6366f1, #4f46e5)' : 'transparent',
-                              color: selected ? 'white' : '#e2e8f0',
+                              border: isFocused && !selected ? '1px solid rgba(129, 140, 248, 0.45)' : '1px solid transparent',
+                              background: selected
+                                ? 'linear-gradient(135deg, #6366f1, #4f46e5)'
+                                : (isFocused ? 'rgba(255,255,255,0.1)' : 'transparent'),
+                              color: selected || isFocused ? 'white' : '#e2e8f0',
                               cursor: 'pointer',
-                              transition: 'all 0.2s ease'
+                              outline: 'none',
+                              transition: 'all 0.15s ease'
                             }}
-                            onMouseEnter={e => { if (!selected) e.currentTarget.style.background = 'rgba(255,255,255,0.07)'; }}
-                            onMouseLeave={e => { if (!selected) e.currentTarget.style.background = 'transparent'; }}
                           >
                             <div style={{
                               marginTop: '2px',
-                              padding: '6px',
-                              borderRadius: '8px',
-                              background: selected ? 'rgba(255,255,255,0.2)' : 'rgba(99, 102, 241, 0.15)',
+                              padding: '7px',
+                              borderRadius: '9px',
+                              background: selected ? 'rgba(255,255,255,0.22)' : 'rgba(99, 102, 241, 0.18)',
                               color: selected ? 'white' : '#818cf8',
                               display: 'flex',
                               alignItems: 'center',
@@ -3800,9 +3899,9 @@ export default function SurgicalDashboard({ onBack }) {
                             }}>
                               {item.icon}
                             </div>
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                              <span style={{ fontWeight: 700, fontSize: '0.88rem' }}>{item.label}</span>
-                              <span style={{ fontSize: '0.73rem', color: selected ? 'rgba(255,255,255,0.82)' : '#94a3b8' }}>{item.desc}</span>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                              <span style={{ fontWeight: 700, fontSize: '0.9rem' }}>{item.label}</span>
+                              <span style={{ fontSize: '0.74rem', color: selected ? 'rgba(255,255,255,0.85)' : '#94a3b8' }}>{item.desc}</span>
                             </div>
                           </button>
                         );
@@ -3834,6 +3933,62 @@ export default function SurgicalDashboard({ onBack }) {
           </button>
         </div>
       </header>
+
+      {/* SUB-BARRA DIRECTA PARA INDICADORES DE GESTIÓN DE PABELLÓN */}
+      {(activeTab === 'tabla' || activeTab === 'disponibilidad' || activeTab === 'subprogramacion') && (
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '10px',
+            marginBottom: '22px',
+            padding: '10px 16px',
+            background: '#ffffff',
+            borderRadius: '16px',
+            border: '1px solid #e2e8f0',
+            boxShadow: '0 4px 12px rgba(15, 23, 42, 0.04)',
+            flexWrap: 'wrap'
+          }}
+        >
+          <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', marginRight: '6px' }}>
+            Indicadores de Pabellón:
+          </span>
+          {[
+            { id: 'tabla', label: 'Suspensiones de Tabla', icon: <Calendar size={15} /> },
+            { id: 'disponibilidad', label: 'Retraso en primera Hora', icon: <Clock size={15} /> },
+            { id: 'subprogramacion', label: 'Subprogramación Diaria', icon: <Timer size={15} /> }
+          ].map(sub => {
+            const isSelected = activeTab === sub.id;
+            return (
+              <button
+                key={sub.id}
+                type="button"
+                onClick={() => {
+                  setActiveTab(sub.id);
+                  setIndicadoresMenuOpen(false);
+                }}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  padding: '8px 16px',
+                  borderRadius: '10px',
+                  border: isSelected ? '1px solid #4f46e5' : '1px solid #e2e8f0',
+                  background: isSelected ? '#eef2ff' : '#f8fafc',
+                  color: isSelected ? '#4338ca' : '#475569',
+                  fontWeight: isSelected ? 700 : 600,
+                  fontSize: '0.85rem',
+                  cursor: 'pointer',
+                  transition: 'all 0.18s ease'
+                }}
+              >
+                {sub.icon}
+                {sub.label}
+              </button>
+            );
+          })}
+        </div>
+      )}
 
       {/* MAIN CONTENT AREA WITH FLOATING SIDEBAR */}
       {(activeTab === 'libro' || activeTab === 'tabla' || activeTab === 'disponibilidad') && (

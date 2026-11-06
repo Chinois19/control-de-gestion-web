@@ -608,9 +608,15 @@ function App() {
   const [listaEsperaInitialTab, setListaEsperaInitialTab] = useState(null);
   const [programacionInitialSearch, setProgramacionInitialSearch] = useState('');
   const [hoveredIdx, setHoveredIdx] = useState(null);
+  const [sidebarFocusedIdx, setSidebarFocusedIdx] = useState(0);
+  const sidebarRef = useRef(null);
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
+    localStorage.setItem('cg_villarrica_active_view', activeView);
+    if (window.location.hash.replace('#', '') !== activeView) {
+      window.history.replaceState(null, '', `#${activeView}`);
+    }
   }, [activeView]);
 
   useEffect(() => {
@@ -645,12 +651,6 @@ function App() {
   };
 
   const handleMenuClick = (id) => {
-    if (id === 'produccion_general') {
-      navigateToView('produccion_general');
-      setIsSidebarOpen(false);
-      return;
-    }
-    
     if (menuStructure.find(m => m.id === id)?.subItems) {
       setExpandedMenu(expandedMenu === id ? null : id);
     } else {
@@ -759,6 +759,77 @@ function App() {
     setExpandedSubMenu(expandedSubMenu === id ? null : id);
   };
 
+  const handleSearchKeyDown = (e) => {
+    if (searchResults.length === 0) return;
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setHoveredIdx(prev => (prev === null || prev >= searchResults.length - 1 ? 0 : prev + 1));
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setHoveredIdx(prev => (prev === null || prev <= 0 ? searchResults.length - 1 : prev - 1));
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      const targetIdx = hoveredIdx !== null && hoveredIdx >= 0 && hoveredIdx < searchResults.length ? hoveredIdx : 0;
+      handleSearchResultClick(searchResults[targetIdx].action);
+      setHoveredIdx(null);
+    } else if (e.key === 'Escape') {
+      e.preventDefault();
+      setSearchQuery('');
+      setHoveredIdx(null);
+    }
+  };
+
+  useEffect(() => {
+    if (!isSidebarOpen) return;
+    const handleSidebarKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        setIsSidebarOpen(false);
+        return;
+      }
+      if (e.key === 'ArrowDown' || e.key === 'ArrowUp' || e.key === 'Enter') {
+        const container = sidebarRef.current;
+        if (!container) return;
+        const items = Array.from(container.querySelectorAll('.menu-item-main, .submenu-item'));
+        if (items.length === 0) return;
+        e.preventDefault();
+        if (e.key === 'ArrowDown') {
+          setSidebarFocusedIdx(prev => {
+            const next = prev < items.length - 1 ? prev + 1 : 0;
+            items[next]?.scrollIntoView({ block: 'nearest' });
+            return next;
+          });
+        } else if (e.key === 'ArrowUp') {
+          setSidebarFocusedIdx(prev => {
+            const next = prev > 0 ? prev - 1 : items.length - 1;
+            items[next]?.scrollIntoView({ block: 'nearest' });
+            return next;
+          });
+        } else if (e.key === 'Enter') {
+          const idx = Math.min(Math.max(0, sidebarFocusedIdx), items.length - 1);
+          items[idx]?.click();
+        }
+      }
+    };
+    window.addEventListener('keydown', handleSidebarKeyDown);
+    return () => window.removeEventListener('keydown', handleSidebarKeyDown);
+  }, [isSidebarOpen, sidebarFocusedIdx, expandedMenu, expandedSubMenu]);
+
+  useEffect(() => {
+    const container = sidebarRef.current;
+    if (!container || !isSidebarOpen) return;
+    const items = Array.from(container.querySelectorAll('.menu-item-main, .submenu-item'));
+    items.forEach((el, idx) => {
+      if (idx === sidebarFocusedIdx) {
+        el.style.outline = '2px solid rgba(99, 102, 241, 0.85)';
+        el.style.background = 'rgba(99, 102, 241, 0.18)';
+        el.style.borderRadius = '10px';
+      } else {
+        el.style.outline = '';
+        el.style.background = '';
+      }
+    });
+  }, [isSidebarOpen, sidebarFocusedIdx, expandedMenu, expandedSubMenu]);
+
   // ─── RENDER LOGIN IF NOT AUTHENTICATED ────────────────────────────────────
   if (!session) {
     return <LoginScreen onLogin={handleLogin} />;
@@ -801,7 +872,8 @@ function App() {
               <input 
                 placeholder="Busca ej. 'NSP', 'pabellón'..." 
                 value={searchQuery} 
-                onChange={(e) => setSearchQuery(e.target.value)} 
+                onChange={(e) => { setSearchQuery(e.target.value); setHoveredIdx(0); }} 
+                onKeyDown={handleSearchKeyDown}
                 style={{ fontSize: '0.9rem', background: 'transparent' }}
               />
             </div>
@@ -906,9 +978,12 @@ function App() {
         {isSidebarOpen && (
           <>
             <motion.div className="search-modal-overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setIsSidebarOpen(false)} style={{ zIndex: 1900 }} />
-            <motion.div className="collapsible-sidebar open" initial={{ x: -450 }} animate={{ x: 24 }} exit={{ x: -450 }}>
+            <motion.div ref={sidebarRef} className="collapsible-sidebar open" initial={{ x: -450 }} animate={{ x: 24 }} exit={{ x: -450 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexShrink: 0 }}>
-                <h3 style={{ fontSize: '1.1rem', fontWeight: 700 }}>Menú</h3>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                  <h3 style={{ fontSize: '1.1rem', fontWeight: 700, margin: 0 }}>Menú</h3>
+                  <span style={{ fontSize: '0.68rem', color: 'rgba(255,255,255,0.45)', fontWeight: 600 }}>Usa ↑↓ y Enter para navegar</span>
+                </div>
                 <X size={22} cursor="pointer" onClick={() => setIsSidebarOpen(false)} style={{ opacity: 0.5 }} />
               </div>
 
@@ -924,78 +999,93 @@ function App() {
                     <AnimatePresence>
                       {expandedMenu === item.id && item.subItems && (
                         <motion.div className="submenu-container" initial={{ height: 0 }} animate={{ height: 'auto' }} exit={{ height: 0 }}>
-                          {item.subItems.map(sub => (
-                            <div key={sub.id} className="menu-item-container">
-                              <div className="submenu-item" onClick={(e) => sub.nested ? handleSubMenuClick(e, sub.id) : (navigateToView(sub.id), setIsSidebarOpen(false))}>
-                                {sub.label}
-                                {sub.nested && <ChevronRight size={14} style={{ transform: expandedSubMenu === sub.id ? 'rotate(90deg)' : 'none', transition: '0.3s' }} />}
-                              </div>
-                              {expandedSubMenu === sub.id && sub.nested && (
-                                <div style={{ paddingLeft: '20px', display: 'flex', flexDirection: 'column', gap: '4px', marginTop: '4px' }}>
-                                  {sub.nested.map(nest => (
-                                    <div key={nest.id} className="menu-item-container">
-                                      <div 
-                                        className="submenu-item" 
-                                        style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.3)' }} 
-                                        onClick={(e) => {
-                                          if (nest.subNested) {
-                                            e.stopPropagation();
-                                            setExpandedSubMenu(expandedSubMenu === nest.id ? null : nest.id);
-                                          } else {
-                                            navigateToView(nest.id);
-                                            setIsSidebarOpen(false);
-                                          }
-                                        }}
-                                      >
-                                        {nest.label}
-                                        {nest.subNested && <ChevronRight size={12} style={{ transform: expandedSubMenu === nest.id ? 'rotate(90deg)' : 'none', transition: '0.3s' }} />}
-                                      </div>
-                                      
-                                      {expandedSubMenu === nest.id && nest.subNested && (
-                                        <div style={{ paddingLeft: '16px', display: 'flex', flexDirection: 'column', gap: '4px', marginTop: '4px' }}>
-                                          {nest.subNested.map(sn => (
-                                            <div key={sn.id} className="menu-item-container">
-                                              <div 
-                                                className="submenu-item" 
-                                                style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.2)' }}
-                                                onClick={(e) => {
-                                                  if (sn.items) {
-                                                    e.stopPropagation();
-                                                    setExpandedSubMenu(expandedSubMenu === sn.id ? null : sn.id);
-                                                  } else {
-                                                    navigateToView(sn.id);
-                                                    setIsSidebarOpen(false);
-                                                  }
-                                                }}
-                                              >
-                                                {sn.label}
-                                                {sn.items && <ChevronRight size={10} style={{ transform: expandedSubMenu === sn.id ? 'rotate(90deg)' : 'none', transition: '0.3s' }} />}
-                                              </div>
-                                              
-                                              {expandedSubMenu === sn.id && sn.items && (
-                                                <div style={{ paddingLeft: '12px', display: 'flex', flexDirection: 'column', gap: '4px', marginTop: '4px' }}>
-                                                  {sn.items.map(item => (
-                                                    <div 
-                                                      key={item.id} 
-                                                      className="submenu-item" 
-                                                      style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.15)' }}
-                                                      onClick={() => { navigateToView(item.id); setIsSidebarOpen(false); }}
-                                                    >
-                                                      {item.label}
-                                                    </div>
-                                                  ))}
-                                                </div>
-                                              )}
-                                            </div>
-                                          ))}
-                                        </div>
-                                      )}
-                                    </div>
-                                  ))}
-                                </div>
-                              )}
+                          {item.id === 'produccion_general' && (
+                            <div
+                              className="submenu-item"
+                              style={{ fontWeight: 700, color: '#93c5fd' }}
+                              onClick={() => { navigateToView('produccion_general'); setIsSidebarOpen(false); }}
+                            >
+                              Ver Portal General de Producción
                             </div>
-                          ))}
+                          )}
+                          {item.subItems.map(sub => {
+                            const children = sub.nested || sub.subNested;
+                            return (
+                              <div key={sub.id} className="menu-item-container">
+                                <div className="submenu-item" onClick={(e) => children ? handleSubMenuClick(e, sub.id) : (navigateToView(sub.id), setIsSidebarOpen(false))}>
+                                  {sub.label}
+                                  {children && <ChevronRight size={14} style={{ transform: expandedSubMenu === sub.id ? 'rotate(90deg)' : 'none', transition: '0.3s' }} />}
+                                </div>
+                                {expandedSubMenu === sub.id && children && (
+                                  <div style={{ paddingLeft: '20px', display: 'flex', flexDirection: 'column', gap: '4px', marginTop: '4px' }}>
+                                    {children.map(nest => {
+                                      const grandChildren = nest.subNested || nest.items;
+                                      return (
+                                        <div key={nest.id} className="menu-item-container">
+                                          <div 
+                                            className="submenu-item" 
+                                            style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.65)' }} 
+                                            onClick={(e) => {
+                                              if (grandChildren) {
+                                                e.stopPropagation();
+                                                setExpandedSubMenu(expandedSubMenu === nest.id ? null : nest.id);
+                                              } else {
+                                                navigateToView(nest.id);
+                                                setIsSidebarOpen(false);
+                                              }
+                                            }}
+                                          >
+                                            {nest.label}
+                                            {grandChildren && <ChevronRight size={12} style={{ transform: expandedSubMenu === nest.id ? 'rotate(90deg)' : 'none', transition: '0.3s' }} />}
+                                          </div>
+                                          
+                                          {expandedSubMenu === nest.id && grandChildren && (
+                                            <div style={{ paddingLeft: '16px', display: 'flex', flexDirection: 'column', gap: '4px', marginTop: '4px' }}>
+                                              {grandChildren.map(sn => (
+                                                <div key={sn.id} className="menu-item-container">
+                                                  <div 
+                                                    className="submenu-item" 
+                                                    style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.55)' }}
+                                                    onClick={(e) => {
+                                                      if (sn.items) {
+                                                        e.stopPropagation();
+                                                        setExpandedSubMenu(expandedSubMenu === sn.id ? null : sn.id);
+                                                      } else {
+                                                        navigateToView(sn.id);
+                                                        setIsSidebarOpen(false);
+                                                      }
+                                                    }}
+                                                  >
+                                                    {sn.label}
+                                                    {sn.items && <ChevronRight size={10} style={{ transform: expandedSubMenu === sn.id ? 'rotate(90deg)' : 'none', transition: '0.3s' }} />}
+                                                  </div>
+                                                  
+                                                  {expandedSubMenu === sn.id && sn.items && (
+                                                    <div style={{ paddingLeft: '12px', display: 'flex', flexDirection: 'column', gap: '4px', marginTop: '4px' }}>
+                                                      {sn.items.map(leaf => (
+                                                        <div 
+                                                          key={leaf.id} 
+                                                          className="submenu-item" 
+                                                          style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.45)' }}
+                                                          onClick={() => { navigateToView(leaf.id); setIsSidebarOpen(false); }}
+                                                        >
+                                                          {leaf.label}
+                                                        </div>
+                                                      ))}
+                                                    </div>
+                                                  )}
+                                                </div>
+                                              ))}
+                                            </div>
+                                          )}
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
                         </motion.div>
                       )}
                     </AnimatePresence>
@@ -1024,7 +1114,8 @@ function App() {
                     <input 
                       placeholder="Busca de forma inteligente: ej. 'NSP mamografías', 'pabellón', 'metas'..." 
                       value={searchQuery} 
-                      onChange={(e) => setSearchQuery(e.target.value)} 
+                      onChange={(e) => { setSearchQuery(e.target.value); setHoveredIdx(0); }} 
+                      onKeyDown={handleSearchKeyDown}
                     />
                   </div>
 
