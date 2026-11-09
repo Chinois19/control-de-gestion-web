@@ -42,6 +42,7 @@ export default function MammographyDashboard({ onBack, initialTab = 'summary', i
   const [selectedEstablecimiento, setSelectedEstablecimiento] = useState('Todas');
   const [selectedRangoEdad, setSelectedRangoEdad] = useState('Todas');
   const [selectedEstadoAtencion, setSelectedEstadoAtencion] = useState(initialFilterNsp ? 'No se presentó' : 'Todas'); // Default 'Todas'
+  const [selectedModalidad, setSelectedModalidad] = useState('Todas');
 
   useEffect(() => {
     if (initialTab) {
@@ -243,8 +244,9 @@ export default function MammographyDashboard({ onBack, initialTab = 'summary', i
     const funcionarios = [...new Set(processedData.map(d => d.funcionario))].filter(Boolean).sort();
     const establecimientos = [...new Set(processedData.map(d => d.establecimiento))].filter(Boolean).sort();
     const estados = [...new Set(processedData.map(d => d.estadoAtencion))].filter(Boolean).sort();
+    const modalidades = [...new Set(processedData.map(d => d.modalidadAtencion))].filter(Boolean).sort();
     
-    return { funcionarios, establecimientos, estados };
+    return { funcionarios, establecimientos, estados, modalidades };
   }, [processedData]);
 
   // Apply filters
@@ -260,6 +262,7 @@ export default function MammographyDashboard({ onBack, initialTab = 'summary', i
       if (selectedEstablecimiento !== 'Todas' && item.establecimiento !== selectedEstablecimiento) return false;
       if (selectedRangoEdad !== 'Todas' && item.grupoEdad !== selectedRangoEdad) return false;
       if (selectedEstadoAtencion !== 'Todas' && item.estadoAtencion !== selectedEstadoAtencion) return false;
+      if (selectedModalidad !== 'Todas' && item.modalidadAtencion !== selectedModalidad) return false;
       
       if (searchQuery) {
         const query = searchQuery.toLowerCase();
@@ -271,7 +274,7 @@ export default function MammographyDashboard({ onBack, initialTab = 'summary', i
       }
       return true;
     });
-  }, [processedData, startDate, endDate, selectedFuncionario, selectedEstablecimiento, selectedRangoEdad, selectedEstadoAtencion, searchQuery]);
+  }, [processedData, startDate, endDate, selectedFuncionario, selectedEstablecimiento, selectedRangoEdad, selectedEstadoAtencion, selectedModalidad, searchQuery]);
 
   // Calculations for KPI Cards
   const stats = useMemo(() => {
@@ -556,7 +559,7 @@ export default function MammographyDashboard({ onBack, initialTab = 'summary', i
   // Reset pagination on filter change
   useEffect(() => {
     setCurrentPage(1);
-  }, [startDate, endDate, selectedFuncionario, selectedEstablecimiento, selectedRangoEdad, selectedEstadoAtencion, searchQuery]);
+  }, [startDate, endDate, selectedFuncionario, selectedEstablecimiento, selectedRangoEdad, selectedEstadoAtencion, selectedModalidad, searchQuery]);
 
   const grandTotal = useMemo(() => {
     return pivotData.rows.reduce((acc, row) => acc + row.total, 0);
@@ -618,6 +621,7 @@ export default function MammographyDashboard({ onBack, initialTab = 'summary', i
       if (selectedFuncionario !== 'Todas' && r.funcionario !== selectedFuncionario) return;
       if (selectedEstablecimiento !== 'Todas' && r.establecimiento !== selectedEstablecimiento) return;
       if (selectedRangoEdad !== 'Todas' && r.grupoEdad !== selectedRangoEdad) return;
+      if (selectedModalidad !== 'Todas' && r.modalidadAtencion !== selectedModalidad) return;
       
       if (searchQuery) {
         const query = searchQuery.toLowerCase();
@@ -922,6 +926,14 @@ export default function MammographyDashboard({ onBack, initialTab = 'summary', i
             <select value={selectedFuncionario} onChange={(e) => setSelectedFuncionario(e.target.value)}>
               <option value="Todas">Todos los profesionales</option>
               {filtersList.funcionarios.map(f => <option key={f} value={f}>{f}</option>)}
+            </select>
+          </div>
+
+          <div className="filter-item">
+            <label>MODALIDAD DE ATENCIÓN</label>
+            <select value={selectedModalidad} onChange={(e) => setSelectedModalidad(e.target.value)}>
+              <option value="Todas">Todas las modalidades</option>
+              {filtersList.modalidades.map(m => <option key={m} value={m}>{m}</option>)}
             </select>
           </div>
 

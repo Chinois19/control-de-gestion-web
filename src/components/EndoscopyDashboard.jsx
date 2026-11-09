@@ -42,6 +42,7 @@ export default function EndoscopyDashboard({ onBack, initialTab = 'summary', ini
   const [selectedRangoEdad, setSelectedRangoEdad] = useState('Todas');
   const [selectedEstadoAtencion, setSelectedEstadoAtencion] = useState(initialFilterNsp ? 'No se presentó' : 'Todas');
   const [selectedProcedencia, setSelectedProcedencia] = useState('Todas');
+  const [selectedModalidad, setSelectedModalidad] = useState('Todas');
   const [searchQuery, setSearchQuery] = useState('');
   
   // Pagination for REM rows
@@ -155,17 +156,22 @@ export default function EndoscopyDashboard({ onBack, initialTab = 'summary', ini
     const establecimientos = new Set();
     const funcionarios = new Set();
     const procedencias = new Set();
+    const modalidades = new Set();
 
     rawData.forEach(r => {
       if (r.establecimiento_de_origen) establecimientos.add(r.establecimiento_de_origen);
       if (r.medico) funcionarios.add(r.medico);
       if (r.procedencia_de_derivaci_n) procedencias.add(r.procedencia_de_derivaci_n);
+      if (r.modalidad_de_atenci_n && r.modalidad_de_atenci_n.trim() !== '') {
+        modalidades.add(r.modalidad_de_atenci_n.trim());
+      }
     });
 
     return {
       establecimientos: Array.from(establecimientos).sort(),
       funcionarios: Array.from(funcionarios).sort(),
-      procedencias: Array.from(procedencias).sort()
+      procedencias: Array.from(procedencias).sort(),
+      modalidades: Array.from(modalidades).sort()
     };
   }, [rawData]);
 
@@ -184,6 +190,7 @@ export default function EndoscopyDashboard({ onBack, initialTab = 'summary', ini
       if (selectedFuncionario !== 'Todas' && r.medico !== selectedFuncionario) return false;
       if (selectedEstadoAtencion !== 'Todas' && r.estadoAtencion !== selectedEstadoAtencion) return false;
       if (selectedProcedencia !== 'Todas' && r.procedencia_de_derivaci_n !== selectedProcedencia) return false;
+      if (selectedModalidad !== 'Todas' && (r.modalidad_de_atenci_n || 'Sin Informar').trim() !== selectedModalidad) return false;
       
       // Age range filter
       if (selectedRangoEdad !== 'Todas') {
@@ -206,7 +213,7 @@ export default function EndoscopyDashboard({ onBack, initialTab = 'summary', ini
 
       return true;
     });
-  }, [rawData, startDate, endDate, selectedEstablecimiento, selectedFuncionario, selectedEstadoAtencion, selectedRangoEdad, selectedProcedencia, searchQuery]);
+  }, [rawData, startDate, endDate, selectedEstablecimiento, selectedFuncionario, selectedEstadoAtencion, selectedRangoEdad, selectedProcedencia, selectedModalidad, searchQuery]);
 
   // KPIs & Calculations
   const stats = useMemo(() => {
@@ -477,9 +484,8 @@ export default function EndoscopyDashboard({ onBack, initialTab = 'summary', ini
     };
 
     const isConvenioOrNoInstitucional = (rec) => {
-      const modal = String(rec.modalidad_de_atenci_n || '').toLowerCase();
-      const cc = String(rec.centro_de_costo_perc || '').toLowerCase();
-      return !modal.includes('institucional') || modal.includes('convenio') || cc.includes('631') || cc.includes('convenio');
+      const modal = String(rec.modalidad_de_atenci_n || '').trim().toLowerCase();
+      return modal === 'convenio' || modal.includes('convenio');
     };
 
     const aggregation = {};
@@ -720,6 +726,18 @@ export default function EndoscopyDashboard({ onBack, initialTab = 'summary', ini
                   >
                     <option value="Todas">Todas las procedencias</option>
                     {uniqueDropdowns.procedencias.map(pr => <option key={pr} value={pr}>{pr}</option>)}
+                  </select>
+                </div>
+
+                <div>
+                  <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#475569', textTransform: 'uppercase', display: 'block', marginBottom: '8px' }}>Modalidad de Atención</label>
+                  <select 
+                    value={selectedModalidad} 
+                    onChange={(e) => setSelectedModalidad(e.target.value)}
+                    className="filter-select"
+                  >
+                    <option value="Todas">Todas las modalidades</option>
+                    {uniqueDropdowns.modalidades.map(m => <option key={m} value={m}>{m}</option>)}
                   </select>
                 </div>
 
