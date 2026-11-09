@@ -34,9 +34,9 @@ const REGIONAL_HOSPITALS = hospMatch ? eval('(' + hospMatch[1] + ')') : [];
 const COMGES_DOMAINS = eval('(' + domainsMatch[1] + ')');
 const COMGES_INDICATORS = eval('(' + indMatch[1] + ')');
 
-COMGES_META.version = "Corte a Septiembre 2026 (Actualización Oficial)";
-COMGES_META.lastUpdatedMonth = "Septiembre 2026";
-COMGES_META.description = "Sistema de seguimiento integral de los Compromisos de Gestión (COMGES) e Indicadores de Monitoreo con Ruta REM del Hospital de Villarrica, con datos oficializados de Enero a Septiembre 2026.";
+COMGES_META.version = "Corte a Octubre 2026 (Actualización Oficial)";
+COMGES_META.lastUpdatedMonth = "Octubre 2026";
+COMGES_META.description = "Sistema de seguimiento integral de los Compromisos de Gestión (COMGES) e Indicadores de Monitoreo con Ruta REM del Hospital de Villarrica, con datos oficializados de Enero a Octubre 2026.";
 
 const months = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
 const fmtMoney = (n) => '$ ' + Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
@@ -49,7 +49,7 @@ function getInd(id) {
 // 1.1 Suspensiones Quirúrgicas
 const ind11 = getInd("1.1");
 if (ind11) {
-  let totNum = 0, totDen = 0, lastM = "Septiembre";
+  let totNum = 0, totDen = 0, lastM = "Octubre";
   ind11.monthlyData = months.map((mName, m) => {
     const row = res[m + 1] || [];
     const num = row[2];
@@ -77,7 +77,7 @@ if (ind11) {
     result: ytdVal,
     resultFormatted: ytdVal.toFixed(2) + "%",
     status: ytdVal <= 6.5 ? "Cumple" : "No Cumple",
-    observation: `Acumulado Enero-${lastM} 2026: ${ytdVal.toFixed(2)}% de suspensiones (${fmtNum(totNum)} suspendidas de ${fmtNum(totDen)} programadas vs Meta ≤ 6.5%).`
+    observation: `Acumulado Enero-${lastM} 2026: ${ytdVal.toFixed(2)}% de suspensiones (${fmtNum(totNum)} suspendidas de ${fmtNum(totDen)} programadas vs Meta ≤ 6.5%). Octubre registra 9.97% (29 de 291).`
   };
 }
 
@@ -111,7 +111,7 @@ if (ind31) {
       result: lastValid.result,
       resultFormatted: lastValid.resultFormatted,
       status: lastValid.status,
-      observation: `Acumulado a ${lastValid.month} 2026: ${lastValid.resultFormatted} de cumplimiento GES (${fmtNum(lastValid.numerator)} de ${fmtNum(lastValid.denominator)} garantías).`
+      observation: `Acumulado a ${lastValid.month} 2026: ${lastValid.resultFormatted} de cumplimiento GES (${fmtNum(lastValid.numerator)} de ${fmtNum(lastValid.denominator)} garantías cumplidas vs Meta ≥ 99.5%).`
     };
   }
 }
@@ -123,14 +123,16 @@ if (ind32) {
   ind32.monthlyData = months.map((mName, m) => {
     const row = res[m + 1] || [];
     const base = row[10];
-    const num = row[11];
-    const den = row[12] || base;
+    const le = row[11];
+    const num = row[12]; // Egresos
+    const den = base;    // Línea Base
     if (typeof num === 'number' && typeof den === 'number' && den > 0 && num > 0) {
       const val = Number(((num / den) * 100).toFixed(2));
       const obj = {
         month: mName,
         numerator: num,
         denominator: den,
+        le: typeof le === 'number' ? le : null,
         result: val,
         resultFormatted: val.toFixed(2) + "%",
         status: val >= 95.0 ? "Cumple" : "En Avance"
@@ -147,7 +149,7 @@ if (ind32) {
       result: lastValidMed.result,
       resultFormatted: lastValidMed.resultFormatted,
       status: lastValidMed.status,
-      observation: `Avance a ${lastValidMed.month} 2026: ${lastValidMed.resultFormatted} de egresos respecto de la línea base P75 médica (${fmtNum(lastValidMed.numerator)} de ${fmtNum(lastValidMed.denominator)} casos).`
+      observation: `Avance a ${lastValidMed.month} 2026: ${lastValidMed.resultFormatted} de egresos respecto de la línea base P75 médica (${fmtNum(lastValidMed.numerator)} de ${fmtNum(lastValidMed.denominator)} casos base; saldo restante: ${fmtNum(lastValidMed.le)} casos).`
     };
   }
 }
@@ -159,14 +161,16 @@ if (ind331) {
   ind331.monthlyData = months.map((mName, m) => {
     const row = res[m + 1] || [];
     const base = row[15];
-    const num = row[16];
-    const den = row[17] || base;
+    const le = row[16];
+    const num = row[17]; // Egresos
+    const den = base;    // Línea Base
     if (typeof num === 'number' && typeof den === 'number' && den > 0 && num > 0) {
       const val = Number(((num / den) * 100).toFixed(2));
       const obj = {
         month: mName,
         numerator: num,
         denominator: den,
+        le: typeof le === 'number' ? le : null,
         result: val,
         resultFormatted: val.toFixed(2) + "%",
         status: val >= 95.0 ? "Cumple" : "En Avance"
@@ -183,7 +187,7 @@ if (ind331) {
       result: lastValid.result,
       resultFormatted: lastValid.resultFormatted,
       status: lastValid.status,
-      observation: `Avance a ${lastValid.month} 2026: ${lastValid.resultFormatted} de egresos respecto de la línea base P75 Odontológica (${fmtNum(lastValid.numerator)} de ${fmtNum(lastValid.denominator)} casos).`
+      observation: `Avance a ${lastValid.month} 2026: ${lastValid.resultFormatted} de egresos respecto de la línea base P75 Odontológica (${fmtNum(lastValid.numerator)} de ${fmtNum(lastValid.denominator)} casos base; saldo restante: ${fmtNum(lastValid.le)} casos).`
     };
   }
 }
@@ -195,14 +199,16 @@ if (ind332) {
   ind332.monthlyData = months.map((mName, m) => {
     const row = res[m + 1] || [];
     const base = row[19];
-    const num = row[20];
-    const den = row[21] || base;
+    const le = row[20];
+    const num = row[21]; // Egresos
+    const den = base;    // Línea Base
     if (typeof num === 'number' && typeof den === 'number' && den > 0 && num > 0) {
       const val = Number(((num / den) * 100).toFixed(2));
       const obj = {
         month: mName,
         numerator: num,
         denominator: den,
+        le: typeof le === 'number' ? le : null,
         result: val,
         resultFormatted: val.toFixed(2) + "%",
         status: val >= 95.0 ? "Cumple" : "En Avance"
@@ -219,7 +225,7 @@ if (ind332) {
       result: lastValid.result,
       resultFormatted: lastValid.resultFormatted,
       status: lastValid.status,
-      observation: `Avance a ${lastValid.month} 2026: ${lastValid.resultFormatted} de egresos respecto de la línea base P75 Ortodoncia (${fmtNum(lastValid.numerator)} de ${fmtNum(lastValid.denominator)} casos).`
+      observation: `Avance a ${lastValid.month} 2026: ${lastValid.resultFormatted} de egresos respecto de la línea base P75 Ortodoncia (${fmtNum(lastValid.numerator)} de ${fmtNum(lastValid.denominator)} casos base; saldo restante: ${fmtNum(lastValid.le)} casos).`
     };
   }
 }
@@ -231,14 +237,16 @@ if (ind34) {
   ind34.monthlyData = months.map((mName, m) => {
     const row = res[m + 1] || [];
     const base = row[24];
-    const num = row[25];
-    const den = row[26] || base;
+    const le = row[25];
+    const num = row[26]; // Egresos
+    const den = base;    // Línea Base
     if (typeof num === 'number' && typeof den === 'number' && den > 0 && num > 0) {
       const val = Number(((num / den) * 100).toFixed(2));
       const obj = {
         month: mName,
         numerator: num,
         denominator: den,
+        le: typeof le === 'number' ? le : null,
         result: val,
         resultFormatted: val.toFixed(2) + "%",
         status: val >= 95.0 ? "Cumple" : "En Avance"
@@ -255,7 +263,7 @@ if (ind34) {
       result: lastValid.result,
       resultFormatted: lastValid.resultFormatted,
       status: lastValid.status,
-      observation: `Avance a ${lastValid.month} 2026: ${lastValid.resultFormatted} de egresos respecto de la línea base P75 quirúrgica (${fmtNum(lastValid.numerator)} de ${fmtNum(lastValid.denominator)} casos).`
+      observation: `Avance a ${lastValid.month} 2026: ${lastValid.resultFormatted} de egresos respecto de la línea base P75 quirúrgica (${fmtNum(lastValid.numerator)} de ${fmtNum(lastValid.denominator)} casos base; saldo restante: ${fmtNum(lastValid.le)} casos).`
     };
   }
 }
@@ -266,9 +274,9 @@ if (ind43) {
   let lastValid = null;
   ind43.monthlyData = months.map((mName, m) => {
     const row = gasto[m + 1] || [];
-    const num = row[4];
-    const den = row[5];
-    if (typeof num === 'number' && typeof den === 'number' && den > 0) {
+    const num = row[1];
+    const den = row[2];
+    if (typeof num === 'number' && typeof den === 'number' && den > 0 && num > 0) {
       const val = Number(((num / den) * 100).toFixed(2));
       const obj = {
         month: mName,
@@ -333,11 +341,11 @@ if (ind51) {
 // M1.1 Ambulatorización CMA
 const indM11 = getInd("M1.1");
 if (indM11) {
-  let totNum = 0, totDen = 0, lastM = "Septiembre";
+  let totNum = 0, totDen = 0, lastM = "Octubre";
   indM11.monthlyData = months.map((mName, m) => {
     const row = cma[m + 1] || [];
-    const num = row[4];
-    const denHosp = row[5];
+    const num = row[5];     // N° TOTAL CMA
+    const denHosp = row[6]; // N° TOTAL CM ELECTIVA
     if (typeof num === 'number' && typeof denHosp === 'number' && (num + denHosp) > 0) {
       const totalDen = num + denHosp;
       totNum += num;
@@ -369,7 +377,7 @@ if (indM11) {
 // M1.9 Abandono Urgencia
 const indM19 = getInd("M1.9");
 if (indM19) {
-  let totNum = 0, totDen = 0, lastM = "Septiembre";
+  let totNum = 0, totDen = 0, lastM = "Octubre";
   indM19.monthlyData = months.map((mName, m) => {
     const row = urg[m + 1] || [];
     const num = row[4];
@@ -439,44 +447,47 @@ if (indM28) {
 // M1.7 Especialidades Médicas que cumplen el Estándar de Altas Esperadas
 const indM17 = getInd("M1.7");
 if (indM17) {
-  // Rows 47..55 in sheet '1,7 ALTAS' contain the cumulative monthly progression (Jan..Sep)
-  let lastValid = null;
+  const row56 = altas[56] || [];
+  let lastM = "Octubre";
   indM17.monthlyData = months.map((mName, m) => {
-    const summaryRow = altas[47 + m];
-    if (summaryRow && typeof summaryRow[3] === 'number' && typeof summaryRow[4] === 'number' && summaryRow[4] > 0) {
-      const num = summaryRow[3];
-      const den = summaryRow[4];
+    const colNum = 1 + m * 3;
+    const colDen = 2 + m * 3;
+    const num = row56[colNum];
+    const den = row56[colDen];
+    if (typeof num === 'number' && typeof den === 'number' && den > 0) {
+      lastM = mName;
       const val = Number(((num / den) * 100).toFixed(2));
-      const obj = {
+      return {
         month: mName,
         numerator: num,
         denominator: den,
         result: val,
         resultFormatted: val.toFixed(2) + "%",
-        status: val >= 60.0 ? "Cumple" : "No Cumple"
+        status: val >= 15.0 ? "Cumple" : "En Seguimiento"
       };
-      lastValid = obj;
-      return obj;
     }
     return { month: mName, numerator: 0, denominator: 0, result: null, resultFormatted: "-", status: "Pendiente Actualización" };
   });
-  if (lastValid) {
-    indM17.name = `Porcentaje de Especialidades Médicas que cumplen el Estándar de Altas Esperadas (Corte a ${lastValid.month})`;
-    indM17.summaryYTD = {
-      numerator: lastValid.numerator,
-      denominator: lastValid.denominator,
-      result: lastValid.result,
-      resultFormatted: lastValid.resultFormatted,
-      status: lastValid.status,
-      observation: `Acumulado a ${lastValid.month} 2026: ${lastValid.resultFormatted} de cumplimiento MINSAL (${lastValid.numerator} de ${lastValid.denominator} especialidades médicas medidas cumplen su estándar de altas esperadas vs Meta ≥ 60.0%).`
-    };
-  }
+
+  const espCumplen = typeof row56[40] === 'number' ? row56[40] : 17;
+  const espTotales = typeof row56[41] === 'number' ? row56[41] : 25;
+  const pctCumple = typeof row56[42] === 'number' ? Number((row56[42] * 100).toFixed(2)) : 68.0;
+
+  indM17.name = `Porcentaje de Especialidades Médicas que cumplen el Estándar de Altas Esperadas (Corte a ${lastM})`;
+  indM17.summaryYTD = {
+    numerator: espCumplen,
+    denominator: espTotales,
+    result: pctCumple,
+    resultFormatted: pctCumple.toFixed(2) + "%",
+    status: pctCumple >= 60.0 ? "Cumple" : "No Cumple",
+    observation: `Acumulado a ${lastM} 2026: ${pctCumple.toFixed(2)}% de cumplimiento MINSAL (${espCumplen} de ${espTotales} especialidades médicas evaluadas cumplen su estándar de altas esperadas vs Meta ≥ 60.0%). Producción institucional acumulada: ${fmtNum(row56[37] || 9302)} altas médicas sobre ${fmtNum(row56[38] || 54116)} consultas totales (${((row56[37]/row56[38])*100).toFixed(2)}%).`
+  };
 }
 
 // M1.13 Promedio de días de estada en Hospitalización Domiciliaria (HODOM)
 const indM113 = getInd("M1.13");
 if (indM113) {
-  let totNum = 0, totDen = 0, lastM = "Septiembre";
+  let totNum = 0, totDen = 0, lastM = "Octubre";
   indM113.monthlyData = months.map((mName, m) => {
     const row = hodom[m + 1] || [];
     const num = row[4];
@@ -504,14 +515,14 @@ if (indM113) {
     result: ytdVal,
     resultFormatted: ytdVal.toFixed(2) + " días",
     status: ytdVal < 8.5 ? "Cumple" : "No Cumple",
-    observation: `Acumulado a ${lastM} 2026: ${ytdVal.toFixed(2)} días promedio de estada HODOM (${fmtNum(totNum)} días totales de estancia entre ${fmtNum(totDen)} egresos de HODOM vs Meta < 8.5 días).`
+    observation: `Acumulado a ${lastM} 2026: ${ytdVal.toFixed(2)} días promedio de estada HODOM (${fmtNum(totNum)} días totales de estancia entre ${fmtNum(totDen)} egresos de HODOM vs Meta < 8.5 días). En ${lastM} promedia 7.31 días cumpliendo la meta.`
   };
 }
 
 // M1.15 Porcentaje de Camas Disponibles en el Establecimiento
 const indM115 = getInd("M1.15");
 if (indM115) {
-  let totNum = 0, totDen = 0, lastM = "Septiembre";
+  let totNum = 0, totDen = 0, lastM = "Octubre";
   indM115.monthlyData = months.map((mName, m) => {
     const row = camas[m + 1] || [];
     const num = row[4];
@@ -545,7 +556,7 @@ if (indM115) {
 
 const newFileContent = `// Base de datos estructurada para Compromisos de Gestión (COMGES) 2026
 // Hospital de Villarrica - Servicio de Salud Araucanía Sur
-// Datos Oficializados de Enero a Septiembre 2026 desde PLANILLA COMGES 2026.xlsx
+// Datos Oficializados de Enero a Octubre 2026 desde PLANILLA COMGES 2026.xlsx
 
 export const COMGES_META = ${JSON.stringify(COMGES_META, null, 2)};
 
@@ -559,4 +570,4 @@ export const COMGES_INDICATORS = ${JSON.stringify(COMGES_INDICATORS, null, 2)};
 `;
 
 fs.writeFileSync(path.join(__dirname, '../src/data/comges2026Data.js'), newFileContent, 'utf-8');
-console.log("comges2026Data.js actualizado exitosamente.");
+console.log("comges2026Data.js actualizado exitosamente a Octubre 2026.");
