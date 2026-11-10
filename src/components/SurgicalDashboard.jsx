@@ -2395,6 +2395,7 @@ export default function SurgicalDashboard({ onBack }) {
   const [tablaModalidad, setTablaModalidad] = useState([]);
   const [tablaCausaSuspension, setTablaCausaSuspension] = useState([]);
   const [tablaMotivoSuspension, setTablaMotivoSuspension] = useState([]);
+  const [tablaEsUrgencia, setTablaEsUrgencia] = useState([]);
   const [tablaLastUpdated, setTablaLastUpdated] = useState(null);
   const [dispLastUpdated, setDispLastUpdated] = useState(null);
   const [libroLastUpdated, setLibroLastUpdated] = useState(null);
@@ -2413,6 +2414,7 @@ export default function SurgicalDashboard({ onBack }) {
   const [indicadorPabellon, setIndicadorPabellon] = useState(['1', '2', '3', '4', '5']); // Por defecto excluye 6 y 7
   const [indicadorCumplimiento, setIndicadorCumplimiento] = useState([]);
   const [indicadorTipoDia, setIndicadorTipoDia] = useState('habiles'); // 'habiles', 'no_habiles', 'todos'
+  const [indicadorEsUrgencia, setIndicadorEsUrgencia] = useState([]);
   const [indicadorSearch, setIndicadorSearch] = useState('');
 
   // Floating Sidebar state
@@ -2425,7 +2427,7 @@ export default function SurgicalDashboard({ onBack }) {
       return [tipoCirugia, tipoPaciente, procedencia, tipoGestor, formaPago, nombreIq, primerCirujano, segundoCirujano, anestesiologo, reintervencion, libroPabellonTabla, libroPabellonCrr]
         .filter(arr => Array.isArray(arr) && arr.length > 0).length;
     } else if (activeTab === 'tabla') {
-      let count = [tablaFechaProg, tablaTipoCirugia, tablaTipoPaciente, tablaPriorizacion, tablaPabellonCrr, tablaIntervencion, tablaCirujano, tablaAnestesista, tablaPabellon, tablaModalidad, tablaCausaSuspension, tablaMotivoSuspension]
+      let count = [tablaFechaProg, tablaTipoCirugia, tablaTipoPaciente, tablaPriorizacion, tablaPabellonCrr, tablaIntervencion, tablaCirujano, tablaAnestesista, tablaPabellon, tablaModalidad, tablaCausaSuspension, tablaMotivoSuspension, tablaEsUrgencia]
         .filter(arr => Array.isArray(arr) && arr.length > 0).length;
       if (dateRangeTabla.start !== '2026-01-01' || dateRangeTabla.end !== '2026-12-31') count++;
       return count;
@@ -2435,11 +2437,12 @@ export default function SurgicalDashboard({ onBack }) {
       if (indicadorPabellon.length !== 5 || !['1', '2', '3', '4', '5'].every(p => indicadorPabellon.includes(p))) count++;
       if (indicadorCumplimiento.length > 0) count++;
       if (indicadorTipoDia !== 'habiles') count++;
+      if (indicadorEsUrgencia.length > 0) count++;
       if (indicadorSearch) count++;
       return count;
     }
     return 0;
-  }, [activeTab, tipoCirugia, tipoPaciente, procedencia, tipoGestor, formaPago, nombreIq, primerCirujano, segundoCirujano, anestesiologo, reintervencion, libroPabellonTabla, libroPabellonCrr, dateRangeTabla, tablaFechaProg, tablaTipoCirugia, tablaTipoPaciente, tablaPriorizacion, tablaPabellonCrr, tablaIntervencion, tablaCirujano, tablaAnestesista, tablaPabellon, tablaModalidad, tablaCausaSuspension, tablaMotivoSuspension, dateRangeIndicadores, indicadorPabellon, indicadorCumplimiento, indicadorTipoDia, indicadorSearch]);
+  }, [activeTab, tipoCirugia, tipoPaciente, procedencia, tipoGestor, formaPago, nombreIq, primerCirujano, segundoCirujano, anestesiologo, reintervencion, libroPabellonTabla, libroPabellonCrr, dateRangeTabla, tablaFechaProg, tablaTipoCirugia, tablaTipoPaciente, tablaPriorizacion, tablaPabellonCrr, tablaIntervencion, tablaCirujano, tablaAnestesista, tablaPabellon, tablaModalidad, tablaCausaSuspension, tablaMotivoSuspension, tablaEsUrgencia, dateRangeIndicadores, indicadorPabellon, indicadorCumplimiento, indicadorTipoDia, indicadorEsUrgencia, indicadorSearch]);
 
   const clearAllFilters = () => {
     if (activeTab === 'libro') {
@@ -2450,12 +2453,13 @@ export default function SurgicalDashboard({ onBack }) {
       setDateRangeTabla({ start: '2026-01-01', end: '2026-12-31' });
       setTablaFechaProg([]); setTablaTipoCirugia([]); setTablaTipoPaciente([]); setTablaPriorizacion([]); setTablaPabellonCrr([]);
       setTablaIntervencion([]); setTablaCirujano([]); setTablaAnestesista([]); setTablaPabellon([]); setTablaModalidad([]);
-      setTablaCausaSuspension([]); setTablaMotivoSuspension([]);
+      setTablaCausaSuspension([]); setTablaMotivoSuspension([]); setTablaEsUrgencia([]);
     } else if (activeTab === 'disponibilidad') {
       setDateRangeIndicadores({ start: '2026-01-01', end: '2026-12-31' });
       setIndicadorPabellon(['1', '2', '3', '4', '5']);
       setIndicadorCumplimiento([]);
       setIndicadorTipoDia('habiles');
+      setIndicadorEsUrgencia([]);
       setIndicadorSearch('');
     }
   };
@@ -2793,6 +2797,10 @@ export default function SurgicalDashboard({ onBack }) {
       mods: Array.from(mods).sort().filter(Boolean),
       causas: Array.from(causas).sort().filter(Boolean),
       motivos: Array.from(motivos).sort().filter(Boolean),
+      esUrgencia: [
+        { value: 'true', label: 'Sí (Urgencia)' },
+        { value: 'false', label: 'No (Electivo)' }
+      ]
     };
   }, [tablaData, tablaCausaSuspension]);
 
@@ -2814,6 +2822,10 @@ export default function SurgicalDashboard({ onBack }) {
         { id: 'habiles', label: 'Días Hábiles (Lunes a Viernes)' },
         { id: 'no_habiles', label: 'Días No Hábiles (Fines de Semana)' },
         { id: 'todos', label: 'Todos los Días (Lunes a Domingo)' }
+      ],
+      urgencias: [
+        { id: 'true', label: 'Sí (Urgencia)' },
+        { id: 'false', label: 'No (Electivo)' }
       ]
     };
   }, []);
@@ -2838,6 +2850,11 @@ export default function SurgicalDashboard({ onBack }) {
       if (tablaAnestesista.length > 0 && !tablaAnestesista.includes(ane)) return false;
       if (tablaPabellon.length > 0 && !tablaPabellon.includes(String(r.pabellon))) return false;
       if (tablaModalidad.length > 0 && !tablaModalidad.includes(r.modalidad)) return false;
+      if (tablaEsUrgencia.length > 0) {
+        const isUrg = r.pabellon_urgencia === true || r.pabellon_urgencia === 'true' || r.pabellon_urgencia === 1;
+        const valStr = isUrg ? 'true' : 'false';
+        if (!tablaEsUrgencia.includes(valStr)) return false;
+      }
       if (tablaCausaSuspension.length > 0) {
         const gc = resolverGranCausa(r.causa_suspension, r.motivo_suspension);
         if (!tablaCausaSuspension.includes(gc)) return false;
@@ -2849,7 +2866,7 @@ export default function SurgicalDashboard({ onBack }) {
 
       return true;
     });
-  }, [tablaData, dateRangeTabla, tablaFechaProg, tablaTipoCirugia, tablaTipoPaciente, tablaPriorizacion, tablaPabellonCrr, tablaIntervencion, tablaCirujano, tablaAnestesista, tablaPabellon, tablaModalidad, tablaCausaSuspension, tablaMotivoSuspension]);
+  }, [tablaData, dateRangeTabla, tablaFechaProg, tablaTipoCirugia, tablaTipoPaciente, tablaPriorizacion, tablaPabellonCrr, tablaIntervencion, tablaCirujano, tablaAnestesista, tablaPabellon, tablaModalidad, tablaEsUrgencia, tablaCausaSuspension, tablaMotivoSuspension]);
 
   // Compute stats and YoY for Tabla
   const getTablaYoYStats = (key) => {
@@ -2888,6 +2905,11 @@ export default function SurgicalDashboard({ onBack }) {
       if (tablaAnestesista.length > 0 && !tablaAnestesista.includes(ane)) return;
       if (tablaPabellon.length > 0 && !tablaPabellon.includes(String(r.pabellon))) return;
       if (tablaModalidad.length > 0 && !tablaModalidad.includes(r.modalidad)) return;
+      if (tablaEsUrgencia.length > 0) {
+        const isUrg = r.pabellon_urgencia === true || r.pabellon_urgencia === 'true' || r.pabellon_urgencia === 1;
+        const valStr = isUrg ? 'true' : 'false';
+        if (!tablaEsUrgencia.includes(valStr)) return;
+      }
 
       if (key === 'programados') priorCount++;
       if (key === 'intervenidos' && r.estado === 'Intervenido') priorCount++;
@@ -3018,6 +3040,13 @@ export default function SurgicalDashboard({ onBack }) {
           if (!indicadorCumplimiento.includes(cat)) return;
         }
 
+        // Filtro es urgencia
+        if (indicadorEsUrgencia.length > 0) {
+          const isUrg = (pabellon.es_urgencia === true || pabellon.es_urgencia === 'true' || primeraCirugia?.pabellon_urgencia === true || primeraCirugia?.pabellon_urgencia === 'true');
+          const valStr = isUrg ? 'true' : 'false';
+          if (!indicadorEsUrgencia.includes(valStr)) return;
+        }
+
         // Búsqueda de texto libre si está activa
         if (indicadorSearch) {
           const q = indicadorSearch.toLowerCase();
@@ -3132,7 +3161,7 @@ export default function SurgicalDashboard({ onBack }) {
       pabellonStats,
       casosDetalle: casos
     };
-  }, [disponibilidadData, tablaData, dateRangeIndicadores, indicadorPabellon, indicadorCumplimiento, indicadorTipoDia, indicadorSearch]);
+  }, [disponibilidadData, tablaData, dateRangeIndicadores, indicadorPabellon, indicadorCumplimiento, indicadorTipoDia, indicadorEsUrgencia, indicadorSearch]);
 
   // Chart Data Processing for Tabla
   const tablaChartData = useMemo(() => {
@@ -4224,6 +4253,7 @@ export default function SurgicalDashboard({ onBack }) {
                     <>
                       {[
                         { label: 'Fecha de programación', val: tablaFechaProg, set: setTablaFechaProg, options: tablaDropdowns.fechas },
+                        { label: 'Es Urgencia (Pabellón)', val: tablaEsUrgencia, set: setTablaEsUrgencia, options: tablaDropdowns.esUrgencia },
                         { label: 'Gran Causa de Suspensión', val: tablaCausaSuspension, set: setTablaCausaSuspension, options: tablaDropdowns.causas },
                         { label: 'Causa Específica (Motivo)', val: tablaMotivoSuspension, set: setTablaMotivoSuspension, options: tablaDropdowns.motivos },
                         { label: 'Tipo de cirugía', val: tablaTipoCirugia, set: setTablaTipoCirugia, options: tablaDropdowns.tipos },
@@ -4299,7 +4329,8 @@ export default function SurgicalDashboard({ onBack }) {
 
                       {[
                         { label: 'Pabellón', val: indicadorPabellon, set: setIndicadorPabellon, options: indicadorDropdowns.pabs },
-                        { label: 'Estado Cumplimiento (15 min)', val: indicadorCumplimiento, set: setIndicadorCumplimiento, options: indicadorDropdowns.cumplimientos }
+                        { label: 'Estado Cumplimiento (15 min)', val: indicadorCumplimiento, set: setIndicadorCumplimiento, options: indicadorDropdowns.cumplimientos },
+                        { label: 'Es Urgencia (Pabellón)', val: indicadorEsUrgencia, set: setIndicadorEsUrgencia, options: indicadorDropdowns.urgencias }
                       ].map((f, i) => (
                         <div key={i}>
                           <label style={{ display: 'block', fontSize: '0.72rem', fontWeight: 700, marginBottom: '6px', color: '#64748b', textTransform: 'uppercase' }}>{f.label}</label>

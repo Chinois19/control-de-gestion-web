@@ -58,14 +58,20 @@ const esVerdadero = (v) => v === true || v === 'true' || v === 'True' || v === 1
  */
 export function calcularSubprogramacion(tabla, disponibilidad, opts = {}) {
   const hoy = opts.hoy || fechaLocalISO();
+  const filtroUrgencia = opts.esUrgencia || 'electivo'; // 'electivo' | 'urgencia' | 'todos'
 
-  // Pacientes intervenidos por fecha|pabellón (excluye eliminadas y pabellón de urgencia)
+  // Pacientes intervenidos por fecha|pabellón
   const pacientes = new Map();
   for (const r of tabla || []) {
     if (r.estado !== 'Intervenido') continue;
     if (esVerdadero(r.eliminada)) continue;
-    if (esVerdadero(r.pabellon_urgencia)) continue;
+
     const fecha = (r.fecha_programacion || '').substring(0, 10);
+    const pab = Number(r.pabellon);
+    const esUrg = esVerdadero(r.pabellon_urgencia) || esPabellonUrgencia(fecha, pab);
+    if (filtroUrgencia === 'electivo' && esUrg) continue;
+    if (filtroUrgencia === 'urgencia' && !esUrg) continue;
+
     const salidaRaw = aMinutos(r.hora_salida_cirugia);
     if (!fecha || salidaRaw === null) continue;
 
@@ -73,7 +79,7 @@ export function calcularSubprogramacion(tabla, disponibilidad, opts = {}) {
     const inicio = aMinutos(r.hora_inicio_cirugia);
     if (inicio !== null && salida < inicio) salida += 1440; // cruza medianoche
 
-    const key = `${fecha}|${Number(r.pabellon)}`;
+    const key = `${fecha}|${pab}`;
     if (!pacientes.has(key)) pacientes.set(key, []);
     pacientes.get(key).push({ salida, rec: r });
   }
@@ -84,8 +90,10 @@ export function calcularSubprogramacion(tabla, disponibilidad, opts = {}) {
     const pab = Number(d.numero_pabellon);
     if (!fecha || fecha >= hoy) continue;
     if (!PABELLONES_VALIDOS.includes(pab)) continue;
-    if (esPabellonUrgencia(fecha, pab)) continue;
-    if (fecha >= FECHA_CAMBIO_URGENCIA && esVerdadero(d.es_urgencia)) continue;
+
+    const esUrgDisp = esPabellonUrgencia(fecha, pab) || (fecha >= FECHA_CAMBIO_URGENCIA && esVerdadero(d.es_urgencia));
+    if (filtroUrgencia === 'electivo' && esUrgDisp) continue;
+    if (filtroUrgencia === 'urgencia' && !esUrgDisp) continue;
 
     const finAm = aMinutos(d.horario_am_termino);
     const finPm = aMinutos(d.horario_pm_termino);

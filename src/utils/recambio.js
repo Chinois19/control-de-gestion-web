@@ -46,6 +46,7 @@ const esVerdadero = (v) => v === true || v === 'true' || v === 'True' || v === 1
  */
 export function calcularRecambios(tabla, disponibilidad, opts = {}) {
   const hoy = opts.hoy || fechaLocalISO();
+  const filtroUrgencia = opts.esUrgencia || 'electivo'; // 'electivo' | 'urgencia' | 'todos'
 
   const dispMap = new Map();
   for (const d of disponibilidad || []) {
@@ -59,16 +60,16 @@ export function calcularRecambios(tabla, disponibilidad, opts = {}) {
   for (const r of tabla || []) {
     if (r.estado !== 'Intervenido') continue;
     if (esVerdadero(r.eliminada)) continue;
-    if (esVerdadero(r.pabellon_urgencia)) continue;
 
     const fecha = (r.fecha_programacion || '').substring(0, 10);
     const pab = Number(r.pabellon);
     if (!fecha || fecha >= hoy) continue;
     if (!PABELLONES_VALIDOS.includes(pab)) continue;
-    if (esPabellonUrgencia(fecha, pab)) continue;
 
     const d = dispMap.get(`${fecha}|${pab}`);
-    if (fecha >= FECHA_CAMBIO_URGENCIA && d && esVerdadero(d.es_urgencia)) continue;
+    const esUrg = esVerdadero(r.pabellon_urgencia) || esPabellonUrgencia(fecha, pab) || (fecha >= FECHA_CAMBIO_URGENCIA && d && esVerdadero(d.es_urgencia));
+    if (filtroUrgencia === 'electivo' && esUrg) continue;
+    if (filtroUrgencia === 'urgencia' && !esUrg) continue;
 
     const ingreso = aMinutos(r.hora_ingreso_cirugia);
     const salidaRaw = aMinutos(r.hora_salida_cirugia);

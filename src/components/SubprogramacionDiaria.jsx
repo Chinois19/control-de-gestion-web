@@ -94,12 +94,13 @@ function Chip({ active, onClick, children }) {
 
 export default function SubprogramacionDiaria({ tablaData = [], disponibilidadData = [], loading = false }) {
   const [tipoDia, setTipoDia] = useState('habiles'); // habiles | no_habiles | todos
+  const [esUrgencia, setEsUrgencia] = useState('electivo'); // electivo | urgencia | todos
   const [pabellones, setPabellones] = useState(PABELLONES_VALIDOS);
   const [umbral, setUmbral] = useState(UMBRAL_DEFECTO_MIN);
   const [desde, setDesde] = useState('2026-01-01');
   const [hasta, setHasta] = useState('');
 
-  const todas = useMemo(() => calcularSubprogramacion(tablaData, disponibilidadData), [tablaData, disponibilidadData]);
+  const todas = useMemo(() => calcularSubprogramacion(tablaData, disponibilidadData, { esUrgencia }), [tablaData, disponibilidadData, esUrgencia]);
 
   const rango = useMemo(() => {
     if (!todas.length) return { min: '2026-01-01', max: '2026-12-31' };
@@ -248,7 +249,7 @@ export default function SubprogramacionDiaria({ tablaData = [], disponibilidadDa
   }, [porEspecialidad, umbral]);
 
   const togglePab = (p) => setPabellones((prev) => (prev.includes(p) ? prev.filter((x) => x !== p) : [...prev, p].sort((a, b) => a - b)));
-  const limpiar = () => { setTipoDia('habiles'); setPabellones(PABELLONES_VALIDOS); setUmbral(UMBRAL_DEFECTO_MIN); setDesde('2026-01-01'); setHasta(''); };
+  const limpiar = () => { setTipoDia('habiles'); setEsUrgencia('electivo'); setPabellones(PABELLONES_VALIDOS); setUmbral(UMBRAL_DEFECTO_MIN); setDesde('2026-01-01'); setHasta(''); };
 
   if (loading) {
     return <div style={{ padding: '60px', textAlign: 'center', color: '#64748b', fontWeight: 600 }}>Cargando datos de subprogramación…</div>;
@@ -281,6 +282,14 @@ export default function SubprogramacionDiaria({ tablaData = [], disponibilidadDa
           <div style={{ fontSize: '0.72rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', marginBottom: '6px' }}>Pabellón</div>
           <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
             {PABELLONES_VALIDOS.map((p) => <Chip key={p} active={pabellones.includes(p)} onClick={() => togglePab(p)}>{p}</Chip>)}
+          </div>
+        </div>
+        <div>
+          <div style={{ fontSize: '0.72rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', marginBottom: '6px' }}>Es Urgencia</div>
+          <div style={{ display: 'flex', gap: '6px' }}>
+            <Chip active={esUrgencia === 'todos'} onClick={() => setEsUrgencia('todos')}>Todos</Chip>
+            <Chip active={esUrgencia === 'electivo'} onClick={() => setEsUrgencia('electivo')}>Electivo (No)</Chip>
+            <Chip active={esUrgencia === 'urgencia'} onClick={() => setEsUrgencia('urgencia')}>Urgencia (Sí)</Chip>
           </div>
         </div>
         <div>

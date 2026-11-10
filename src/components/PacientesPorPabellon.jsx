@@ -105,6 +105,7 @@ function Chip({ active, onClick, children }) {
 
 export default function PacientesPorPabellon({ tablaData = [], disponibilidadData = [], loading = false }) {
   const [tipoDia, setTipoDia] = useState('habiles'); // habiles | no_habiles | todos
+  const [esUrgencia, setEsUrgencia] = useState('electivo'); // electivo | urgencia | todos
   const [filtroRegimen, setFiltroRegimen] = useState('todos'); // todos | 17h | 20h
   const [pabellones, setPabellones] = useState(PABELLONES_VALIDOS);
   const [desde, setDesde] = useState('2026-01-01');
@@ -114,7 +115,7 @@ export default function PacientesPorPabellon({ tablaData = [], disponibilidadDat
   const pisoRef = filtroRegimen === '20h' ? META_PACIENTES_20H.min : META_PACIENTES_17H.min;
   const techoRef = filtroRegimen === '20h' ? META_PACIENTES_20H.max : META_PACIENTES_17H.max;
 
-  const todas = useMemo(() => calcularPacientesPorPabellon(tablaData, disponibilidadData), [tablaData, disponibilidadData]);
+  const todas = useMemo(() => calcularPacientesPorPabellon(tablaData, disponibilidadData, { esUrgencia }), [tablaData, disponibilidadData, esUrgencia]);
 
   const rango = useMemo(() => {
     if (!todas.length) return { min: '2026-01-01', max: '2026-12-31' };
@@ -272,6 +273,7 @@ export default function PacientesPorPabellon({ tablaData = [], disponibilidadDat
   const togglePab = (p) => setPabellones((prev) => (prev.includes(p) ? prev.filter((x) => x !== p) : [...prev, p].sort((a, b) => a - b)));
   const limpiar = () => {
     setTipoDia('habiles');
+    setEsUrgencia('electivo');
     setFiltroRegimen('todos');
     setPabellones(PABELLONES_VALIDOS);
     setDesde('2026-01-01');
@@ -319,6 +321,14 @@ export default function PacientesPorPabellon({ tablaData = [], disponibilidadDat
             <Chip active={filtroRegimen === 'todos'} onClick={() => setFiltroRegimen('todos')}>Todos</Chip>
             <Chip active={filtroRegimen === '17h'} onClick={() => setFiltroRegimen('17h')}>08:00–17:00 (Óptimo 5–6)</Chip>
             <Chip active={filtroRegimen === '20h'} onClick={() => setFiltroRegimen('20h')}>08:00–20:00 (Óptimo 6–8)</Chip>
+          </div>
+        </div>
+        <div>
+          <div style={{ fontSize: '0.72rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', marginBottom: '6px' }}>Es Urgencia</div>
+          <div style={{ display: 'flex', gap: '6px' }}>
+            <Chip active={esUrgencia === 'todos'} onClick={() => setEsUrgencia('todos')}>Todos</Chip>
+            <Chip active={esUrgencia === 'electivo'} onClick={() => setEsUrgencia('electivo')}>Electivo (No)</Chip>
+            <Chip active={esUrgencia === 'urgencia'} onClick={() => setEsUrgencia('urgencia')}>Urgencia (Sí)</Chip>
           </div>
         </div>
         <div>
