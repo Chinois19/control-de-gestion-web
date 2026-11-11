@@ -5100,10 +5100,68 @@ export default function SurgicalDashboard({ onBack }) {
                 {(activeTab === 'tabla' || activeTab === 'informe-crr') && (
                   <div>
                     {/* TÍTULO DEL TABLERO */}
-                    <div style={{ marginBottom: '24px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px', marginBottom: '24px' }}>
                       <h2 style={{ fontSize: '1.6rem', fontWeight: 800, color: '#1e293b', margin: 0 }}>
                         Suspensión de Tabla Quirúrgica
                       </h2>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase' }}>
+                          Filtro Urgencia:
+                        </span>
+                        <div style={{ display: 'flex', gap: '6px' }}>
+                          <button
+                            type="button"
+                            onClick={() => setTablaEsUrgencia([])}
+                            style={{
+                              padding: '5px 12px',
+                              borderRadius: '999px',
+                              cursor: 'pointer',
+                              fontWeight: 700,
+                              fontSize: '0.75rem',
+                              border: `1.5px solid ${tablaEsUrgencia.length === 0 ? '#4f46e5' : '#cbd5e1'}`,
+                              background: tablaEsUrgencia.length === 0 ? '#eef2ff' : 'white',
+                              color: tablaEsUrgencia.length === 0 ? '#4338ca' : '#64748b',
+                              transition: 'all 0.15s ease'
+                            }}
+                          >
+                            Todos
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setTablaEsUrgencia(['false'])}
+                            style={{
+                              padding: '5px 12px',
+                              borderRadius: '999px',
+                              cursor: 'pointer',
+                              fontWeight: 700,
+                              fontSize: '0.75rem',
+                              border: `1.5px solid ${tablaEsUrgencia.length === 1 && tablaEsUrgencia[0] === 'false' ? '#4f46e5' : '#cbd5e1'}`,
+                              background: tablaEsUrgencia.length === 1 && tablaEsUrgencia[0] === 'false' ? '#eef2ff' : 'white',
+                              color: tablaEsUrgencia.length === 1 && tablaEsUrgencia[0] === 'false' ? '#4338ca' : '#64748b',
+                              transition: 'all 0.15s ease'
+                            }}
+                          >
+                            Electivo (No)
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setTablaEsUrgencia(['true'])}
+                            style={{
+                              padding: '5px 12px',
+                              borderRadius: '999px',
+                              cursor: 'pointer',
+                              fontWeight: 700,
+                              fontSize: '0.75rem',
+                              border: `1.5px solid ${tablaEsUrgencia.length === 1 && tablaEsUrgencia[0] === 'true' ? '#4f46e5' : '#cbd5e1'}`,
+                              background: tablaEsUrgencia.length === 1 && tablaEsUrgencia[0] === 'true' ? '#eef2ff' : 'white',
+                              color: tablaEsUrgencia.length === 1 && tablaEsUrgencia[0] === 'true' ? '#4338ca' : '#64748b',
+                              transition: 'all 0.15s ease'
+                            }}
+                          >
+                            Urgencia (Sí)
+                          </button>
+                        </div>
+                      </div>
                     </div>
 
                     {/* MENÚ DE PESTAÑAS EJECUTIVAS PARA TABLA */}
@@ -5175,7 +5233,84 @@ export default function SurgicalDashboard({ onBack }) {
 
                         {/* BAR CHART PRODUCCIÓN */}
                         <div style={{ background: 'white', padding: '24px', borderRadius: '16px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px rgba(0,0,0,0.02)', marginBottom: '24px' }}>
-                          <h3 style={{ margin: '0 0 24px 0', fontSize: '1.1rem', fontWeight: 700, color: '#0f172a' }}>Producción Quirúrgica y Suspensiones</h3>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px', marginBottom: '20px' }}>
+                            <div>
+                              <h3 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 800, color: '#0f172a' }}>
+                                Producción Quirúrgica y Suspensiones
+                              </h3>
+                              <p style={{ margin: '4px 0 0 0', fontSize: '0.8rem', color: '#64748b' }}>
+                                Evolución mensual de pacientes programados, intervenidos, suspendidos y tasa de suspensión
+                              </p>
+                            </div>
+
+                            {/* FILTRO ES URGENCIA INTEGRADO DIRECTAMENTE EN LA GRÁFICA */}
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+                              <div style={{ display: 'flex', gap: '6px' }}>
+                                <button
+                                  type="button"
+                                  onClick={() => setTablaEsUrgencia([])}
+                                  style={{
+                                    padding: '6px 12px',
+                                    borderRadius: '999px',
+                                    cursor: 'pointer',
+                                    fontWeight: 700,
+                                    fontSize: '0.78rem',
+                                    border: `1.5px solid ${tablaEsUrgencia.length === 0 ? '#4f46e5' : '#cbd5e1'}`,
+                                    background: tablaEsUrgencia.length === 0 ? '#eef2ff' : 'white',
+                                    color: tablaEsUrgencia.length === 0 ? '#4338ca' : '#64748b',
+                                    transition: 'all 0.15s ease'
+                                  }}
+                                >
+                                  Todos
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => setTablaEsUrgencia(['false'])}
+                                  style={{
+                                    padding: '6px 12px',
+                                    borderRadius: '999px',
+                                    cursor: 'pointer',
+                                    fontWeight: 700,
+                                    fontSize: '0.78rem',
+                                    border: `1.5px solid ${tablaEsUrgencia.length === 1 && tablaEsUrgencia[0] === 'false' ? '#4f46e5' : '#cbd5e1'}`,
+                                    background: tablaEsUrgencia.length === 1 && tablaEsUrgencia[0] === 'false' ? '#eef2ff' : 'white',
+                                    color: tablaEsUrgencia.length === 1 && tablaEsUrgencia[0] === 'false' ? '#4338ca' : '#64748b',
+                                    transition: 'all 0.15s ease'
+                                  }}
+                                >
+                                  Electivo (No)
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => setTablaEsUrgencia(['true'])}
+                                  style={{
+                                    padding: '6px 12px',
+                                    borderRadius: '999px',
+                                    cursor: 'pointer',
+                                    fontWeight: 700,
+                                    fontSize: '0.78rem',
+                                    border: `1.5px solid ${tablaEsUrgencia.length === 1 && tablaEsUrgencia[0] === 'true' ? '#4f46e5' : '#cbd5e1'}`,
+                                    background: tablaEsUrgencia.length === 1 && tablaEsUrgencia[0] === 'true' ? '#eef2ff' : 'white',
+                                    color: tablaEsUrgencia.length === 1 && tablaEsUrgencia[0] === 'true' ? '#4338ca' : '#64748b',
+                                    transition: 'all 0.15s ease'
+                                  }}
+                                >
+                                  Urgencia (Sí)
+                                </button>
+                              </div>
+
+                              <div style={{ minWidth: '180px', maxWidth: '240px' }}>
+                                <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: 800, marginBottom: '4px', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                                  Es Urgencia (Pabellón)
+                                </label>
+                                <MultiSearchableSelect
+                                  value={tablaEsUrgencia}
+                                  options={tablaDropdowns.esUrgencia}
+                                  onChange={setTablaEsUrgencia}
+                                />
+                              </div>
+                            </div>
+                          </div>
                           <div style={{ height: '360px' }}>
                             <ResponsiveContainer width="100%" height="100%">
                               <ComposedChart data={tablaChartData} margin={{ top: 20, right: 20, left: 0, bottom: 0 }}>
