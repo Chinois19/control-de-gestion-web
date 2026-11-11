@@ -1984,7 +1984,7 @@ function InsumosCosteoDashboard({
 
           {/* Tipo Cirugia */}
           <div style={S.filterGroup}>
-            <div style={S.filterLabel}>🔪 Tipo de Cirugía</div>
+            <div style={S.filterLabel}>🔪 Tipo de Cirugía Validada</div>
             <MultiSearchableSelect
               value={selectedTiposCirugia}
               options={filterOptions.tiposCirugia}
@@ -4351,7 +4351,7 @@ export default function SurgicalDashboard({ onBack }) {
                       {[
                         { label: 'N° Pabellón (Tabla Quirúrgica)', val: libroPabellonTabla, set: setLibroPabellonTabla, options: dropdowns.pabellonesTabla },
                         { label: 'Pabellón CRR (Tabla)', val: libroPabellonCrr, set: setLibroPabellonCrr, options: dropdowns.crrOptions },
-                        { label: 'Tipo de Cirugía', val: tipoCirugia, set: setTipoCirugia, options: dropdowns.tipos },
+                        { label: 'Tipo de Cirugía Validada', val: tipoCirugia, set: setTipoCirugia, options: dropdowns.tipos },
                         { label: 'Tipo de Paciente', val: tipoPaciente, set: setTipoPaciente, options: dropdowns.tipoPacientes },
                         { label: 'Procedencia', val: procedencia, set: setProcedencia, options: dropdowns.procedencias },
                         { label: 'Tipo de Gestor', val: tipoGestor, set: setTipoGestor, options: dropdowns.gestores },
