@@ -2425,6 +2425,68 @@ export default function SurgicalDashboard({ onBack }) {
   const [sidebarPinned, setSidebarPinned] = useState(false);
   const isExpanded = sidebarHovered || sidebarPinned;
 
+  // Date input refs for stable manual keyboard typing without unmounting or focus resets
+  const tablaStartRef = useRef(null);
+  const tablaEndRef = useRef(null);
+  const dispStartRef = useRef(null);
+  const dispEndRef = useRef(null);
+
+  const startDebounceRef = useRef(null);
+  const endDebounceRef = useRef(null);
+
+  // Sync external state changes (preset buttons, clear filters) without stealing active focus
+  useEffect(() => {
+    if (tablaStartRef.current && document.activeElement !== tablaStartRef.current && tablaStartRef.current.value !== dateRangeTabla.start) {
+      tablaStartRef.current.value = dateRangeTabla.start;
+    }
+  }, [dateRangeTabla.start]);
+
+  useEffect(() => {
+    if (tablaEndRef.current && document.activeElement !== tablaEndRef.current && tablaEndRef.current.value !== dateRangeTabla.end) {
+      tablaEndRef.current.value = dateRangeTabla.end;
+    }
+  }, [dateRangeTabla.end]);
+
+  useEffect(() => {
+    if (dispStartRef.current && document.activeElement !== dispStartRef.current && dispStartRef.current.value !== dateRangeIndicadores.start) {
+      dispStartRef.current.value = dateRangeIndicadores.start;
+    }
+  }, [dateRangeIndicadores.start]);
+
+  useEffect(() => {
+    if (dispEndRef.current && document.activeElement !== dispEndRef.current && dispEndRef.current.value !== dateRangeIndicadores.end) {
+      dispEndRef.current.value = dateRangeIndicadores.end;
+    }
+  }, [dateRangeIndicadores.end]);
+
+  const commitTablaStart = (val) => {
+    if (startDebounceRef.current) clearTimeout(startDebounceRef.current);
+    if (val && /^\d{4}-\d{2}-\d{2}$/.test(val) && val !== dateRangeTabla.start) {
+      setDateRangeTabla(p => ({ ...p, start: val }));
+    }
+  };
+
+  const commitTablaEnd = (val) => {
+    if (endDebounceRef.current) clearTimeout(endDebounceRef.current);
+    if (val && /^\d{4}-\d{2}-\d{2}$/.test(val) && val !== dateRangeTabla.end) {
+      setDateRangeTabla(p => ({ ...p, end: val }));
+    }
+  };
+
+  const commitDispStart = (val) => {
+    if (startDebounceRef.current) clearTimeout(startDebounceRef.current);
+    if (val && /^\d{4}-\d{2}-\d{2}$/.test(val) && val !== dateRangeIndicadores.start) {
+      setDateRangeIndicadores(p => ({ ...p, start: val }));
+    }
+  };
+
+  const commitDispEnd = (val) => {
+    if (endDebounceRef.current) clearTimeout(endDebounceRef.current);
+    if (val && /^\d{4}-\d{2}-\d{2}$/.test(val) && val !== dateRangeIndicadores.end) {
+      setDateRangeIndicadores(p => ({ ...p, end: val }));
+    }
+  };
+
   const activeFilterCount = useMemo(() => {
     if (activeTab === 'libro') {
       return [tipoCirugia, tipoPaciente, procedencia, tipoGestor, formaPago, nombreIq, primerCirujano, segundoCirujano, anestesiologo, reintervencion, libroPabellonTabla, libroPabellonCrr]
@@ -2456,6 +2518,8 @@ export default function SurgicalDashboard({ onBack }) {
       setNombreIq([]); setPrimerCirujano([]); setSegundoCirujano([]); setAnestesiologo([]); setReintervencion([]);
       setLibroPabellonTabla([]); setLibroPabellonCrr([]);
     } else if (activeTab === 'tabla') {
+      if (tablaStartRef.current) tablaStartRef.current.value = '2026-01-01';
+      if (tablaEndRef.current) tablaEndRef.current.value = '2026-12-31';
       setDateRangeTabla({ start: '2026-01-01', end: '2026-12-31' });
       setTablaFechaProg(['2026']);
       setTablaTipoCirugia(DEFAULT_TABLA_TIPOS_CIRUGIA);
@@ -2464,6 +2528,8 @@ export default function SurgicalDashboard({ onBack }) {
       setTablaIntervencion([]); setTablaCirujano([]); setTablaAnestesista([]); setTablaPabellon([]); setTablaModalidad([]);
       setTablaCausaSuspension([]); setTablaMotivoSuspension([]); setTablaEsUrgencia([]);
     } else if (activeTab === 'disponibilidad') {
+      if (dispStartRef.current) dispStartRef.current.value = '2026-01-01';
+      if (dispEndRef.current) dispEndRef.current.value = '2026-12-31';
       setDateRangeIndicadores({ start: '2026-01-01', end: '2026-12-31' });
       setIndicadorPabellon(['1', '2', '3', '4', '5']);
       setIndicadorCumplimiento([]);
@@ -4228,37 +4294,49 @@ export default function SurgicalDashboard({ onBack }) {
                       {activeTab === 'disponibilidad' ? (
                         <>
                           <input
-                            key={`disp-start-${dateRangeIndicadores.start}`}
+                            ref={dispStartRef}
                             type="date"
                             defaultValue={dateRangeIndicadores.start}
                             onChange={e => {
                               const val = e.target.value;
+                              if (startDebounceRef.current) clearTimeout(startDebounceRef.current);
                               if (val && /^\d{4}-\d{2}-\d{2}$/.test(val)) {
-                                setDateRangeIndicadores(p => ({ ...p, start: val }));
+                                startDebounceRef.current = setTimeout(() => {
+                                  commitDispStart(val);
+                                }, 600);
                               }
                             }}
                             onBlur={e => {
-                              const val = e.target.value;
-                              if (val && /^\d{4}-\d{2}-\d{2}$/.test(val)) {
-                                setDateRangeIndicadores(p => ({ ...p, start: val }));
+                              commitDispStart(e.target.value);
+                            }}
+                            onKeyDown={e => {
+                              if (e.key === 'Enter') {
+                                commitDispStart(e.target.value);
+                                e.target.blur();
                               }
                             }}
                             style={{ width: '100%', padding: '8px 10px', borderRadius: '10px', border: '1px solid #cbd5e1', background: 'white', color: '#1e293b', fontSize: '0.8rem', outline: 'none', fontWeight: 600 }}
                           />
                           <input
-                            key={`disp-end-${dateRangeIndicadores.end}`}
+                            ref={dispEndRef}
                             type="date"
                             defaultValue={dateRangeIndicadores.end}
                             onChange={e => {
                               const val = e.target.value;
+                              if (endDebounceRef.current) clearTimeout(endDebounceRef.current);
                               if (val && /^\d{4}-\d{2}-\d{2}$/.test(val)) {
-                                setDateRangeIndicadores(p => ({ ...p, end: val }));
+                                endDebounceRef.current = setTimeout(() => {
+                                  commitDispEnd(val);
+                                }, 600);
                               }
                             }}
                             onBlur={e => {
-                              const val = e.target.value;
-                              if (val && /^\d{4}-\d{2}-\d{2}$/.test(val)) {
-                                setDateRangeIndicadores(p => ({ ...p, end: val }));
+                              commitDispEnd(e.target.value);
+                            }}
+                            onKeyDown={e => {
+                              if (e.key === 'Enter') {
+                                commitDispEnd(e.target.value);
+                                e.target.blur();
                               }
                             }}
                             style={{ width: '100%', padding: '8px 10px', borderRadius: '10px', border: '1px solid #cbd5e1', background: 'white', color: '#1e293b', fontSize: '0.8rem', outline: 'none', fontWeight: 600 }}
@@ -4267,37 +4345,49 @@ export default function SurgicalDashboard({ onBack }) {
                       ) : activeTab === 'tabla' ? (
                         <>
                           <input
-                            key={`tabla-start-${dateRangeTabla.start}`}
+                            ref={tablaStartRef}
                             type="date"
                             defaultValue={dateRangeTabla.start}
                             onChange={e => {
                               const val = e.target.value;
+                              if (startDebounceRef.current) clearTimeout(startDebounceRef.current);
                               if (val && /^\d{4}-\d{2}-\d{2}$/.test(val)) {
-                                setDateRangeTabla(p => ({ ...p, start: val }));
+                                startDebounceRef.current = setTimeout(() => {
+                                  commitTablaStart(val);
+                                }, 600);
                               }
                             }}
                             onBlur={e => {
-                              const val = e.target.value;
-                              if (val && /^\d{4}-\d{2}-\d{2}$/.test(val)) {
-                                setDateRangeTabla(p => ({ ...p, start: val }));
+                              commitTablaStart(e.target.value);
+                            }}
+                            onKeyDown={e => {
+                              if (e.key === 'Enter') {
+                                commitTablaStart(e.target.value);
+                                e.target.blur();
                               }
                             }}
                             style={{ width: '100%', padding: '8px 10px', borderRadius: '10px', border: '1px solid #cbd5e1', background: 'white', color: '#1e293b', fontSize: '0.8rem', outline: 'none', fontWeight: 600 }}
                           />
                           <input
-                            key={`tabla-end-${dateRangeTabla.end}`}
+                            ref={tablaEndRef}
                             type="date"
                             defaultValue={dateRangeTabla.end}
                             onChange={e => {
                               const val = e.target.value;
+                              if (endDebounceRef.current) clearTimeout(endDebounceRef.current);
                               if (val && /^\d{4}-\d{2}-\d{2}$/.test(val)) {
-                                setDateRangeTabla(p => ({ ...p, end: val }));
+                                endDebounceRef.current = setTimeout(() => {
+                                  commitTablaEnd(val);
+                                }, 600);
                               }
                             }}
                             onBlur={e => {
-                              const val = e.target.value;
-                              if (val && /^\d{4}-\d{2}-\d{2}$/.test(val)) {
-                                setDateRangeTabla(p => ({ ...p, end: val }));
+                              commitTablaEnd(e.target.value);
+                            }}
+                            onKeyDown={e => {
+                              if (e.key === 'Enter') {
+                                commitTablaEnd(e.target.value);
+                                e.target.blur();
                               }
                             }}
                             style={{ width: '100%', padding: '8px 10px', borderRadius: '10px', border: '1px solid #cbd5e1', background: 'white', color: '#1e293b', fontSize: '0.8rem', outline: 'none', fontWeight: 600 }}
@@ -4312,23 +4402,33 @@ export default function SurgicalDashboard({ onBack }) {
                     </div>
                     {(activeTab === 'disponibilidad' || activeTab === 'tabla') && (() => {
                       const currentRange = activeTab === 'disponibilidad' ? dateRangeIndicadores : dateRangeTabla;
-                      const setRange = activeTab === 'disponibilidad' ? setDateRangeIndicadores : setDateRangeTabla;
+                      const handlePreset = (range) => {
+                        if (activeTab === 'disponibilidad') {
+                          if (dispStartRef.current) dispStartRef.current.value = range.start;
+                          if (dispEndRef.current) dispEndRef.current.value = range.end;
+                          setDateRangeIndicadores(range);
+                        } else {
+                          if (tablaStartRef.current) tablaStartRef.current.value = range.start;
+                          if (tablaEndRef.current) tablaEndRef.current.value = range.end;
+                          setDateRangeTabla(range);
+                        }
+                      };
                       return (
                         <div style={{ display: 'flex', gap: '4px', marginTop: '8px' }}>
                           <button
-                            onClick={() => setRange({ start: '2026-01-01', end: '2026-12-31' })}
+                            onClick={() => handlePreset({ start: '2026-01-01', end: '2026-12-31' })}
                             style={{ flex: 1, padding: '4px 6px', fontSize: '0.7rem', background: (currentRange.start === '2026-01-01' && currentRange.end === '2026-12-31') ? '#1e40af' : '#f1f5f9', color: (currentRange.start === '2026-01-01' && currentRange.end === '2026-12-31') ? 'white' : '#475569', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 700 }}
                           >
                             Año 2026
                           </button>
                           <button
-                            onClick={() => setRange({ start: '2026-01-01', end: '2026-06-30' })}
+                            onClick={() => handlePreset({ start: '2026-01-01', end: '2026-06-30' })}
                             style={{ flex: 1, padding: '4px 6px', fontSize: '0.7rem', background: (currentRange.start === '2026-01-01' && currentRange.end === '2026-06-30') ? '#1e40af' : '#f1f5f9', color: (currentRange.start === '2026-01-01' && currentRange.end === '2026-06-30') ? 'white' : '#475569', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 700 }}
                           >
                             1er Sem 2026
                           </button>
                           <button
-                            onClick={() => setRange({ start: '2025-01-01', end: '2026-12-31' })}
+                            onClick={() => handlePreset({ start: '2025-01-01', end: '2026-12-31' })}
                             style={{ flex: 1, padding: '4px 6px', fontSize: '0.7rem', background: (currentRange.start === '2025-01-01' && currentRange.end === '2026-12-31') ? '#1e40af' : '#f1f5f9', color: (currentRange.start === '2025-01-01' && currentRange.end === '2026-12-31') ? 'white' : '#475569', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 700 }}
                           >
                             Histórico
