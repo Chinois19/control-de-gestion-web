@@ -93,6 +93,11 @@ async function fetchAndCache(name, token, cacheFileName) {
     // Filter only 2025-2026 records to optimize size
     const records = filterRecordsForYears(rawRecords, name);
 
+    // Enrich Tabla Quirurgica with Fonasa validation
+    if (name === 'Tabla Quirurgica') {
+      enrichPabellonWithFonasa(records);
+    }
+
     // Create the cached JSON object
     const cacheDir = path.join(__dirname, 'public', 'data');
     if (!fs.existsSync(cacheDir)) {
@@ -112,6 +117,58 @@ async function fetchAndCache(name, token, cacheFileName) {
     console.log(`[${name}] Saved cache to ${cacheFilePath} and ${gzFilePath}`);
   } catch (err) {
     console.error(`[${name}] Error caching records:`, err);
+  }
+}
+
+// Helper to enrich Pabellon records with Tipo de Actividad Fonasa and Tipo de Cirugía Validada
+function enrichPabellonWithFonasa(records) {
+  try {
+    const mapPath = path.join(__dirname, 'public', 'data', 'fonasa_actividad_map.json');
+    if (!fs.existsSync(mapPath)) return;
+    const fonasaMap = JSON.parse(fs.readFileSync(mapPath, 'utf8'));
+
+    records.forEach(r => {
+      let code = null;
+      if (r.codigo_iq) {
+        const m = String(r.codigo_iq).match(/^(\d{6,8})/);
+        if (m) code = m[1];
+      }
+      if (!code && r.intervencion_propuesta) {
+        const m = String(r.intervencion_propuesta).match(/^(\d{6,8})/);
+        if (m) code = m[1];
+      }
+      if (!code && r.codigo_iq) {
+        const m = String(r.codigo_iq).match(/\b(\d{7}|\d{6})\b/);
+        if (m) code = m[1];
+      }
+      if (!code && r.intervencion_propuesta) {
+        const m = String(r.intervencion_propuesta).match(/\b(\d{7}|\d{6})\b/);
+        if (m) code = m[1];
+      }
+
+      const actFonasa = code ? fonasaMap[code] : null;
+
+      if (!actFonasa) {
+        r.tipo_actividad_fonasa = 'Sin codificar Fonasa';
+        r.tipo_cirugia_validada = 'Sin codificar Fonasa';
+      } else if (actFonasa === 'Cirugía Menor') {
+        r.tipo_actividad_fonasa = 'Cirugía Menor';
+        r.tipo_cirugia_validada = 'Cirugía Menor';
+      } else if (actFonasa === 'Procedimientos') {
+        r.tipo_actividad_fonasa = 'Procedimientos';
+        r.tipo_cirugia_validada = 'Procedimientos';
+      } else if (actFonasa === 'Cirugía Mayor') {
+        r.tipo_actividad_fonasa = 'Cirugía Mayor';
+        const rawTipo = String(r.tipo_cirugia || '').trim();
+        r.tipo_cirugia_validada = rawTipo === 'Mayor' ? 'Cirugía Mayor' : 'Cirugía Mayor Ambulatoria';
+      } else {
+        r.tipo_actividad_fonasa = actFonasa;
+        r.tipo_cirugia_validada = actFonasa;
+      }
+    });
+    console.log(`[Tabla Quirurgica] Enriched ${records.length} records with Tipo de Cirugía Validada (Fonasa).`);
+  } catch (err) {
+    console.error(`[Tabla Quirurgica] Warning: Could not enrich with Fonasa validation:`, err);
   }
 }
 
@@ -135,6 +192,11 @@ async function fetchAndCacheBasicAuth(name, url, username, password, cacheFileNa
 
     // Filter only 2025-2026 records to optimize size
     const records = filterRecordsForYears(rawRecords, name);
+
+    // Enrich Tabla Quirurgica with Fonasa validation
+    if (name === 'Tabla Quirurgica') {
+      enrichPabellonWithFonasa(records);
+    }
 
     // Create the cached JSON object
     const cacheDir = path.join(__dirname, 'public', 'data');
@@ -179,6 +241,11 @@ async function fetchAndCachePabellonDisponibilidad(name, url, username, password
 
     // Filter only 2025-2026 records to optimize size
     const records = filterRecordsForYears(rawRecords, name);
+
+    // Enrich Tabla Quirurgica with Fonasa validation
+    if (name === 'Tabla Quirurgica') {
+      enrichPabellonWithFonasa(records);
+    }
 
     // Create the cached JSON object
     const cacheDir = path.join(__dirname, 'public', 'data');

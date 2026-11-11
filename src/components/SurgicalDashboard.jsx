@@ -2382,7 +2382,7 @@ export default function SurgicalDashboard({ onBack }) {
   const [showAuditoriaModal, setShowAuditoriaModal] = useState(false);
 
   // Sidebar Filters for Tabla (Suspensiones de Tabla: por defecto año 2026, Mayor y Mayor Amb, sin Condicional)
-  const DEFAULT_TABLA_TIPOS_CIRUGIA = ['Mayor', 'Mayor Amb'];
+  const DEFAULT_TABLA_TIPOS_CIRUGIA = ['Cirugía Mayor', 'Cirugía Mayor Ambulatoria'];
   const DEFAULT_TABLA_TIPOS_PACIENTE = ['Lista de espera', 'GES', 'Prioridad Clínica', 'COMGES', 'Privado', 'LISTA DE ESPERA'];
 
   const [dateRangeTabla, setDateRangeTabla] = useState({ start: '2026-01-01', end: '2026-12-31' });
@@ -2434,7 +2434,7 @@ export default function SurgicalDashboard({ onBack }) {
         .filter(arr => Array.isArray(arr) && arr.length > 0).length;
       if (dateRangeTabla.start !== '2026-01-01' || dateRangeTabla.end !== '2026-12-31') count++;
       if (tablaFechaProg.length !== 1 || tablaFechaProg[0] !== '2026') count++;
-      if (tablaTipoCirugia.length !== 2 || !['Mayor', 'Mayor Amb'].every(t => tablaTipoCirugia.includes(t))) count++;
+      if (tablaTipoCirugia.length !== 2 || !['Cirugía Mayor', 'Cirugía Mayor Ambulatoria'].every(t => tablaTipoCirugia.includes(t))) count++;
       if (tablaTipoPaciente.some(p => String(p).toLowerCase() === 'condicional') || tablaTipoPaciente.length === 0) count++;
       return count;
     } else if (activeTab === 'disponibilidad') {
@@ -2770,7 +2770,8 @@ export default function SurgicalDashboard({ onBack }) {
 
     tablaData.forEach(r => {
       if (r.fecha_programacion) fechas.add(r.fecha_programacion.split('-')[0]);
-      if (r.tipo_cirugia) tipos.add(r.tipo_cirugia);
+      const valTipo = r.tipo_cirugia_validada || (r.tipo_cirugia === 'Mayor' ? 'Cirugía Mayor' : r.tipo_cirugia === 'Mayor Amb' ? 'Cirugía Mayor Ambulatoria' : r.tipo_cirugia === 'Menor' ? 'Cirugía Menor' : r.tipo_cirugia === 'Procedimiento' ? 'Procedimientos' : 'Sin codificar Fonasa');
+      if (valTipo) tipos.add(valTipo);
       if (r.tipo_paciente) tipoPacientes.add(r.tipo_paciente);
       if (r.priorizacion) prios.add(r.priorizacion);
       if (r.pabellon_crr) crrs.add(r.pabellon_crr);
@@ -2794,15 +2795,26 @@ export default function SurgicalDashboard({ onBack }) {
     });
 
     const tipoCirugiaLabels = {
-      'Mayor': 'Mayor (Cirugía Mayor)',
-      'Mayor Amb': 'Mayor Ambulatoria (CMA)',
-      'Menor': 'Menor (Cirugía Menor)',
-      'Procedimiento': 'Procedimiento'
+      'Cirugía Mayor': 'Mayor (Cirugía Mayor)',
+      'Cirugía Mayor Ambulatoria': 'Mayor Amb (Cirugía Mayor Ambulatoria)',
+      'Cirugía Menor': 'Menor (Cirugía Menor)',
+      'Procedimientos': 'Procedimiento (Procedimientos)',
+      'Sin codificar Fonasa': 'Sin codificar Fonasa'
     };
+
+    const orderPrecedence = ['Cirugía Mayor', 'Cirugía Mayor Ambulatoria', 'Cirugía Menor', 'Procedimientos', 'Sin codificar Fonasa'];
+    const sortedTipos = Array.from(tipos).filter(Boolean).sort((a, b) => {
+      const idxA = orderPrecedence.indexOf(a);
+      const idxB = orderPrecedence.indexOf(b);
+      if (idxA !== -1 && idxB !== -1) return idxA - idxB;
+      if (idxA !== -1) return -1;
+      if (idxB !== -1) return 1;
+      return a.localeCompare(b);
+    }).map(t => ({ value: t, label: tipoCirugiaLabels[t] || t }));
 
     return {
       fechas: Array.from(fechas).sort().filter(Boolean),
-      tipos: Array.from(tipos).sort().filter(Boolean).map(t => ({ value: t, label: tipoCirugiaLabels[t] || t })),
+      tipos: sortedTipos,
       tipoPacientes: Array.from(tipoPacientes).sort().filter(Boolean),
       prios: Array.from(prios).sort().filter(Boolean),
       crrs: Array.from(crrs).sort().filter(Boolean),
@@ -2855,7 +2867,16 @@ export default function SurgicalDashboard({ onBack }) {
       if (dateOnly < dateRangeTabla.start || dateOnly > dateRangeTabla.end) return false;
 
       if (tablaFechaProg.length > 0 && !tablaFechaProg.includes(r.fecha_programacion.split('-')[0])) return false;
-      if (tablaTipoCirugia.length > 0 && !tablaTipoCirugia.includes(r.tipo_cirugia)) return false;
+      if (tablaTipoCirugia.length > 0) {
+        const valTipo = r.tipo_cirugia_validada || (r.tipo_cirugia === 'Mayor' ? 'Cirugía Mayor' : r.tipo_cirugia === 'Mayor Amb' ? 'Cirugía Mayor Ambulatoria' : r.tipo_cirugia === 'Menor' ? 'Cirugía Menor' : r.tipo_cirugia === 'Procedimiento' ? 'Procedimientos' : 'Sin codificar Fonasa');
+        const matchesVal = tablaTipoCirugia.includes(valTipo);
+        const matchesRaw = (tablaTipoCirugia.includes('Cirugía Mayor') && r.tipo_cirugia === 'Mayor') ||
+                           (tablaTipoCirugia.includes('Cirugía Mayor Ambulatoria') && r.tipo_cirugia === 'Mayor Amb') ||
+                           (tablaTipoCirugia.includes('Cirugía Menor') && r.tipo_cirugia === 'Menor') ||
+                           (tablaTipoCirugia.includes('Procedimientos') && r.tipo_cirugia === 'Procedimiento') ||
+                           tablaTipoCirugia.includes(r.tipo_cirugia);
+        if (!matchesVal && !matchesRaw) return false;
+      }
       if (tablaTipoPaciente.length > 0) {
         if (!tablaTipoPaciente.includes(r.tipo_paciente)) return false;
       } else {
@@ -2914,7 +2935,16 @@ export default function SurgicalDashboard({ onBack }) {
       if (dateOnly < priorStart || dateOnly > priorEnd) return;
 
       if (tablaFechaProg.length > 0 && !tablaFechaProg.includes(r.fecha_programacion.split('-')[0])) return;
-      if (tablaTipoCirugia.length > 0 && !tablaTipoCirugia.includes(r.tipo_cirugia)) return;
+      if (tablaTipoCirugia.length > 0) {
+        const valTipo = r.tipo_cirugia_validada || (r.tipo_cirugia === 'Mayor' ? 'Cirugía Mayor' : r.tipo_cirugia === 'Mayor Amb' ? 'Cirugía Mayor Ambulatoria' : r.tipo_cirugia === 'Menor' ? 'Cirugía Menor' : r.tipo_cirugia === 'Procedimiento' ? 'Procedimientos' : 'Sin codificar Fonasa');
+        const matchesVal = tablaTipoCirugia.includes(valTipo);
+        const matchesRaw = (tablaTipoCirugia.includes('Cirugía Mayor') && r.tipo_cirugia === 'Mayor') ||
+                           (tablaTipoCirugia.includes('Cirugía Mayor Ambulatoria') && r.tipo_cirugia === 'Mayor Amb') ||
+                           (tablaTipoCirugia.includes('Cirugía Menor') && r.tipo_cirugia === 'Menor') ||
+                           (tablaTipoCirugia.includes('Procedimientos') && r.tipo_cirugia === 'Procedimiento') ||
+                           tablaTipoCirugia.includes(r.tipo_cirugia);
+        if (!matchesVal && !matchesRaw) return;
+      }
       if (tablaTipoPaciente.length > 0) {
         if (!tablaTipoPaciente.includes(r.tipo_paciente)) return;
       } else {
@@ -4347,7 +4377,7 @@ export default function SurgicalDashboard({ onBack }) {
                         { label: 'Es Urgencia (Pabellón)', val: tablaEsUrgencia, set: setTablaEsUrgencia, options: tablaDropdowns.esUrgencia },
                         { label: 'Gran Causa de Suspensión', val: tablaCausaSuspension, set: setTablaCausaSuspension, options: tablaDropdowns.causas },
                         { label: 'Causa Específica (Motivo)', val: tablaMotivoSuspension, set: setTablaMotivoSuspension, options: tablaDropdowns.motivos },
-                        { label: 'Tipo de cirugía', val: tablaTipoCirugia, set: setTablaTipoCirugia, options: tablaDropdowns.tipos },
+                        { label: 'Tipo de Cirugía Validada', val: tablaTipoCirugia, set: setTablaTipoCirugia, options: tablaDropdowns.tipos },
                         { label: 'Tipo de paciente', val: tablaTipoPaciente, set: setTablaTipoPaciente, options: tablaDropdowns.tipoPacientes },
                         { label: 'Tipo de priorización', val: tablaPriorizacion, set: setTablaPriorizacion, options: tablaDropdowns.prios },
                         { label: 'Pabellón CRR', val: tablaPabellonCrr, set: setTablaPabellonCrr, options: tablaDropdowns.crrs },
