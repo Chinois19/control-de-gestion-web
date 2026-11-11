@@ -2381,11 +2381,14 @@ export default function SurgicalDashboard({ onBack }) {
   const [showPivotTable, setShowPivotTable] = useState(false);
   const [showAuditoriaModal, setShowAuditoriaModal] = useState(false);
 
-  // Sidebar Filters for Tabla (Suspensiones de Tabla: por defecto año 2026)
+  // Sidebar Filters for Tabla (Suspensiones de Tabla: por defecto año 2026, Mayor y Mayor Amb, sin Condicional)
+  const DEFAULT_TABLA_TIPOS_CIRUGIA = ['Mayor', 'Mayor Amb'];
+  const DEFAULT_TABLA_TIPOS_PACIENTE = ['Lista de espera', 'GES', 'Prioridad Clínica', 'COMGES', 'Privado', 'LISTA DE ESPERA'];
+
   const [dateRangeTabla, setDateRangeTabla] = useState({ start: '2026-01-01', end: '2026-12-31' });
-  const [tablaFechaProg, setTablaFechaProg] = useState([]);
-  const [tablaTipoCirugia, setTablaTipoCirugia] = useState([]);
-  const [tablaTipoPaciente, setTablaTipoPaciente] = useState([]);
+  const [tablaFechaProg, setTablaFechaProg] = useState(['2026']);
+  const [tablaTipoCirugia, setTablaTipoCirugia] = useState(DEFAULT_TABLA_TIPOS_CIRUGIA);
+  const [tablaTipoPaciente, setTablaTipoPaciente] = useState(DEFAULT_TABLA_TIPOS_PACIENTE);
   const [tablaPriorizacion, setTablaPriorizacion] = useState([]);
   const [tablaPabellonCrr, setTablaPabellonCrr] = useState([]);
   const [tablaIntervencion, setTablaIntervencion] = useState([]);
@@ -2427,9 +2430,12 @@ export default function SurgicalDashboard({ onBack }) {
       return [tipoCirugia, tipoPaciente, procedencia, tipoGestor, formaPago, nombreIq, primerCirujano, segundoCirujano, anestesiologo, reintervencion, libroPabellonTabla, libroPabellonCrr]
         .filter(arr => Array.isArray(arr) && arr.length > 0).length;
     } else if (activeTab === 'tabla') {
-      let count = [tablaFechaProg, tablaTipoCirugia, tablaTipoPaciente, tablaPriorizacion, tablaPabellonCrr, tablaIntervencion, tablaCirujano, tablaAnestesista, tablaPabellon, tablaModalidad, tablaCausaSuspension, tablaMotivoSuspension, tablaEsUrgencia]
+      let count = [tablaPriorizacion, tablaPabellonCrr, tablaIntervencion, tablaCirujano, tablaAnestesista, tablaPabellon, tablaModalidad, tablaCausaSuspension, tablaMotivoSuspension, tablaEsUrgencia]
         .filter(arr => Array.isArray(arr) && arr.length > 0).length;
       if (dateRangeTabla.start !== '2026-01-01' || dateRangeTabla.end !== '2026-12-31') count++;
+      if (tablaFechaProg.length !== 1 || tablaFechaProg[0] !== '2026') count++;
+      if (tablaTipoCirugia.length !== 2 || !['Mayor', 'Mayor Amb'].every(t => tablaTipoCirugia.includes(t))) count++;
+      if (tablaTipoPaciente.some(p => String(p).toLowerCase() === 'condicional') || tablaTipoPaciente.length === 0) count++;
       return count;
     } else if (activeTab === 'disponibilidad') {
       let count = 0;
@@ -2451,7 +2457,10 @@ export default function SurgicalDashboard({ onBack }) {
       setLibroPabellonTabla([]); setLibroPabellonCrr([]);
     } else if (activeTab === 'tabla') {
       setDateRangeTabla({ start: '2026-01-01', end: '2026-12-31' });
-      setTablaFechaProg([]); setTablaTipoCirugia([]); setTablaTipoPaciente([]); setTablaPriorizacion([]); setTablaPabellonCrr([]);
+      setTablaFechaProg(['2026']);
+      setTablaTipoCirugia(DEFAULT_TABLA_TIPOS_CIRUGIA);
+      setTablaTipoPaciente(DEFAULT_TABLA_TIPOS_PACIENTE);
+      setTablaPriorizacion([]); setTablaPabellonCrr([]);
       setTablaIntervencion([]); setTablaCirujano([]); setTablaAnestesista([]); setTablaPabellon([]); setTablaModalidad([]);
       setTablaCausaSuspension([]); setTablaMotivoSuspension([]); setTablaEsUrgencia([]);
     } else if (activeTab === 'disponibilidad') {
@@ -2784,9 +2793,16 @@ export default function SurgicalDashboard({ onBack }) {
       }
     });
 
+    const tipoCirugiaLabels = {
+      'Mayor': 'Mayor (Cirugía Mayor)',
+      'Mayor Amb': 'Mayor Ambulatoria (CMA)',
+      'Menor': 'Menor (Cirugía Menor)',
+      'Procedimiento': 'Procedimiento'
+    };
+
     return {
       fechas: Array.from(fechas).sort().filter(Boolean),
-      tipos: Array.from(tipos).sort().filter(Boolean),
+      tipos: Array.from(tipos).sort().filter(Boolean).map(t => ({ value: t, label: tipoCirugiaLabels[t] || t })),
       tipoPacientes: Array.from(tipoPacientes).sort().filter(Boolean),
       prios: Array.from(prios).sort().filter(Boolean),
       crrs: Array.from(crrs).sort().filter(Boolean),
@@ -2834,14 +2850,17 @@ export default function SurgicalDashboard({ onBack }) {
   const filteredTabla = useMemo(() => {
     return tablaData.filter(r => {
       if (r.eliminada === true || r.eliminada === "true") return false;
-      if (r.tipo_paciente === 'Condicional' && r.cirugia_realizada !== 'Si') return false; // Exclude condicionales no realizados
       if (!r.fecha_programacion) return false;
       const dateOnly = r.fecha_programacion.substring(0, 10);
       if (dateOnly < dateRangeTabla.start || dateOnly > dateRangeTabla.end) return false;
 
       if (tablaFechaProg.length > 0 && !tablaFechaProg.includes(r.fecha_programacion.split('-')[0])) return false;
       if (tablaTipoCirugia.length > 0 && !tablaTipoCirugia.includes(r.tipo_cirugia)) return false;
-      if (tablaTipoPaciente.length > 0 && !tablaTipoPaciente.includes(r.tipo_paciente)) return false;
+      if (tablaTipoPaciente.length > 0) {
+        if (!tablaTipoPaciente.includes(r.tipo_paciente)) return false;
+      } else {
+        if (String(r.tipo_paciente || '').trim().toLowerCase() === 'condicional') return false;
+      }
       if (tablaPriorizacion.length > 0 && !tablaPriorizacion.includes(r.priorizacion)) return false;
       if (tablaPabellonCrr.length > 0 && !tablaPabellonCrr.includes(r.pabellon_crr)) return false;
       if (tablaIntervencion.length > 0 && !tablaIntervencion.includes(r.intervencion_propuesta)) return false;
@@ -2896,7 +2915,11 @@ export default function SurgicalDashboard({ onBack }) {
 
       if (tablaFechaProg.length > 0 && !tablaFechaProg.includes(r.fecha_programacion.split('-')[0])) return;
       if (tablaTipoCirugia.length > 0 && !tablaTipoCirugia.includes(r.tipo_cirugia)) return;
-      if (tablaTipoPaciente.length > 0 && !tablaTipoPaciente.includes(r.tipo_paciente)) return;
+      if (tablaTipoPaciente.length > 0) {
+        if (!tablaTipoPaciente.includes(r.tipo_paciente)) return;
+      } else {
+        if (String(r.tipo_paciente || '').trim().toLowerCase() === 'condicional') return;
+      }
       if (tablaPriorizacion.length > 0 && !tablaPriorizacion.includes(r.priorizacion)) return;
       if (tablaPabellonCrr.length > 0 && !tablaPabellonCrr.includes(r.pabellon_crr)) return;
       if (tablaIntervencion.length > 0 && !tablaIntervencion.includes(r.intervencion_propuesta)) return;
@@ -5333,7 +5356,7 @@ export default function SurgicalDashboard({ onBack }) {
                                 </Bar>
                                 
                                 <Line yAxisId="right" type="monotone" dataKey="pctSuspensiones" stroke="#f59e0b" strokeWidth={3} dot={{ r: 4, fill: '#f59e0b' }} activeDot={{ r: 6 }} name="% Suspensiones" />
-                                <ReferenceLine yAxisId="right" y={5} stroke="#ef4444" strokeDasharray="3 3" opacity={0.6} label={{ position: 'top', value: 'Meta 5%', fill: '#ef4444', fontSize: 11, fontWeight: 700 }} />
+                                <ReferenceLine yAxisId="right" y={6.5} stroke="#ef4444" strokeDasharray="3 3" opacity={0.75} label={{ position: 'top', value: 'Meta ≤ 6.5%', fill: '#ef4444', fontSize: 11, fontWeight: 700 }} />
                               </ComposedChart>
                             </ResponsiveContainer>
                           </div>
