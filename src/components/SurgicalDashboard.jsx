@@ -4205,13 +4205,81 @@ export default function SurgicalDashboard({ onBack }) {
                     <div style={{ display: 'flex', gap: '8px' }}>
                       {activeTab === 'disponibilidad' ? (
                         <>
-                          <input type="date" value={dateRangeIndicadores.start} onChange={e => setDateRangeIndicadores(p => ({ ...p, start: e.target.value }))} style={{ width: '100%', padding: '8px 10px', borderRadius: '10px', border: '1px solid #cbd5e1', background: 'white', color: '#1e293b', fontSize: '0.8rem', outline: 'none', fontWeight: 600 }} />
-                          <input type="date" value={dateRangeIndicadores.end} onChange={e => setDateRangeIndicadores(p => ({ ...p, end: e.target.value }))} style={{ width: '100%', padding: '8px 10px', borderRadius: '10px', border: '1px solid #cbd5e1', background: 'white', color: '#1e293b', fontSize: '0.8rem', outline: 'none', fontWeight: 600 }} />
+                          <input
+                            key={`disp-start-${dateRangeIndicadores.start}`}
+                            type="date"
+                            defaultValue={dateRangeIndicadores.start}
+                            onChange={e => {
+                              const val = e.target.value;
+                              if (val && /^\d{4}-\d{2}-\d{2}$/.test(val)) {
+                                setDateRangeIndicadores(p => ({ ...p, start: val }));
+                              }
+                            }}
+                            onBlur={e => {
+                              const val = e.target.value;
+                              if (val && /^\d{4}-\d{2}-\d{2}$/.test(val)) {
+                                setDateRangeIndicadores(p => ({ ...p, start: val }));
+                              }
+                            }}
+                            style={{ width: '100%', padding: '8px 10px', borderRadius: '10px', border: '1px solid #cbd5e1', background: 'white', color: '#1e293b', fontSize: '0.8rem', outline: 'none', fontWeight: 600 }}
+                          />
+                          <input
+                            key={`disp-end-${dateRangeIndicadores.end}`}
+                            type="date"
+                            defaultValue={dateRangeIndicadores.end}
+                            onChange={e => {
+                              const val = e.target.value;
+                              if (val && /^\d{4}-\d{2}-\d{2}$/.test(val)) {
+                                setDateRangeIndicadores(p => ({ ...p, end: val }));
+                              }
+                            }}
+                            onBlur={e => {
+                              const val = e.target.value;
+                              if (val && /^\d{4}-\d{2}-\d{2}$/.test(val)) {
+                                setDateRangeIndicadores(p => ({ ...p, end: val }));
+                              }
+                            }}
+                            style={{ width: '100%', padding: '8px 10px', borderRadius: '10px', border: '1px solid #cbd5e1', background: 'white', color: '#1e293b', fontSize: '0.8rem', outline: 'none', fontWeight: 600 }}
+                          />
                         </>
                       ) : activeTab === 'tabla' ? (
                         <>
-                          <input type="date" value={dateRangeTabla.start} onChange={e => setDateRangeTabla(p => ({ ...p, start: e.target.value }))} style={{ width: '100%', padding: '8px 10px', borderRadius: '10px', border: '1px solid #cbd5e1', background: 'white', color: '#1e293b', fontSize: '0.8rem', outline: 'none', fontWeight: 600 }} />
-                          <input type="date" value={dateRangeTabla.end} onChange={e => setDateRangeTabla(p => ({ ...p, end: e.target.value }))} style={{ width: '100%', padding: '8px 10px', borderRadius: '10px', border: '1px solid #cbd5e1', background: 'white', color: '#1e293b', fontSize: '0.8rem', outline: 'none', fontWeight: 600 }} />
+                          <input
+                            key={`tabla-start-${dateRangeTabla.start}`}
+                            type="date"
+                            defaultValue={dateRangeTabla.start}
+                            onChange={e => {
+                              const val = e.target.value;
+                              if (val && /^\d{4}-\d{2}-\d{2}$/.test(val)) {
+                                setDateRangeTabla(p => ({ ...p, start: val }));
+                              }
+                            }}
+                            onBlur={e => {
+                              const val = e.target.value;
+                              if (val && /^\d{4}-\d{2}-\d{2}$/.test(val)) {
+                                setDateRangeTabla(p => ({ ...p, start: val }));
+                              }
+                            }}
+                            style={{ width: '100%', padding: '8px 10px', borderRadius: '10px', border: '1px solid #cbd5e1', background: 'white', color: '#1e293b', fontSize: '0.8rem', outline: 'none', fontWeight: 600 }}
+                          />
+                          <input
+                            key={`tabla-end-${dateRangeTabla.end}`}
+                            type="date"
+                            defaultValue={dateRangeTabla.end}
+                            onChange={e => {
+                              const val = e.target.value;
+                              if (val && /^\d{4}-\d{2}-\d{2}$/.test(val)) {
+                                setDateRangeTabla(p => ({ ...p, end: val }));
+                              }
+                            }}
+                            onBlur={e => {
+                              const val = e.target.value;
+                              if (val && /^\d{4}-\d{2}-\d{2}$/.test(val)) {
+                                setDateRangeTabla(p => ({ ...p, end: val }));
+                              }
+                            }}
+                            style={{ width: '100%', padding: '8px 10px', borderRadius: '10px', border: '1px solid #cbd5e1', background: 'white', color: '#1e293b', fontSize: '0.8rem', outline: 'none', fontWeight: 600 }}
+                          />
                         </>
                       ) : (
                         <>

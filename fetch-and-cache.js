@@ -42,6 +42,11 @@ function filterRecordsForYears(records, name) {
   const filtered = records.filter(r => {
     // If no fields, keep by default so we don't lose data
     if (!r || typeof r !== 'object') return false;
+
+    // Discard deleted records (especialmente en Tabla Quirúrgica / Pabellón)
+    if (r.eliminada === true || r.eliminada === 'true' || r.eliminada === 1) {
+      return false;
+    }
     
     // Check if any of the common date fields belong to 2025 or 2026
     for (const field of dateFields) {
@@ -55,7 +60,7 @@ function filterRecordsForYears(records, name) {
     return !hasAnyDateField;
   });
 
-  console.log(`[${name}] Filtered from ${records.length} to ${filtered.length} records (Years 2025-2026).`);
+  console.log(`[${name}] Filtered from ${records.length} to ${filtered.length} records (Years 2025-2026, sin eliminadas).`);
   return filtered;
 }
 
