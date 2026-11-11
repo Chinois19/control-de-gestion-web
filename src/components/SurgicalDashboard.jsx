@@ -2435,7 +2435,7 @@ export default function SurgicalDashboard({ onBack }) {
       if (dateRangeTabla.start !== '2026-01-01' || dateRangeTabla.end !== '2026-12-31') count++;
       if (tablaFechaProg.length !== 1 || tablaFechaProg[0] !== '2026') count++;
       if (tablaTipoCirugia.length !== 2 || !['Cirugía Mayor', 'Cirugía Mayor Ambulatoria'].every(t => tablaTipoCirugia.includes(t))) count++;
-      if (tablaTipoPaciente.some(p => String(p).toLowerCase() === 'condicional') || tablaTipoPaciente.length === 0) count++;
+      if (tablaTipoPaciente.length > 0 && !DEFAULT_TABLA_TIPOS_PACIENTE.every(p => tablaTipoPaciente.includes(p))) count++;
       return count;
     } else if (activeTab === 'disponibilidad') {
       let count = 0;
@@ -2877,11 +2877,7 @@ export default function SurgicalDashboard({ onBack }) {
                            tablaTipoCirugia.includes(r.tipo_cirugia);
         if (!matchesVal && !matchesRaw) return false;
       }
-      if (tablaTipoPaciente.length > 0) {
-        if (!tablaTipoPaciente.includes(r.tipo_paciente)) return false;
-      } else {
-        if (String(r.tipo_paciente || '').trim().toLowerCase() === 'condicional') return false;
-      }
+      if (tablaTipoPaciente.length > 0 && !tablaTipoPaciente.includes(r.tipo_paciente)) return false;
       if (tablaPriorizacion.length > 0 && !tablaPriorizacion.includes(r.priorizacion)) return false;
       if (tablaPabellonCrr.length > 0 && !tablaPabellonCrr.includes(r.pabellon_crr)) return false;
       if (tablaIntervencion.length > 0 && !tablaIntervencion.includes(r.intervencion_propuesta)) return false;
@@ -2945,11 +2941,7 @@ export default function SurgicalDashboard({ onBack }) {
                            tablaTipoCirugia.includes(r.tipo_cirugia);
         if (!matchesVal && !matchesRaw) return;
       }
-      if (tablaTipoPaciente.length > 0) {
-        if (!tablaTipoPaciente.includes(r.tipo_paciente)) return;
-      } else {
-        if (String(r.tipo_paciente || '').trim().toLowerCase() === 'condicional') return;
-      }
+      if (tablaTipoPaciente.length > 0 && !tablaTipoPaciente.includes(r.tipo_paciente)) return;
       if (tablaPriorizacion.length > 0 && !tablaPriorizacion.includes(r.priorizacion)) return;
       if (tablaPabellonCrr.length > 0 && !tablaPabellonCrr.includes(r.pabellon_crr)) return;
       if (tablaIntervencion.length > 0 && !tablaIntervencion.includes(r.intervencion_propuesta)) return;
