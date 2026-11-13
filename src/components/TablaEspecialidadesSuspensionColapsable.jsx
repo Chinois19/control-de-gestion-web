@@ -316,7 +316,7 @@ export default function TablaEspecialidadesSuspensionColapsable({ data = [] }) {
             </div>
             <div>
               <h3 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 800, color: '#0f172a' }}>
-                Matriz Colapsable: Suspensiones por Especialidad e Intervención Quirúrgica Propuesta
+                Suspensiones por Especialidad e Intervención Quirúrgica Propuesta
               </h3>
               <p style={{ margin: '2px 0 0 0', fontSize: '0.82rem', color: '#64748b' }}>
                 Especialidades y cirugías suspendidas en filas con subtotales y porcentajes × Meses y años en columnas

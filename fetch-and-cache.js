@@ -165,11 +165,80 @@ function enrichPabellonWithFonasa(records) {
         r.tipo_actividad_fonasa = actFonasa;
         r.tipo_cirugia_validada = actFonasa;
       }
+
+      // Calculate Tipo de Horario según REM
+      r.tipo_horario = calculateTipoHorario(r);
     });
-    console.log(`[Tabla Quirurgica] Enriched ${records.length} records with Tipo de Cirugía Validada (Fonasa).`);
+    console.log(`[Tabla Quirurgica] Enriched ${records.length} records with Tipo de Cirugía Validada (Fonasa) y Tipo de Horario.`);
   } catch (err) {
     console.error(`[Tabla Quirurgica] Warning: Could not enrich with Fonasa validation:`, err);
   }
+}
+
+const CHILEAN_HOLIDAYS = new Set([
+  // 2024
+  '2024-01-01', '2024-03-29', '2024-03-30', '2024-05-01', '2024-05-21', '2024-06-09',
+  '2024-06-20', '2024-06-29', '2024-07-16', '2024-08-15', '2024-09-18', '2024-09-19',
+  '2024-09-20', '2024-10-12', '2024-10-27', '2024-10-31', '2024-11-01', '2024-12-08', '2024-12-25',
+  // 2025
+  '2025-01-01', '2025-04-18', '2025-04-19', '2025-05-01', '2025-05-21', '2025-06-20',
+  '2025-06-29', '2025-07-16', '2025-08-15', '2025-09-18', '2025-09-19', '2025-10-12',
+  '2025-10-31', '2025-11-01', '2025-11-16', '2025-12-08', '2025-12-14', '2025-12-25',
+  // 2026
+  '2026-01-01', '2026-04-03', '2026-04-04', '2026-05-01', '2026-05-21', '2026-06-21',
+  '2026-06-29', '2026-07-16', '2026-08-15', '2026-09-18', '2026-09-19', '2026-10-12',
+  '2026-10-31', '2026-11-01', '2026-12-08', '2026-12-25',
+  // 2027
+  '2027-01-01', '2027-03-26', '2027-03-27', '2027-05-01', '2027-05-21', '2027-06-21',
+  '2027-06-29', '2027-07-16', '2027-08-15', '2027-09-18', '2027-09-19', '2027-10-12',
+  '2027-10-31', '2027-11-01', '2027-12-08', '2027-12-25'
+]);
+
+function calculateTipoHorario(r) {
+  if (!r.fecha_programacion) return 'Horario hábil';
+  const dateStr = String(r.fecha_programacion).split('T')[0];
+  const [y, m, d] = dateStr.split('-').map(Number);
+  const dt = new Date(y, m - 1, d);
+  const dayOfWeek = dt.getDay(); // 0 = Domingo, 6 = Sábado
+
+  // 3. Sábado, domingo y festivos
+  if (dayOfWeek === 0 || dayOfWeek === 6 || CHILEAN_HOLIDAYS.has(dateStr)) {
+    return 'Sábado, domingo y festivos';
+  }
+
+  // Determine time of entry to pabellon
+  let timeStr = r.hora_ingreso_cirugia || r.hora_inicio_cirugia;
+  
+  if (!timeStr) {
+    if (r.hora_suspension && /^\d{1,2}:\d{2}/.test(r.hora_suspension)) {
+      timeStr = r.hora_suspension;
+    } else {
+      return 'Horario hábil';
+    }
+  }
+
+  const [hh, mm] = String(timeStr).split(':').map(Number);
+  const totalMin = hh * 60 + (mm || 0);
+
+  // Lunes a Jueves: 08:00 a 17:00 inclusive (480 a 1020)
+  if (dayOfWeek >= 1 && dayOfWeek <= 4) {
+    if (totalMin >= 480 && totalMin <= 1020) {
+      return 'Horario hábil';
+    } else {
+      return 'Horario inhábil de lunes a viernes';
+    }
+  }
+
+  // Viernes: 08:00 a 16:00 inclusive (480 a 960)
+  if (dayOfWeek === 5) {
+    if (totalMin >= 480 && totalMin <= 960) {
+      return 'Horario hábil';
+    } else {
+      return 'Horario inhábil de lunes a viernes';
+    }
+  }
+
+  return 'Horario hábil';
 }
 
 async function fetchAndCacheBasicAuth(name, url, username, password, cacheFileName) {

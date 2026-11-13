@@ -24,6 +24,94 @@ const PIE_COLORS = {
   'Procedimientos': '#38bdf8'
 };
 
+export const getTipoCirugiaValidada = (r) => {
+  if (!r) return 'Sin codificar Fonasa';
+  if (r.tipo_cirugia_validada) return r.tipo_cirugia_validada;
+  
+  const fonasa = String(r.tipo_actividad_fonasa || '').trim();
+  const rawTipo = String(r.tipo_cirugia || '').trim();
+
+  if (fonasa === 'Cirugía Menor') {
+    return 'Cirugía Menor';
+  }
+  if (fonasa === 'Procedimientos') {
+    return 'Procedimientos';
+  }
+  if (fonasa === 'Cirugía Mayor') {
+    return rawTipo === 'Mayor' ? 'Cirugía Mayor' : 'Cirugía Mayor Ambulatoria';
+  }
+  return 'Sin codificar Fonasa';
+};
+
+export const CHILEAN_HOLIDAYS = new Set([
+  // 2024
+  '2024-01-01', '2024-03-29', '2024-03-30', '2024-05-01', '2024-05-21', '2024-06-09',
+  '2024-06-20', '2024-06-29', '2024-07-16', '2024-08-15', '2024-09-18', '2024-09-19',
+  '2024-09-20', '2024-10-12', '2024-10-27', '2024-10-31', '2024-11-01', '2024-12-08', '2024-12-25',
+  // 2025
+  '2025-01-01', '2025-04-18', '2025-04-19', '2025-05-01', '2025-05-21', '2025-06-20',
+  '2025-06-29', '2025-07-16', '2025-08-15', '2025-09-18', '2025-09-19', '2025-10-12',
+  '2025-10-31', '2025-11-01', '2025-11-16', '2025-12-08', '2025-12-14', '2025-12-25',
+  // 2026
+  '2026-01-01', '2026-04-03', '2026-04-04', '2026-05-01', '2026-05-21', '2026-06-21',
+  '2026-06-29', '2026-07-16', '2026-08-15', '2026-09-18', '2026-09-19', '2026-10-12',
+  '2026-10-31', '2026-11-01', '2026-12-08', '2026-12-25',
+  // 2027
+  '2027-01-01', '2027-03-26', '2027-03-27', '2027-05-01', '2027-05-21', '2027-06-21',
+  '2027-06-29', '2027-07-16', '2027-08-15', '2027-09-18', '2027-09-19', '2027-10-12',
+  '2027-10-31', '2027-11-01', '2027-12-08', '2027-12-25'
+]);
+
+export const getTipoHorario = (r) => {
+  if (!r) return 'Horario hábil';
+  if (r.tipo_horario) return r.tipo_horario;
+  if (!r.fecha_programacion) return 'Horario hábil';
+
+  const dateStr = String(r.fecha_programacion).split('T')[0];
+  const [y, m, d] = dateStr.split('-').map(Number);
+  const dt = new Date(y, m - 1, d);
+  const dayOfWeek = dt.getDay(); // 0 = Domingo, 6 = Sábado
+
+  // 3. Sábado, domingo y festivos
+  if (dayOfWeek === 0 || dayOfWeek === 6 || CHILEAN_HOLIDAYS.has(dateStr)) {
+    return 'Sábado, domingo y festivos';
+  }
+
+  // Determine time of entry to pabellon
+  let timeStr = r.hora_ingreso_cirugia || r.hora_inicio_cirugia;
+  
+  if (!timeStr) {
+    if (r.hora_suspension && /^\d{1,2}:\d{2}/.test(r.hora_suspension)) {
+      timeStr = r.hora_suspension;
+    } else {
+      return 'Horario hábil';
+    }
+  }
+
+  const [hh, mm] = String(timeStr).split(':').map(Number);
+  const totalMin = hh * 60 + (mm || 0);
+
+  // Lunes a Jueves: 08:00 a 17:00 inclusive (480 a 1020)
+  if (dayOfWeek >= 1 && dayOfWeek <= 4) {
+    if (totalMin >= 480 && totalMin <= 1020) {
+      return 'Horario hábil';
+    } else {
+      return 'Horario inhábil de lunes a viernes';
+    }
+  }
+
+  // Viernes: 08:00 a 16:00 inclusive (480 a 960)
+  if (dayOfWeek === 5) {
+    if (totalMin >= 480 && totalMin <= 960) {
+      return 'Horario hábil';
+    } else {
+      return 'Horario inhábil de lunes a viernes';
+    }
+  }
+
+  return 'Horario hábil';
+};
+
 const MultiSearchableSelect = ({ value = [], options = [], onChange }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [search, setSearch] = useState("");
@@ -687,7 +775,9 @@ const TablaDinamicaSuspensiones = ({ data = [] }) => {
     suspData.forEach(r => {
       const esp = r.especialidad || 'Sin Especialidad';
       const cir = r.intervencion_propuesta || 'Sin Intervención Especificada';
-      const med = r.cirujano || 'Sin Médico Asignado';
+      const cirujano = r.cirujano || 'Sin Cirujano';
+      const anestesiologo = r.anestesiologo || 'Sin Anestesiólogo';
+      const med = `Cir: ${cirujano} · Anest: ${anestesiologo}`;
       const causaStr = `${r.causa_suspension || 'Sin Causa'} - ${r.motivo_suspension || 'Sin Motivo'}`;
       const monthKey = r.fecha_programacion ? r.fecha_programacion.substring(0, 7) : '2025-01';
 
@@ -1048,6 +1138,72 @@ const AnalisisHallazgosSuspensiones = ({ data = [] }) => {
 
     const avgAge = validEdadCount > 0 ? (sumEdad / validEdadCount).toFixed(1) : 0;
 
+    // Profundización específica: Tasas reales por grupo etario, tipo de paciente, día de semana y combinaciones críticas
+    const ageBuckets = {
+      '< 18 años': { prog: 0, susp: 0 },
+      '18–59 años': { prog: 0, susp: 0 },
+      '≥ 60 años': { prog: 0, susp: 0 }
+    };
+    const tpMap = {};
+    const dayNames = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+    const dayMap = { Lun: 0, Mar: 0, Mié: 0, Jue: 0, Vie: 0 };
+    const comboMap = {};
+
+    data.forEach(r => {
+      const isS = r.estado === 'Suspendido';
+      const age = parseInt(r.edad, 10);
+      if (!isNaN(age)) {
+        const bKey = age < 18 ? '< 18 años' : age < 60 ? '18–59 años' : '≥ 60 años';
+        ageBuckets[bKey].prog++;
+        if (isS) ageBuckets[bKey].susp++;
+      }
+      const tp = r.tipo_paciente || 'Sin Dato';
+      if (!tpMap[tp]) tpMap[tp] = { prog: 0, susp: 0 };
+      tpMap[tp].prog++;
+      if (isS) tpMap[tp].susp++;
+
+      if (isS) {
+        if (r.fecha_programacion) {
+          const d = new Date(r.fecha_programacion.substring(0, 10) + 'T12:00:00');
+          if (!isNaN(d.getTime())) {
+            const dn = dayNames[d.getDay()];
+            if (dayMap[dn] !== undefined) dayMap[dn]++;
+          }
+        }
+        const comboKey = `${r.especialidad || 'Sin Esp.'} · ${r.motivo_suspension || 'Sin Motivo'}`;
+        comboMap[comboKey] = (comboMap[comboKey] || 0) + 1;
+      }
+    });
+
+    const ageGroupRates = Object.entries(ageBuckets).map(([label, d]) => ({
+      label,
+      prog: d.prog,
+      susp: d.susp,
+      rate: d.prog > 0 ? ((d.susp / d.prog) * 100).toFixed(1) : '0.0'
+    }));
+
+    const topTipoPaciente = Object.entries(tpMap)
+      .filter(([, d]) => d.prog >= 3 && d.susp > 0)
+      .map(([name, d]) => ({
+        name,
+        prog: d.prog,
+        susp: d.susp,
+        rate: ((d.susp / d.prog) * 100).toFixed(1)
+      }))
+      .sort((a, b) => parseFloat(b.rate) - parseFloat(a.rate))
+      .slice(0, 3);
+
+    const weekdayStats = Object.entries(dayMap).map(([day, count]) => ({
+      day,
+      count,
+      pct: total > 0 ? ((count / total) * 100).toFixed(1) : '0.0'
+    }));
+
+    const topCombos = Object.entries(comboMap)
+      .map(([name, count]) => ({ name, count, pct: ((count / total) * 100).toFixed(1) }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 3);
+
     return {
       total,
       topPrio,
@@ -1061,7 +1217,11 @@ const AnalisisHallazgosSuspensiones = ({ data = [] }) => {
       electiva,
       urgencia,
       ambulatoria,
-      hospitalizado
+      hospitalizado,
+      ageGroupRates,
+      topTipoPaciente,
+      weekdayStats,
+      topCombos
     };
   }, [data]);
 
@@ -1157,7 +1317,7 @@ const AnalisisHallazgosSuspensiones = ({ data = [] }) => {
    COMPONENTE: ANÁLISIS AVANZADO DE CIRUJANOS, ANESTESIÓLOGOS Y CAUSAS
    ========================================================================== */
 const AnalisisCirujanosYCausas = ({ data = [] }) => {
-  const [viewMode, setViewMode] = useState('cirujano');
+  const [viewMode, setViewMode] = useState('causa');
   const [selectedProf, setSelectedProf] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -1268,6 +1428,18 @@ const AnalisisCirujanosYCausas = ({ data = [] }) => {
 
         <div style={{ display: 'flex', gap: '8px', background: '#f8fafc', padding: '6px', borderRadius: '14px', border: '1px solid #e2e8f0' }}>
           <button
+            onClick={() => { setViewMode('causa'); setSelectedProf(null); }}
+            style={{
+              padding: '8px 16px', fontSize: '0.8rem', fontWeight: viewMode === 'causa' ? 800 : 600,
+              borderRadius: '10px', border: 'none',
+              background: viewMode === 'causa' ? 'linear-gradient(135deg, #ea580c, #c2410c)' : 'transparent',
+              color: viewMode === 'causa' ? 'white' : '#475569', cursor: 'pointer', transition: 'all 0.2s',
+              boxShadow: viewMode === 'causa' ? '0 4px 12px rgba(234, 88, 12, 0.25)' : 'none'
+            }}
+          >
+            ⚠️ Matriz & Pareto de Causas
+          </button>
+          <button
             onClick={() => { setViewMode('cirujano'); setSelectedProf(null); }}
             style={{
               padding: '8px 16px', fontSize: '0.8rem', fontWeight: viewMode === 'cirujano' ? 800 : 600,
@@ -1290,18 +1462,6 @@ const AnalisisCirujanosYCausas = ({ data = [] }) => {
             }}
           >
             💉 Por Anestesiólogo
-          </button>
-          <button
-            onClick={() => { setViewMode('causa'); setSelectedProf(null); }}
-            style={{
-              padding: '8px 16px', fontSize: '0.8rem', fontWeight: viewMode === 'causa' ? 800 : 600,
-              borderRadius: '10px', border: 'none',
-              background: viewMode === 'causa' ? 'linear-gradient(135deg, #ea580c, #c2410c)' : 'transparent',
-              color: viewMode === 'causa' ? 'white' : '#475569', cursor: 'pointer', transition: 'all 0.2s',
-              boxShadow: viewMode === 'causa' ? '0 4px 12px rgba(234, 88, 12, 0.25)' : 'none'
-            }}
-          >
-            ⚠️ Matriz & Pareto de Causas
           </button>
         </div>
       </div>
@@ -1329,6 +1489,14 @@ const AnalisisCirujanosYCausas = ({ data = [] }) => {
           <p style={{ margin: 0, fontSize: '0.7rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase' }}>Causa Frecuente #1</p>
           <h4 style={{ margin: '4px 0 0 0', fontSize: '0.95rem', fontWeight: 800, color: '#0f172a', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={kpis.topCausa}>{kpis.topCausa}</h4>
           <span style={{ fontSize: '0.72rem', color: '#8b5cf6', fontWeight: 700 }}>Foco de gestión prioritario</span>
+        </div>
+      </div>
+
+      {/* DEFINICIÓN EXPLÍCITA DE CAUSAS DE GESTIÓN EVITABLES */}
+      <div style={{ background: '#fff7ed', border: '1px solid #fed7aa', borderRadius: '14px', padding: '14px 18px', marginBottom: '20px', display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
+        <AlertCircle size={18} color="#ea580c" style={{ flexShrink: 0, marginTop: '2px' }} />
+        <div style={{ fontSize: '0.8rem', color: '#7c2d12', lineHeight: 1.5 }}>
+          <strong style={{ color: '#9a3412' }}>Definición — Causas de Gestión Evitables:</strong> Corresponde a las suspensiones atribuibles a la gestión interna u operacional del establecimiento (excluyendo causas propias del paciente). Agrupa las causales que contienen términos asociados a: <strong>Equipo Quirúrgico</strong> (prolongación de tabla, falta de tiempo, disponibilidad de cirujano, anestesiólogo o personal), <strong>Administrativas</strong> (disponibilidad de camas, exámenes pendientes, programación) y <strong>Apoyo Logístico / Clínico</strong> (insumos, pabellón).
         </div>
       </div>
 
@@ -2381,24 +2549,29 @@ export default function SurgicalDashboard({ onBack }) {
   const [showPivotTable, setShowPivotTable] = useState(false);
   const [showAuditoriaModal, setShowAuditoriaModal] = useState(false);
 
-  // Sidebar Filters for Tabla (Suspensiones de Tabla: por defecto año 2026, Mayor y Mayor Amb, sin Condicional)
+  // Sidebar Filters for Tabla (Suspensiones de Tabla: por defecto año 2026, Mayor y Mayor Amb, sin Condicional, Electivo, Horario hábil, Pabellones 1-6)
   const DEFAULT_TABLA_TIPOS_CIRUGIA = ['Cirugía Mayor', 'Cirugía Mayor Ambulatoria'];
   const DEFAULT_TABLA_TIPOS_PACIENTE = ['Lista de espera', 'GES', 'Prioridad Clínica', 'COMGES', 'Privado', 'LISTA DE ESPERA'];
+  const DEFAULT_TABLA_TIPO_HORARIO = ['Horario hábil'];
+  const DEFAULT_TABLA_PABELLONES = ['1', '2', '3', '4', '5', '6'];
+  const DEFAULT_TABLA_ES_URGENCIA = ['false'];
+  const DEFAULT_TABLA_PROCEDENCIA = ['Electiva', 'Urgencia Diferida'];
 
   const [dateRangeTabla, setDateRangeTabla] = useState({ start: '2026-01-01', end: '2026-12-31' });
-  const [tablaFechaProg, setTablaFechaProg] = useState(['2026']);
   const [tablaTipoCirugia, setTablaTipoCirugia] = useState(DEFAULT_TABLA_TIPOS_CIRUGIA);
+  const [tablaTipoHorario, setTablaTipoHorario] = useState(DEFAULT_TABLA_TIPO_HORARIO);
   const [tablaTipoPaciente, setTablaTipoPaciente] = useState(DEFAULT_TABLA_TIPOS_PACIENTE);
+  const [tablaProcedencia, setTablaProcedencia] = useState(DEFAULT_TABLA_PROCEDENCIA);
   const [tablaPriorizacion, setTablaPriorizacion] = useState([]);
   const [tablaPabellonCrr, setTablaPabellonCrr] = useState([]);
   const [tablaIntervencion, setTablaIntervencion] = useState([]);
   const [tablaCirujano, setTablaCirujano] = useState([]);
   const [tablaAnestesista, setTablaAnestesista] = useState([]);
-  const [tablaPabellon, setTablaPabellon] = useState([]);
+  const [tablaPabellon, setTablaPabellon] = useState(DEFAULT_TABLA_PABELLONES);
   const [tablaModalidad, setTablaModalidad] = useState([]);
   const [tablaCausaSuspension, setTablaCausaSuspension] = useState([]);
   const [tablaMotivoSuspension, setTablaMotivoSuspension] = useState([]);
-  const [tablaEsUrgencia, setTablaEsUrgencia] = useState([]);
+  const [tablaEsUrgencia, setTablaEsUrgencia] = useState(DEFAULT_TABLA_ES_URGENCIA);
   const [tablaLastUpdated, setTablaLastUpdated] = useState(null);
   const [dispLastUpdated, setDispLastUpdated] = useState(null);
   const [libroLastUpdated, setLibroLastUpdated] = useState(null);
@@ -2414,10 +2587,20 @@ export default function SurgicalDashboard({ onBack }) {
 
   // Sidebar Filters for Indicadores de Gestión
   const [dateRangeIndicadores, setDateRangeIndicadores] = useState({ start: '2026-01-01', end: '2026-12-31' });
-  const [indicadorPabellon, setIndicadorPabellon] = useState(['1', '2', '3', '4', '5']); // Por defecto excluye 6 y 7
+  const [indicadorPabellon, setIndicadorPabellon] = useState(['1', '2', '3', '4', '5', '6']);
   const [indicadorCumplimiento, setIndicadorCumplimiento] = useState([]);
   const [indicadorTipoDia, setIndicadorTipoDia] = useState('habiles'); // 'habiles', 'no_habiles', 'todos'
-  const [indicadorEsUrgencia, setIndicadorEsUrgencia] = useState([]);
+  const [indicadorEsUrgencia, setIndicadorEsUrgencia] = useState(['false']);
+  const [indicadorProcedencia, setIndicadorProcedencia] = useState(['Electiva', 'Urgencia Diferida']);
+  const [indicadorTipoCirugia, setIndicadorTipoCirugia] = useState([]);
+  const [indicadorTipoHorario, setIndicadorTipoHorario] = useState([]);
+  const [indicadorTipoPaciente, setIndicadorTipoPaciente] = useState([]);
+  const [indicadorPriorizacion, setIndicadorPriorizacion] = useState([]);
+  const [indicadorPabellonCrr, setIndicadorPabellonCrr] = useState([]);
+  const [indicadorIntervencion, setIndicadorIntervencion] = useState([]);
+  const [indicadorCirujano, setIndicadorCirujano] = useState([]);
+  const [indicadorAnestesista, setIndicadorAnestesista] = useState([]);
+  const [indicadorModalidad, setIndicadorModalidad] = useState([]);
   const [indicadorSearch, setIndicadorSearch] = useState('');
 
   // Floating Sidebar state
@@ -2492,10 +2675,9 @@ export default function SurgicalDashboard({ onBack }) {
       return [tipoCirugia, tipoPaciente, procedencia, tipoGestor, formaPago, nombreIq, primerCirujano, segundoCirujano, anestesiologo, reintervencion, libroPabellonTabla, libroPabellonCrr]
         .filter(arr => Array.isArray(arr) && arr.length > 0).length;
     } else if (activeTab === 'tabla') {
-      let count = [tablaPriorizacion, tablaPabellonCrr, tablaIntervencion, tablaCirujano, tablaAnestesista, tablaPabellon, tablaModalidad, tablaCausaSuspension, tablaMotivoSuspension, tablaEsUrgencia]
+      let count = [tablaPriorizacion, tablaPabellonCrr, tablaIntervencion, tablaCirujano, tablaAnestesista, tablaPabellon, tablaModalidad, tablaCausaSuspension, tablaMotivoSuspension, tablaEsUrgencia, tablaTipoHorario]
         .filter(arr => Array.isArray(arr) && arr.length > 0).length;
       if (dateRangeTabla.start !== '2026-01-01' || dateRangeTabla.end !== '2026-12-31') count++;
-      if (tablaFechaProg.length !== 1 || tablaFechaProg[0] !== '2026') count++;
       if (tablaTipoCirugia.length !== 2 || !['Cirugía Mayor', 'Cirugía Mayor Ambulatoria'].every(t => tablaTipoCirugia.includes(t))) count++;
       if (tablaTipoPaciente.length > 0 && !DEFAULT_TABLA_TIPOS_PACIENTE.every(p => tablaTipoPaciente.includes(p))) count++;
       return count;
@@ -2510,7 +2692,7 @@ export default function SurgicalDashboard({ onBack }) {
       return count;
     }
     return 0;
-  }, [activeTab, tipoCirugia, tipoPaciente, procedencia, tipoGestor, formaPago, nombreIq, primerCirujano, segundoCirujano, anestesiologo, reintervencion, libroPabellonTabla, libroPabellonCrr, dateRangeTabla, tablaFechaProg, tablaTipoCirugia, tablaTipoPaciente, tablaPriorizacion, tablaPabellonCrr, tablaIntervencion, tablaCirujano, tablaAnestesista, tablaPabellon, tablaModalidad, tablaCausaSuspension, tablaMotivoSuspension, tablaEsUrgencia, dateRangeIndicadores, indicadorPabellon, indicadorCumplimiento, indicadorTipoDia, indicadorEsUrgencia, indicadorSearch]);
+  }, [activeTab, tipoCirugia, tipoPaciente, procedencia, tipoGestor, formaPago, nombreIq, primerCirujano, segundoCirujano, anestesiologo, reintervencion, libroPabellonTabla, libroPabellonCrr, dateRangeTabla, tablaTipoCirugia, tablaTipoHorario, tablaTipoPaciente, tablaProcedencia, tablaPriorizacion, tablaPabellonCrr, tablaIntervencion, tablaCirujano, tablaAnestesista, tablaPabellon, tablaModalidad, tablaCausaSuspension, tablaMotivoSuspension, tablaEsUrgencia, dateRangeIndicadores, indicadorPabellon, indicadorCumplimiento, indicadorTipoDia, indicadorEsUrgencia, indicadorSearch]);
 
   const clearAllFilters = () => {
     if (activeTab === 'libro') {
@@ -2521,20 +2703,21 @@ export default function SurgicalDashboard({ onBack }) {
       if (tablaStartRef.current) tablaStartRef.current.value = '2026-01-01';
       if (tablaEndRef.current) tablaEndRef.current.value = '2026-12-31';
       setDateRangeTabla({ start: '2026-01-01', end: '2026-12-31' });
-      setTablaFechaProg(['2026']);
       setTablaTipoCirugia(DEFAULT_TABLA_TIPOS_CIRUGIA);
+      setTablaTipoHorario(DEFAULT_TABLA_TIPO_HORARIO);
       setTablaTipoPaciente(DEFAULT_TABLA_TIPOS_PACIENTE);
+      setTablaProcedencia(DEFAULT_TABLA_PROCEDENCIA);
       setTablaPriorizacion([]); setTablaPabellonCrr([]);
-      setTablaIntervencion([]); setTablaCirujano([]); setTablaAnestesista([]); setTablaPabellon([]); setTablaModalidad([]);
-      setTablaCausaSuspension([]); setTablaMotivoSuspension([]); setTablaEsUrgencia([]);
+      setTablaIntervencion([]); setTablaCirujano([]); setTablaAnestesista([]); setTablaPabellon(DEFAULT_TABLA_PABELLONES); setTablaModalidad([]);
+      setTablaCausaSuspension([]); setTablaMotivoSuspension([]); setTablaEsUrgencia(DEFAULT_TABLA_ES_URGENCIA);
     } else if (activeTab === 'disponibilidad') {
       if (dispStartRef.current) dispStartRef.current.value = '2026-01-01';
       if (dispEndRef.current) dispEndRef.current.value = '2026-12-31';
       setDateRangeIndicadores({ start: '2026-01-01', end: '2026-12-31' });
-      setIndicadorPabellon(['1', '2', '3', '4', '5']);
+      setIndicadorPabellon(['1', '2', '3', '4', '5', '6']);
       setIndicadorCumplimiento([]);
       setIndicadorTipoDia('habiles');
-      setIndicadorEsUrgencia([]);
+      setIndicadorEsUrgencia(['false']);
       setIndicadorSearch('');
     }
   };
@@ -2824,6 +3007,7 @@ export default function SurgicalDashboard({ onBack }) {
     const fechas = new Set();
     const tipos = new Set();
     const tipoPacientes = new Set();
+    const procedencias = new Set();
     const prios = new Set();
     const crrs = new Set();
     const ints = new Set();
@@ -2836,9 +3020,10 @@ export default function SurgicalDashboard({ onBack }) {
 
     tablaData.forEach(r => {
       if (r.fecha_programacion) fechas.add(r.fecha_programacion.split('-')[0]);
-      const valTipo = r.tipo_cirugia_validada || (r.tipo_cirugia === 'Mayor' ? 'Cirugía Mayor' : r.tipo_cirugia === 'Mayor Amb' ? 'Cirugía Mayor Ambulatoria' : r.tipo_cirugia === 'Menor' ? 'Cirugía Menor' : r.tipo_cirugia === 'Procedimiento' ? 'Procedimientos' : 'Sin codificar Fonasa');
+      const valTipo = getTipoCirugiaValidada(r);
       if (valTipo) tipos.add(valTipo);
       if (r.tipo_paciente) tipoPacientes.add(r.tipo_paciente);
+      if (r.procedencia) procedencias.add(r.procedencia);
       if (r.priorizacion) prios.add(r.priorizacion);
       if (r.pabellon_crr) crrs.add(r.pabellon_crr);
       if (r.intervencion_propuesta) ints.add(r.intervencion_propuesta);
@@ -2882,6 +3067,7 @@ export default function SurgicalDashboard({ onBack }) {
       fechas: Array.from(fechas).sort().filter(Boolean),
       tipos: sortedTipos,
       tipoPacientes: Array.from(tipoPacientes).sort().filter(Boolean),
+      procedencias: Array.from(procedencias).sort().filter(Boolean),
       prios: Array.from(prios).sort().filter(Boolean),
       crrs: Array.from(crrs).sort().filter(Boolean),
       ints: Array.from(ints).sort().filter(Boolean),
@@ -2894,6 +3080,11 @@ export default function SurgicalDashboard({ onBack }) {
       esUrgencia: [
         { value: 'true', label: 'Sí (Urgencia)' },
         { value: 'false', label: 'No (Electivo)' }
+      ],
+      tiposHorario: [
+        { value: 'Horario hábil', label: 'Horario hábil' },
+        { value: 'Horario inhábil de lunes a viernes', label: 'Horario inhábil de lunes a viernes' },
+        { value: 'Sábado, domingo y festivos', label: 'Sábado, domingo y festivos' }
       ]
     };
   }, [tablaData, tablaCausaSuspension]);
@@ -2907,8 +3098,8 @@ export default function SurgicalDashboard({ onBack }) {
         { id: '3', label: 'Pabellón 3' },
         { id: '4', label: 'Pabellón 4' },
         { id: '5', label: 'Pabellón 5' },
-        { id: '6', label: 'Pabellón 6 (Urgencia)' },
-        { id: '7', label: 'Pabellón 7 (Cirugía Menor)' }
+        { id: '6', label: 'Pabellón 6' },
+        { id: '7', label: 'Pabellón 7' }
       ],
       pabValues: ['1', '2', '3', '4', '5', '6', '7'],
       cumplimientos: ['Cumple norma (≤ 15 min)', 'Con retraso (> 15 min)'],
@@ -2932,18 +3123,16 @@ export default function SurgicalDashboard({ onBack }) {
       const dateOnly = r.fecha_programacion.substring(0, 10);
       if (dateOnly < dateRangeTabla.start || dateOnly > dateRangeTabla.end) return false;
 
-      if (tablaFechaProg.length > 0 && !tablaFechaProg.includes(r.fecha_programacion.split('-')[0])) return false;
       if (tablaTipoCirugia.length > 0) {
-        const valTipo = r.tipo_cirugia_validada || (r.tipo_cirugia === 'Mayor' ? 'Cirugía Mayor' : r.tipo_cirugia === 'Mayor Amb' ? 'Cirugía Mayor Ambulatoria' : r.tipo_cirugia === 'Menor' ? 'Cirugía Menor' : r.tipo_cirugia === 'Procedimiento' ? 'Procedimientos' : 'Sin codificar Fonasa');
-        const matchesVal = tablaTipoCirugia.includes(valTipo);
-        const matchesRaw = (tablaTipoCirugia.includes('Cirugía Mayor') && r.tipo_cirugia === 'Mayor') ||
-                           (tablaTipoCirugia.includes('Cirugía Mayor Ambulatoria') && r.tipo_cirugia === 'Mayor Amb') ||
-                           (tablaTipoCirugia.includes('Cirugía Menor') && r.tipo_cirugia === 'Menor') ||
-                           (tablaTipoCirugia.includes('Procedimientos') && r.tipo_cirugia === 'Procedimiento') ||
-                           tablaTipoCirugia.includes(r.tipo_cirugia);
-        if (!matchesVal && !matchesRaw) return false;
+        const valTipo = getTipoCirugiaValidada(r);
+        if (!tablaTipoCirugia.includes(valTipo)) return false;
+      }
+      if (tablaTipoHorario.length > 0) {
+        const h = r.tipo_horario || getTipoHorario(r);
+        if (!tablaTipoHorario.includes(h)) return false;
       }
       if (tablaTipoPaciente.length > 0 && !tablaTipoPaciente.includes(r.tipo_paciente)) return false;
+      if (tablaProcedencia.length > 0 && !tablaProcedencia.includes(r.procedencia)) return false;
       if (tablaPriorizacion.length > 0 && !tablaPriorizacion.includes(r.priorizacion)) return false;
       if (tablaPabellonCrr.length > 0 && !tablaPabellonCrr.includes(r.pabellon_crr)) return false;
       if (tablaIntervencion.length > 0 && !tablaIntervencion.includes(r.intervencion_propuesta)) return false;
@@ -2968,7 +3157,7 @@ export default function SurgicalDashboard({ onBack }) {
 
       return true;
     });
-  }, [tablaData, dateRangeTabla, tablaFechaProg, tablaTipoCirugia, tablaTipoPaciente, tablaPriorizacion, tablaPabellonCrr, tablaIntervencion, tablaCirujano, tablaAnestesista, tablaPabellon, tablaModalidad, tablaEsUrgencia, tablaCausaSuspension, tablaMotivoSuspension]);
+  }, [tablaData, dateRangeTabla, tablaTipoCirugia, tablaTipoHorario, tablaTipoPaciente, tablaProcedencia, tablaPriorizacion, tablaPabellonCrr, tablaIntervencion, tablaCirujano, tablaAnestesista, tablaPabellon, tablaModalidad, tablaEsUrgencia, tablaCausaSuspension, tablaMotivoSuspension]);
 
   // Compute stats and YoY for Tabla
   const getTablaYoYStats = (key) => {
@@ -2996,18 +3185,16 @@ export default function SurgicalDashboard({ onBack }) {
       const dateOnly = r.fecha_programacion.substring(0, 10);
       if (dateOnly < priorStart || dateOnly > priorEnd) return;
 
-      if (tablaFechaProg.length > 0 && !tablaFechaProg.includes(r.fecha_programacion.split('-')[0])) return;
       if (tablaTipoCirugia.length > 0) {
-        const valTipo = r.tipo_cirugia_validada || (r.tipo_cirugia === 'Mayor' ? 'Cirugía Mayor' : r.tipo_cirugia === 'Mayor Amb' ? 'Cirugía Mayor Ambulatoria' : r.tipo_cirugia === 'Menor' ? 'Cirugía Menor' : r.tipo_cirugia === 'Procedimiento' ? 'Procedimientos' : 'Sin codificar Fonasa');
-        const matchesVal = tablaTipoCirugia.includes(valTipo);
-        const matchesRaw = (tablaTipoCirugia.includes('Cirugía Mayor') && r.tipo_cirugia === 'Mayor') ||
-                           (tablaTipoCirugia.includes('Cirugía Mayor Ambulatoria') && r.tipo_cirugia === 'Mayor Amb') ||
-                           (tablaTipoCirugia.includes('Cirugía Menor') && r.tipo_cirugia === 'Menor') ||
-                           (tablaTipoCirugia.includes('Procedimientos') && r.tipo_cirugia === 'Procedimiento') ||
-                           tablaTipoCirugia.includes(r.tipo_cirugia);
-        if (!matchesVal && !matchesRaw) return;
+        const valTipo = getTipoCirugiaValidada(r);
+        if (!tablaTipoCirugia.includes(valTipo)) return;
+      }
+      if (tablaTipoHorario.length > 0) {
+        const h = r.tipo_horario || getTipoHorario(r);
+        if (!tablaTipoHorario.includes(h)) return;
       }
       if (tablaTipoPaciente.length > 0 && !tablaTipoPaciente.includes(r.tipo_paciente)) return;
+      if (tablaProcedencia.length > 0 && !tablaProcedencia.includes(r.procedencia)) return;
       if (tablaPriorizacion.length > 0 && !tablaPriorizacion.includes(r.priorizacion)) return;
       if (tablaPabellonCrr.length > 0 && !tablaPabellonCrr.includes(r.pabellon_crr)) return;
       if (tablaIntervencion.length > 0 && !tablaIntervencion.includes(r.intervencion_propuesta)) return;
@@ -3318,14 +3505,33 @@ export default function SurgicalDashboard({ onBack }) {
     const especialidadesMap = {}; // { esp: { prog: 0, susp: 0 } }
     const motivosMap = {};
     const causeMotivoMap = {};
+    const tipoPacienteMap = {};
+    const cirujanoMap = {};
+    const jornadaMap = {};
+
+    const trackRate = (map, key, isSuspended) => {
+      if (!map[key]) map[key] = { prog: 0, susp: 0 };
+      map[key].prog++;
+      if (isSuspended) map[key].susp++;
+    };
 
     filteredTabla.forEach(r => {
       const isSuspended = r.estado === 'Suspendido';
       const esp = r.especialidad || 'Sin Especialidad';
-      
-      if (!especialidadesMap[esp]) especialidadesMap[esp] = { prog: 0, susp: 0 };
-      especialidadesMap[esp].prog++;
-      if (isSuspended) especialidadesMap[esp].susp++;
+      trackRate(especialidadesMap, esp, isSuspended);
+
+      const tp = r.tipo_paciente || 'Sin Dato';
+      trackRate(tipoPacienteMap, tp, isSuspended);
+
+      const cir = r.cirujano || 'Sin Cirujano';
+      if (cir !== 'Sin Cirujano' && cir !== 'No especificado') {
+        trackRate(cirujanoMap, cir, isSuspended);
+      }
+
+      const jor = r.jornada || 'Sin Jornada';
+      if (jor !== 'Sin Jornada') {
+        trackRate(jornadaMap, jor, isSuspended);
+      }
 
       if (isSuspended) {
         suspendidos++;
@@ -3352,6 +3558,30 @@ export default function SurgicalDashboard({ onBack }) {
       sunburstCausas.push({ name: causa, value: causaTotal });
     });
 
+    sunburstCausas.sort((a, b) => b.value - a.value);
+    sunburstMotivos.sort((a, b) => b.value - a.value);
+
+    const toRateArray = (map, minProg = 1) =>
+      Object.entries(map)
+        .filter(([, d]) => d.prog >= minProg && d.susp > 0)
+        .map(([name, d]) => ({
+          name,
+          prog: d.prog,
+          susp: d.susp,
+          rate: d.prog > 0 ? parseFloat(((d.susp / d.prog) * 100).toFixed(1)) : 0
+        }))
+        .sort((a, b) => b.rate - a.rate || b.susp - a.susp);
+
+    const tipoPacienteStats = toRateArray(tipoPacienteMap, 3);
+    const cirujanoStats = toRateArray(cirujanoMap, 5);
+    const jornadaStats = toRateArray(jornadaMap, 1);
+
+    const treemapData = sunburstCausas.map((c, idx) => ({
+      name: c.name,
+      size: c.value,
+      fill: COLORS[idx % COLORS.length]
+    }));
+
     const especialidadesArray = Object.entries(especialidadesMap).map(([name, data]) => ({
       name,
       prog: data.prog,
@@ -3362,6 +3592,10 @@ export default function SurgicalDashboard({ onBack }) {
     return {
       sunburstCausas,
       sunburstMotivos,
+      treemapData,
+      tipoPacienteStats: tipoPacienteStats.length > 0 ? tipoPacienteStats : toRateArray(tipoPacienteMap, 1),
+      cirujanoStats: cirujanoStats.length > 0 ? cirujanoStats : toRateArray(cirujanoMap, 1),
+      jornadaStats,
       topEspProb: especialidadesArray.slice(0, 10)
     };
   }, [filteredTabla]);
@@ -4088,63 +4322,7 @@ export default function SurgicalDashboard({ onBack }) {
         </div>
       </header>
 
-      {/* SUB-BARRA DIRECTA PARA INDICADORES DE GESTIÓN DE PABELLÓN */}
-      {(activeTab === 'tabla' || activeTab === 'disponibilidad' || activeTab === 'subprogramacion' || activeTab === 'recambio' || activeTab === 'pacientes_pabellon') && (
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '10px',
-            marginBottom: '22px',
-            padding: '10px 16px',
-            background: '#ffffff',
-            borderRadius: '16px',
-            border: '1px solid #e2e8f0',
-            boxShadow: '0 4px 12px rgba(15, 23, 42, 0.04)',
-            flexWrap: 'wrap'
-          }}
-        >
-          <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', marginRight: '6px' }}>
-            Indicadores de Pabellón:
-          </span>
-          {[
-            { id: 'tabla', label: 'Suspensiones de Tabla', icon: <Calendar size={15} /> },
-            { id: 'disponibilidad', label: 'Retraso en primera Hora', icon: <Clock size={15} /> },
-            { id: 'subprogramacion', label: 'Subprogramación Diaria', icon: <Timer size={15} /> },
-            { id: 'recambio', label: 'Tiempo de Recambio', icon: <RefreshCw size={15} /> },
-            { id: 'pacientes_pabellon', label: 'Pacientes por Pabellón', icon: <Users size={15} /> }
-          ].map(sub => {
-            const isSelected = activeTab === sub.id;
-            return (
-              <button
-                key={sub.id}
-                type="button"
-                onClick={() => {
-                  setActiveTab(sub.id);
-                  setIndicadoresMenuOpen(false);
-                }}
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  padding: '8px 16px',
-                  borderRadius: '10px',
-                  border: isSelected ? '1px solid #4f46e5' : '1px solid #e2e8f0',
-                  background: isSelected ? '#eef2ff' : '#f8fafc',
-                  color: isSelected ? '#4338ca' : '#475569',
-                  fontWeight: isSelected ? 700 : 600,
-                  fontSize: '0.85rem',
-                  cursor: 'pointer',
-                  transition: 'all 0.18s ease'
-                }}
-              >
-                {sub.icon}
-                {sub.label}
-              </button>
-            );
-          })}
-        </div>
-      )}
+
 
       {/* MAIN CONTENT AREA WITH FLOATING SIDEBAR */}
       {(activeTab === 'libro' || activeTab === 'tabla' || activeTab === 'disponibilidad') && (
@@ -4465,12 +4643,13 @@ export default function SurgicalDashboard({ onBack }) {
                   {activeTab === 'tabla' && (
                     <>
                       {[
-                        { label: 'Fecha de programación', val: tablaFechaProg, set: setTablaFechaProg, options: tablaDropdowns.fechas },
                         { label: 'Es Urgencia (Pabellón)', val: tablaEsUrgencia, set: setTablaEsUrgencia, options: tablaDropdowns.esUrgencia },
                         { label: 'Gran Causa de Suspensión', val: tablaCausaSuspension, set: setTablaCausaSuspension, options: tablaDropdowns.causas },
                         { label: 'Causa Específica (Motivo)', val: tablaMotivoSuspension, set: setTablaMotivoSuspension, options: tablaDropdowns.motivos },
                         { label: 'Tipo de Cirugía Validada', val: tablaTipoCirugia, set: setTablaTipoCirugia, options: tablaDropdowns.tipos },
+                        { label: 'Tipo de Horario', val: tablaTipoHorario, set: setTablaTipoHorario, options: tablaDropdowns.tiposHorario },
                         { label: 'Tipo de paciente', val: tablaTipoPaciente, set: setTablaTipoPaciente, options: tablaDropdowns.tipoPacientes },
+                        { label: 'Procedencia', val: tablaProcedencia, set: setTablaProcedencia, options: tablaDropdowns.procedencias },
                         { label: 'Tipo de priorización', val: tablaPriorizacion, set: setTablaPriorizacion, options: tablaDropdowns.prios },
                         { label: 'Pabellón CRR', val: tablaPabellonCrr, set: setTablaPabellonCrr, options: tablaDropdowns.crrs },
                         { label: 'Intervención Propuesta', val: tablaIntervencion, set: setTablaIntervencion, options: tablaDropdowns.ints },
@@ -4489,61 +4668,33 @@ export default function SurgicalDashboard({ onBack }) {
 
                   {activeTab === 'disponibilidad' && (
                     <>
-                      <div style={{ background: '#f8fafc', padding: '12px', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
-                        <label style={{ display: 'block', fontSize: '0.72rem', fontWeight: 700, marginBottom: '6px', color: '#1e40af', textTransform: 'uppercase' }}>Búsqueda Rápida</label>
-                        <div style={{ position: 'relative' }}>
-                          <input
-                            type="text"
-                            placeholder="Paciente, cirujano, IQ..."
-                            value={indicadorSearch}
-                            onChange={e => setIndicadorSearch(e.target.value)}
-                            style={{ width: '100%', padding: '8px 10px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '0.8rem', outline: 'none' }}
-                          />
-                        </div>
-                      </div>
-
-                      {/* Selector Tipo de Jornada (Días Hábiles / No Hábiles) */}
-                      <div style={{ background: '#f8fafc', padding: '12px', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
-                        <label style={{ display: 'block', fontSize: '0.72rem', fontWeight: 800, marginBottom: '8px', color: '#1e40af', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Tipo de Jornada / Días</label>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                          {[
-                            { id: 'habiles', label: 'Días hábiles (Lun - Vie)', badge: 'Lun a Vie' },
-                            { id: 'no_habiles', label: 'Días no hábiles (Sáb - Dom)', badge: 'Sáb y Dom' },
-                            { id: 'todos', label: 'Todos los días', badge: 'Completo' }
-                          ].map(t => (
-                            <button
-                              key={t.id}
-                              onClick={() => setIndicadorTipoDia(t.id)}
-                              style={{
-                                width: '100%',
-                                padding: '8px 10px',
-                                fontSize: '0.78rem',
-                                textAlign: 'left',
-                                borderRadius: '8px',
-                                border: indicadorTipoDia === t.id ? '1.5px solid #1e40af' : '1px solid #e2e8f0',
-                                background: indicadorTipoDia === t.id ? '#eff6ff' : 'white',
-                                color: indicadorTipoDia === t.id ? '#1e40af' : '#334155',
-                                fontWeight: indicadorTipoDia === t.id ? 800 : 500,
-                                cursor: 'pointer',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'space-between',
-                                transition: 'all 0.15s ease'
-                              }}
-                            >
-                              <span>{t.label}</span>
-                              {indicadorTipoDia === t.id && (
-                                <span style={{ background: '#1e40af', color: 'white', fontSize: '0.65rem', padding: '2px 6px', borderRadius: '6px', fontWeight: 700 }}>Activo</span>
-                              )}
-                            </button>
-                          ))}
-                        </div>
+                      <div>
+                        <label style={{ display: 'block', fontSize: '0.72rem', fontWeight: 700, marginBottom: '6px', color: '#64748b', textTransform: 'uppercase' }}>Tipo de Jornada / Días</label>
+                        <select
+                          value={indicadorTipoDia}
+                          onChange={e => setIndicadorTipoDia(e.target.value)}
+                          style={{ width: '100%', padding: '8px 10px', borderRadius: '10px', border: '1px solid #cbd5e1', fontSize: '0.8rem', background: 'white', color: '#0f172a', fontWeight: 600, outline: 'none' }}
+                        >
+                          <option value="habiles">Días hábiles (Lun - Vie)</option>
+                          <option value="no_habiles">Días no hábiles (Sáb - Dom)</option>
+                          <option value="todos">Todos los días</option>
+                        </select>
                       </div>
 
                       {[
-                        { label: 'Pabellón', val: indicadorPabellon, set: setIndicadorPabellon, options: indicadorDropdowns.pabs },
                         { label: 'Estado Cumplimiento (15 min)', val: indicadorCumplimiento, set: setIndicadorCumplimiento, options: indicadorDropdowns.cumplimientos },
-                        { label: 'Es Urgencia (Pabellón)', val: indicadorEsUrgencia, set: setIndicadorEsUrgencia, options: indicadorDropdowns.urgencias }
+                        { label: 'Es Urgencia (Pabellón)', val: indicadorEsUrgencia, set: setIndicadorEsUrgencia, options: indicadorDropdowns.urgencias },
+                        { label: 'Tipo de Cirugía Validada', val: indicadorTipoCirugia, set: setIndicadorTipoCirugia, options: tablaDropdowns.tipos },
+                        { label: 'Tipo de Horario', val: indicadorTipoHorario, set: setIndicadorTipoHorario, options: tablaDropdowns.tiposHorario },
+                        { label: 'Tipo de paciente', val: indicadorTipoPaciente, set: setIndicadorTipoPaciente, options: tablaDropdowns.tipoPacientes },
+                        { label: 'Procedencia', val: indicadorProcedencia, set: setIndicadorProcedencia, options: tablaDropdowns.procedencias },
+                        { label: 'Tipo de priorización', val: indicadorPriorizacion, set: setIndicadorPriorizacion, options: tablaDropdowns.prios },
+                        { label: 'Pabellón CRR', val: indicadorPabellonCrr, set: setIndicadorPabellonCrr, options: tablaDropdowns.crrs },
+                        { label: 'Intervención Propuesta', val: indicadorIntervencion, set: setIndicadorIntervencion, options: tablaDropdowns.ints },
+                        { label: 'Primer Cirujano', val: indicadorCirujano, set: setIndicadorCirujano, options: tablaDropdowns.cirus },
+                        { label: 'Anestesiólogo', val: indicadorAnestesista, set: setIndicadorAnestesista, options: tablaDropdowns.anestesistas },
+                        { label: 'Pabellón', val: indicadorPabellon, set: setIndicadorPabellon, options: indicadorDropdowns.pabs },
+                        { label: 'Modalidad de atención', val: indicadorModalidad, set: setIndicadorModalidad, options: tablaDropdowns.mods }
                       ].map((f, i) => (
                         <div key={i}>
                           <label style={{ display: 'block', fontSize: '0.72rem', fontWeight: 700, marginBottom: '6px', color: '#64748b', textTransform: 'uppercase' }}>{f.label}</label>
@@ -5317,73 +5468,14 @@ export default function SurgicalDashboard({ onBack }) {
                       <h2 style={{ fontSize: '1.6rem', fontWeight: 800, color: '#1e293b', margin: 0 }}>
                         Suspensión de Tabla Quirúrgica
                       </h2>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                        <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase' }}>
-                          Filtro Urgencia:
-                        </span>
-                        <div style={{ display: 'flex', gap: '6px' }}>
-                          <button
-                            type="button"
-                            onClick={() => setTablaEsUrgencia([])}
-                            style={{
-                              padding: '5px 12px',
-                              borderRadius: '999px',
-                              cursor: 'pointer',
-                              fontWeight: 700,
-                              fontSize: '0.75rem',
-                              border: `1.5px solid ${tablaEsUrgencia.length === 0 ? '#4f46e5' : '#cbd5e1'}`,
-                              background: tablaEsUrgencia.length === 0 ? '#eef2ff' : 'white',
-                              color: tablaEsUrgencia.length === 0 ? '#4338ca' : '#64748b',
-                              transition: 'all 0.15s ease'
-                            }}
-                          >
-                            Todos
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setTablaEsUrgencia(['false'])}
-                            style={{
-                              padding: '5px 12px',
-                              borderRadius: '999px',
-                              cursor: 'pointer',
-                              fontWeight: 700,
-                              fontSize: '0.75rem',
-                              border: `1.5px solid ${tablaEsUrgencia.length === 1 && tablaEsUrgencia[0] === 'false' ? '#4f46e5' : '#cbd5e1'}`,
-                              background: tablaEsUrgencia.length === 1 && tablaEsUrgencia[0] === 'false' ? '#eef2ff' : 'white',
-                              color: tablaEsUrgencia.length === 1 && tablaEsUrgencia[0] === 'false' ? '#4338ca' : '#64748b',
-                              transition: 'all 0.15s ease'
-                            }}
-                          >
-                            Electivo (No)
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setTablaEsUrgencia(['true'])}
-                            style={{
-                              padding: '5px 12px',
-                              borderRadius: '999px',
-                              cursor: 'pointer',
-                              fontWeight: 700,
-                              fontSize: '0.75rem',
-                              border: `1.5px solid ${tablaEsUrgencia.length === 1 && tablaEsUrgencia[0] === 'true' ? '#4f46e5' : '#cbd5e1'}`,
-                              background: tablaEsUrgencia.length === 1 && tablaEsUrgencia[0] === 'true' ? '#eef2ff' : 'white',
-                              color: tablaEsUrgencia.length === 1 && tablaEsUrgencia[0] === 'true' ? '#4338ca' : '#64748b',
-                              transition: 'all 0.15s ease'
-                            }}
-                          >
-                            Urgencia (Sí)
-                          </button>
-                        </div>
-                      </div>
                     </div>
 
                     {/* MENÚ DE PESTAÑAS EJECUTIVAS PARA TABLA */}
                     <div style={{ display: 'flex', gap: '8px', background: '#f1f5f9', padding: '6px', borderRadius: '16px', border: '1px solid #e2e8f0', marginBottom: '24px', flexWrap: 'wrap' }}>
                       {[
                         { id: 'resumen', label: '📊 1. Resumen & Métricas Clave' },
-                        { id: 'profesionales', label: '👨‍⚕️ 2. Cirujanos, Anestesiólogos & Causas' },
-                        { id: 'tabla_jerarquica', label: '🌳 3. Tabla Jerárquica (4 Niveles)' },
-                        { id: 'pivot', label: '📋 4. Matriz Pivot Quirúrgica' }
+                        { id: 'profesionales', label: '⚠️ 2. Matriz y Pareto de Causas' },
+                        { id: 'tabla_jerarquica', label: '👤 3. Perfil del Paciente Suspendido' }
                       ].map(st => (
                         <button
                           key={st.id}
@@ -5455,74 +5547,6 @@ export default function SurgicalDashboard({ onBack }) {
                                 Evolución mensual de pacientes programados, intervenidos, suspendidos y tasa de suspensión
                               </p>
                             </div>
-
-                            {/* FILTRO ES URGENCIA INTEGRADO DIRECTAMENTE EN LA GRÁFICA */}
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
-                              <div style={{ display: 'flex', gap: '6px' }}>
-                                <button
-                                  type="button"
-                                  onClick={() => setTablaEsUrgencia([])}
-                                  style={{
-                                    padding: '6px 12px',
-                                    borderRadius: '999px',
-                                    cursor: 'pointer',
-                                    fontWeight: 700,
-                                    fontSize: '0.78rem',
-                                    border: `1.5px solid ${tablaEsUrgencia.length === 0 ? '#4f46e5' : '#cbd5e1'}`,
-                                    background: tablaEsUrgencia.length === 0 ? '#eef2ff' : 'white',
-                                    color: tablaEsUrgencia.length === 0 ? '#4338ca' : '#64748b',
-                                    transition: 'all 0.15s ease'
-                                  }}
-                                >
-                                  Todos
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => setTablaEsUrgencia(['false'])}
-                                  style={{
-                                    padding: '6px 12px',
-                                    borderRadius: '999px',
-                                    cursor: 'pointer',
-                                    fontWeight: 700,
-                                    fontSize: '0.78rem',
-                                    border: `1.5px solid ${tablaEsUrgencia.length === 1 && tablaEsUrgencia[0] === 'false' ? '#4f46e5' : '#cbd5e1'}`,
-                                    background: tablaEsUrgencia.length === 1 && tablaEsUrgencia[0] === 'false' ? '#eef2ff' : 'white',
-                                    color: tablaEsUrgencia.length === 1 && tablaEsUrgencia[0] === 'false' ? '#4338ca' : '#64748b',
-                                    transition: 'all 0.15s ease'
-                                  }}
-                                >
-                                  Electivo (No)
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => setTablaEsUrgencia(['true'])}
-                                  style={{
-                                    padding: '6px 12px',
-                                    borderRadius: '999px',
-                                    cursor: 'pointer',
-                                    fontWeight: 700,
-                                    fontSize: '0.78rem',
-                                    border: `1.5px solid ${tablaEsUrgencia.length === 1 && tablaEsUrgencia[0] === 'true' ? '#4f46e5' : '#cbd5e1'}`,
-                                    background: tablaEsUrgencia.length === 1 && tablaEsUrgencia[0] === 'true' ? '#eef2ff' : 'white',
-                                    color: tablaEsUrgencia.length === 1 && tablaEsUrgencia[0] === 'true' ? '#4338ca' : '#64748b',
-                                    transition: 'all 0.15s ease'
-                                  }}
-                                >
-                                  Urgencia (Sí)
-                                </button>
-                              </div>
-
-                              <div style={{ minWidth: '180px', maxWidth: '240px' }}>
-                                <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: 800, marginBottom: '4px', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                                  Es Urgencia (Pabellón)
-                                </label>
-                                <MultiSearchableSelect
-                                  value={tablaEsUrgencia}
-                                  options={tablaDropdowns.esUrgencia}
-                                  onChange={setTablaEsUrgencia}
-                                />
-                              </div>
-                            </div>
                           </div>
                           <div style={{ height: '360px' }}>
                             <ResponsiveContainer width="100%" height="100%">
@@ -5551,6 +5575,135 @@ export default function SurgicalDashboard({ onBack }) {
                             </ResponsiveContainer>
                           </div>
                         </div>
+
+                        {/* GRANDES CAUSAS Y CAUSAS ESPECÍFICAS DE SUSPENSIÓN */}
+                        <TablaCausasSuspensionColapsable data={filteredTabla} />
+
+                        {/* INSIGHTS PRINCIPALES DE SUSPENSIONES (COMPACTO + YOY + CORRELACIONES + TREEMAP) */}
+                        {(() => {
+                          const yoySusp = getTablaYoYStats('suspendidos');
+                          const yoyProg = getTablaYoYStats('programados');
+                          const topTp = tablaInsights.tipoPacienteStats?.[0];
+                          const lowTp = tablaInsights.tipoPacienteStats?.[tablaInsights.tipoPacienteStats.length - 1];
+                          const topCir = tablaInsights.cirujanoStats?.[0];
+                          const topJor = tablaInsights.jornadaStats?.[0];
+                          const totalSusp = tablaInsights.sunburstCausas?.reduce((acc, c) => acc + c.value, 0) || 0;
+
+                          return (
+                            <div style={{ background: 'linear-gradient(135deg, #f8fafc 0%, #eff6ff 100%)', padding: '16px 20px', borderRadius: '16px', border: '1px solid #bfdbfe', marginBottom: '20px' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px', flexWrap: 'wrap', gap: '8px' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                  <Lightbulb size={18} color="#1d4ed8" />
+                                  <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 800, color: '#1e3a8a' }}>Insights Principales, Correlaciones y Distribución de Causas</h3>
+                                </div>
+                                <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#475569', background: 'white', padding: '3px 10px', borderRadius: '999px', border: '1px solid #cbd5e1' }}>
+                                  Total analizado: {totalSusp} suspensiones
+                                </span>
+                              </div>
+
+                              <div style={{ display: 'grid', gridTemplateColumns: 'minmax(320px, 1.35fr) minmax(260px, 1fr)', gap: '14px', alignItems: 'stretch' }}>
+                                {/* COLUMNA IZQUIERDA: TARJETAS ANALÍTICAS COMPACTAS */}
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', justifyContent: 'space-between' }}>
+                                  {/* 1. Comparativa YoY */}
+                                  <div style={{ background: 'white', padding: '11px 14px', borderRadius: '10px', border: '1px solid #e2e8f0' }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                                      <span style={{ fontSize: '0.7rem', fontWeight: 800, color: '#1e40af', textTransform: 'uppercase' }}>Comparativa vs. Mismo Período Año Anterior</span>
+                                      {yoySusp.prior > 0 && (
+                                        <span style={{ fontSize: '0.72rem', fontWeight: 800, color: yoySusp.diff > 0 ? '#dc2626' : '#16a34a', background: yoySusp.diff > 0 ? '#fef2f2' : '#f0fdf4', padding: '2px 8px', borderRadius: '6px' }}>
+                                          {yoySusp.diff > 0 ? `+${yoySusp.diff.toFixed(1)}%` : `${yoySusp.diff.toFixed(1)}%`} susp.
+                                        </span>
+                                      )}
+                                    </div>
+                                    <div style={{ fontSize: '0.8rem', color: '#334155', lineHeight: 1.4 }}>
+                                      {yoySusp.prior > 0 ? (
+                                        <>
+                                          Se registran <strong>{yoySusp.val}</strong> suspensiones frente a <strong>{yoySusp.prior}</strong> del año previo ({yoySusp.diff > 0 ? 'alza' : 'baja'} de <strong>{Math.abs(yoySusp.diff).toFixed(1)}%</strong>), mientras que el volumen programado varió <strong>{yoyProg.diff >= 0 ? `+${yoyProg.diff.toFixed(1)}%` : `${yoyProg.diff.toFixed(1)}%`}</strong> ({yoyProg.val} vs {yoyProg.prior}).
+                                          {yoySusp.diff > yoyProg.diff ? ' Las suspensiones crecen por encima de la actividad quirúrgica.' : ' El comportamiento de suspensiones se mantiene contenido respecto al volumen.'}
+                                        </>
+                                      ) : (
+                                        'No existen registros comparables en el mismo período del año anterior para los filtros actuales.'
+                                      )}
+                                    </div>
+                                  </div>
+
+                                  {/* 2. Correlación Tipo de Paciente y Jornada */}
+                                  <div style={{ background: 'white', padding: '11px 14px', borderRadius: '10px', border: '1px solid #e2e8f0' }}>
+                                    <div style={{ fontSize: '0.7rem', fontWeight: 800, color: '#b45309', textTransform: 'uppercase', marginBottom: '4px' }}>Correlación: Tipo de Paciente y Jornada</div>
+                                    <div style={{ fontSize: '0.8rem', color: '#334155', lineHeight: 1.4 }}>
+                                      {topTp ? (
+                                        <>
+                                          Mayor propensión en <strong>{topTp.name}</strong> con <strong>{topTp.rate}%</strong> de suspensión ({topTp.susp}/{topTp.prog} prog.)
+                                          {lowTp && lowTp.name !== topTp.name ? <> vs. <strong>{lowTp.name}</strong> ({lowTp.rate}%).</> : '.'}
+                                          {topJor && <> En jornada, <strong>{topJor.name}</strong> concentra la mayor tasa ({topJor.rate}%, {topJor.susp} casos).</>}
+                                        </>
+                                      ) : 'Sin datos suficientes para correlación por tipo de paciente.'}
+                                    </div>
+                                  </div>
+
+                                  {/* 3. Correlación Cirujano / Programador y Motivo */}
+                                  <div style={{ background: 'white', padding: '11px 14px', borderRadius: '10px', border: '1px solid #e2e8f0' }}>
+                                    <div style={{ fontSize: '0.7rem', fontWeight: 800, color: '#7c3aed', textTransform: 'uppercase', marginBottom: '4px' }}>Correlación: Programador (Cirujano) y Causa Raíz</div>
+                                    <div style={{ fontSize: '0.8rem', color: '#334155', lineHeight: 1.4 }}>
+                                      {topCir ? (
+                                        <>
+                                          Mayor tasa de suspensión asociada a <strong>{topCir.name}</strong> (<strong>{topCir.rate}%</strong>; {topCir.susp}/{topCir.prog} cirugías).
+                                        </>
+                                      ) : 'Sin volumen suficiente por cirujano.'}{' '}
+                                      Motivo específico líder: <strong>{tablaInsights.sunburstMotivos?.[0]?.name || 'Sin datos'}</strong> ({tablaInsights.sunburstMotivos?.[0]?.value || 0} casos).
+                                    </div>
+                                  </div>
+                                </div>
+
+                                {/* COLUMNA DERECHA: GRÁFICO DE ÁRBOL (TREEMAP) DE CAUSAS */}
+                                <div style={{ background: 'white', padding: '12px 14px', borderRadius: '10px', border: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column' }}>
+                                  <div style={{ fontSize: '0.72rem', fontWeight: 800, color: '#0f172a', textTransform: 'uppercase', marginBottom: '6px' }}>
+                                    Árbol de Grandes Causas de Suspensión
+                                  </div>
+                                  <div style={{ flex: 1, minHeight: '210px' }}>
+                                    {tablaInsights.treemapData && tablaInsights.treemapData.length > 0 ? (
+                                      <ResponsiveContainer width="100%" height={215}>
+                                        <Treemap
+                                          data={tablaInsights.treemapData}
+                                          dataKey="size"
+                                          aspectRatio={4 / 3}
+                                          stroke="#ffffff"
+                                          content={({ x, y, width, height, name, size, fill }) => {
+                                            if (width < 28 || height < 22) return null;
+                                            const pct = totalSusp > 0 ? ((size / totalSusp) * 100).toFixed(0) : 0;
+                                            return (
+                                              <g>
+                                                <rect x={x} y={y} width={width} height={height} fill={fill || '#3b82f6'} stroke="#fff" strokeWidth={2} rx={4} />
+                                                {width > 65 && height > 36 && (
+                                                  <>
+                                                    <text x={x + 6} y={y + 16} fill="#ffffff" fontSize={11} fontWeight={700}>
+                                                      {name?.length > 18 ? `${name.slice(0, 16)}…` : name}
+                                                    </text>
+                                                    <text x={x + 6} y={y + 31} fill="#e2e8f0" fontSize={10} fontWeight={600}>
+                                                      {size} ({pct}%)
+                                                    </text>
+                                                  </>
+                                                )}
+                                              </g>
+                                            );
+                                          }}
+                                        >
+                                          <RechartsTooltip
+                                            formatter={(value) => [`${value} suspensiones`, 'Casos']}
+                                            contentStyle={{ borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '0.78rem' }}
+                                          />
+                                        </Treemap>
+                                      </ResponsiveContainer>
+                                    ) : (
+                                      <div style={{ height: '215px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#94a3b8', fontSize: '0.8rem' }}>
+                                        Sin suspensiones para graficar
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })()}
 
                         {/* INSIGHTS ROW WITH CHARTS */}
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', marginBottom: '24px' }}>
@@ -5602,10 +5755,7 @@ export default function SurgicalDashboard({ onBack }) {
                           </div>
                         </div>
 
-                        {/* MATRIZ COLAPSABLE DE GRANDES CAUSAS Y CAUSAS ESPECÍFICAS DE SUSPENSIÓN */}
-                        <TablaCausasSuspensionColapsable data={filteredTabla} />
-
-                        {/* MATRIZ COLAPSABLE DE ESPECIALIDADES E INTERVENCIONES PROPUESTAS (IQ) */}
+                        {/* ESPECIALIDADES E INTERVENCIONES PROPUESTAS (IQ) */}
                         <TablaEspecialidadesSuspensionColapsable data={filteredTabla} />
                       </motion.div>
                     )}
@@ -5639,73 +5789,27 @@ export default function SurgicalDashboard({ onBack }) {
                             </div>
                           </div>
 
-                          {/* MATRIZ DINÁMICA DE GRANDES CAUSAS Y CAUSAS ESPECÍFICAS DE SUSPENSIÓN */}
-                          <TablaCausasSuspensionColapsable data={filteredTabla} />
-
-                          {/* MATRIZ COLAPSABLE DE ESPECIALIDADES E INTERVENCIONES PROPUESTAS (IQ) */}
-                          <TablaEspecialidadesSuspensionColapsable data={filteredTabla} />
-
-                          {/* TABLA DINÁMICA JERÁRQUICA COLAPSABLE (POR ESPECIALIDAD Y MÉDICO) */}
-                          <TablaDinamicaSuspensiones data={filteredTabla} />
-
                           {/* PANEL DE ANÁLISIS DE HALLAZGOS ESTADÍSTICOS DEL PACIENTE SUSPENDIDO */}
                           <AnalisisHallazgosSuspensiones data={filteredTabla} />
+
+                          {/* TABLA DINÁMICA JERÁRQUICA COLAPSABLE (POR ESPECIALIDAD, CIRUGÍA PROPUESTA Y PROFESIONALES) */}
+                          <TablaDinamicaSuspensiones data={filteredTabla} />
                         </div>
                       </motion.div>
                     )}
 
-                    {/* SUB-TAB 4: MATRIZ PIVOT QUIRÚRGICA */}
-                    {tablaSubTab === 'pivot' && (
-                      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }}>
-                        <div style={{ marginBottom: '24px' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
-                            <Users size={22} color="#1e40af" />
-                            <h3 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 700, color: '#0f172a' }}>Despliegue Detallado de Producción (Tabla Dinámica)</h3>
-                          </div>
-                          <PivotTable data={filteredTabla} totalCirugias={tablaProgKPI.val} />
-                        </div>
-                      </motion.div>
-                    )}
+
                   </div>
                 )}
 
                 {/* TAB 3: INDICADORES DE GESTIÓN (RETRASO EN PRIMERA HORA Y DISPONIBILIDAD) */}
                 {activeTab === 'disponibilidad' && (
                   <div>
-                    {/* ENCABEZADO Y CONTEXTO NORMATIVO */}
-                    <div style={{ background: 'linear-gradient(135deg, #1e3a8a 0%, #1e40af 50%, #3b82f6 100%)', borderRadius: '24px', padding: '28px 32px', color: 'white', marginBottom: '32px', boxShadow: '0 15px 35px -10px rgba(30, 64, 175, 0.4)', position: 'relative', overflow: 'hidden' }}>
-                      <div style={{ position: 'absolute', top: '-40px', right: '-40px', width: '220px', height: '220px', background: 'radial-gradient(circle, rgba(255,255,255,0.15) 0%, transparent 70%)', borderRadius: '50%' }}></div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
-                        <span style={{ background: 'rgba(255,255,255,0.2)', padding: '4px 12px', borderRadius: '20px', fontSize: '0.75rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.5px', backdropFilter: 'blur(4px)' }}>
-                          Estándar Quirúrgico Institucional
-                        </span>
-                        <span style={{ background: '#10b981', color: 'white', padding: '4px 12px', borderRadius: '20px', fontSize: '0.75rem', fontWeight: 800 }}>
-                          Tolerancia: ≤ 15 Minutos
-                        </span>
-                      </div>
-                      <h2 style={{ fontSize: '1.85rem', fontWeight: 900, margin: '0 0 10px 0', letterSpacing: '-0.5px' }}>
-                        Indicador: Retraso en Primera Hora de Pabellón
+                    {/* TÍTULO DEL TABLERO */}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px', marginBottom: '24px' }}>
+                      <h2 style={{ fontSize: '1.6rem', fontWeight: 800, color: '#1e293b', margin: 0 }}>
+                        Retraso en Primera Hora de Pabellón
                       </h2>
-                      <p style={{ margin: '0 0 16px 0', fontSize: '0.95rem', opacity: 0.92, maxWidth: '900px', lineHeight: 1.5 }}>
-                        Monitoreo del tiempo transcurrido desde la habilitación oficial de cada quirófano (<code style={{ background: 'rgba(0,0,0,0.2)', padding: '2px 6px', borderRadius: '4px', color: '#fed7aa' }}>horario_inicio</code>) hasta el ingreso del primer paciente intervenido (<code style={{ background: 'rgba(0,0,0,0.2)', padding: '2px 6px', borderRadius: '4px', color: '#fed7aa' }}>hora_ingreso_cirugia</code>). Se evalúa el cumplimiento del estándar de inicio puntual (máximo 15 min de demora) y se computan los minutos totales de retraso operacional acumulados.
-                      </p>
-
-                      {/* BADGES DE FILTROS ACTIVOS */}
-                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', alignItems: 'center', background: 'rgba(0,0,0,0.18)', padding: '10px 16px', borderRadius: '14px', border: '1px solid rgba(255,255,255,0.1)' }}>
-                        <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#fed7aa', textTransform: 'uppercase' }}>Filtros en curso:</span>
-                        <span style={{ background: 'rgba(255,255,255,0.2)', padding: '3px 10px', borderRadius: '12px', fontSize: '0.72rem', fontWeight: 700 }}>
-                          📅 Periodo: {dateRangeIndicadores.start} al {dateRangeIndicadores.end}
-                        </span>
-                        <span style={{ background: 'rgba(255,255,255,0.2)', padding: '3px 10px', borderRadius: '12px', fontSize: '0.72rem', fontWeight: 700 }}>
-                          🏥 Pabellones: {indicadorPabellon.length === 0 ? 'Todos' : indicadorPabellon.map(p => `Pab ${p}`).join(', ')}
-                        </span>
-                        <span style={{ background: indicadorTipoDia === 'habiles' ? 'rgba(16, 185, 129, 0.25)' : indicadorTipoDia === 'no_habiles' ? 'rgba(245, 158, 11, 0.25)' : 'rgba(59, 130, 246, 0.25)', border: '1px solid rgba(255,255,255,0.3)', padding: '3px 10px', borderRadius: '12px', fontSize: '0.72rem', fontWeight: 800 }}>
-                          🗓️ {indicadorTipoDia === 'habiles' ? 'Días Hábiles (Lun a Vie)' : indicadorTipoDia === 'no_habiles' ? 'Días No Hábiles (Fines de Semana)' : 'Todos los Días'}
-                        </span>
-                        <span style={{ background: 'rgba(239, 68, 68, 0.25)', border: '1px solid rgba(239, 68, 68, 0.4)', color: '#fee2e2', padding: '3px 10px', borderRadius: '12px', fontSize: '0.72rem', fontWeight: 700 }}>
-                          ✕ Pabellones 6 (Urgencia) y 7 (Cirugía Menor) excluidos por defecto
-                        </span>
-                      </div>
                     </div>
 
                     {/* KPI SUMMARY CARDS */}

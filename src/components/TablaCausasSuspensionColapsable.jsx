@@ -443,7 +443,7 @@ export default function TablaCausasSuspensionColapsable({ data = [] }) {
             </div>
             <div>
               <h3 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 800, color: '#0f172a' }}>
-                Matriz Colapsable: Grandes Causas y Causas Específicas de Suspensión
+                Grandes Causas y Causas Específicas de Suspensión
               </h3>
               <p style={{ margin: '2px 0 0 0', fontSize: '0.82rem', color: '#64748b' }}>
                 Filas jerárquicas con subtotales por gran causa y desglose por causa específica × Meses y años en columnas
@@ -870,7 +870,7 @@ export default function TablaCausasSuspensionColapsable({ data = [] }) {
               {/* FILAS DE GRANDES CAUSAS Y CAUSAS ESPECÍFICAS */}
               {filteredMatrix.map(causa => {
                 const conf = CAUSA_CONFIG[causa.name] || CAUSA_CONFIG['Otras / No clasificada'];
-                const isExpanded = causa.isForceExpanded || (expandedCausas[causa.name] ?? true);
+                const isExpanded = causa.isForceExpanded || (expandedCausas[causa.name] ?? false);
                 const pctOfGrandTotal = grandTotal > 0 ? ((causa.total / grandTotal) * 100).toFixed(1) : '0.0';
 
                 return (
