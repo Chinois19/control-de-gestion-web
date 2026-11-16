@@ -34,12 +34,38 @@ import {
 } from 'lucide-react';
 
 import * as XLSX from 'xlsx';
+import { EgresosServicioMensualChart, EgresosServicioRanking, TendenciaIngresosEgresos } from './CensoGeneralCharts';
 
 // ─── Custom MultiSelect with Search ────────────────────────────────────────
 function MultiSelectDropdown({ label, selectedValues, setSelectedValues, options, placeholder, dropdownKey, activeDropdown, setActiveDropdown }) {
   const [searchTerm, setSearchTerm] = React.useState('');
   const isOpen = activeDropdown === dropdownKey;
   const isAll = selectedValues.includes('Todas');
+  const wrapperRef = React.useRef(null);
+  const closeTimer = React.useRef(null);
+
+  // Cierre automático: clic fuera, tecla Escape o al alejar el mouse del filtro
+  React.useEffect(() => {
+    if (!isOpen) return undefined;
+    const onDown = (e) => {
+      if (wrapperRef.current && !wrapperRef.current.contains(e.target)) setActiveDropdown(null);
+    };
+    const onKey = (e) => { if (e.key === 'Escape') setActiveDropdown(null); };
+    document.addEventListener('mousedown', onDown);
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('mousedown', onDown);
+      document.removeEventListener('keydown', onKey);
+      clearTimeout(closeTimer.current);
+    };
+  }, [isOpen, setActiveDropdown]);
+
+  const handleMouseLeave = () => {
+    if (!isOpen) return;
+    clearTimeout(closeTimer.current);
+    closeTimer.current = setTimeout(() => setActiveDropdown(null), 350);
+  };
+  const handleMouseEnter = () => clearTimeout(closeTimer.current);
 
   const filtered = options.filter(o => o.toLowerCase().includes(searchTerm.toLowerCase()));
 
@@ -57,7 +83,7 @@ function MultiSelectDropdown({ label, selectedValues, setSelectedValues, options
   };
 
   return (
-    <div style={{ position: 'relative', marginBottom: '14px' }}>
+    <div ref={wrapperRef} onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave} style={{ position: 'relative', marginBottom: '14px' }}>
       <label style={{ display: 'block', fontSize: '0.68rem', fontWeight: 800, color: '#475569', marginBottom: '6px', letterSpacing: '0.05em', textTransform: 'uppercase' }}>
         {label}
       </label>
@@ -234,6 +260,23 @@ export default function ClosedAttentionDashboard({ onBack, initialTab, initialSu
 
   // Dynamic Chart Interactive States
   const [chartSelectedUnit, setChartSelectedUnit] = useState('todos'); 
+
+  // Sincronizar filtro lateral de Servicio con la unidad del gráfico de ocupación
+  useEffect(() => {
+    if (!selectedService || selectedService.includes('Todas') || selectedService.length !== 1) {
+      setChartSelectedUnit('todos');
+      return;
+    }
+    const s = selectedService[0].toLowerCase();
+    if (s.includes('uci') || s.includes('intensiv')) setChartSelectedUnit('uci');
+    else if (s.includes('uti') || s.includes('intermedi')) setChartSelectedUnit('uti');
+    else if (s.includes('medi')) setChartSelectedUnit('medios');
+    else if (s.includes('básic') || s.includes('basic')) setChartSelectedUnit('basicos');
+    else if (s.includes('matern') || s.includes('gineco') || s.includes('obstet')) setChartSelectedUnit('maternidad');
+    else if (s.includes('infan') || s.includes('pediat')) setChartSelectedUnit('infantil');
+    else if (s.includes('neonat')) setChartSelectedUnit('neonatologia');
+    else setChartSelectedUnit('todos');
+  }, [selectedService]);
   const [chartVisibleMeasures, setChartVisibleMeasures] = useState({
     ocupadas: true,
     inhabilitadas: true,
@@ -319,16 +362,28 @@ export default function ClosedAttentionDashboard({ onBack, initialTab, initialSu
 
   // 1. Process Bed Occupancy (Cuadratura de Camas)
   const sortedCuadratura = useMemo(() => {
-    return [...cuadraturaRaw].map(r => ({
-      ...r,
-      parsedDate: parseDDMMYYYY(r.fecha)
-    })).filter(r => r.parsedDate !== null)
+    return [...cuadraturaRaw].map(r => {
+      const parsedDate = parseDDMMYYYY(r.fecha);
+      const ymd = parsedDate
+        ? `${parsedDate.getFullYear()}-${String(parsedDate.getMonth() + 1).padStart(2, '0')}-${String(parsedDate.getDate()).padStart(2, '0')}`
+        : null;
+      return { ...r, parsedDate, ymd };
+    }).filter(r => r.parsedDate !== null)
       .sort((a, b) => b.parsedDate - a.parsedDate);
   }, [cuadraturaRaw]);
 
-  // Current day bed status (latest record)
+  const filteredCuadratura = useMemo(() => {
+    return sortedCuadratura.filter(r => {
+      if (startDate && r.ymd < startDate) return false;
+      if (endDate && r.ymd > endDate) return false;
+      return true;
+    });
+  }, [sortedCuadratura, startDate, endDate]);
+
+  // Current day bed status (latest record within monitoring period)
   const currentOccupancy = useMemo(() => {
-    if (sortedCuadratura.length === 0) {
+    const source = filteredCuadratura.length > 0 ? filteredCuadratura : sortedCuadratura;
+    if (source.length === 0) {
       return {
         fecha: 'N/A',
         cuidados_basicos_disponibles: 0, cuidados_basicos_inhabilitadas: 0, cuidados_basicos_ocupadas: 0,
@@ -341,12 +396,12 @@ export default function ClosedAttentionDashboard({ onBack, initialTab, initialSu
         total_camas_disponibles: 0, total_camas_inhabilitadas: 0, total_camas_habilitadas: 0, total_camas_ocupadas: 0
       };
     }
-    return sortedCuadratura[0];
-  }, [sortedCuadratura]);
+    return source[0];
+  }, [filteredCuadratura, sortedCuadratura]);
 
   const occupancyHistory = useMemo(() => {
-    return [...sortedCuadratura].slice(0, 30).reverse();
-  }, [sortedCuadratura]);
+    return [...filteredCuadratura].reverse();
+  }, [filteredCuadratura]);
 
   const occupancyStats = useMemo(() => {
     const o = currentOccupancy;
@@ -2145,265 +2200,10 @@ export default function ClosedAttentionDashboard({ onBack, initialTab, initialSu
                   <div className="general-charts-dual-row" style={{ display: 'grid', gridTemplateColumns: '1.3fr 1fr', gap: '30px', alignItems: 'stretch' }}>
                     
                     {/* LEFT: Stacked Bar Card */}
-                    <div className="glass-card chart-container" style={{ padding: '24px', background: '#ffffff', boxShadow: '0 10px 40px -10px rgba(0,0,0,0.06)', borderRadius: '24px', border: '1px solid rgba(0,0,0,0.05)', marginBottom: 0 }}>
-                      <div className="chart-header" style={{ marginBottom: '20px', borderBottom: 'none' }}>
-                        <div>
-                          <h3 className="c-title" style={{ fontSize: '1.1rem', fontWeight: 900, color: '#1a365d' }}>Número de egresos según servicio clínico en el periodo</h3>
-                          <span style={{ fontSize: '0.8rem', color: '#64748b', fontWeight: 600 }}>Hospital de Villarrica • Egresos netos acumulados por especialidad</span>
-                        </div>
-                      </div>
-
-                      <div style={{ position: 'relative', marginTop: '10px', height: '220px', width: '100%' }}>
-                        <svg viewBox="0 0 700 240" width="100%" height="100%" preserveAspectRatio="none" style={{ overflow: 'visible' }}>
-                              <line x1="50" y1="40" x2="650" y2="40" stroke="rgba(0,0,0,0.03)" strokeDasharray="3 3" />
-                              <line x1="50" y1="80" x2="650" y2="80" stroke="rgba(0,0,0,0.03)" strokeDasharray="3 3" />
-                              <line x1="50" y1="120" x2="650" y2="120" stroke="rgba(0,0,0,0.03)" strokeDasharray="3 3" />
-                              <line x1="50" y1="160" x2="650" y2="160" stroke="rgba(0,0,0,0.03)" strokeDasharray="3 3" />
-                              <line x1="50" y1="200" x2="650" y2="200" stroke="rgba(0,0,0,0.08)" />
-
-                              <text x="15" y="20" fill="#94a3b8" fontSize="7.5" fontWeight="800">Recuento</text>
-
-                              {(() => {
-                                const data = metrics.current.monthlyData;
-                                const maxTotal = Math.max(...data.map(d => d.total)) || 10;
-
-                                // Dynamic sizing and spacing to avoid cut off/empty space
-                                let barWidth = 56;
-                                let step = 580 / Math.max(1, data.length);
-                                let getX = (i) => 70 + i * step;
-
-                                if (data.length === 1) {
-                                  barWidth = 120;
-                                  getX = (i) => 350 - barWidth / 2;
-                                } else if (data.length === 2) {
-                                  barWidth = 90;
-                                  step = 280;
-                                  getX = (i) => 160 + i * step;
-                                } else if (data.length === 3) {
-                                  barWidth = 72;
-                                  step = 180;
-                                  getX = (i) => 130 + i * step;
-                                } else {
-                                  // Standard responsive layout for many bars
-                                  barWidth = 56;
-                                  step = 520 / (data.length - 1);
-                                  getX = (i) => 80 + i * step;
-                                }
-
-                                return (
-                                  <React.Fragment>
-                                    {data.map((m, i) => {
-                                      const x = getX(i);
-                                      const scale = 160 / maxTotal;
-                                      
-                                      const hUci = (m.uci || 0) * scale;
-                                      const hUti = (m.uti || 0) * scale;
-                                      const hBasicos = (m.basicos || 0) * scale;
-                                      const hMedios = (m.medios || 0) * scale;
-                                      const hMujer = (m.mujer || 0) * scale;
-                                      const hInfantil = (m.infantil || 0) * scale;
-
-                                      const yUci = 200 - hUci;
-                                      const yUti = yUci - hUti;
-                                      const yBasicos = yUti - hBasicos;
-                                      const yMedios = yBasicos - hMedios;
-                                      const yMujer = yMedios - hMujer;
-                                      const yInfantil = yMujer - hInfantil;
-
-                                      const segmentStyle = (key) => ({
-                                        opacity: hoveredService && hoveredService !== key ? 0.25 : 1,
-                                        cursor: 'pointer',
-                                        transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-                                        filter: hoveredService === key ? 'drop-shadow(0px 0px 4px rgba(0,0,0,0.15))' : 'none'
-                                      });
-
-                                      return (
-                                        <g key={i} className="stacked-bar-group">
-                                          {hUci > 0 && <rect x={x} y={yUci} width={barWidth} height={hUci} fill="#10b981" rx="2" style={segmentStyle('uci')} onMouseEnter={() => setHoveredService('uci')} onMouseLeave={() => setHoveredService(null)} />}
-                                          {hUti > 0 && <rect x={x} y={yUti} width={barWidth} height={hUti} fill="#8b5cf6" rx="2" style={segmentStyle('uti')} onMouseEnter={() => setHoveredService('uti')} onMouseLeave={() => setHoveredService(null)} />}
-                                          {hBasicos > 0 && <rect x={x} y={yBasicos} width={barWidth} height={hBasicos} fill="#0284c7" rx="2" style={segmentStyle('basicos')} onMouseEnter={() => setHoveredService('basicos')} onMouseLeave={() => setHoveredService(null)} />}
-                                          {hMedios > 0 && <rect x={x} y={yMedios} width={barWidth} height={hMedios} fill="#1e3a8a" rx="2" style={segmentStyle('medios')} onMouseEnter={() => setHoveredService('medios')} onMouseLeave={() => setHoveredService(null)} />}
-                                          {hMujer > 0 && <rect x={x} y={yMujer} width={barWidth} height={hMujer} fill="#f43f5e" rx="2" style={segmentStyle('mujer')} onMouseEnter={() => setHoveredService('mujer')} onMouseLeave={() => setHoveredService(null)} />}
-                                          {hInfantil > 0 && <rect x={x} y={yInfantil} width={barWidth} height={hInfantil} fill="#f59e0b" rx="3.5" style={segmentStyle('infantil')} onMouseEnter={() => setHoveredService('infantil')} onMouseLeave={() => setHoveredService(null)} />}
-
-                                          {/* In-bar segment counts with white contrast text */}
-                                          {m.medios > 20 && <text x={x + barWidth/2} y={yMedios + hMedios/2 + 3} fill="#fff" fontSize="8.2" fontWeight="950" textAnchor="middle" style={{ pointerEvents: 'none', opacity: hoveredService && hoveredService !== 'medios' ? 0.25 : 1 }}>{m.medios}</text>}
-                                          {m.mujer > 20 && <text x={x + barWidth/2} y={yMujer + hMujer/2 + 3} fill="#fff" fontSize="8.2" fontWeight="950" textAnchor="middle" style={{ pointerEvents: 'none', opacity: hoveredService && hoveredService !== 'mujer' ? 0.25 : 1 }}>{m.mujer}</text>}
-                                          {m.basicos > 15 && <text x={x + barWidth/2} y={yBasicos + hBasicos/2 + 3} fill="#fff" fontSize="8.2" fontWeight="950" textAnchor="middle" style={{ pointerEvents: 'none', opacity: hoveredService && hoveredService !== 'basicos' ? 0.25 : 1 }}>{m.basicos}</text>}
-
-                                          {/* Top Total Box */}
-                                          <g style={{ cursor: 'pointer' }} onMouseEnter={() => setHoveredStackMonth({ ...m, idx: i })} onMouseLeave={() => setHoveredStackMonth(null)}>
-                                            <rect x={x + barWidth/2 - 20} y={yInfantil - 18} width="40" height="12" fill="#1a365d" stroke="rgba(0,0,0,0.05)" strokeWidth="0.8" rx="4" ry="4" />
-                                            <text x={x + barWidth/2} y={yInfantil - 9} fill="#ffffff" fontSize="8" fontWeight="950" textAnchor="middle">{m.total}</text>
-                                          </g>
-
-                                          <text x={x + barWidth/2} y="215" fill="#64748b" fontSize="8.5" fontWeight="800" textAnchor="middle">{m.label}</text>
-                                        </g>
-                                      );
-                                    })}
-                                  </React.Fragment>
-                                );
-                              })()}
-                            </svg>
-                          </div>
-
-                        <AnimatePresence>
-                          {hoveredStackMonth && (
-                            <motion.div
-                              initial={{ opacity: 0, scale: 0.95, y: -10 }}
-                              animate={{ opacity: 1, scale: 1, y: 0 }}
-                              exit={{ opacity: 0, scale: 0.95 }}
-                              className="stacked-bar-tooltip glass-card"
-                              style={{
-                                position: 'absolute',
-                                left: `${Math.min(Math.max(hoveredStackMonth.idx * 80 + 30, 20), 450)}px`,
-                                top: '15px',
-                                padding: '14px 18px',
-                                background: 'rgba(255, 255, 255, 0.98)',
-                                border: '2px solid #1a365d',
-                                borderRadius: '16px',
-                                boxShadow: '0 10px 30px rgba(0, 0, 0, 0.08)',
-                                zIndex: 100,
-                                width: '220px',
-                                pointerEvents: 'none'
-                              }}
-                            >
-                              <span style={{ display: 'block', fontWeight: 800, fontSize: '0.86rem', color: '#1a365d', marginBottom: '6px', borderBottom: '1px solid rgba(0,0,0,0.06)', paddingBottom: '4px' }}>
-                                Período: {hoveredStackMonth.label}
-                              </span>
-                              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '0.78rem', fontWeight: 700, color: '#475569' }}>
-                                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                  <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><span style={{ width: '6px', height: '6px', background: '#1e3a8a', borderRadius: '50%' }}></span> Medios:</span>
-                                  <strong style={{ color: '#1a365d' }}>{hoveredStackMonth.medios} egresos</strong>
-                                </div>
-                                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                  <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><span style={{ width: '6px', height: '6px', background: '#f43f5e', borderRadius: '50%' }}></span> Mqx mujer:</span>
-                                  <strong style={{ color: '#1a365d' }}>{hoveredStackMonth.mujer} egresos</strong>
-                                </div>
-                                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                  <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><span style={{ width: '6px', height: '6px', background: '#f59e0b', borderRadius: '50%' }}></span> Mqx infantil:</span>
-                                  <strong style={{ color: '#1a365d' }}>{hoveredStackMonth.infantil} egresos</strong>
-                                </div>
-                                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                  <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><span style={{ width: '6px', height: '6px', background: '#0284c7', borderRadius: '50%' }}></span> Básicos:</span>
-                                  <strong style={{ color: '#1a365d' }}>{hoveredStackMonth.basicos} egresos</strong>
-                                </div>
-                                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                  <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><span style={{ width: '6px', height: '6px', background: '#10b981', borderRadius: '50%' }}></span> UCI:</span>
-                                  <strong style={{ color: '#1a365d' }}>{hoveredStackMonth.uci || 0} egresos</strong>
-                                </div>
-                                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                  <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><span style={{ width: '6px', height: '6px', background: '#8b5cf6', borderRadius: '50%' }}></span> UTI:</span>
-                                  <strong style={{ color: '#1a365d' }}>{hoveredStackMonth.uti || 0} egresos</strong>
-                                </div>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px dashed rgba(0,0,0,0.08)', paddingTop: '6px', marginTop: '4px', fontWeight: 800 }}>
-                                  <span style={{ color: '#1a365d' }}>Total Egresos:</span>
-                                  <span style={{ color: '#1a365d' }}>{hoveredStackMonth.total} altas</span>
-                                </div>
-                              </div>
-                            </motion.div>
-                          )}
-                        </AnimatePresence>
-                      </div>
+                    <EgresosServicioMensualChart data={metrics.current.monthlyData} />
 
                     {/* RIGHT: Donut Chart Card */}
-                    <div className="glass-card chart-container" style={{ padding: '24px', background: '#ffffff', boxShadow: '0 10px 40px -10px rgba(0,0,0,0.06)', borderRadius: '24px', border: '1px solid rgba(0,0,0,0.05)', display: 'flex', flexDirection: 'column', height: '100%', marginBottom: 0 }}>
-                      <div className="chart-header" style={{ marginBottom: '16px', borderBottom: 'none', width: '100%' }}>
-                        <div style={{ textAlign: 'center', width: '100%' }}>
-                          <h3 className="c-title" style={{ fontSize: '1.05rem', fontWeight: 900, color: '#1a365d' }}>Distribución porcentual de egresos según servicio de egreso</h3>
-                        </div>
-                      </div>
-
-                      <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: '20px', width: '100%', flex: 1 }}>
-                        
-                        {/* Donut SVG Left Column */}
-                        <div style={{ width: '220px', height: '220px', position: 'relative', flexShrink: 0 }}>
-                          <svg width="100%" height="100%" viewBox="0 0 300 300" style={{ overflow: 'visible' }}>
-                            {donutSegments.map((seg, idx) => (
-                              <g key={idx}>
-                                <path 
-                                  d={seg.pathData} 
-                                  fill={seg.color} 
-                                  onMouseEnter={() => setHoveredService(seg.key)}
-                                  onMouseLeave={() => setHoveredService(null)}
-                                  style={{
-                                    opacity: hoveredService && hoveredService !== seg.key ? 0.25 : 1,
-                                    cursor: 'pointer',
-                                    transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
-                                    transform: hoveredService === seg.key ? 'scale(1.05)' : 'scale(1)',
-                                    transformOrigin: '150px 150px',
-                                    filter: hoveredService === seg.key ? 'drop-shadow(0px 4px 8px rgba(0,0,0,0.15))' : 'none'
-                                  }}
-                                />
-                              </g>
-                            ))}
-                            <circle cx="150" cy="150" r="64" fill="#ffffff" />
-                            
-                            {/* Interactive Hole Text */}
-                            {hoveredService && donutSegments.find(s => s.key === hoveredService) ? (() => {
-                              const activeSeg = donutSegments.find(s => s.key === hoveredService);
-                              return (
-                                <React.Fragment>
-                                  <text x="150" y="132" fill="#64748b" fontSize="7.5" fontWeight="800" textAnchor="middle" textTransform="uppercase">
-                                    {activeSeg.name.substring(0, 16)}
-                                  </text>
-                                  <text x="150" y="156" fill={activeSeg.color} fontSize="19" fontWeight="950" textAnchor="middle">
-                                    {activeSeg.value.toLocaleString()}
-                                  </text>
-                                  <text x="150" y="174" fill="#64748b" fontSize="8" fontWeight="800" textAnchor="middle">
-                                    {activeSeg.percent}% del total
-                                  </text>
-                                </React.Fragment>
-                              );
-                            })() : (
-                              <React.Fragment>
-                                <text x="150" y="138" fill="#64748b" fontSize="8" fontWeight="800" textAnchor="middle" textTransform="uppercase">Total Egresos</text>
-                                <text x="150" y="166" fill="#1a365d" fontSize="20" fontWeight="950" textAnchor="middle">
-                                  {(metrics.current.totalEgresosNetos).toLocaleString()}
-                                </text>
-                              </React.Fragment>
-                            )}
-                          </svg>
-                        </div>
-
-                        {/* Interactive Side List Legend Right Column */}
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', flex: 1, minWidth: 0 }}>
-                          {donutSegments.map((seg, idx) => {
-                            const isHovered = hoveredService === seg.key;
-                            const isDimmed = hoveredService && hoveredService !== seg.key;
-                            
-                            return (
-                              <div 
-                                key={idx}
-                                onMouseEnter={() => setHoveredService(seg.key)}
-                                onMouseLeave={() => setHoveredService(null)}
-                                style={{
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  justifyContent: 'space-between',
-                                  padding: '6px 10px',
-                                  borderRadius: '8px',
-                                  background: isHovered ? 'rgba(0,0,0,0.03)' : 'transparent',
-                                  opacity: isDimmed ? 0.4 : 1,
-                                  cursor: 'pointer',
-                                  transition: 'all 0.2s ease',
-                                  borderLeft: isHovered ? `3.5px solid ${seg.color}` : '3.5px solid transparent'
-                                }}
-                              >
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', overflow: 'hidden' }}>
-                                  <span style={{ width: '8px', height: '8px', background: seg.color, borderRadius: '50%', flexShrink: 0 }}></span>
-                                  <span style={{ fontSize: '0.76rem', fontWeight: 700, color: '#334155', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{seg.name}</span>
-                                </div>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
-                                  <span style={{ fontSize: '0.78rem', fontWeight: 900, color: '#1e293b' }}>{seg.value}</span>
-                                  <span style={{ fontSize: '0.66rem', fontWeight: 800, color: '#64748b', background: 'rgba(0,0,0,0.04)', padding: '2px 5px', borderRadius: '4px' }}>{seg.percent}%</span>
-                                </div>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    </div>
+                    <EgresosServicioRanking segments={donutSegments} total={metrics.current.totalEgresosNetos} />
                   </div>
 
                   {/* Unified Interactive Legend Badges Row under BOTH charts */}
@@ -2514,166 +2314,7 @@ export default function ClosedAttentionDashboard({ onBack, initialTab, initialSu
                   </div>
 
                   {/* Daily Ingress & Egress Trend Chart (REVISED - NO SIDE SCROLL, SELECTOR INTEGRATED) */}
-                  <div className="glass-card chart-container border-glow-cyan" style={{ padding: '24px', background: '#ffffff', boxShadow: '0 10px 40px -10px rgba(0,0,0,0.06)', borderRadius: '24px', border: '1px solid rgba(0,0,0,0.05)', marginTop: '30px', position: 'relative' }}>
-                    <div className="chart-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '15px', borderBottom: '1px solid rgba(0,0,0,0.05)', paddingBottom: '14px', marginBottom: '20px' }}>
-                      <div>
-                        <h2 className="c-title" style={{ fontSize: '1.1rem', fontWeight: 900, color: '#1a365d', margin: 0 }}>Tendencia Temporal de Ingresos y Egresos (Monitoreo Diario)</h2>
-                        <p className="c-subtitle" style={{ fontSize: '0.78rem', color: '#64748b', margin: '2px 0 0 0' }}>Análisis cronológico de admisiones vs altas netas en el periodo seleccionado</p>
-                      </div>
-                      
-                      <div className="chart-controls-row" style={{ display: 'flex', alignItems: 'center', gap: '20px', flexWrap: 'wrap' }}>
-                        <div className="chart-unit-selector" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <label style={{ fontSize: '0.74rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase' }}>Filtro de Servicio:</label>
-                          <select 
-                            value={trendSelectedService} 
-                            onChange={(e) => setTrendSelectedService(e.target.value)}
-                            style={{ padding: '8px 12px', borderRadius: '10px', border: '1.5px solid rgba(26, 54, 93, 0.15)', fontSize: '0.8rem', fontWeight: 700, outline: 'none', cursor: 'pointer', background: 'white', color: '#1a365d' }}
-                          >
-                            <option value="todos">Todos los servicios clínicos</option>
-                            {uniqueDropdowns.servicios.map(s => (
-                              <option key={s} value={s}>{s}</option>
-                            ))}
-                          </select>
-                        </div>
-
-                        <div className="legend-row" style={{ display: 'flex', gap: '14px', fontSize: '0.78rem', fontWeight: 700 }}>
-                          <div className="legend-item"><span className="legend-color" style={{ background: '#059669', width: '10px', height: '10px', borderRadius: '20%', display: 'inline-block', marginRight: '4px' }}></span> Ingresos (Admisiones)</div>
-                          <div className="legend-item"><span className="legend-color" style={{ background: '#0284c7', width: '10px', height: '10px', borderRadius: '20%', display: 'inline-block', marginRight: '4px' }}></span> Egresos (Altas Netas)</div>
-                        </div>
-                      </div>
-                    </div>
-
-                    {ingressEgressTrendData.length === 0 ? (
-                      <div className="empty-chart" style={{ textAlign: 'center', padding: '40px', color: '#64748b', fontWeight: 700 }}>Sin registros de ingresos o egresos en este rango de fechas</div>
-                    ) : (
-                      <div style={{ position: 'relative', marginTop: '20px' }}>
-                        <div style={{ width: '100%', height: '220px', position: 'relative' }}>
-                          <svg viewBox="0 0 1000 220" width="100%" height="100%" preserveAspectRatio="none" style={{ overflow: 'visible' }}>
-                            <line x1="50" y1="40" x2="950" y2="40" stroke="rgba(0,0,0,0.03)" strokeDasharray="3 3" />
-                            <line x1="50" y1="100" x2="950" y2="100" stroke="rgba(0,0,0,0.03)" strokeDasharray="3 3" />
-                            <line x1="50" y1="160" x2="950" y2="160" stroke="rgba(0,0,0,0.03)" strokeDasharray="3 3" />
-                            <line x1="50" y1="190" x2="950" y2="190" stroke="rgba(0,0,0,0.08)" />
-
-                            <text x="15" y="20" fill="#64748b" fontSize="8.5" fontWeight="800">MOVIMIENTOS (n)</text>
-
-                            {(() => {
-                              const pointsWidth = 900 / Math.max(1, ingressEgressTrendData.length - 1);
-                              const maxVal = Math.max(...ingressEgressTrendData.map(d => Math.max(d.ingresos, d.egresos))) || 5;
-                              const scale = 140 / maxVal;
-
-                              const points = ingressEgressTrendData.map((d, i) => ({
-                                x: 50 + i * pointsWidth,
-                                yIngresos: 190 - d.ingresos * scale,
-                                yEgresos: 190 - d.egresos * scale,
-                                date: d.label,
-                                dateKey: d.dateKey,
-                                ingresos: d.ingresos,
-                                egresos: d.egresos
-                              }));
-
-                              const pathIngresos = points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.yIngresos}`).join(' ');
-                              const pathEgresos = points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.yEgresos}`).join(' ');
-
-                              return (
-                                <React.Fragment>
-                                  {/* Area under Ingresos */}
-                                  <path d={`${pathIngresos} L ${points[points.length - 1].x} 190 L ${points[0].x} 190 Z`} fill="url(#greenAreaGrad)" opacity="0.04" />
-                                  {/* Area under Egresos */}
-                                  <path d={`${pathEgresos} L ${points[points.length - 1].x} 190 L ${points[0].x} 190 Z`} fill="url(#blueAreaGrad)" opacity="0.04" />
-
-                                  <path d={pathIngresos} fill="none" stroke="#059669" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" />
-                                  <path d={pathEgresos} fill="none" stroke="#0284c7" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" />
-
-                                  <defs>
-                                    <linearGradient id="greenAreaGrad" x1="0" y1="0" x2="0" y2="1">
-                                      <stop offset="0%" stopColor="#059669" stopOpacity="0.4" />
-                                      <stop offset="100%" stopColor="#059669" stopOpacity="0.0" />
-                                    </linearGradient>
-                                    <linearGradient id="blueAreaGrad" x1="0" y1="0" x2="0" y2="1">
-                                      <stop offset="0%" stopColor="#0284c7" stopOpacity="0.4" />
-                                      <stop offset="100%" stopColor="#0284c7" stopOpacity="0.0" />
-                                    </linearGradient>
-                                  </defs>
-
-                                  {points.map((p, i) => {
-                                    const stepLabel = Math.ceil(points.length / 10) || 1;
-                                    const shouldRenderLabel = i % stepLabel === 0 || i === points.length - 1;
-
-                                    return (
-                                      <g key={i} className="chart-badge-group">
-                                        {shouldRenderLabel && (
-                                          <React.Fragment>
-                                            <circle cx={p.x} cy={p.yIngresos} r="4.5" fill="#059669" stroke="#fff" strokeWidth="1.5" />
-                                            <circle cx={p.x} cy={p.yEgresos} r="4.5" fill="#0284c7" stroke="#fff" strokeWidth="1.5" />
-                                            <text x={p.x} y="206" fill="#64748b" fontSize="8.5" fontWeight="700" textAnchor="middle">{p.date}</text>
-                                          </React.Fragment>
-                                        )}
-                                        <rect 
-                                          x={p.x - pointsWidth/2}
-                                          y="10"
-                                          width={pointsWidth}
-                                          height="180"
-                                          fill="transparent"
-                                          style={{ cursor: 'pointer' }}
-                                          onMouseEnter={() => setHoveredTrendNode({ ...p, idx: i })}
-                                          onMouseLeave={() => setHoveredTrendNode(null)}
-                                        />
-                                      </g>
-                                    );
-                                  })}
-                                </React.Fragment>
-                              );
-                            })()}
-                          </svg>
-                        </div>
-                      </div>
-                    )}
-
-                    <AnimatePresence>
-                      {hoveredTrendNode && (
-                        <motion.div 
-                          initial={{ opacity: 0, scale: 0.95, y: 10 }}
-                          animate={{ opacity: 1, scale: 1, y: 0 }}
-                          exit={{ opacity: 0, scale: 0.95 }}
-                          className="absolute-chart-tooltip glass-card"
-                          style={{ 
-                            position: 'absolute',
-                            left: `${Math.min(Math.max(hoveredTrendNode.idx * (900 / Math.max(1, ingressEgressTrendData.length - 1)) + 30, 20), 750)}px`,
-                            top: '110px',
-                            padding: '16px',
-                            background: 'rgba(255, 255, 255, 0.98)',
-                            border: '2px solid #1a365d',
-                            borderRadius: '16px',
-                            boxShadow: '0 10px 30px rgba(26, 54, 93, 0.08)',
-                            zIndex: 100,
-                            width: '220px',
-                            pointerEvents: 'none'
-                          }}
-                        >
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px', borderBottom: '1px solid rgba(0,0,0,0.06)', paddingBottom: '6px' }}>
-                            <Calendar size={14} style={{ color: '#1a365d' }} />
-                            <span style={{ fontWeight: 800, fontSize: '0.86rem', color: '#1a365d' }}>Fecha: {hoveredTrendNode.date}</span>
-                          </div>
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '0.78rem', fontWeight: 700, color: '#334155' }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                              <span>Ingresos:</span>
-                              <span style={{ color: '#059669' }}>{hoveredTrendNode.ingresos} pac.</span>
-                            </div>
-                            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                              <span>Egresos:</span>
-                              <span style={{ color: '#0284c7' }}>{hoveredTrendNode.egresos} pac.</span>
-                            </div>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px dashed rgba(0,0,0,0.08)', paddingTop: '6px', marginTop: '4px', fontWeight: 800 }}>
-                              <span>Balance Neto:</span>
-                              <span style={{ color: hoveredTrendNode.ingresos - hoveredTrendNode.egresos >= 0 ? '#059669' : '#b91c1c' }}>
-                                {hoveredTrendNode.ingresos - hoveredTrendNode.egresos >= 0 ? '+' : ''}{hoveredTrendNode.ingresos - hoveredTrendNode.egresos} pac.
-                              </span>
-                            </div>
-                          </div>
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-                  </div>
+                  <TendenciaIngresosEgresos data={ingressEgressTrendData} servicios={uniqueDropdowns.servicios} selected={trendSelectedService} onChange={setTrendSelectedService} />
 
                 </motion.div>
               )}
@@ -3177,8 +2818,8 @@ export default function ClosedAttentionDashboard({ onBack, initialTab, initialSu
                   <div className="glass-card chart-container border-glow-cyan" style={{ marginBottom: '30px' }}>
                     <div className="chart-header">
                       <div>
-                        <h2 className="c-title text-glow-cyan">Historial Dinámico de Ocupación de Camas (Últimos 30 días)</h2>
-                        <p className="c-subtitle">Tendencia de capacidad operativa, ocupación, disponibilidad de camas libres y tasa porcentual de ocupación</p>
+                        <h2 className="c-title text-glow-cyan">Historial Dinámico de Ocupación de Camas</h2>
+                        <p className="c-subtitle">Tendencia de capacidad operativa, ocupación, camas libres y % de ocupación ({startDate} al {endDate})</p>
                       </div>
                       
                       <div className="chart-controls-row" style={{ display: 'flex', alignItems: 'center', gap: '20px', flexWrap: 'wrap', justifyContent: 'space-between', width: '100%', marginTop: '10px' }}>
