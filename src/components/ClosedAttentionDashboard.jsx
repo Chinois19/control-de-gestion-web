@@ -2565,9 +2565,9 @@ export default function ClosedAttentionDashboard({ onBack, initialTab, initialSu
                       const pathArea = `${pathLine} L ${points[points.length - 1].x} 180 L ${points[0].x} 180 Z`;
 
                       return (
-                        <div style={{ display: 'grid', gridTemplateColumns: '320px 1fr', gap: '30px', marginTop: '20px', alignItems: 'stretch' }}>
-                          {/* Left Column of compact tags */}
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: '420px 1fr', gap: '24px', marginTop: '20px', alignItems: 'start' }}>
+                          {/* Left Column of compact tags (2 columns × 7 rows) */}
+                          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: '10px' }}>
                             {indicatorsConfig.map(cfg => {
                               const IconComponent = cfg.icon;
                               const active = selectedIndicator === cfg.key;
@@ -2576,53 +2576,50 @@ export default function ClosedAttentionDashboard({ onBack, initialTab, initialSu
                                 <div
                                   key={cfg.key}
                                   onClick={() => setSelectedIndicator(cfg.key)}
+                                  title={cfg.formula}
                                   style={{
-                                    padding: '10px 14px',
-                                    background: active ? 'rgba(8, 145, 178, 0.05)' : '#ffffff',
-                                    border: active ? '2.5px solid #0891b2' : '1.5px solid rgba(0,0,0,0.06)',
-                                    borderRadius: '16px',
+                                    padding: '10px 12px',
+                                    background: active ? 'rgba(8, 145, 178, 0.06)' : '#ffffff',
+                                    border: active ? '2px solid #0891b2' : '1px solid rgba(0,0,0,0.07)',
+                                    borderRadius: '14px',
                                     cursor: 'pointer',
                                     transition: 'all 0.18s ease-in-out',
                                     display: 'flex',
                                     flexDirection: 'column',
                                     justifyContent: 'space-between',
-                                    boxShadow: active ? '0 8px 30px rgba(8, 145, 178, 0.1)' : 'none',
-                                    transform: active ? 'scale(1.02)' : 'scale(1)',
+                                    boxShadow: active ? '0 6px 20px rgba(8, 145, 178, 0.12)' : 'none',
                                     position: 'relative',
-                                    overflow: 'hidden'
+                                    overflow: 'hidden',
+                                    minWidth: 0
                                   }}
                                   className={`clinical-indicator-tag ${active ? 'active' : ''}`}
                                 >
-                                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                      <div style={{
-                                        background: active ? '#0891b2' : 'rgba(0,0,0,0.04)',
-                                        color: active ? '#ffffff' : '#64748b',
-                                        width: '26px',
-                                        height: '26px',
-                                        borderRadius: '8px',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center'
-                                      }}>
-                                        <IconComponent size={14} />
-                                      </div>
-                                      <span style={{ fontSize: '0.8rem', fontWeight: active ? 850 : 750, color: active ? '#1a365d' : '#475569' }}>
-                                        {cfg.shortTitle}
-                                      </span>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '7px', minWidth: 0 }}>
+                                    <div style={{
+                                      background: active ? '#0891b2' : 'rgba(0,0,0,0.04)',
+                                      color: active ? '#ffffff' : '#64748b',
+                                      width: '24px',
+                                      height: '24px',
+                                      borderRadius: '7px',
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      justifyContent: 'center',
+                                      flexShrink: 0
+                                    }}>
+                                      <IconComponent size={13} />
                                     </div>
-                                    <span style={{ fontSize: '0.64rem', color: '#94a3b8', fontStyle: 'italic', fontWeight: 600 }}>
-                                      {cfg.formula.length > 25 ? cfg.formula.substring(0, 22) + '...' : cfg.formula}
+                                    <span style={{ fontSize: '0.76rem', fontWeight: active ? 850 : 750, color: active ? '#1a365d' : '#475569', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                      {cfg.shortTitle}
                                     </span>
                                   </div>
 
-                                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: '6px' }}>
-                                    <span style={{ fontSize: '1.2rem', fontWeight: 950, color: active ? '#0891b2' : '#1a365d' }}>
+                                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: '8px', gap: '4px' }}>
+                                    <span style={{ fontSize: '1.08rem', fontWeight: 950, color: active ? '#0891b2' : '#1a365d', whiteSpace: 'nowrap' }}>
                                       {cfg.valueFormatter(cfg.value)}
                                     </span>
                                     
                                     {cfg.diff && (
-                                      <div style={{ transform: 'scale(0.85)', transformOrigin: 'right bottom' }}>
+                                      <div style={{ transform: 'scale(0.8)', transformOrigin: 'right bottom', flexShrink: 0 }}>
                                         {renderDiffBadge(cfg.diff, cfg.invertDiffColor)}
                                       </div>
                                     )}
@@ -2632,9 +2629,9 @@ export default function ClosedAttentionDashboard({ onBack, initialTab, initialSu
                             })}
                           </div>
 
-                          {/* Right Column of Line Chart & Insights */}
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                            <div className="glass-card chart-container border-glow-cyan" style={{ padding: '24px', background: '#ffffff', borderRadius: '24px', border: '1px solid rgba(0,0,0,0.05)', position: 'relative', display: 'flex', flexDirection: 'column', flex: 1, minHeight: '400px' }}>
+                          {/* Right Column of Line Chart & Insights (Sticky) */}
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', position: 'sticky', top: '20px' }}>
+                            <div className="glass-card chart-container border-glow-cyan" style={{ padding: '24px', background: '#ffffff', borderRadius: '24px', border: '1px solid rgba(0,0,0,0.05)', position: 'relative', display: 'flex', flexDirection: 'column' }}>
                               <div className="chart-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '15px', borderBottom: '1px solid rgba(0,0,0,0.05)', paddingBottom: '14px', marginBottom: '14px' }}>
                                 <div>
                                   <h2 className="c-title" style={{ fontSize: '1.1rem', fontWeight: 900, color: '#1a365d', margin: 0 }}>
