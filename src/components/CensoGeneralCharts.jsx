@@ -8,13 +8,17 @@ const AXIS_TICK = { fill: '#64748b', fontSize: 12, fontWeight: 500 };
 const GRID_COLOR = '#e2e8f0';
 
 const SERIES = [
-  { key: 'basicos', name: 'Cuidados básicos', color: '#0284c7' },
-  { key: 'medios', name: 'Cuidados medios', color: '#1e3a8a' },
-  { key: 'mujer', name: 'Mqx de la mujer', color: '#e11d48' },
-  { key: 'infantil', name: 'Mqx infantil', color: '#f59e0b' },
-  { key: 'uci', name: 'UCI', color: '#059669' },
-  { key: 'uti', name: 'UTI', color: '#7c3aed' }
+  { key: 'basicos', short: '403 · Méd.-Quir. Básicos', name: '403 - Área Médico-Quirúrgico Cuidados Básicos', color: '#0284c7' },
+  { key: 'medios', short: '404 · Méd.-Quir. Medios', name: '404 - Área Médico-Quirúrgico Cuidados Medios', color: '#1e3a8a' },
+  { key: 'mujer', short: '416 · Obstetricia', name: '416 - Área Obstetricia', color: '#e11d48' },
+  { key: 'infantil_408', short: '408 · Ped. Médica (<=Jun)', name: '408 - Área Médica Pediátrica Cuidados Medios', color: '#f59e0b' },
+  { key: 'infantil_410', short: '410 · Ped. Méd.-Quir. (>=Jul)', name: '410 - Área Médico-Quirúrgica Pediátrica Cuidados Medios', color: '#ea580c' },
+  { key: 'neonatologia', short: '413 · Neonatología Bás.', name: '413 - Área Neonatología Cuidados Básicos', color: '#0d9488' },
+  { key: 'uci', short: '405 · Intensivos (UCI)', name: '405 - Área Cuidados Intensivos Adultos', color: '#059669' },
+  { key: 'uti', short: '406 · Intermedios (UTI)', name: '406 - Área Cuidados Intermedios Adultos', color: '#7c3aed' }
 ];
+
+const SHORT_BY_NAME = Object.fromEntries(SERIES.map(x => [x.name, x.short]));
 
 const cardStyle = {
   padding: '24px',
@@ -47,9 +51,9 @@ const Row = ({ color, label, value, strong }) => (
 );
 
 /* 1) Egresos por servicio clínico - barras apiladas por mes */
-export function EgresosServicioMensualChart({ data = [] }) {
+export function EgresosServicioMensualChart({ data = [], serviceCounts = {} }) {
   const maxTotal = Math.max(1, ...data.map(d => d.total || 0));
-  const minLabel = maxTotal * 0.07;
+  const minLabel = maxTotal * 0.055;
 
   const segLabel = (v) => (v >= minLabel ? v : '');
 
@@ -71,7 +75,7 @@ export function EgresosServicioMensualChart({ data = [] }) {
 
   return (
     <div className="glass-card chart-container" style={cardStyle}>
-      <div style={{ marginBottom: 12 }}>
+      <div style={{ marginBottom: 14 }}>
         <h3 className="c-title" style={{ fontSize: '1.1rem', fontWeight: 800, color: '#1a365d', margin: 0 }}>
           Egresos por servicio clínico y mes
         </h3>
@@ -79,17 +83,22 @@ export function EgresosServicioMensualChart({ data = [] }) {
           Hospital de Villarrica • Egresos netos del período, apilados por servicio
         </span>
       </div>
-      <div style={{ width: '100%', height: 340 }}>
+      <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 14 }}>
+        {SERIES.map(s => (
+          <div key={s.key} title={s.name} style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderLeft: `3.5px solid ${s.color}`, borderRadius: 12, padding: '7px 12px', minWidth: 135 }}>
+            <div style={{ fontSize: '0.66rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>{s.short}</div>
+            <div style={{ fontSize: '1.12rem', fontWeight: 700, color: s.color }}>{(serviceCounts?.[s.key] || 0).toLocaleString('es-CL')}</div>
+          </div>
+        ))}
+      </div>
+      <div style={{ width: '100%', height: 380 }}>
         <ResponsiveContainer>
-          <ComposedChart data={data} margin={{ top: 28, right: 12, left: 0, bottom: 4 }}>
+          <ComposedChart data={data} margin={{ top: 24, right: 12, left: 0, bottom: 4 }}>
             <CartesianGrid stroke={GRID_COLOR} strokeDasharray="3 3" vertical={false} />
             <XAxis dataKey="label" tick={AXIS_TICK} axisLine={{ stroke: '#cbd5e1' }} tickLine={false} />
             <YAxis tick={AXIS_TICK} axisLine={false} tickLine={false} width={44} allowDecimals={false}
               label={{ value: 'Egresos (n)', angle: -90, position: 'insideLeft', fill: '#94a3b8', fontSize: 11, dx: 6 }} />
             <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(148,163,184,0.12)' }} />
-            <Legend verticalAlign="bottom" iconType="square" iconSize={10}
-              wrapperStyle={{ fontSize: 12, color: '#475569', paddingTop: 10 }}
-              payload={SERIES.map(s => ({ value: s.name, type: 'square', color: s.color, id: s.key }))} />
             {SERIES.map(s => (
               <Bar key={s.key} dataKey={s.key} name={s.name} stackId="egresos" fill={s.color} maxBarSize={64} isAnimationActive={false}>
                 <LabelList dataKey={s.key} position="center" formatter={segLabel}
@@ -112,7 +121,13 @@ export function EgresosServicioRanking({ segments = [], total = 0 }) {
   const rows = useMemo(
     () => segments
       .filter(s => s.key !== 'none')
-      .map(s => ({ name: s.name, value: s.value, percent: parseFloat(s.percent), color: s.color }))
+      .map(s => ({
+        name: s.name,
+        shortName: SHORT_BY_NAME[s.name] || SERIES.find(x => x.key === s.key)?.short || s.name,
+        value: s.value,
+        percent: parseFloat(s.percent),
+        color: s.color
+      }))
       .sort((a, b) => b.value - a.value),
     [segments]
   );
@@ -151,12 +166,12 @@ export function EgresosServicioRanking({ segments = [], total = 0 }) {
           Total del período: <strong style={{ color: '#0f172a', fontWeight: 600 }}>{total.toLocaleString('es-CL')}</strong> egresos
         </span>
       </div>
-      <div style={{ width: '100%', flex: 1, minHeight: 300 }}>
+      <div style={{ width: '100%', flex: 1, minHeight: 330 }}>
         <ResponsiveContainer>
-          <BarChart data={rows} layout="vertical" margin={{ top: 4, right: 90, left: 4, bottom: 4 }}>
+          <BarChart data={rows} layout="vertical" margin={{ top: 4, right: 110, left: 4, bottom: 4 }}>
             <CartesianGrid stroke={GRID_COLOR} strokeDasharray="3 3" horizontal={false} />
             <XAxis type="number" tick={AXIS_TICK} axisLine={false} tickLine={false} allowDecimals={false} />
-            <YAxis type="category" dataKey="name" tick={{ ...AXIS_TICK, fill: '#334155' }} axisLine={false} tickLine={false} width={120} />
+            <YAxis type="category" dataKey="name" tick={{ fill: '#334155', fontSize: 12, fontWeight: 600 }} axisLine={false} tickLine={false} width={350} />
             <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(148,163,184,0.12)' }} />
             <Bar dataKey="value" barSize={22} radius={[0, 6, 6, 0]} isAnimationActive={false}>
               {rows.map((r, i) => <Cell key={i} fill={r.color} />)}
@@ -289,17 +304,6 @@ export function TendenciaIngresosEgresos({ data = [], servicios = [], selected, 
             {toggleBtn('semanal', 'Semanal')}
             {toggleBtn('mensual', 'Mensual')}
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <label style={{ fontSize: '0.72rem', fontWeight: 600, color: '#64748b', textTransform: 'uppercase' }}>Servicio:</label>
-            <select
-              value={selected}
-              onChange={(e) => onChange(e.target.value)}
-              style={{ padding: '7px 10px', borderRadius: 10, border: '1px solid #cbd5e1', fontSize: '0.8rem', fontWeight: 500, background: 'white', color: '#1a365d', outline: 'none' }}
-            >
-              <option value="todos">Todos los servicios clínicos</option>
-              {servicios.map(s => <option key={s} value={s}>{s}</option>)}
-            </select>
-          </div>
         </div>
       </div>
 
@@ -346,6 +350,104 @@ export function TendenciaIngresosEgresos({ data = [], servicios = [], selected, 
           </ResponsiveContainer>
         </div>
       )}
+    </div>
+  );
+}
+
+/* 4) Evolución mensual de indicador clínico (Tab 2) */
+export function EvolucionIndicadorChart({ points = [], title, unit, color = '#0d9488', formatValue }) {
+  const fmt = formatValue || ((v) => `${v}`);
+  const CustomTooltip = ({ active, payload }) => {
+    if (!active || !payload || !payload.length) return null;
+    const row = payload[0].payload;
+    return (
+      <div style={tooltipBox}>
+        <div style={{ fontWeight: 700, color: '#1a365d', marginBottom: 4, borderBottom: '1px solid #e2e8f0', paddingBottom: 4 }}>
+          {row.fullLabel || row.label}
+        </div>
+        <Row color={color} label={title} value={fmt(row.val)} strong />
+        {row.estabCamas !== undefined && (
+          <Row color="#94a3b8" label="Total días-cama disp. (mes)" value={`${Number(row.estabCamas).toLocaleString('es-CL')} días-cama`} />
+        )}
+      </div>
+    );
+  };
+
+  const renderBadgeLabel = (props) => {
+    const { x, y, value } = props;
+    if (value === undefined || value === null) return null;
+    const txt = String(fmt(value)).replace(/\s*(camas|días-cama|días|pac\.)$/i, '').trim();
+    return (
+      <text
+        x={x}
+        y={y - 10}
+        textAnchor="middle"
+        fill={color}
+        stroke="#ffffff"
+        strokeWidth={3.5}
+        paintOrder="stroke"
+        fontSize={11}
+        fontWeight={700}
+      >
+        {txt}
+      </text>
+    );
+  };
+
+  return (
+    <div style={{ width: '100%', height: 280, marginTop: 8 }}>
+      <ResponsiveContainer>
+        <ComposedChart data={points} margin={{ top: 32, right: 16, left: 6, bottom: 4 }}>
+          <CartesianGrid stroke={GRID_COLOR} strokeDasharray="3 3" vertical={false} />
+          <XAxis dataKey="label" tick={AXIS_TICK} axisLine={{ stroke: '#cbd5e1' }} tickLine={false} />
+          <YAxis
+            yAxisId="left"
+            tick={AXIS_TICK}
+            axisLine={false}
+            tickLine={false}
+            width={52}
+            domain={['auto', 'auto']}
+            label={{ value: unit ? `(${unit})` : '', angle: -90, position: 'insideLeft', fill: '#94a3b8', fontSize: 11, dx: 4 }}
+          />
+          <YAxis
+            yAxisId="right"
+            orientation="right"
+            tick={{ fill: '#94a3b8', fontSize: 11, fontWeight: 500 }}
+            axisLine={false}
+            tickLine={false}
+            width={52}
+            domain={[0, (dataMax) => Math.ceil((dataMax || 100) * 1.15)]}
+            label={{ value: 'Días-Cama', angle: 90, position: 'insideRight', fill: '#94a3b8', fontSize: 10, dx: -2 }}
+          />
+          <Tooltip content={<CustomTooltip />} />
+          <Legend verticalAlign="top" align="right" iconType="square" wrapperStyle={{ fontSize: 11.5, color: '#64748b', paddingBottom: 6 }} />
+          <Bar
+            yAxisId="right"
+            dataKey="estabCamas"
+            name="Total días-cama disp. (mes)"
+            fill="#94a3b8"
+            fillOpacity={0.2}
+            stroke="#94a3b8"
+            strokeOpacity={0.35}
+            barSize={26}
+            radius={[6, 6, 0, 0]}
+            isAnimationActive={false}
+          />
+          <Line
+            yAxisId="left"
+            type="monotone"
+            dataKey="val"
+            name={title}
+            stroke={color}
+            strokeWidth={3}
+            dot={{ r: 4.5, fill: color, stroke: '#ffffff', strokeWidth: 2 }}
+            activeDot={{ r: 6.5, fill: color, stroke: '#ffffff', strokeWidth: 2 }}
+            isAnimationActive={false}
+          >
+            {points.length <= 15 && <LabelList dataKey="val" content={renderBadgeLabel} />}
+          </Line>
+        </ComposedChart>
+      </ResponsiveContainer>
     </div>
   );
 }

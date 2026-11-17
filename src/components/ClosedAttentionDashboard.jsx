@@ -30,17 +30,19 @@ import {
   Percent,
   BarChart2,
   PieChart,
-  Info
+  Info,
+  Pin
 } from 'lucide-react';
 
 import * as XLSX from 'xlsx';
-import { EgresosServicioMensualChart, EgresosServicioRanking, TendenciaIngresosEgresos } from './CensoGeneralCharts';
+import { EgresosServicioMensualChart, EgresosServicioRanking, TendenciaIngresosEgresos, EvolucionIndicadorChart } from './CensoGeneralCharts';
 
 // ─── Custom MultiSelect with Search ────────────────────────────────────────
-function MultiSelectDropdown({ label, selectedValues, setSelectedValues, options, placeholder, dropdownKey, activeDropdown, setActiveDropdown }) {
+function MultiSelectDropdown({ label, selectedValues, setSelectedValues, options, placeholder, dropdownKey, activeDropdown, setActiveDropdown, formatOption }) {
   const [searchTerm, setSearchTerm] = React.useState('');
   const isOpen = activeDropdown === dropdownKey;
   const isAll = selectedValues.includes('Todas');
+  const getLabel = (v) => (formatOption ? formatOption(v) : v);
   const wrapperRef = React.useRef(null);
   const closeTimer = React.useRef(null);
 
@@ -67,11 +69,11 @@ function MultiSelectDropdown({ label, selectedValues, setSelectedValues, options
   };
   const handleMouseEnter = () => clearTimeout(closeTimer.current);
 
-  const filtered = options.filter(o => o.toLowerCase().includes(searchTerm.toLowerCase()));
+  const filtered = options.filter(o => getLabel(o).toLowerCase().includes(searchTerm.toLowerCase()));
 
   let displayLabel = placeholder;
   if (!isAll && selectedValues.length > 0) {
-    displayLabel = selectedValues.length === 1 ? selectedValues[0] : `${selectedValues.length} seleccionados`;
+    displayLabel = selectedValues.length === 1 ? getLabel(selectedValues[0]) : `${selectedValues.length} seleccionados`;
   }
 
   const toggle = (value) => {
@@ -189,7 +191,7 @@ function MultiSelectDropdown({ label, selectedValues, setSelectedValues, options
                       fontSize: '0.78rem', fontWeight: checked ? 700 : 500,
                       color: checked ? '#0891b2' : '#475569',
                       overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap'
-                    }}>{opt}</span>
+                    }}>{getLabel(opt)}</span>
                   </div>
                 );
               })}
@@ -207,6 +209,66 @@ function MultiSelectDropdown({ label, selectedValues, setSelectedValues, options
   );
 }
 // ────────────────────────────────────────────────────────────────────────────
+
+// Homologación de nombres de Unidades Funcionales según REM 20 MINSAL
+function getRemServiceLabel(srv = '', endDateStr = '') {
+  const s = String(srv).toLowerCase();
+  if (s.startsWith('408') || s.startsWith('410') || s.startsWith('403') || s.startsWith('404') || s.startsWith('405') || s.startsWith('406') || s.startsWith('413') || s.startsWith('416')) return srv;
+  if (s.includes('neo')) return '413 - Área Neonatología Cuidados Básicos';
+  if (s.includes('infan') || s.includes('pediat')) {
+    return (endDateStr && endDateStr >= '2026-07-01')
+      ? '410 - Área Médico-Quirúrgica Pediátrica Cuidados Medios'
+      : '408 - Área Médica Pediátrica Cuidados Medios';
+  }
+  if (s.includes('uci') || s.includes('intensivo')) return '405 - Área Cuidados Intensivos Adultos';
+  if (s.includes('uti') || s.includes('intermedio')) return '406 - Área Cuidados Intermedios Adultos';
+  if (s.includes('matern') || s.includes('mujer') || s.includes('obstet') || s.includes('ginec')) return '416 - Área Obstetricia';
+  if (s.includes('basico') || s.includes('básico')) return '403 - Área Médico-Quirúrgico Cuidados Básicos';
+  if (s.includes('medio')) return '404 - Área Médico-Quirúrgico Cuidados Medios';
+  return srv;
+}
+
+function isAllServicesFilter(filter) {
+  if (!filter || filter === 'Todas') return true;
+  return Array.isArray(filter) && (filter.length === 0 || filter.includes('Todas'));
+}
+
+function matchesServiceFilter(srv, filter) {
+  if (isAllServicesFilter(filter)) return true;
+  const list = Array.isArray(filter) ? filter : [filter];
+  return list.includes(srv);
+}
+
+function sumCuadraturaForServices(r, filter) {
+  if (isAllServicesFilter(filter)) {
+    return {
+      disp: r.total_camas_habilitadas || 0,
+      ocup: r.total_camas_ocupadas || 0,
+      inhab: r.total_camas_inhabilitadas || 0
+    };
+  }
+  const list = Array.isArray(filter) ? filter : [filter];
+  const keys = new Set();
+  list.forEach(item => {
+    const s = String(item).toLowerCase();
+    // Orden estricto: evaluar neo (413), pediatría (408/410), uci (405), uti (406) y maternidad (416)
+    // ANTES de 'básico' (403) y 'medio' (404), ya que 413 contiene "Básicos" y 408/410/406 contienen "Medios"/"Intermedios".
+    if (s.startsWith('413') || s.includes('neo') || s.includes('cuna')) keys.add('neonatologia');
+    else if (s.startsWith('408') || s.startsWith('410') || s.includes('pediat') || s.includes('infantil')) keys.add('infantil');
+    else if (s.startsWith('405') || s.includes('uci') || s.includes('intensivo')) keys.add('uci');
+    else if (s.startsWith('406') || s.includes('uti') || s.includes('intermedio')) keys.add('uti');
+    else if (s.startsWith('416') || s.includes('mater') || s.includes('mujer') || s.includes('obstet') || s.includes('ginec')) keys.add('maternidad');
+    else if (s.startsWith('403') || s.includes('basico') || s.includes('básico')) keys.add('cuidados_basicos');
+    else if (s.startsWith('404') || s.includes('medio')) keys.add('cuidados_medios');
+  });
+  let disp = 0, ocup = 0, inhab = 0;
+  keys.forEach(k => {
+    disp += r[`${k}_disponibles`] || 0;
+    ocup += r[`${k}_ocupadas`] || 0;
+    inhab += r[`${k}_inhabilitadas`] || 0;
+  });
+  return { disp, ocup, inhab };
+}
 
 export default function ClosedAttentionDashboard({ onBack, initialTab, initialSubTab }) {
   const [censoRaw, setCensoRaw] = useState([]);
@@ -255,6 +317,7 @@ export default function ClosedAttentionDashboard({ onBack, initialTab, initialSu
 
   // Collapsible and Multi-select controls
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [sidebarPinned, setSidebarPinned] = useState(true);
   const [activeDropdown, setActiveDropdown] = useState(null); // null, 'service', 'procedencia', 'condicion', 'cie10', 'edad'
   const [selectedRemService, setSelectedRemService] = useState('Todas');
 
@@ -268,13 +331,13 @@ export default function ClosedAttentionDashboard({ onBack, initialTab, initialSu
       return;
     }
     const s = selectedService[0].toLowerCase();
-    if (s.includes('uci') || s.includes('intensiv')) setChartSelectedUnit('uci');
-    else if (s.includes('uti') || s.includes('intermedi')) setChartSelectedUnit('uti');
-    else if (s.includes('medi')) setChartSelectedUnit('medios');
-    else if (s.includes('básic') || s.includes('basic')) setChartSelectedUnit('basicos');
-    else if (s.includes('matern') || s.includes('gineco') || s.includes('obstet')) setChartSelectedUnit('maternidad');
-    else if (s.includes('infan') || s.includes('pediat')) setChartSelectedUnit('infantil');
-    else if (s.includes('neonat')) setChartSelectedUnit('neonatologia');
+    if (s.startsWith('413') || s.includes('neonat')) setChartSelectedUnit('neonatologia');
+    else if (s.startsWith('408') || s.startsWith('410') || s.includes('infan') || s.includes('pediat')) setChartSelectedUnit('infantil');
+    else if (s.startsWith('405') || s.includes('uci') || s.includes('intensiv')) setChartSelectedUnit('uci');
+    else if (s.startsWith('406') || s.includes('uti') || s.includes('intermedi')) setChartSelectedUnit('uti');
+    else if (s.startsWith('416') || s.includes('matern') || s.includes('gineco') || s.includes('obstet')) setChartSelectedUnit('maternidad');
+    else if (s.startsWith('403') || s.includes('básic') || s.includes('basic')) setChartSelectedUnit('basicos');
+    else if (s.startsWith('404') || s.includes('medi')) setChartSelectedUnit('medios');
     else setChartSelectedUnit('todos');
   }, [selectedService]);
   const [chartVisibleMeasures, setChartVisibleMeasures] = useState({
@@ -285,7 +348,7 @@ export default function ClosedAttentionDashboard({ onBack, initialTab, initialSu
     tasa: true
   });
   const [trendSelectedService, setTrendSelectedService] = useState('todos');
-  const [selectedClinicalService, setSelectedClinicalService] = useState('Todas');
+  const [selectedClinicalService, setSelectedClinicalService] = useState(['Todas']);
   const [selectedIndicator, setSelectedIndicator] = useState('ocupacion');
   const [hoveredNode, setHoveredNode] = useState(null); 
   const [hoveredTrendNode, setHoveredTrendNode] = useState(null); 
@@ -462,6 +525,20 @@ export default function ClosedAttentionDashboard({ onBack, initialTab, initialSu
         }
       }
 
+      const normalizePediatriaByDate = (rawSrv, ymdDate) => {
+        const clean = (rawSrv || 'Sin Servicio').trim();
+        const low = clean.toLowerCase();
+        if (low === 'infantil' || low.includes('pediat')) {
+          return (ymdDate && ymdDate >= '2026-07-01')
+            ? '410 - Área Médico-Quirúrgica Pediátrica Cuidados Medios'
+            : '408 - Área Médica Pediátrica Cuidados Medios';
+        }
+        return clean;
+      };
+
+      const servicioIngresoClean = normalizePediatriaByDate(r.servicio_ingreso, ymdEgreso || ymdIngreso);
+      const servicioEgresoClean = normalizePediatriaByDate(r.servicio_egreso || r.servicio_ingreso, ymdEgreso || ymdIngreso);
+
       return {
         ...r,
         recordId: r.cuenta_corriente || r.id || String(idx),
@@ -474,9 +551,9 @@ export default function ClosedAttentionDashboard({ onBack, initialTab, initialSu
         isCurrentlyHospitalized,
         calculatedDays,
         procedenciaClean: (r.procedencia || 'Desconocida').trim(),
-        servicioIngresoClean: (r.servicio_ingreso || 'Sin Servicio').trim(),
+        servicioIngresoClean,
         // Bug Fix: servicioEgreso may differ from servicioIngreso (traslados internos)
-        servicioEgresoClean: (r.servicio_egreso || r.servicio_ingreso || 'Sin Servicio').trim(),
+        servicioEgresoClean,
         condicionEgresoClean: (r.condicion_egreso || 'Sin Alta').trim()
       };
     });
@@ -560,21 +637,24 @@ export default function ClosedAttentionDashboard({ onBack, initialTab, initialSu
       let totalDiasEstada = 0;
       let deceasedCount = 0;
       let totalTraslados = 0;
+      let totalDiasTraslados = 0;
       let totalBedDaysInPeriod = 0;
 
       const monitorStart = new Date(start);
       const monitorEnd = new Date(end);
 
-      const serviceCounts = { medios: 0, mujer: 0, infantil: 0, basicos: 0, uti: 0, uci: 0 };
+      const serviceCounts = { medios: 0, mujer: 0, infantil_408: 0, infantil_410: 0, neonatologia: 0, basicos: 0, uti: 0, uci: 0 };
       const monthlyStats = {};
 
       const getDonutCategory = (srv) => {
         const s = srv.toLowerCase();
         if (s.includes('intensivo') || s.includes('uci')) return 'uci';
         if (s.includes('intermedio') || s.includes('uti')) return 'uti';
+        if (s.includes('neo')) return 'neonatologia';
         if (s.includes('básico') || s.includes('basico') || s.includes('pensionado')) return 'basicos';
         if (s.includes('maternidad') || s.includes('gineco') || s.includes('obstet') || s.includes('mujer')) return 'mujer';
-        if (s.includes('infantil') || s.includes('pediat') || s.includes('niño')) return 'infantil';
+        if (s.includes('410') || s.includes('médico-quirúrgica pediátrica')) return 'infantil_410';
+        if (s.includes('408') || s.includes('infantil') || s.includes('pediat') || s.includes('niño')) return 'infantil_408';
         return 'medios';
       };
 
@@ -589,6 +669,7 @@ export default function ClosedAttentionDashboard({ onBack, initialTab, initialSu
           const cond = r.condicionEgresoClean.toLowerCase();
           if (cond.includes('traslado servicio')) {
             totalTraslados++;
+            totalDiasTraslados += r.calculatedDays;
           } else {
             totalEgresosNetos++;
             totalDiasEstada += r.calculatedDays;
@@ -613,7 +694,9 @@ export default function ClosedAttentionDashboard({ onBack, initialTab, initialSu
                   total: 0,
                   medios: 0,
                   mujer: 0,
-                  infantil: 0,
+                  infantil_408: 0,
+                  infantil_410: 0,
+                  neonatologia: 0,
                   basicos: 0,
                   uti: 0,
                   uci: 0
@@ -651,14 +734,32 @@ export default function ClosedAttentionDashboard({ onBack, initialTab, initialSu
 
       const diffTimeMonitor = Math.abs(monitorEnd - monitorStart);
       const diffDaysMonitor = Math.ceil(diffTimeMonitor / (1000 * 60 * 60 * 24)) || 1;
-      
-      const camasHabilitadas = currentOccupancy.total_camas_habilitadas || 120;
-      const diasInhabilitados = (currentOccupancy.total_camas_inhabilitadas || 4) * diffDaysMonitor;
 
-      // Inpatient indicators calculation
-      const occupancyRate = ((totalBedDaysInPeriod / (camasHabilitadas * diffDaysMonitor)) * 100);
-      const rotationIndex = totalEgresosNetos > 0 ? (totalEgresosNetos / camasHabilitadas) : 0;
-      const subInterval = totalEgresosNetos > 0 ? ((camasHabilitadas * diffDaysMonitor - totalBedDaysInPeriod) / totalEgresosNetos) : 0;
+      let sumDispTab1 = 0, sumOcupTab1 = 0, sumInhabTab1 = 0, countDaysTab1 = 0;
+      cuadraturaRaw.forEach(r => {
+        const pDate = parseDDMMYYYY(r.fecha);
+        if (pDate && pDate >= monitorStart && pDate <= monitorEnd) {
+          countDaysTab1++;
+          const sums = sumCuadraturaForServices(r, selectedService);
+          sumDispTab1 += sums.disp;
+          sumOcupTab1 += sums.ocup;
+          sumInhabTab1 += sums.inhab;
+        }
+      });
+
+      const camasHabilitadas = sumDispTab1 > 0
+        ? Math.round(sumDispTab1 / (countDaysTab1 || 1))
+        : (currentOccupancy.total_camas_habilitadas || 120);
+      const diasInhabilitados = countDaysTab1 > 0
+        ? sumInhabTab1
+        : (currentOccupancy.total_camas_inhabilitadas || 4) * diffDaysMonitor;
+      const availableDaysTab1 = sumDispTab1 > 0 ? sumDispTab1 : (camasHabilitadas * diffDaysMonitor);
+      const occupiedDaysTab1 = sumDispTab1 > 0 ? sumOcupTab1 : totalBedDaysInPeriod;
+
+      // Inpatient indicators calculation (Cuadratura MINSAL)
+      const occupancyRate = availableDaysTab1 > 0 ? ((occupiedDaysTab1 / availableDaysTab1) * 100) : 0;
+      const rotationIndex = (totalEgresosNetos > 0 && camasHabilitadas > 0) ? (totalEgresosNetos / camasHabilitadas) : 0;
+      const subInterval = totalEgresosNetos > 0 ? ((availableDaysTab1 - occupiedDaysTab1) / totalEgresosNetos) : 0;
       const lethalityRate = totalEgresosNetos > 0 ? ((deceasedCount / totalEgresosNetos) * 100) : 0;
 
       const sortedMonthlyData = Object.values(monthlyStats)
@@ -678,6 +779,7 @@ export default function ClosedAttentionDashboard({ onBack, initialTab, initialSu
         totalEgresosNetos,
         totalDiasEstada,
         totalTraslados,
+        avgEstadaTraslados: totalTraslados > 0 ? (totalDiasTraslados / totalTraslados) : 0,
         totalBedDaysInPeriod,
         occupancyRate,
         rotationIndex,
@@ -729,20 +831,22 @@ export default function ClosedAttentionDashboard({ onBack, initialTab, initialSu
       previous,
       diffs
     };
-  }, [filteredCenso, startDate, endDate, currentOccupancy]);
+  }, [filteredCenso, cuadraturaRaw, selectedService, prevPeriod, startDate, endDate, currentOccupancy]);
 
   // Donut segment calculations with pointer coordinates
   const donutSegments = useMemo(() => {
     const counts = metrics.current.serviceCounts;
-    const total = counts.medios + counts.mujer + counts.infantil + counts.basicos + counts.uti + counts.uci;
+    const total = counts.medios + counts.mujer + (counts.infantil_408 || 0) + (counts.infantil_410 || 0) + (counts.neonatologia || 0) + counts.basicos + counts.uti + counts.uci;
     
     const rawSegments = [
-      { name: 'Cuidados básicos', value: counts.basicos, color: '#0284c7', key: 'basicos' }, 
-      { name: 'Cuidados medios', value: counts.medios, color: '#1e3a8a', key: 'medios' }, 
-      { name: 'Mqx de la mujer', value: counts.mujer, color: '#f43f5e', key: 'mujer' }, 
-      { name: 'Mqx infantil', value: counts.infantil, color: '#f59e0b', key: 'infantil' }, 
-      { name: 'UCI', value: counts.uci, color: '#10b981', key: 'uci' }, 
-      { name: 'UTI', value: counts.uti, color: '#8b5cf6', key: 'uti' } 
+      { name: getRemServiceLabel('basicos', endDate), value: counts.basicos, color: '#0284c7', key: 'basicos' }, 
+      { name: getRemServiceLabel('medios', endDate), value: counts.medios, color: '#1e3a8a', key: 'medios' }, 
+      { name: getRemServiceLabel('maternidad', endDate), value: counts.mujer, color: '#f43f5e', key: 'mujer' }, 
+      { name: '408 - Área Médica Pediátrica Cuidados Medios', value: counts.infantil_408 || 0, color: '#f59e0b', key: 'infantil_408' }, 
+      { name: '410 - Área Médico-Quirúrgica Pediátrica Cuidados Medios', value: counts.infantil_410 || 0, color: '#ea580c', key: 'infantil_410' },
+      { name: getRemServiceLabel('neonatologia', endDate), value: counts.neonatologia || 0, color: '#0d9488', key: 'neonatologia' },
+      { name: getRemServiceLabel('uci', endDate), value: counts.uci, color: '#10b981', key: 'uci' }, 
+      { name: getRemServiceLabel('uti', endDate), value: counts.uti, color: '#8b5cf6', key: 'uti' } 
     ];
 
     if (total === 0) {
@@ -948,6 +1052,7 @@ export default function ClosedAttentionDashboard({ onBack, initialTab, initialSu
       let totalDiasEstada = 0;
       let deceasedCount = 0;
       let totalTraslados = 0;
+      let totalDiasTraslados = 0;
       let totalBedDaysInPeriod = 0;
 
       const monitorStart = new Date(start + 'T00:00:00');
@@ -965,46 +1070,10 @@ export default function ClosedAttentionDashboard({ onBack, initialTab, initialSu
         const pDate = parseDDMMYYYY(r.fecha);
         if (pDate && pDate >= monitorStart && pDate <= monitorEnd) {
           countDays++;
-          if (serviceFilter === 'Todas') {
-            sumHabilCamas += r.total_camas_habilitadas || 0;
-            sumOcupadasCamas += r.total_camas_ocupadas || 0;
-            sumInhabilCamas += r.total_camas_inhabilitadas || 0;
-          } else {
-            const s = serviceFilter.toLowerCase();
-            if (s.includes('basico') || s.includes('básico')) {
-              sumHabilCamas += r.cuidados_basicos_disponibles || 0;
-              sumOcupadasCamas += r.cuidados_basicos_ocupadas || 0;
-              sumInhabilCamas += r.cuidados_basicos_inhabilitadas || 0;
-            } else if (s.includes('medio')) {
-              sumHabilCamas += r.cuidados_medios_disponibles || 0;
-              sumOcupadasCamas += r.cuidados_medios_ocupadas || 0;
-              sumInhabilCamas += r.cuidados_medios_inhabilitadas || 0;
-            } else if (s.includes('uci') || s.includes('intensivo')) {
-              sumHabilCamas += r.uci_disponibles || 0;
-              sumOcupadasCamas += r.uci_ocupadas || 0;
-              sumInhabilCamas += r.uci_inhabilitadas || 0;
-            } else if (s.includes('uti') || s.includes('intermedio')) {
-              sumHabilCamas += r.uti_disponibles || 0;
-              sumOcupadasCamas += r.uti_ocupadas || 0;
-              sumInhabilCamas += r.uti_inhabilitadas || 0;
-            } else if (s.includes('mater') || s.includes('mujer') || s.includes('obstet') || s.includes('ginec')) {
-              sumHabilCamas += r.maternidad_disponibles || 0;
-              sumOcupadasCamas += r.maternidad_ocupadas || 0;
-              sumInhabilCamas += r.maternidad_inhabilitadas || 0;
-            } else if (s.includes('pediat') || s.includes('infantil')) {
-              sumHabilCamas += r.infantil_disponibles || 0;
-              sumOcupadasCamas += r.infantil_ocupadas || 0;
-              sumInhabilCamas += r.infantil_inhabilitadas || 0;
-            } else if (s.includes('neo') || s.includes('cuna')) {
-              sumHabilCamas += r.neonatologia_disponibles || 0;
-              sumOcupadasCamas += r.neonatologia_ocupadas || 0;
-              sumInhabilCamas += r.neonatologia_inhabilitadas || 0;
-            } else {
-              sumHabilCamas += r.total_camas_habilitadas || 0;
-              sumOcupadasCamas += r.total_camas_ocupadas || 0;
-              sumInhabilCamas += r.total_camas_inhabilitadas || 0;
-            }
-          }
+          const sums = sumCuadraturaForServices(r, serviceFilter);
+          sumHabilCamas += sums.disp;
+          sumOcupadasCamas += sums.ocup;
+          sumInhabilCamas += sums.inhab;
         }
       });
 
@@ -1017,9 +1086,10 @@ export default function ClosedAttentionDashboard({ onBack, initialTab, initialSu
       } else {
         // Fallback to static rules
         let defaultInhabilitadas = 4;
-        if (serviceFilter !== 'Todas') {
-          const s = serviceFilter.toLowerCase();
-          if (s.includes('pediat') || s.includes('infantil')) { camasHabilitadas = 15; defaultInhabilitadas = 1; }
+        if (!isAllServicesFilter(serviceFilter)) {
+          const first = Array.isArray(serviceFilter) ? serviceFilter[0] : serviceFilter;
+          const s = String(first || '').toLowerCase();
+          if (s.includes('pediat') || s.includes('infantil') || s.startsWith('408') || s.startsWith('410')) { camasHabilitadas = 15; defaultInhabilitadas = 1; }
           else if (s.includes('mater') || s.includes('mujer') || s.includes('ginec')) { camasHabilitadas = 20; defaultInhabilitadas = 1; }
           else if (s.includes('intensivo') || s.includes('uci')) { camasHabilitadas = 6; defaultInhabilitadas = 0; }
           else if (s.includes('intermedio') || s.includes('uti')) { camasHabilitadas = 8; defaultInhabilitadas = 0; }
@@ -1031,8 +1101,8 @@ export default function ClosedAttentionDashboard({ onBack, initialTab, initialSu
 
       censoCleaned.forEach(r => {
         // Apply service filter
-        if (serviceFilter !== 'Todas') {
-          if (r.servicioIngresoClean !== serviceFilter && r.servicioEgresoClean !== serviceFilter) return;
+        if (!isAllServicesFilter(serviceFilter)) {
+          if (!matchesServiceFilter(r.servicioIngresoClean, serviceFilter) && !matchesServiceFilter(r.servicioEgresoClean, serviceFilter)) return;
         }
 
         // A. Ingresos in period
@@ -1045,6 +1115,7 @@ export default function ClosedAttentionDashboard({ onBack, initialTab, initialSu
           const cond = r.condicionEgresoClean.toLowerCase();
           if (cond.includes('traslado servicio')) {
             totalTraslados++;
+            totalDiasTraslados += r.calculatedDays;
           } else {
             totalEgresosNetos++;
             totalDiasEstada += r.calculatedDays;
@@ -1084,6 +1155,8 @@ export default function ClosedAttentionDashboard({ onBack, initialTab, initialSu
 
       return {
         camasHabilitadas,
+        availableBedDays,
+        occupiedBedDays,
         diasInhabilitados,
         totalIngresos,
         totalEgresosNetos,
@@ -1177,46 +1250,10 @@ export default function ClosedAttentionDashboard({ onBack, initialTab, initialSu
         const pDate = parseDDMMYYYY(r.fecha);
         if (pDate && pDate >= monitorStart && pDate <= monitorEnd) {
           countDays++;
-          if (serviceFilter === 'Todas') {
-            sumHabilCamas += r.total_camas_habilitadas || 0;
-            sumOcupadasCamas += r.total_camas_ocupadas || 0;
-            sumInhabilCamas += r.total_camas_inhabilitadas || 0;
-          } else {
-            const s = serviceFilter.toLowerCase();
-            if (s.includes('basico') || s.includes('básico')) {
-              sumHabilCamas += r.cuidados_basicos_disponibles || 0;
-              sumOcupadasCamas += r.cuidados_basicos_ocupadas || 0;
-              sumInhabilCamas += r.cuidados_basicos_inhabilitadas || 0;
-            } else if (s.includes('medio')) {
-              sumHabilCamas += r.cuidados_medios_disponibles || 0;
-              sumOcupadasCamas += r.cuidados_medios_ocupadas || 0;
-              sumInhabilCamas += r.cuidados_medios_inhabilitadas || 0;
-            } else if (s.includes('uci') || s.includes('intensivo')) {
-              sumHabilCamas += r.uci_disponibles || 0;
-              sumOcupadasCamas += r.uci_ocupadas || 0;
-              sumInhabilCamas += r.uci_inhabilitadas || 0;
-            } else if (s.includes('uti') || s.includes('intermedio')) {
-              sumHabilCamas += r.uti_disponibles || 0;
-              sumOcupadasCamas += r.uti_ocupadas || 0;
-              sumInhabilCamas += r.uti_inhabilitadas || 0;
-            } else if (s.includes('mater') || s.includes('mujer') || s.includes('obstet') || s.includes('ginec')) {
-              sumHabilCamas += r.maternidad_disponibles || 0;
-              sumOcupadasCamas += r.maternidad_ocupadas || 0;
-              sumInhabilCamas += r.maternidad_inhabilitadas || 0;
-            } else if (s.includes('pediat') || s.includes('infantil')) {
-              sumHabilCamas += r.infantil_disponibles || 0;
-              sumOcupadasCamas += r.infantil_ocupadas || 0;
-              sumInhabilCamas += r.infantil_inhabilitadas || 0;
-            } else if (s.includes('neo') || s.includes('cuna')) {
-              sumHabilCamas += r.neonatologia_disponibles || 0;
-              sumOcupadasCamas += r.neonatologia_ocupadas || 0;
-              sumInhabilCamas += r.neonatologia_inhabilitadas || 0;
-            } else {
-              sumHabilCamas += r.total_camas_habilitadas || 0;
-              sumOcupadasCamas += r.total_camas_ocupadas || 0;
-              sumInhabilCamas += r.total_camas_inhabilitadas || 0;
-            }
-          }
+          const sums = sumCuadraturaForServices(r, serviceFilter);
+          sumHabilCamas += sums.disp;
+          sumOcupadasCamas += sums.ocup;
+          sumInhabilCamas += sums.inhab;
         }
       });
 
@@ -1229,9 +1266,10 @@ export default function ClosedAttentionDashboard({ onBack, initialTab, initialSu
       } else {
         // Fallback to static rules
         let defaultInhabilitadas = 4;
-        if (serviceFilter !== 'Todas') {
-          const s = serviceFilter.toLowerCase();
-          if (s.includes('pediat') || s.includes('infantil')) { camasHabilitadas = 15; defaultInhabilitadas = 1; }
+        if (!isAllServicesFilter(serviceFilter)) {
+          const first = Array.isArray(serviceFilter) ? serviceFilter[0] : serviceFilter;
+          const s = String(first || '').toLowerCase();
+          if (s.includes('pediat') || s.includes('infantil') || s.startsWith('408') || s.startsWith('410')) { camasHabilitadas = 15; defaultInhabilitadas = 1; }
           else if (s.includes('mater') || s.includes('mujer') || s.includes('ginec')) { camasHabilitadas = 20; defaultInhabilitadas = 1; }
           else if (s.includes('intensivo') || s.includes('uci')) { camasHabilitadas = 6; defaultInhabilitadas = 0; }
           else if (s.includes('intermedio') || s.includes('uti')) { camasHabilitadas = 8; defaultInhabilitadas = 0; }
@@ -1242,8 +1280,8 @@ export default function ClosedAttentionDashboard({ onBack, initialTab, initialSu
       }
 
       censoCleaned.forEach(r => {
-        if (serviceFilter !== 'Todas') {
-          if (r.servicioIngresoClean !== serviceFilter && r.servicioEgresoClean !== serviceFilter) return;
+        if (!isAllServicesFilter(serviceFilter)) {
+          if (!matchesServiceFilter(r.servicioIngresoClean, serviceFilter) && !matchesServiceFilter(r.servicioEgresoClean, serviceFilter)) return;
         }
 
         if (r.ymdIngreso && r.ymdIngreso >= start && r.ymdIngreso <= end) {
@@ -1290,6 +1328,8 @@ export default function ClosedAttentionDashboard({ onBack, initialTab, initialSu
 
       return {
         camasHabilitadas,
+        availableBedDays,
+        occupiedBedDays,
         diasInhabilitados,
         totalIngresos,
         totalEgresosNetos,
@@ -1307,7 +1347,9 @@ export default function ClosedAttentionDashboard({ onBack, initialTab, initialSu
         key: m.key,
         label: m.shortLabel,
         fullLabel: m.fullLabel,
-        disponibles: res.camasHabilitadas,
+        disponibles: res.availableBedDays,
+        ocupados: res.occupiedBedDays,
+        estabCamas: res.availableBedDays,
         inhabilitados: res.diasInhabilitados,
         rotacion: res.rotationIndex,
         sustitucion: res.subInterval,
@@ -1388,13 +1430,14 @@ export default function ClosedAttentionDashboard({ onBack, initialTab, initialSu
 
     const mapService = (srv) => {
       const s = (srv || '').trim().toLowerCase();
-      if (s.includes('basico') || s.includes('básico') || s.includes('403')) return 'MQ CUIDADOS BÁSICOS (403)';
-      if (s.includes('medio') || s.includes('404')) return 'MQ CUIDADOS MEDIOS (404)';
-      if (s.includes('mater') || s.includes('mujer') || s.includes('416')) return 'MQ DE LA MUJER (416)';
-      if (s.includes('uci') || s.includes('intensivo') || s.includes('405')) return 'UCI (405)';
-      if (s.includes('uti') || s.includes('intermedio') || s.includes('406')) return 'UTI (406)';
-      if (s.includes('infantil') || s.includes('pediat') || s.includes('408')) return 'MQ INFANTIL (408)';
-      if (s.includes('neo') || s.includes('cuna')) return 'NEONATOLOGÍA';
+      if (s.startsWith('413') || s.includes('neo') || s.includes('cuna')) return 'NEONATOLOGÍA (413)';
+      if (s.startsWith('410') || s.includes('médico-quirúrgica pediátrica')) return 'MQ INFANTIL (410)';
+      if (s.startsWith('408') || s.includes('infantil') || s.includes('pediat')) return 'MQ INFANTIL (408)';
+      if (s.startsWith('405') || s.includes('uci') || s.includes('intensivo')) return 'UCI (405)';
+      if (s.startsWith('406') || s.includes('uti') || s.includes('intermedio')) return 'UTI (406)';
+      if (s.startsWith('416') || s.includes('mater') || s.includes('mujer') || s.includes('obstet')) return 'MQ DE LA MUJER (416)';
+      if (s.startsWith('403') || s.includes('basico') || s.includes('básico')) return 'MQ CUIDADOS BÁSICOS (403)';
+      if (s.startsWith('404') || s.includes('medio')) return 'MQ CUIDADOS MEDIOS (404)';
       return srv || 'Otros Servicios';
     };
 
@@ -1431,7 +1474,7 @@ export default function ClosedAttentionDashboard({ onBack, initialTab, initialSu
       if (!pIn) return;
 
       const ptype = getPatientType(r);
-      const srvMapped = mapService(r.servicio_ingreso);
+      const srvMapped = mapService(r.servicioIngresoClean);
       const cc = r.cuenta_corriente || r.id || `temp-${Math.random()}`;
       // Clave de deduplicación: RUT o cuenta corriente como fallback
       const rutKey = r.rut_paciente || r.cuenta_corriente || r.recordId;
@@ -1454,33 +1497,39 @@ export default function ClosedAttentionDashboard({ onBack, initialTab, initialSu
           const oEnd   = pEgRaw > monitorEnd ? monitorEnd : pEgRaw;
 
           if (oStart <= oEnd) {
-            let diffTime = oEnd.getTime() - oStart.getTime();
-            // +1 día para contar INCLUSIVE (misma lógica que el cursor del set)
-            let diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24)) + 1;
-            if (diffDays <= 0) diffDays = 1;
+            const isSameDay = r.ymdIngreso && r.ymdEgreso && r.ymdIngreso === r.ymdEgreso;
+            // Norma DEIS: Fecha Egreso - Fecha Ingreso (no suma el día de egreso salvo que siga hospitalizado después de monitorEnd; mismo día = 1)
+            const effectiveEnd = (!r.isCurrentlyHospitalized && pEgRaw <= monitorEnd && !isSameDay)
+              ? new Date(oEnd.getTime() - 24 * 60 * 60 * 1000)
+              : oEnd;
 
-            if (!activeMap.has(key)) {
-              activeMap.set(key, { patients: new Set(), bedDays: 0 });
+            if (oStart <= effectiveEnd) {
+              let diffTime = effectiveEnd.getTime() - oStart.getTime();
+              let diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24)) + 1;
+              if (diffDays <= 0) diffDays = 1;
+
+              if (!activeMap.has(key)) {
+                activeMap.set(key, { patients: new Set(), bedDays: 0 });
+              }
+              const group = activeMap.get(key);
+              group.patients.add(cc);
+              group.bedDays += diffDays;
+
+              const cursor = new Date(oStart);
+              while (cursor <= effectiveEnd) {
+                uniquePatientDayGlobal.add(
+                  `${rutKey}-${cursor.getFullYear()}-${cursor.getMonth()}-${cursor.getDate()}`
+                );
+                cursor.setDate(cursor.getDate() + 1);
+              }
+
+              activePatientsList.push({
+                ...r,
+                Categoria_Edad: ptype,
+                Servicio_Mapeado: srvMapped,
+                Dias_Cama_Periodo: diffDays
+              });
             }
-            const group = activeMap.get(key);
-            group.patients.add(cc);
-            group.bedDays += diffDays;
-
-            // Deduplicación global por RUT+fecha — idéntica al REM 20
-            const cursor = new Date(oStart);
-            while (cursor <= oEnd) {
-              uniquePatientDayGlobal.add(
-                `${rutKey}-${cursor.getFullYear()}-${cursor.getMonth()}-${cursor.getDate()}`
-              );
-              cursor.setDate(cursor.getDate() + 1);
-            }
-
-            activePatientsList.push({
-              ...r,
-              Categoria_Edad: ptype,
-              Servicio_Mapeado: srvMapped,
-              Dias_Cama_Periodo: diffDays
-            });
           }
         }
       }
@@ -1717,7 +1766,7 @@ export default function ClosedAttentionDashboard({ onBack, initialTab, initialSu
   // (toggle logic now handled inside <MultiSelectDropdown />)
 
   // renderMultiSelect → now delegated to <MultiSelectDropdown /> component above
-  const renderMultiSelect = (label, selectedValues, setSelectedValues, options, placeholder, dropdownKey) => (
+  const renderMultiSelect = (label, selectedValues, setSelectedValues, options, placeholder, dropdownKey, formatOption) => (
     <MultiSelectDropdown
       label={label}
       selectedValues={selectedValues}
@@ -1727,6 +1776,7 @@ export default function ClosedAttentionDashboard({ onBack, initialTab, initialSu
       dropdownKey={dropdownKey}
       activeDropdown={activeDropdown}
       setActiveDropdown={setActiveDropdown}
+      formatOption={formatOption}
     />
   );
 
@@ -1858,32 +1908,7 @@ export default function ClosedAttentionDashboard({ onBack, initialTab, initialSu
         }
       }
 
-      // 5. Días Cama Ocupados — DEDUPLICADO por RUT+fecha (metodología MINSAL)
-      // Solo cuenta cada día una vez por paciente, independiente de cuántos
-      // servicios haya recorrido. Elimina el sobreconteo de traslados internos.
-      if (inServiceIngreso || inServiceEgreso) {
-        const pIngreso = r.parsedIngreso;
-        if (pIngreso && pIngreso <= monitorEnd) {
-          const pEgreso = r.isCurrentlyHospitalized ? new Date() : r.parsedEgreso;
-          if (pEgreso && pEgreso >= monitorStart) {
-            const overlapStart = pIngreso < monitorStart ? monitorStart : pIngreso;
-            const overlapEnd   = pEgreso  > monitorEnd   ? monitorEnd   : pEgreso;
-
-            if (overlapStart <= overlapEnd) {
-              // Clave de deduplicación: RUT del paciente o Cuenta Corriente (Hospitalización) + fecha del día
-              const rutKey = r.rut_paciente || r.cuenta_corriente || r.recordId;
-              const cursor = new Date(overlapStart);
-              while (cursor <= overlapEnd) {
-                const dayKey = `${rutKey}-${cursor.getFullYear()}-${cursor.getMonth()}-${cursor.getDate()}`;
-                uniquePatientDaySet.add(dayKey);
-                cursor.setDate(cursor.getDate() + 1);
-              }
-            }
-          }
-        }
-      }
-
-      // 6. Días de Estada (solo egresos netos, excluye traslados)
+      // 5. Días de Estada (solo egresos netos, excluye traslados)
       if (inServiceEgreso) {
         const pEgreso = r.parsedEgreso;
         if (!r.isCurrentlyHospitalized && pEgreso && pEgreso >= monitorStart && pEgreso <= monitorEnd) {
@@ -1894,9 +1919,6 @@ export default function ClosedAttentionDashboard({ onBack, initialTab, initialSu
         }
       }
     });
-
-    // El conteo de días cama es el tamaño del Set deduplicado
-    const totalBedDaysDedup = uniquePatientDaySet.size;
 
     const totalIngresos = ingresosUrgencia + ingresosCma + ingresosCae + ingresosOtrosHospitales + ingresosOtraProcedencia + ingresosMismoHospital;
     const totalEgresos  = egresosAlta + egresosTraslado + egresosFallecidos;
@@ -1913,63 +1935,20 @@ export default function ClosedAttentionDashboard({ onBack, initialTab, initialSu
       const pDate = parseDDMMYYYY(r.fecha);
       if (pDate && pDate >= monitorStart && pDate <= monitorEnd) {
         countCuadraturaDays++;
-        if (selectedRemService === 'Todas') {
-          diasCamaDisponibles += r.total_camas_habilitadas || 0;
-          // diasCamaOcupadas omitido para forzar el uso del totalBedDaysDedup (Censo de pacientes)
-        } else {
-          const s = selectedRemService.toLowerCase();
-          if (s.includes('basico') || s.includes('básico')) {
-            diasCamaDisponibles += r.cuidados_basicos_disponibles || 0;
-          } else if (s.includes('medio')) {
-            diasCamaDisponibles += r.cuidados_medios_disponibles || 0;
-          } else if (s.includes('uci') || s.includes('intensivo')) {
-            diasCamaDisponibles += r.uci_disponibles || 0;
-          } else if (s.includes('uti') || s.includes('intermedio')) {
-            diasCamaDisponibles += r.uti_disponibles || 0;
-          } else if (s.includes('mater') || s.includes('mujer') || s.includes('obstet') || s.includes('ginec')) {
-            diasCamaDisponibles += r.maternidad_disponibles || 0;
-          } else if (s.includes('pediat') || s.includes('infantil')) {
-            diasCamaDisponibles += r.infantil_disponibles || 0;
-          } else if (s.includes('neo') || s.includes('cuna')) {
-            diasCamaDisponibles += r.neonatologia_disponibles || 0;
-          } else {
-            diasCamaDisponibles += r.total_camas_habilitadas || 0;
-          }
-        }
+        const sums = sumCuadraturaForServices(r, selectedRemService);
+        diasCamaDisponibles += sums.disp;
+        diasCamaOcupadas += sums.ocup;
       }
     });
 
-    let camasHabilitadas = 120;
-    // divisor = número de días del periodo con registro en cuadratura.
-    // Si la cuadratura tiene >1 fila por día (ej: una por servicio), countCuadraturaDays
-    // se inflará. Para obtener el promedio real usamos diffDaysMonitor como divisor seguro
-    // cuando countCuadraturaDays supera la cantidad de días del periodo.
-    const divisor = (countCuadraturaDays > 0 && countCuadraturaDays <= diffDaysMonitor)
+    const hasCuadraturaData = countCuadraturaDays > 0;
+    const divisor = (hasCuadraturaData && countCuadraturaDays <= diffDaysMonitor)
       ? countCuadraturaDays
       : diffDaysMonitor || 1;
 
-    if (diasCamaDisponibles > 0) {
-      camasHabilitadas = Math.round(diasCamaDisponibles / divisor);
-    } else {
-      if (selectedRemService !== 'Todas') {
-        const s = selectedRemService.toLowerCase();
-        if (s.includes('pediat') || s.includes('infantil')) { camasHabilitadas = 15; }
-        else if (s.includes('mater') || s.includes('mujer') || s.includes('ginec') || s.includes('obstet')) { camasHabilitadas = 20; }
-        else if (s.includes('intensivo') || s.includes('uci')) { camasHabilitadas = 6; }
-        else if (s.includes('intermedio') || s.includes('uti')) { camasHabilitadas = 8; }
-        else if (s.includes('básico') || s.includes('basico')) { camasHabilitadas = 25; }
-        else { camasHabilitadas = 46; }
-      }
-    }
-
-    // Días cama disponibles = camas habilitadas (promedio) × días del periodo.
-    // Se recalcula siempre desde camasHabilitadas para evitar que la acumulación
-    // cruda de cuadraturaRaw infle el total cuando hay múltiples registros por día.
-    diasCamaDisponibles = camasHabilitadas * diffDaysMonitor;
-
-    if (diasCamaOcupadas === 0) {
-      diasCamaOcupadas = totalBedDaysDedup;
-    }
+    const camasHabilitadas = (hasCuadraturaData && diasCamaDisponibles > 0)
+      ? Math.round(diasCamaDisponibles / divisor)
+      : 0;
 
     return {
       existenciaAnterior,
@@ -1990,7 +1969,8 @@ export default function ClosedAttentionDashboard({ onBack, initialTab, initialSu
       diasCamaOcupadas,
       diasEstadaTotal:  totalDiasEstada,
       diasEstadaBeneficiarios: totalDiasEstada,
-      camasHabilitadas
+      camasHabilitadas,
+      hasCuadraturaData
     };
   }, [censoCleaned, cuadraturaRaw, startDate, endDate, selectedRemService]);
 
@@ -2036,42 +2016,59 @@ export default function ClosedAttentionDashboard({ onBack, initialTab, initialSu
       <div className="portal-layout">
         {/* Collapsible Sidebar Filters with Premium Custom Multi-select checklist dropdowns */}
         <aside 
-          className={`portal-sidebar glass-card border-glow-cyan ${sidebarCollapsed ? 'collapsed' : ''}`}
+          className={`portal-sidebar glass-card border-glow-cyan ${(sidebarCollapsed && !sidebarPinned) ? 'collapsed' : ''}`}
+          onMouseEnter={() => setSidebarCollapsed(false)}
+          onMouseLeave={() => { if (!sidebarPinned && !activeDropdown) setSidebarCollapsed(true); }}
           style={{
-            width: sidebarCollapsed ? '0px' : '290px',
-            padding: sidebarCollapsed ? '0px' : '20px',
-            opacity: sidebarCollapsed ? 0 : 1,
-            overflow: sidebarCollapsed ? 'hidden' : 'visible',
-            transition: 'all 0.35s cubic-bezier(0.4, 0, 0.2, 1)',
-            border: sidebarCollapsed ? 'none' : '1px solid rgba(8, 145, 178, 0.1)',
-            boxShadow: sidebarCollapsed ? 'none' : '0 10px 30px rgba(0,0,0,0.05)',
+            width: (sidebarCollapsed && !sidebarPinned) ? '52px' : '290px',
+            padding: (sidebarCollapsed && !sidebarPinned) ? '16px 8px' : '20px',
+            opacity: 1,
+            overflow: (sidebarCollapsed && !sidebarPinned) ? 'hidden' : 'visible',
+            transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
+            border: '1px solid rgba(8, 145, 178, 0.15)',
+            boxShadow: '0 10px 30px rgba(0,0,0,0.05)',
             flexShrink: 0,
-            marginRight: sidebarCollapsed ? '0px' : '20px'
+            marginRight: '20px',
+            alignSelf: 'flex-start',
+            position: 'sticky',
+            top: '20px',
+            zIndex: 40
           }}
         >
-          <div className="sidebar-section-title text-glow-cyan" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <Filter size={18} style={{ color: '#0891b2' }} /> <span>Período de Monitoreo</span>
+          {(sidebarCollapsed && !sidebarPinned) ? (
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px', paddingTop: '6px', cursor: 'pointer' }} title="Pasa el mouse para desplegar filtros">
+              <div style={{ background: '#0891b2', color: 'white', padding: '8px', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <Filter size={18} />
+              </div>
+              <div style={{ fontSize: '0.68rem', fontWeight: 800, color: '#0891b2', textTransform: 'uppercase', writingMode: 'vertical-rl', transform: 'rotate(180deg)', letterSpacing: '2px' }}>
+                FILTROS
+              </div>
             </div>
-            <button 
-              onClick={() => setSidebarCollapsed(true)}
-              style={{
-                background: 'none',
-                border: 'none',
-                color: '#64748b',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                padding: '4px',
-                borderRadius: '6px',
-                transition: 'all 0.2s'
-              }}
-              title="Colapsar panel de filtros"
-            >
-              <ChevronLeft size={16} />
-            </button>
-          </div>
+          ) : (
+            <>
+              <div className="sidebar-section-title text-glow-cyan" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <Filter size={18} style={{ color: '#0891b2' }} /> <span>Período de Monitoreo</span>
+                </div>
+                <button 
+                  onClick={() => setSidebarPinned(p => !p)}
+                  style={{
+                    background: sidebarPinned ? '#0891b2' : '#f1f5f9',
+                    border: 'none',
+                    color: sidebarPinned ? 'white' : '#64748b',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    padding: '6px',
+                    borderRadius: '8px',
+                    transition: 'all 0.2s'
+                  }}
+                  title={sidebarPinned ? 'Desfijar (auto-ocultar)' : 'Fijar panel de filtros'}
+                >
+                  <Pin size={14} />
+                </button>
+              </div>
 
           <div className="filter-item" style={{ position: 'relative', marginBottom: '14px' }}>
             <label style={{ display: 'block', fontSize: '0.68rem', fontWeight: 800, color: '#475569', marginBottom: '6px', letterSpacing: '0.05em', textTransform: 'uppercase' }}>DESDE</label>
@@ -2127,7 +2124,7 @@ export default function ClosedAttentionDashboard({ onBack, initialTab, initialSu
             />
           </div>
 
-          {renderMultiSelect('Servicio Clínico de Egreso', selectedService, setSelectedService, uniqueDropdowns.servicios, 'Todos los servicios clínicos', 'service')}
+          {renderMultiSelect('Servicio Clínico de Egreso', selectedService, setSelectedService, uniqueDropdowns.servicios, 'Todos los servicios clínicos', 'service', (o) => getRemServiceLabel(o, endDate))}
 
           {renderMultiSelect('Condición de Egreso', selectedCondicion, setSelectedCondicion, uniqueDropdowns.condiciones, 'Todas las condiciones (Sin traslados)', 'condicion')}
 
@@ -2149,11 +2146,13 @@ export default function ClosedAttentionDashboard({ onBack, initialTab, initialSu
               Universo total de {censoRaw.length.toLocaleString()} hospitalizaciones
             </p>
           </div>
+            </>
+          )}
         </aside>
 
         {/* Content Pane */}
         <main className="portal-content-pane" style={{ flex: 1, minWidth: 0 }}>
-          {sidebarCollapsed && (
+          {false && sidebarCollapsed && (
             <button 
               onClick={() => setSidebarCollapsed(false)}
               style={{
@@ -2197,67 +2196,13 @@ export default function ClosedAttentionDashboard({ onBack, initialTab, initialSu
                 <motion.div key="general_stats" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -15 }} className="tab-pane-layout">
                   
                   {/* Clean Visual Presentation Grid (Image 1 replica style, reconfigured aesthetics) */}
-                  <div className="general-charts-dual-row" style={{ display: 'grid', gridTemplateColumns: '1.3fr 1fr', gap: '30px', alignItems: 'stretch' }}>
+                  <div className="general-charts-dual-row" style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '24px', alignItems: 'stretch' }}>
                     
                     {/* LEFT: Stacked Bar Card */}
-                    <EgresosServicioMensualChart data={metrics.current.monthlyData} />
+                    <EgresosServicioMensualChart data={metrics.current.monthlyData} serviceCounts={metrics.current.serviceCounts} />
 
                     {/* RIGHT: Donut Chart Card */}
                     <EgresosServicioRanking segments={donutSegments} total={metrics.current.totalEgresosNetos} />
-                  </div>
-
-                  {/* Unified Interactive Legend Badges Row under BOTH charts */}
-                  <div className="glass-card legend-row-container" style={{ 
-                    padding: '20px', 
-                    display: 'grid', 
-                    gridTemplateColumns: 'repeat(6, 1fr)', 
-                    gap: '16px', 
-                    marginTop: '24px', 
-                    background: '#ffffff', 
-                    boxShadow: '0 10px 40px -10px rgba(0,0,0,0.06)', 
-                    borderRadius: '20px', 
-                    border: '1px solid rgba(0,0,0,0.05)' 
-                  }}>
-                    {(() => {
-                      const badges = [
-                        { key: 'basicos', label: 'Cuidados básicos', count: metrics.current.serviceCounts.basicos, color: '#0284c7', bg: 'rgba(2, 132, 199, 0.06)', border: 'rgba(2, 132, 199, 0.15)' },
-                        { key: 'medios', label: 'Cuidados medios', count: metrics.current.serviceCounts.medios, color: '#1e3a8a', bg: 'rgba(30, 58, 138, 0.06)', border: 'rgba(30, 58, 138, 0.15)' },
-                        { key: 'mujer', label: 'Mqx de la mujer', count: metrics.current.serviceCounts.mujer, color: '#f43f5e', bg: 'rgba(244, 63, 94, 0.06)', border: 'rgba(244, 63, 94, 0.15)' },
-                        { key: 'infantil', label: 'Mqx infantil', count: metrics.current.serviceCounts.infantil, color: '#f59e0b', bg: 'rgba(245, 158, 11, 0.06)', border: 'rgba(245, 158, 11, 0.15)' },
-                        { key: 'uci', label: 'UCI', count: metrics.current.serviceCounts.uci, color: '#10b981', bg: 'rgba(16, 185, 129, 0.06)', border: 'rgba(16, 185, 129, 0.15)' },
-                        { key: 'uti', label: 'UTI', count: metrics.current.serviceCounts.uti, color: '#8b5cf6', bg: 'rgba(139, 92, 246, 0.06)', border: 'rgba(139, 92, 246, 0.15)' }
-                      ];
-
-                      return badges.map((badge) => {
-                        const isHovered = hoveredService === badge.key;
-                        const isDimmed = hoveredService && hoveredService !== badge.key;
-
-                        return (
-                          <div 
-                            key={badge.key}
-                            onMouseEnter={() => setHoveredService(badge.key)}
-                            onMouseLeave={() => setHoveredService(null)}
-                            style={{
-                              background: badge.bg,
-                              border: `1px solid ${badge.border}`,
-                              borderLeft: `4px solid ${badge.color}`,
-                              padding: '10px 14px',
-                              borderRadius: '12px',
-                              display: 'flex',
-                              flexDirection: 'column',
-                              cursor: 'pointer',
-                              opacity: isDimmed ? 0.35 : 1,
-                              transform: isHovered ? 'translateY(-2px)' : 'none',
-                              boxShadow: isHovered ? '0 4px 12px rgba(0,0,0,0.06)' : 'none',
-                              transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)'
-                            }}
-                          >
-                            <span className="lbl" style={{ fontSize: '0.62rem', fontWeight: 800, textTransform: 'uppercase', color: '#64748b' }}>{badge.label}</span>
-                            <strong style={{ fontSize: '1.25rem', fontWeight: 900, color: badge.color, marginTop: '4px' }}>{badge.count}</strong>
-                          </div>
-                        );
-                      });
-                    })()}
                   </div>
 
                   {/* Row 2: Logistics and In-depth Clinical Insights */}
@@ -2287,8 +2232,8 @@ export default function ClosedAttentionDashboard({ onBack, initialTab, initialSu
 
                         <div className="metric-box glass-card" style={{ borderLeft: '4px solid #059669', padding: '14px', background: 'rgba(5, 150, 105, 0.04)', margin: 0, border: '1px solid rgba(5, 150, 105, 0.12)' }}>
                           <span style={{ fontSize: '0.62rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase' }}>Estancia Pre-Traslado</span>
-                          <h4 style={{ fontSize: '1.4rem', fontWeight: 900, color: '#059669', margin: '4px 0' }}>1.4 <span style={{ fontSize: '0.72rem', color: '#64748b', fontWeight: 600 }}>días</span></h4>
-                          <p style={{ fontSize: '0.66rem', color: '#64748b', margin: 0 }}>Permanencia en intermedia</p>
+                          <h4 style={{ fontSize: '1.4rem', fontWeight: 900, color: '#059669', margin: '4px 0' }}>{(metrics.current.avgEstadaTraslados || 0).toFixed(1)} <span style={{ fontSize: '0.72rem', color: '#64748b', fontWeight: 600 }}>días</span></h4>
+                          <p style={{ fontSize: '0.66rem', color: '#64748b', margin: 0 }}>Promedio previo al traslado</p>
                         </div>
                       </div>
                     </div>
@@ -2336,7 +2281,7 @@ export default function ClosedAttentionDashboard({ onBack, initialTab, initialSu
                           title: 'Ocupación de Camas',
                           shortTitle: '% Ocupación',
                           unit: '%',
-                          formula: '(Días Estada / (Camas * Días Periodo)) * 100',
+                          formula: '(Días Cama Ocupados / Días Cama Disponibles) * 100',
                           definition: 'Porcentaje de camas de dotación que se mantuvieron ocupadas en promedio durante el periodo de monitoreo. Representa el nivel de saturación del establecimiento.',
                           color: '#0284c7',
                           gradient: 'blueAreaGrad',
@@ -2364,7 +2309,7 @@ export default function ClosedAttentionDashboard({ onBack, initialTab, initialSu
                           title: 'Intervalo de Sustitución',
                           shortTitle: 'Intervalo Sust.',
                           unit: 'días',
-                          formula: '((Camas * Días) - Días Estada) / Egresos Netos',
+                          formula: '(Días Cama Disponibles - Días Cama Ocupados) / Egresos Netos',
                           definition: 'Tiempo promedio (en días) que permanece una cama vacía entre el egreso de un paciente y el ingreso del siguiente. Idealmente debe ser entre 0 y 0.5 días.',
                           color: '#0891b2',
                           gradient: 'cyanAreaGrad',
@@ -2391,16 +2336,30 @@ export default function ClosedAttentionDashboard({ onBack, initialTab, initialSu
                         },
                         {
                           key: 'disponibles',
-                          title: 'Camas Disponibles',
-                          shortTitle: 'Camas',
-                          unit: 'camas',
-                          formula: 'Capacidad operativa instalada habilitada',
-                          definition: 'Promedio de camas habilitadas y en funcionamiento continuo para la hospitalización de pacientes en el servicio durante el periodo.',
+                          title: 'Días Cama Disponibles',
+                          shortTitle: 'Días Cama Disp.',
+                          unit: 'días-cama',
+                          formula: 'Sumatoria diaria de camas disponibles (Cuadratura)',
+                          definition: 'Total acumulado de días-cama disponibles registrados diariamente en la Cuadratura de Camas para el servicio y período de monitoreo seleccionado.',
                           color: '#0d9488',
                           gradient: 'tealAreaGrad',
-                          value: clinicalStatsMetrics.current.camasHabilitadas,
-                          valueFormatter: (v) => `${v.toLocaleString()} camas`,
+                          value: clinicalStatsMetrics.current.availableBedDays,
+                          valueFormatter: (v) => `${Number(v).toLocaleString('es-CL')} días-cama`,
                           diff: null,
+                          icon: Bed
+                        },
+                        {
+                          key: 'ocupados',
+                          title: 'Días Cama Ocupados',
+                          shortTitle: 'Días Cama Ocup.',
+                          unit: 'días-cama',
+                          formula: 'Sumatoria diaria de camas ocupadas (Cuadratura)',
+                          definition: 'Total acumulado de días-cama ocupados registrados diariamente en la Cuadratura de Camas para el servicio y período de monitoreo seleccionado.',
+                          color: '#0284c7',
+                          gradient: 'blueAreaGrad',
+                          value: clinicalStatsMetrics.current.totalBedDaysInPeriod,
+                          valueFormatter: (v) => `${Number(v).toLocaleString('es-CL')} días-cama`,
+                          diff: clinicalStatsMetrics.diffs.bedDays,
                           icon: Bed
                         },
                         {
@@ -2499,13 +2458,14 @@ export default function ClosedAttentionDashboard({ onBack, initialTab, initialSu
                         else if (selectedIndicator === 'sustitucion') val = d.sustitucion;
                         else if (selectedIndicator === 'letalidad') val = d.letalidad;
                         else if (selectedIndicator === 'disponibles') val = d.disponibles;
+                        else if (selectedIndicator === 'ocupados') val = d.ocupados;
                         else if (selectedIndicator === 'inhabilitados') val = d.inhabilitados;
                         else if (selectedIndicator === 'egresos') val = d.egresos;
                         else if (selectedIndicator === 'ingresos') val = d.ingresos;
 
                         const x = nPoints === 1 ? (xStart + xEnd) / 2 : xStart + idx * xStep;
                         const y = 180 - (val - yMinBound) * scale;
-                        return { x, y, val, label: d.label, fullLabel: d.fullLabel };
+                        return { x, y, val, estabCamas: d.estabCamas, label: d.label, fullLabel: d.fullLabel };
                       });
 
                       const pathLine = points.map((p, idx) => `${idx === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ');
@@ -2591,18 +2551,18 @@ export default function ClosedAttentionDashboard({ onBack, initialTab, initialSu
                                 </div>
                                 
                                 <div className="chart-controls-row" style={{ display: 'flex', alignItems: 'center', gap: '15px', flexWrap: 'wrap' }}>
-                                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                    <label style={{ fontSize: '0.7rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase' }}>Servicio:</label>
-                                    <select 
-                                      value={selectedClinicalService} 
-                                      onChange={(e) => setSelectedClinicalService(e.target.value)}
-                                      style={{ padding: '6px 10px', borderRadius: '8px', border: '1.5px solid rgba(26, 54, 93, 0.15)', fontSize: '0.74rem', fontWeight: 700, outline: 'none', cursor: 'pointer', background: 'white', color: '#1a365d' }}
-                                    >
-                                      <option value="Todas">Todas las especialidades</option>
-                                      {uniqueDropdowns.servicios.map(s => (
-                                        <option key={s} value={s}>{s}</option>
-                                      ))}
-                                    </select>
+                                  <div style={{ minWidth: '250px', maxWidth: '330px' }}>
+                                    <MultiSelectDropdown
+                                      label="Servicio"
+                                      selectedValues={selectedClinicalService}
+                                      setSelectedValues={setSelectedClinicalService}
+                                      options={uniqueDropdowns.servicios}
+                                      placeholder="Todas las especialidades"
+                                      dropdownKey="clinical_service"
+                                      activeDropdown={activeDropdown}
+                                      setActiveDropdown={setActiveDropdown}
+                                      formatOption={(o) => getRemServiceLabel(o, endDate)}
+                                    />
                                   </div>
 
                                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
@@ -2621,117 +2581,29 @@ export default function ClosedAttentionDashboard({ onBack, initialTab, initialSu
                               </div>
 
                               <div style={{ background: 'rgba(26, 54, 93, 0.015)', padding: '12px 18px', borderRadius: '16px', borderLeft: `4px solid ${activeCfg.color}`, marginBottom: '15px' }}>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
                                   <span style={{ fontSize: '0.64rem', fontWeight: 800, textTransform: 'uppercase', color: '#64748b' }}>Fórmula Oficial MINSAL</span>
-                                  <span style={{ fontSize: '0.72rem', fontWeight: 800, color: activeCfg.color, background: 'rgba(0,0,0,0.03)', padding: '2px 8px', borderRadius: '5px', fontFamily: 'monospace' }}>{activeCfg.formula}</span>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                                    {selectedIndicator === 'disponibles' && (
+                                      <span style={{ fontSize: '0.74rem', fontWeight: 800, color: '#0f766e', background: '#ccfbf1', padding: '3px 10px', borderRadius: '8px', border: '1px solid #99f6e4' }}>
+                                        Promedio diario del período: {(clinicalStatsMetrics.current.camasHabilitadas || 0).toLocaleString('es-CL')} camas
+                                      </span>
+                                    )}
+                                    <span style={{ fontSize: '0.72rem', fontWeight: 800, color: activeCfg.color, background: 'rgba(0,0,0,0.03)', padding: '2px 8px', borderRadius: '5px', fontFamily: 'monospace' }}>{activeCfg.formula}</span>
+                                  </div>
                                 </div>
                                 <p style={{ margin: '6px 0 0 0', fontSize: '0.76rem', color: '#475569', fontWeight: 600, lineHeight: 1.4 }}>
                                   💡 <strong>Metodología:</strong> {activeCfg.definition}
                                 </p>
                               </div>
 
-                              <div style={{ position: 'relative', marginTop: '10px', flex: 1, display: 'flex', alignItems: 'center' }}>
-                                <div style={{ width: '100%', height: '220px', position: 'relative' }}>
-                                  <svg viewBox="0 0 920 220" width="100%" height="100%" preserveAspectRatio="none" style={{ overflow: 'visible' }}>
-                                    <line x1="60" y1="40" x2="880" y2="40" stroke="rgba(0,0,0,0.03)" strokeDasharray="3 3" />
-                                    <line x1="60" y1="100" x2="880" y2="100" stroke="rgba(0,0,0,0.03)" strokeDasharray="3 3" />
-                                    <line x1="60" y1="160" x2="880" y2="160" stroke="rgba(0,0,0,0.03)" strokeDasharray="3 3" />
-                                    <line x1="60" y1="180" x2="880" y2="180" stroke="rgba(0,0,0,0.08)" />
-
-                                    <text x="15" y="20" fill="#64748b" fontSize="8" fontWeight="800" textTransform="uppercase">EVOLUCIÓN ({activeCfg.unit})</text>
-
-                                    <path d={pathArea} fill={`url(#${activeCfg.gradient})`} opacity="0.04" />
-                                    <path d={pathLine} fill="none" stroke={activeCfg.color} strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" />
-
-                                    <defs>
-                                      <linearGradient id="blueAreaGrad" x1="0" y1="0" x2="0" y2="1">
-                                        <stop offset="0%" stopColor="#0284c7" stopOpacity="0.4" />
-                                        <stop offset="100%" stopColor="#0284c7" stopOpacity="0.0" />
-                                      </linearGradient>
-                                      <linearGradient id="purpleAreaGrad" x1="0" y1="0" x2="0" y2="1">
-                                        <stop offset="0%" stopColor="#7c3aed" stopOpacity="0.4" />
-                                        <stop offset="100%" stopColor="#7c3aed" stopOpacity="0.0" />
-                                      </linearGradient>
-                                      <linearGradient id="cyanAreaGrad" x1="0" y1="0" x2="0" y2="1">
-                                        <stop offset="0%" stopColor="#0891b2" stopOpacity="0.4" />
-                                        <stop offset="100%" stopColor="#0891b2" stopOpacity="0.0" />
-                                      </linearGradient>
-                                      <linearGradient id="redAreaGrad" x1="0" y1="0" x2="0" y2="1">
-                                        <stop offset="0%" stopColor="#ef4444" stopOpacity="0.4" />
-                                        <stop offset="100%" stopColor="#ef4444" stopOpacity="0.0" />
-                                      </linearGradient>
-                                      <linearGradient id="tealAreaGrad" x1="0" y1="0" x2="0" y2="1">
-                                        <stop offset="0%" stopColor="#0d9488" stopOpacity="0.4" />
-                                        <stop offset="100%" stopColor="#0d9488" stopOpacity="0.0" />
-                                      </linearGradient>
-                                      <linearGradient id="amberAreaGrad" x1="0" y1="0" x2="0" y2="1">
-                                        <stop offset="0%" stopColor="#f59e0b" stopOpacity="0.4" />
-                                        <stop offset="100%" stopColor="#f59e0b" stopOpacity="0.0" />
-                                      </linearGradient>
-                                      <linearGradient id="greenAreaGrad" x1="0" y1="0" x2="0" y2="1">
-                                        <stop offset="0%" stopColor="#16a34a" stopOpacity="0.4" />
-                                        <stop offset="100%" stopColor="#16a34a" stopOpacity="0.0" />
-                                      </linearGradient>
-                                      <linearGradient id="indigoAreaGrad" x1="0" y1="0" x2="0" y2="1">
-                                        <stop offset="0%" stopColor="#4f46e5" stopOpacity="0.4" />
-                                        <stop offset="100%" stopColor="#4f46e5" stopOpacity="0.0" />
-                                      </linearGradient>
-                                    </defs>
-
-                                    {points.map((p, idx) => (
-                                      <g key={idx} className="chart-badge-group">
-                                        <circle cx={p.x} cy={p.y} r="5" fill={activeCfg.color} stroke="#ffffff" strokeWidth="2" />
-                                        <text x={p.x} y="202" fill="#64748b" fontSize="8" fontWeight="800" textAnchor="middle">{p.label}</text>
-                                        <text x={p.x} y={p.y - 12} fill={activeCfg.color} fontSize="8" fontWeight="950" textAnchor="middle">
-                                          {activeCfg.valueFormatter(p.val)}
-                                        </text>
-                                        <rect 
-                                          x={p.x - 40}
-                                          y="10"
-                                          width="80"
-                                          height="180"
-                                          fill="transparent"
-                                          style={{ cursor: 'pointer' }}
-                                          onMouseEnter={() => setHoveredIndicatorNode({ ...p, idx })}
-                                          onMouseLeave={() => setHoveredIndicatorNode(null)}
-                                        />
-                                      </g>
-                                    ))}
-                                  </svg>
-                                </div>
-                              </div>
-
-                              <AnimatePresence>
-                                {hoveredIndicatorNode && (
-                                  <motion.div 
-                                    initial={{ opacity: 0, scale: 0.95, y: 10 }}
-                                    animate={{ opacity: 1, scale: 1, y: 0 }}
-                                    exit={{ opacity: 0, scale: 0.95 }}
-                                    style={{ 
-                                      position: 'absolute',
-                                      left: `${Math.min(Math.max((hoveredIndicatorNode.x / 920) * 100, 5), 75)}%`,
-                                      top: '140px',
-                                      padding: '14px',
-                                      background: 'rgba(255, 255, 255, 0.98)',
-                                      border: `2px solid ${activeCfg.color}`,
-                                      borderRadius: '16px',
-                                      boxShadow: '0 10px 30px rgba(0,0,0,0.08)',
-                                      zIndex: 100,
-                                      width: '200px',
-                                      pointerEvents: 'none'
-                                    }}
-                                  >
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px', borderBottom: '1px solid rgba(0,0,0,0.06)', paddingBottom: '6px' }}>
-                                      <Calendar size={12} style={{ color: activeCfg.color }} />
-                                      <span style={{ fontWeight: 850, fontSize: '0.8rem', color: '#1a365d' }}>{hoveredIndicatorNode.fullLabel}</span>
-                                    </div>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.76rem', fontWeight: 700 }}>
-                                      <span style={{ color: '#64748b' }}>{activeCfg.shortTitle}:</span>
-                                      <span style={{ color: activeCfg.color, fontWeight: 950 }}>{activeCfg.valueFormatter(hoveredIndicatorNode.val)}</span>
-                                    </div>
-                                  </motion.div>
-                                )}
-                              </AnimatePresence>
+                              <EvolucionIndicadorChart
+                                points={points}
+                                title={activeCfg.shortTitle}
+                                unit={activeCfg.unit}
+                                color={activeCfg.color}
+                                formatValue={activeCfg.valueFormatter}
+                              />
                             </div>
 
                             <div className="glass-card border-glow-cyan" style={{ padding: '20px', background: 'white', borderRadius: '24px', border: '1px solid rgba(0,0,0,0.05)', minHeight: '208px', boxSizing: 'border-box' }}>
@@ -2743,7 +2615,7 @@ export default function ClosedAttentionDashboard({ onBack, initialTab, initialSu
                               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
                                 <div style={{ fontSize: '0.78rem', color: '#475569', fontWeight: 600, lineHeight: 1.45 }}>
                                   <h4 style={{ fontSize: '0.8rem', fontWeight: 850, color: '#0891b2', marginBottom: '6px' }}>
-                                    Estatus de {selectedClinicalService === 'Todas' ? 'Villarrica' : selectedClinicalService}
+                                    Estatus de {isAllServicesFilter(selectedClinicalService) ? 'Villarrica' : selectedClinicalService.map(s => getRemServiceLabel(s, endDate)).join(', ')}
                                   </h4>
                                   <p style={{ marginBottom: '6px' }}>
                                     🏥 <strong>Ocupación Óptima</strong>: La ocupación actual de <strong>{clinicalStatsMetrics.current.occupancyRate.toFixed(1)}%</strong> se encuentra {clinicalStatsMetrics.current.occupancyRate > 85 ? 'ligeramente sobre' : 'dentro de'} los estándares recomendados (80-85%) para mantener resiliencia frente a picos de demanda.
@@ -2831,13 +2703,13 @@ export default function ClosedAttentionDashboard({ onBack, initialTab, initialSu
                             style={{ padding: '8px 12px', borderRadius: '10px', border: '1.5px solid rgba(6, 182, 212, 0.25)', fontSize: '0.8rem', fontWeight: 700, outline: 'none', cursor: 'pointer', background: 'white' }}
                           >
                             <option value="todos">Todas las Unidades (Total General)</option>
-                            <option value="uci">UCI (Intensivos)</option>
-                            <option value="uti">UTI (Intermedios)</option>
-                            <option value="medios">Cuidados Medios</option>
-                            <option value="basicos">Cuidados Básicos</option>
-                            <option value="maternidad">Maternidad y Ginecología</option>
-                            <option value="infantil">Pediatría / Infantil</option>
-                            <option value="neonatologia">Neonatología</option>
+                            <option value="uci">{getRemServiceLabel('uci', endDate)}</option>
+                            <option value="uti">{getRemServiceLabel('uti', endDate)}</option>
+                            <option value="medios">{getRemServiceLabel('medios', endDate)}</option>
+                            <option value="basicos">{getRemServiceLabel('basicos', endDate)}</option>
+                            <option value="maternidad">{getRemServiceLabel('maternidad', endDate)}</option>
+                            <option value="infantil">{getRemServiceLabel('infantil', endDate)}</option>
+                            <option value="neonatologia">{getRemServiceLabel('neonatologia', endDate)}</option>
                           </select>
                         </div>
 
@@ -3169,7 +3041,7 @@ export default function ClosedAttentionDashboard({ onBack, initialTab, initialSu
                       <div className="unit-card glass-card">
                         <div className="unit-card-header">
                           <span className="unit-badge uci">UCI</span>
-                          <h3>U. de Cuidados Intensivos</h3>
+                          <h3>{getRemServiceLabel('uci', endDate)}</h3>
                         </div>
                         <div className="unit-kpis">
                           <div className="kpi"><span className="lbl">Capacidad</span><strong>{currentOccupancy.uci_disponibles}</strong></div>
@@ -3191,7 +3063,7 @@ export default function ClosedAttentionDashboard({ onBack, initialTab, initialSu
                       <div className="unit-card glass-card">
                         <div className="unit-card-header">
                           <span className="unit-badge uti">UTI</span>
-                          <h3>U. de Tratamiento Intermedio</h3>
+                          <h3>{getRemServiceLabel('uti', endDate)}</h3>
                         </div>
                         <div className="unit-kpis">
                           <div className="kpi"><span className="lbl">Capacidad</span><strong>{currentOccupancy.uti_disponibles}</strong></div>
@@ -3213,7 +3085,7 @@ export default function ClosedAttentionDashboard({ onBack, initialTab, initialSu
                       <div className="unit-card glass-card">
                         <div className="unit-card-header">
                           <span className="unit-badge medios">Medios</span>
-                          <h3>Cuidados Medios</h3>
+                          <h3>{getRemServiceLabel('medios', endDate)}</h3>
                         </div>
                         <div className="unit-kpis">
                           <div className="kpi"><span className="lbl">Capacidad</span><strong>{currentOccupancy.cuidados_medios_disponibles}</strong></div>
@@ -3235,7 +3107,7 @@ export default function ClosedAttentionDashboard({ onBack, initialTab, initialSu
                       <div className="unit-card glass-card">
                         <div className="unit-card-header">
                           <span className="unit-badge basicos">Básicos</span>
-                          <h3>Cuidados Básicos</h3>
+                          <h3>{getRemServiceLabel('basicos', endDate)}</h3>
                         </div>
                         <div className="unit-kpis">
                           <div className="kpi"><span className="lbl">Capacidad</span><strong>{currentOccupancy.cuidados_basicos_disponibles}</strong></div>
@@ -3257,7 +3129,7 @@ export default function ClosedAttentionDashboard({ onBack, initialTab, initialSu
                       <div className="unit-card glass-card">
                         <div className="unit-card-header">
                           <span className="unit-badge maternidad">Mat</span>
-                          <h3>Maternidad y Ginecología</h3>
+                          <h3>{getRemServiceLabel('maternidad', endDate)}</h3>
                         </div>
                         <div className="unit-kpis">
                           <div className="kpi"><span className="lbl">Capacidad</span><strong>{currentOccupancy.maternidad_disponibles}</strong></div>
@@ -3279,7 +3151,7 @@ export default function ClosedAttentionDashboard({ onBack, initialTab, initialSu
                       <div className="unit-card glass-card">
                         <div className="unit-card-header">
                           <span className="unit-badge infantil">Inf</span>
-                          <h3>Servicio de Pediatría</h3>
+                          <h3>{getRemServiceLabel('infantil', endDate)}</h3>
                         </div>
                         <div className="unit-kpis">
                           <div className="kpi"><span className="lbl">Capacidad</span><strong>{currentOccupancy.infantil_disponibles}</strong></div>
@@ -3715,7 +3587,7 @@ export default function ClosedAttentionDashboard({ onBack, initialTab, initialSu
                           >
                             <option value="Todas">Todas las especialidades (Total Establecimiento)</option>
                             {uniqueDropdowns.servicios.map(s => (
-                              <option key={s} value={s}>{s}</option>
+                              <option key={s} value={s}>{getRemServiceLabel(s, endDate)}</option>
                             ))}
                           </select>
                         </div>
@@ -3847,24 +3719,36 @@ export default function ClosedAttentionDashboard({ onBack, initialTab, initialSu
                             <td style={{ padding: '12px 18px', color: '#64748b', fontSize: '0.74rem', fontWeight: 500 }}>Pacientes con egreso efectivo en la misma fecha de su ingreso.</td>
                           </tr>
                           <tr style={{ borderBottom: '1px solid rgba(0,0,0,0.05)', background: '#f8fafc' }}>
-                            <td style={{ padding: '12px 18px', fontWeight: 700, paddingLeft: '30px', color: '#334155' }}>Días Cama Disponibles del Periodo (Habilitadas * Días)</td>
-                            <td style={{ padding: '12px 18px', fontWeight: 900, color: '#0891b2', textAlign: 'center' }}>{rem20Data.diasCamaDisponibles.toLocaleString()}</td>
-                            <td style={{ padding: '12px 18px', color: '#64748b', fontSize: '0.74rem', fontWeight: 500 }}>Camas habilitadas ({rem20Data.camasHabilitadas}) multiplicadas por los días del periodo.</td>
+                            <td style={{ padding: '12px 18px', fontWeight: 700, paddingLeft: '30px', color: '#334155' }}>Días Cama Disponibles del Periodo</td>
+                            <td style={{ padding: '12px 18px', fontWeight: 900, color: rem20Data.hasCuadraturaData ? '#0891b2' : '#dc2626', textAlign: 'center' }}>
+                              {rem20Data.hasCuadraturaData ? rem20Data.diasCamaDisponibles.toLocaleString() : 'Sin datos'}
+                            </td>
+                            <td style={{ padding: '12px 18px', color: '#64748b', fontSize: '0.74rem', fontWeight: 500 }}>
+                              {rem20Data.hasCuadraturaData
+                                ? `Sumatoria diaria real de camas disponibles en Cuadratura (promedio ${rem20Data.camasHabilitadas} camas).`
+                                : 'No existen registros de Cuadratura de Camas para el período seleccionado.'}
+                            </td>
                           </tr>
                           <tr style={{ borderBottom: '1px solid rgba(0,0,0,0.05)', background: 'white' }}>
-                            <td style={{ padding: '12px 18px', fontWeight: 700, paddingLeft: '30px', color: '#334155' }}>Días Cama Ocupadas (Censo de Pacientes-Día)</td>
-                            <td style={{ padding: '12px 18px', fontWeight: 900, color: '#0891b2', textAlign: 'center' }}>{rem20Data.diasCamaOcupadas.toLocaleString()}</td>
-                            <td style={{ padding: '12px 18px', color: '#64748b', fontSize: '0.74rem', fontWeight: 500 }}>Suma acumulada de pacientes internados por cada día del periodo.</td>
+                            <td style={{ padding: '12px 18px', fontWeight: 700, paddingLeft: '30px', color: '#334155' }}>Días Cama Ocupadas</td>
+                            <td style={{ padding: '12px 18px', fontWeight: 900, color: rem20Data.hasCuadraturaData ? '#0891b2' : '#dc2626', textAlign: 'center' }}>
+                              {rem20Data.hasCuadraturaData ? rem20Data.diasCamaOcupadas.toLocaleString() : 'Sin datos'}
+                            </td>
+                            <td style={{ padding: '12px 18px', color: '#64748b', fontSize: '0.74rem', fontWeight: 500 }}>
+                              {rem20Data.hasCuadraturaData
+                                ? 'Sumatoria diaria de camas ocupadas registradas en Cuadratura de Camas.'
+                                : 'No existen registros de Cuadratura de Camas para el período seleccionado.'}
+                            </td>
                           </tr>
                           <tr style={{ borderBottom: '1px solid rgba(0,0,0,0.05)', background: '#f8fafc' }}>
                             <td style={{ padding: '12px 18px', fontWeight: 700, paddingLeft: '30px', color: '#334155' }}>Días de Estada Total de Egresados Netos</td>
                             <td style={{ padding: '12px 18px', fontWeight: 900, color: '#0891b2', textAlign: 'center' }}>{rem20Data.diasEstadaTotal.toLocaleString()}</td>
-                            <td style={{ padding: '12px 18px', color: '#64748b', fontSize: '0.74rem', fontWeight: 500 }}>Suma de permanencia de egresados netos (excluye traslados).</td>
+                            <td style={{ padding: '12px 18px', color: '#64748b', fontSize: '0.74rem', fontWeight: 500 }}>Norma DEIS-MINSAL (Fecha Egreso − Fecha Ingreso; mismo día = 1). Excluye traslados internos.</td>
                           </tr>
                           <tr style={{ borderBottom: '2.5px solid rgba(8, 145, 178, 0.2)', background: 'rgba(8, 145, 178, 0.05)' }}>
                             <td style={{ padding: '14px 18px', fontWeight: 900, color: '#0891b2' }}>DÍAS DE ESTADA DE BENEFICIARIOS (FONASA A/B/C/D)</td>
                             <td style={{ padding: '14px 18px', fontWeight: 950, fontSize: '1rem', color: '#0891b2', textAlign: 'center' }}>{rem20Data.diasEstadaBeneficiarios.toLocaleString()}</td>
-                            <td style={{ padding: '14px 18px', color: '#0891b2', fontSize: '0.74rem', fontWeight: 800 }}>Permanencia total correspondiente a usuarios beneficiarios legales.</td>
+                            <td style={{ padding: '14px 18px', color: '#0891b2', fontSize: '0.74rem', fontWeight: 800 }}>Sin campo previsión en base exportada (muestra Total DEIS).</td>
                           </tr>
                         </tbody>
                       </table>
