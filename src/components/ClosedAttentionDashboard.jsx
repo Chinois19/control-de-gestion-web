@@ -316,8 +316,8 @@ export default function ClosedAttentionDashboard({ onBack, initialTab, initialSu
   const [selectedRangoEdad, setSelectedRangoEdad] = useState(['Todas']);
 
   // Collapsible and Multi-select controls
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [sidebarPinned, setSidebarPinned] = useState(true);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
+  const [sidebarPinned, setSidebarPinned] = useState(false);
   const [activeDropdown, setActiveDropdown] = useState(null); // null, 'service', 'procedencia', 'condicion', 'cie10', 'edad'
   const [selectedRemService, setSelectedRemService] = useState('Todas');
 
@@ -349,7 +349,7 @@ export default function ClosedAttentionDashboard({ onBack, initialTab, initialSu
   });
   const [trendSelectedService, setTrendSelectedService] = useState('todos');
   const [selectedClinicalService, setSelectedClinicalService] = useState(['Todas']);
-  const [selectedIndicator, setSelectedIndicator] = useState('disponibles');
+  const [selectedIndicator, setSelectedIndicator] = useState('prom_camas');
   const [hoveredNode, setHoveredNode] = useState(null); 
   const [hoveredTrendNode, setHoveredTrendNode] = useState(null); 
   const [hoveredIndicatorNode, setHoveredIndicatorNode] = useState(null);
@@ -2328,7 +2328,7 @@ export default function ClosedAttentionDashboard({ onBack, initialTab, initialSu
                           unit: 'camas',
                           formula: 'Días Cama Disponibles / Días del Periodo',
                           definition: 'Número promedio de camas que estuvieron en funcionamiento cada día en el período (denominador directo del Índice de Rotación o Giro de Camas).',
-                          color: '#0f766e',
+                          color: '#059669',
                           gradient: 'tealAreaGrad',
                           value: clinicalStatsMetrics.current.camasHabilitadas,
                           valueFormatter: (v) => `${Number(v).toLocaleString('es-CL')} camas`,
@@ -2356,7 +2356,7 @@ export default function ClosedAttentionDashboard({ onBack, initialTab, initialSu
                           unit: '%',
                           formula: '(Días Cama Ocupados / Días Cama Disponibles) * 100',
                           definition: 'Porcentaje de camas de dotación que se mantuvieron ocupadas en promedio durante el periodo de monitoreo. Representa el nivel de saturación del establecimiento.',
-                          color: '#0284c7',
+                          color: '#1e3a8a',
                           gradient: 'blueAreaGrad',
                           value: clinicalStatsMetrics.current.occupancyRate,
                           valueFormatter: (v) => `${v.toFixed(1)}%`,
@@ -2398,7 +2398,7 @@ export default function ClosedAttentionDashboard({ onBack, initialTab, initialSu
                           unit: 'días',
                           formula: 'Total Días de Estada / Total Egresos Netos',
                           definition: 'Número promedio de días de hospitalización por cada paciente egresado en el período (mide cuántos días en promedio permanece hospitalizado un paciente desde su ingreso hasta su egreso).',
-                          color: '#6366f1',
+                          color: '#7c3aed',
                           gradient: 'indigoAreaGrad',
                           value: clinicalStatsMetrics.current.avgStay,
                           valueFormatter: (v) => `${Number(v).toFixed(1)} días`,
@@ -2413,7 +2413,7 @@ export default function ClosedAttentionDashboard({ onBack, initialTab, initialSu
                           unit: '%',
                           formula: '(Egresos Mismo Día / Total Egresos Netos) * 100',
                           definition: 'Proporción de egresos resueltos en la misma fecha calendario de su ingreso (< 24 horas). Permite evaluar hospitalizaciones abreviadas o potencialmente ambulatorizables.',
-                          color: '#0284c7',
+                          color: '#0891b2',
                           gradient: 'cyanAreaGrad',
                           value: clinicalStatsMetrics.current.sameDayRate,
                           valueFormatter: (v) => `${Number(v).toFixed(1)}%`,
@@ -2427,7 +2427,7 @@ export default function ClosedAttentionDashboard({ onBack, initialTab, initialSu
                           unit: '%',
                           formula: '(Egresos con Estada > 14 días / Total Egresos Netos) * 100',
                           definition: 'Proporción de egresos que superaron los 14 días de hospitalización. Identifica el peso de los casos complejos o sociosanitarios (outliers de estancia GRD).',
-                          color: '#d97706',
+                          color: '#ea580c',
                           gradient: 'amberAreaGrad',
                           value: clinicalStatsMetrics.current.longStayRate,
                           valueFormatter: (v) => `${Number(v).toFixed(1)}%`,
@@ -2442,7 +2442,7 @@ export default function ClosedAttentionDashboard({ onBack, initialTab, initialSu
                           unit: 'pac.',
                           formula: 'Total Egresos Netos / Prom. Camas Disponibles',
                           definition: 'Giro de cama. Mide el número de pacientes que egresan por cada cama disponible durante el periodo. A mayor rotación, mayor velocidad de atención.',
-                          color: '#7c3aed',
+                          color: '#6b21a8',
                           gradient: 'purpleAreaGrad',
                           value: clinicalStatsMetrics.current.rotationIndex,
                           valueFormatter: (v) => `${v.toFixed(1)} pac.`,
@@ -2456,7 +2456,7 @@ export default function ClosedAttentionDashboard({ onBack, initialTab, initialSu
                           unit: 'días',
                           formula: '(Días Cama Disponibles - Días Cama Ocupados) / Egresos Netos',
                           definition: 'Tiempo promedio (en días) que permanece una cama vacía entre el egreso de un paciente y el ingreso del siguiente. Idealmente debe ser entre 0 y 0.5 días.',
-                          color: '#0891b2',
+                          color: '#0d9488',
                           gradient: 'cyanAreaGrad',
                           value: clinicalStatsMetrics.current.subInterval,
                           valueFormatter: (v) => `${v.toFixed(1)} días`,
@@ -2471,7 +2471,7 @@ export default function ClosedAttentionDashboard({ onBack, initialTab, initialSu
                           unit: '%',
                           formula: '(Decesos / Egresos Netos) * 100',
                           definition: 'Proporción de egresos netos que terminaron en fallecimiento del paciente. Refleja la severidad de los casos y la calidad de la atención cerrada.',
-                          color: '#ef4444',
+                          color: '#e11d48',
                           gradient: 'redAreaGrad',
                           value: clinicalStatsMetrics.current.lethalityRate,
                           valueFormatter: (v) => `${v.toFixed(1)}%`,
@@ -2486,7 +2486,7 @@ export default function ClosedAttentionDashboard({ onBack, initialTab, initialSu
                           unit: 'pac.',
                           formula: 'Pacientes ingresados formalmente en el periodo',
                           definition: 'Total de admisiones registradas en el servicio clínico durante el periodo de monitoreo establecido por las fechas seleccionadas.',
-                          color: '#16a34a',
+                          color: '#059669',
                           gradient: 'greenAreaGrad',
                           value: clinicalStatsMetrics.current.totalIngresos,
                           valueFormatter: (v) => `${v.toLocaleString()} pac.`,
@@ -2565,74 +2565,99 @@ export default function ClosedAttentionDashboard({ onBack, initialTab, initialSu
                       const pathArea = `${pathLine} L ${points[points.length - 1].x} 180 L ${points[0].x} 180 Z`;
 
                       return (
-                        <div style={{ display: 'grid', gridTemplateColumns: '420px 1fr', gap: '24px', marginTop: '20px', alignItems: 'start' }}>
-                          {/* Left Column of compact tags (2 columns × 7 rows) */}
-                          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: '10px' }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: '275px 1fr', gap: '20px', marginTop: '16px', alignItems: 'start' }}>
+                          {/* Columna izquierda compacta y colorida (gama cromática Tab 1) con scroll vertical */}
+                          <div style={{
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: '8px',
+                            maxHeight: '750px',
+                            overflowY: 'auto',
+                            paddingRight: '6px',
+                            paddingBottom: '4px'
+                          }}>
                             {indicatorsConfig.map(cfg => {
                               const IconComponent = cfg.icon;
                               const active = selectedIndicator === cfg.key;
-                              
+                              const isPositiveGood = !cfg.invertDiffColor;
+                              const diffLabel = cfg.diff && typeof cfg.diff === 'object' ? cfg.diff.label : (typeof cfg.diff === 'number' ? `${cfg.diff >= 0 ? '+' : ''}${cfg.diff.toFixed(1)}%` : null);
+                              const diffPositive = cfg.diff && typeof cfg.diff === 'object' ? cfg.diff.isPositive : (typeof cfg.diff === 'number' ? cfg.diff >= 0 : true);
+                              const diffGood = diffLabel !== null && ((isPositiveGood && diffPositive) || (!isPositiveGood && !diffPositive));
+
                               return (
                                 <div
                                   key={cfg.key}
                                   onClick={() => setSelectedIndicator(cfg.key)}
                                   title={cfg.formula}
                                   style={{
-                                    padding: '10px 12px',
-                                    background: active ? 'rgba(8, 145, 178, 0.06)' : '#ffffff',
-                                    border: active ? '2px solid #0891b2' : '1px solid rgba(0,0,0,0.07)',
-                                    borderRadius: '14px',
+                                    padding: '9px 12px',
+                                    background: '#ffffff',
+                                    borderRadius: '13px',
+                                    border: active ? `2px solid ${cfg.color}` : '1px solid #e2e8f0',
+                                    borderLeft: `4.5px solid ${cfg.color}`,
                                     cursor: 'pointer',
-                                    transition: 'all 0.18s ease-in-out',
+                                    transition: 'all 0.18s ease',
                                     display: 'flex',
                                     flexDirection: 'column',
-                                    justifyContent: 'space-between',
-                                    boxShadow: active ? '0 6px 20px rgba(8, 145, 178, 0.12)' : 'none',
-                                    position: 'relative',
-                                    overflow: 'hidden',
-                                    minWidth: 0
+                                    gap: '3px',
+                                    flexShrink: 0,
+                                    boxSizing: 'border-box',
+                                    boxShadow: active ? `0 6px 16px -4px ${cfg.color}35` : '0 2px 6px rgba(15, 23, 42, 0.03)'
                                   }}
-                                  className={`clinical-indicator-tag ${active ? 'active' : ''}`}
                                 >
-                                  <div style={{ display: 'flex', alignItems: 'center', gap: '7px', minWidth: 0 }}>
-                                    <div style={{
-                                      background: active ? '#0891b2' : 'rgba(0,0,0,0.04)',
-                                      color: active ? '#ffffff' : '#64748b',
-                                      width: '24px',
-                                      height: '24px',
-                                      borderRadius: '7px',
-                                      display: 'flex',
-                                      alignItems: 'center',
-                                      justifyContent: 'center',
-                                      flexShrink: 0
-                                    }}>
-                                      <IconComponent size={13} />
+                                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '6px' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '7px', minWidth: 0 }}>
+                                      <div style={{
+                                        background: active ? cfg.color : `${cfg.color}20`,
+                                        color: active ? '#ffffff' : cfg.color,
+                                        width: '22px',
+                                        height: '22px',
+                                        borderRadius: '6px',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        flexShrink: 0,
+                                        transition: 'all 0.18s'
+                                      }}>
+                                        <IconComponent size={13} />
+                                      </div>
+                                      <span style={{ fontSize: '0.72rem', fontWeight: 850, color: active ? '#0f172a' : '#334155', textTransform: 'uppercase', letterSpacing: '0.02em', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                        {cfg.shortTitle}
+                                      </span>
                                     </div>
-                                    <span style={{ fontSize: '0.76rem', fontWeight: active ? 850 : 750, color: active ? '#1a365d' : '#475569', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                      {cfg.shortTitle}
-                                    </span>
+                                    {diffLabel && (
+                                      <span style={{
+                                        fontSize: '0.6rem',
+                                        fontWeight: 800,
+                                        padding: '1.5px 6px',
+                                        borderRadius: '10px',
+                                        background: diffGood ? '#dcfce7' : '#fee2e2',
+                                        color: diffGood ? '#15803d' : '#b91c1c',
+                                        whiteSpace: 'nowrap',
+                                        flexShrink: 0
+                                      }}>
+                                        {diffLabel}
+                                      </span>
+                                    )}
                                   </div>
 
-                                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: '8px', gap: '4px' }}>
-                                    <span style={{ fontSize: '1.08rem', fontWeight: 950, color: active ? '#0891b2' : '#1a365d', whiteSpace: 'nowrap' }}>
+                                  <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', paddingLeft: '29px' }}>
+                                    <div style={{ fontSize: '1.08rem', fontWeight: 900, color: cfg.color, letterSpacing: '-0.01em', lineHeight: 1.15 }}>
                                       {cfg.valueFormatter(cfg.value)}
+                                    </div>
+                                    <span style={{ fontSize: '0.58rem', color: '#64748b', fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '95px' }}>
+                                      {cfg.unit}
                                     </span>
-                                    
-                                    {cfg.diff && (
-                                      <div style={{ transform: 'scale(0.8)', transformOrigin: 'right bottom', flexShrink: 0 }}>
-                                        {renderDiffBadge(cfg.diff, cfg.invertDiffColor)}
-                                      </div>
-                                    )}
                                   </div>
                                 </div>
                               );
                             })}
                           </div>
 
-                          {/* Right Column of Line Chart & Insights (Sticky) */}
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', position: 'sticky', top: '20px' }}>
+                          {/* Columna derecha: Gráfico + Análisis de Eficiencia */}
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', minWidth: 0 }}>
                             <div className="glass-card chart-container border-glow-cyan" style={{ padding: '24px', background: '#ffffff', borderRadius: '24px', border: '1px solid rgba(0,0,0,0.05)', position: 'relative', display: 'flex', flexDirection: 'column' }}>
-                              <div className="chart-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '15px', borderBottom: '1px solid rgba(0,0,0,0.05)', paddingBottom: '14px', marginBottom: '14px' }}>
+                              <div className="chart-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '15px', borderBottom: '1px solid rgba(0,0,0,0.05)', paddingBottom: '15px', marginBottom: '15px' }}>
                                 <div>
                                   <h2 className="c-title" style={{ fontSize: '1.1rem', fontWeight: 900, color: '#1a365d', margin: 0 }}>
                                     Evolución Temporal del Indicador: <span style={{ color: activeCfg.color }}>{activeCfg.title}</span>

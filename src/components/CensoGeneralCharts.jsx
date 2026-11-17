@@ -395,59 +395,71 @@ export function EvolucionIndicadorChart({ points = [], title, unit, color = '#0d
   };
 
   return (
-    <div style={{ width: '100%', height: 280, marginTop: 8 }}>
-      <ResponsiveContainer>
-        <ComposedChart data={points} margin={{ top: 32, right: 16, left: 6, bottom: 4 }}>
-          <CartesianGrid stroke={GRID_COLOR} strokeDasharray="3 3" vertical={false} />
-          <XAxis dataKey="label" tick={AXIS_TICK} axisLine={{ stroke: '#cbd5e1' }} tickLine={false} />
-          <YAxis
-            yAxisId="left"
-            tick={AXIS_TICK}
-            axisLine={false}
-            tickLine={false}
-            width={52}
-            domain={['auto', 'auto']}
-            label={{ value: unit ? `(${unit})` : '', angle: -90, position: 'insideLeft', fill: '#94a3b8', fontSize: 11, dx: 4 }}
-          />
-          <YAxis
-            yAxisId="right"
-            orientation="right"
-            tick={{ fill: '#94a3b8', fontSize: 11, fontWeight: 500 }}
-            axisLine={false}
-            tickLine={false}
-            width={52}
-            domain={[0, (dataMax) => Math.ceil((dataMax || 100) * 1.15)]}
-            label={{ value: 'Días-Cama', angle: 90, position: 'insideRight', fill: '#94a3b8', fontSize: 10, dx: -2 }}
-          />
-          <Tooltip content={<CustomTooltip />} />
-          <Legend verticalAlign="top" align="right" iconType="square" wrapperStyle={{ fontSize: 11.5, color: '#64748b', paddingBottom: 6 }} />
-          <Bar
-            yAxisId="right"
-            dataKey="estabCamas"
-            name="Total días-cama disp. (mes)"
-            fill="#94a3b8"
-            fillOpacity={0.2}
-            stroke="#94a3b8"
-            strokeOpacity={0.35}
-            barSize={26}
-            radius={[6, 6, 0, 0]}
-            isAnimationActive={false}
-          />
-          <Line
-            yAxisId="left"
-            type="monotone"
-            dataKey="val"
-            name={title}
-            stroke={color}
-            strokeWidth={3}
-            dot={{ r: 4.5, fill: color, stroke: '#ffffff', strokeWidth: 2 }}
-            activeDot={{ r: 6.5, fill: color, stroke: '#ffffff', strokeWidth: 2 }}
-            isAnimationActive={false}
-          >
-            {points.length <= 15 && <LabelList dataKey="val" content={renderBadgeLabel} />}
-          </Line>
-        </ComposedChart>
-      </ResponsiveContainer>
+    <div style={{ width: '100%', marginTop: 6 }}>
+      <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 18, marginBottom: 8, fontSize: '0.76rem', color: '#475569', fontWeight: 600 }}>
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+          <span style={{ width: 12, height: 3, background: color, borderRadius: 2, display: 'inline-block' }} />
+          <span style={{ color }}>{title}</span>
+        </span>
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+          <span style={{ width: 10, height: 10, background: 'rgba(148,163,184,0.35)', border: '1px solid #94a3b8', borderRadius: 2, display: 'inline-block' }} />
+          <span style={{ color: '#64748b' }}>Total días-cama disp. (mes)</span>
+        </span>
+      </div>
+      <div style={{ width: '100%', height: 325 }}>
+        <ResponsiveContainer>
+          <ComposedChart data={points} margin={{ top: 24, right: 16, left: 6, bottom: 4 }}>
+            <CartesianGrid stroke={GRID_COLOR} strokeDasharray="3 3" vertical={false} />
+            <XAxis dataKey="label" tick={AXIS_TICK} axisLine={{ stroke: '#cbd5e1' }} tickLine={false} />
+            <YAxis
+              yAxisId="left"
+              tick={AXIS_TICK}
+              axisLine={false}
+              tickLine={false}
+              width={52}
+              domain={['auto', 'auto']}
+              padding={{ top: 26, bottom: 10 }}
+              label={{ value: unit ? `(${unit})` : '', angle: -90, position: 'insideLeft', fill: '#94a3b8', fontSize: 11, dx: 4 }}
+            />
+            <YAxis
+              yAxisId="right"
+              orientation="right"
+              tick={{ fill: '#94a3b8', fontSize: 11, fontWeight: 500 }}
+              axisLine={false}
+              tickLine={false}
+              width={52}
+              domain={[0, (dataMax) => Math.ceil((dataMax || 100) * 1.18)]}
+              label={{ value: 'Días-Cama', angle: 90, position: 'insideRight', fill: '#94a3b8', fontSize: 10, dx: -2 }}
+            />
+            <Tooltip content={<CustomTooltip />} />
+            <Bar
+              yAxisId="right"
+              dataKey="estabCamas"
+              name="Total días-cama disp. (mes)"
+              fill="#94a3b8"
+              fillOpacity={0.2}
+              stroke="#94a3b8"
+              strokeOpacity={0.35}
+              barSize={32}
+              radius={[6, 6, 0, 0]}
+              isAnimationActive={false}
+            />
+            <Line
+              yAxisId="left"
+              type="monotone"
+              dataKey="val"
+              name={title}
+              stroke={color}
+              strokeWidth={3}
+              dot={{ r: 4.5, fill: color, stroke: '#ffffff', strokeWidth: 2 }}
+              activeDot={{ r: 6.5, fill: color, stroke: '#ffffff', strokeWidth: 2 }}
+              isAnimationActive={false}
+            >
+              {points.length <= 15 && <LabelList dataKey="val" content={renderBadgeLabel} />}
+            </Line>
+          </ComposedChart>
+        </ResponsiveContainer>
+      </div>
     </div>
   );
 }
