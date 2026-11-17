@@ -349,7 +349,7 @@ export default function ClosedAttentionDashboard({ onBack, initialTab, initialSu
   });
   const [trendSelectedService, setTrendSelectedService] = useState('todos');
   const [selectedClinicalService, setSelectedClinicalService] = useState(['Todas']);
-  const [selectedIndicator, setSelectedIndicator] = useState('ocupacion');
+  const [selectedIndicator, setSelectedIndicator] = useState('disponibles');
   const [hoveredNode, setHoveredNode] = useState(null); 
   const [hoveredTrendNode, setHoveredTrendNode] = useState(null); 
   const [hoveredIndicatorNode, setHoveredIndicatorNode] = useState(null);
@@ -636,6 +636,8 @@ export default function ClosedAttentionDashboard({ onBack, initialTab, initialSu
       let totalEgresosNetos = 0;
       let totalDiasEstada = 0;
       let deceasedCount = 0;
+      let sameDayCount = 0;
+      let longStayCount = 0;
       let totalTraslados = 0;
       let totalDiasTraslados = 0;
       let totalBedDaysInPeriod = 0;
@@ -673,6 +675,8 @@ export default function ClosedAttentionDashboard({ onBack, initialTab, initialSu
           } else {
             totalEgresosNetos++;
             totalDiasEstada += r.calculatedDays;
+            if (r.ymdIngreso && r.ymdEgreso && r.ymdIngreso === r.ymdEgreso) sameDayCount++;
+            if (r.calculatedDays > 14) longStayCount++;
             if (cond.includes('fallecido') || cond.includes('óbito') || cond.includes('muerte')) {
               deceasedCount++;
             }
@@ -778,6 +782,9 @@ export default function ClosedAttentionDashboard({ onBack, initialTab, initialSu
         totalIngresos,
         totalEgresosNetos,
         totalDiasEstada,
+        avgStay: totalEgresosNetos > 0 ? (totalDiasEstada / totalEgresosNetos) : 0,
+        sameDayRate: totalEgresosNetos > 0 ? ((sameDayCount / totalEgresosNetos) * 100) : 0,
+        longStayRate: totalEgresosNetos > 0 ? ((longStayCount / totalEgresosNetos) * 100) : 0,
         totalTraslados,
         avgEstadaTraslados: totalTraslados > 0 ? (totalDiasTraslados / totalTraslados) : 0,
         totalBedDaysInPeriod,
@@ -818,6 +825,9 @@ export default function ClosedAttentionDashboard({ onBack, initialTab, initialSu
       ingresos: getPercentDiff(current.totalIngresos, previous?.totalIngresos),
       egresos: getPercentDiff(current.totalEgresosNetos, previous?.totalEgresosNetos),
       estada: getPercentDiff(current.totalDiasEstada, previous?.totalDiasEstada),
+      avgStay: getPercentDiff(current.avgStay, previous?.avgStay),
+      sameDayRate: getPercentDiff(current.sameDayRate, previous?.sameDayRate),
+      longStayRate: getPercentDiff(current.longStayRate, previous?.longStayRate),
       traslados: getPercentDiff(current.totalTraslados, previous?.totalTraslados),
       bedDays: getPercentDiff(current.totalBedDaysInPeriod, previous?.totalBedDaysInPeriod),
       occupancy: getPercentDiff(current.occupancyRate, previous?.occupancyRate),
@@ -1051,6 +1061,8 @@ export default function ClosedAttentionDashboard({ onBack, initialTab, initialSu
       let totalEgresosNetos = 0;
       let totalDiasEstada = 0;
       let deceasedCount = 0;
+      let sameDayCount = 0;
+      let longStayCount = 0;
       let totalTraslados = 0;
       let totalDiasTraslados = 0;
       let totalBedDaysInPeriod = 0;
@@ -1119,6 +1131,8 @@ export default function ClosedAttentionDashboard({ onBack, initialTab, initialSu
           } else {
             totalEgresosNetos++;
             totalDiasEstada += r.calculatedDays;
+            if (r.ymdIngreso && r.ymdEgreso && r.ymdIngreso === r.ymdEgreso) sameDayCount++;
+            if (r.calculatedDays > 14) longStayCount++;
             if (cond.includes('fallecido') || cond.includes('óbito') || cond.includes('muerte')) {
                deceasedCount++;
             }
@@ -1161,6 +1175,9 @@ export default function ClosedAttentionDashboard({ onBack, initialTab, initialSu
         totalIngresos,
         totalEgresosNetos,
         totalDiasEstada,
+        avgStay: totalEgresosNetos > 0 ? (totalDiasEstada / totalEgresosNetos) : 0,
+        sameDayRate: totalEgresosNetos > 0 ? ((sameDayCount / totalEgresosNetos) * 100) : 0,
+        longStayRate: totalEgresosNetos > 0 ? ((longStayCount / totalEgresosNetos) * 100) : 0,
         totalTraslados,
         totalBedDaysInPeriod: occupiedBedDays,
         occupancyRate,
@@ -1191,6 +1208,9 @@ export default function ClosedAttentionDashboard({ onBack, initialTab, initialSu
       ingresos: getPercentDiff(current.totalIngresos, previous?.totalIngresos),
       egresos: getPercentDiff(current.totalEgresosNetos, previous?.totalEgresosNetos),
       estada: getPercentDiff(current.totalDiasEstada, previous?.totalDiasEstada),
+      avgStay: getPercentDiff(current.avgStay, previous?.avgStay),
+      sameDayRate: getPercentDiff(current.sameDayRate, previous?.sameDayRate),
+      longStayRate: getPercentDiff(current.longStayRate, previous?.longStayRate),
       traslados: getPercentDiff(current.totalTraslados, previous?.totalTraslados),
       bedDays: getPercentDiff(current.totalBedDaysInPeriod, previous?.totalBedDaysInPeriod),
       occupancy: getPercentDiff(current.occupancyRate, previous?.occupancyRate),
@@ -1233,6 +1253,8 @@ export default function ClosedAttentionDashboard({ onBack, initialTab, initialSu
       let totalEgresosNetos = 0;
       let totalDiasEstada = 0;
       let deceasedCount = 0;
+      let sameDayCount = 0;
+      let longStayCount = 0;
       let totalBedDaysInPeriod = 0;
 
       const monitorStart = new Date(start + 'T00:00:00');
@@ -1293,6 +1315,8 @@ export default function ClosedAttentionDashboard({ onBack, initialTab, initialSu
           if (!cond.includes('traslado servicio')) {
             totalEgresosNetos++;
             totalDiasEstada += r.calculatedDays;
+            if (r.ymdIngreso && r.ymdEgreso && r.ymdIngreso === r.ymdEgreso) sameDayCount++;
+            if (r.calculatedDays > 14) longStayCount++;
             if (cond.includes('fallecido') || cond.includes('óbito') || cond.includes('muerte')) {
                deceasedCount++;
             }
@@ -1334,6 +1358,9 @@ export default function ClosedAttentionDashboard({ onBack, initialTab, initialSu
         totalIngresos,
         totalEgresosNetos,
         totalDiasEstada,
+        avgStay: totalEgresosNetos > 0 ? (totalDiasEstada / totalEgresosNetos) : 0,
+        sameDayRate: totalEgresosNetos > 0 ? ((sameDayCount / totalEgresosNetos) * 100) : 0,
+        longStayRate: totalEgresosNetos > 0 ? ((longStayCount / totalEgresosNetos) * 100) : 0,
         occupancyRate,
         rotationIndex,
         subInterval,
@@ -1348,6 +1375,7 @@ export default function ClosedAttentionDashboard({ onBack, initialTab, initialSu
         label: m.shortLabel,
         fullLabel: m.fullLabel,
         disponibles: res.availableBedDays,
+        prom_camas: res.camasHabilitadas,
         ocupados: res.occupiedBedDays,
         estabCamas: res.availableBedDays,
         inhabilitados: res.diasInhabilitados,
@@ -1357,7 +1385,10 @@ export default function ClosedAttentionDashboard({ onBack, initialTab, initialSu
         letalidad: res.lethalityRate,
         egresos: res.totalEgresosNetos,
         ingresos: res.totalIngresos,
-        estada: res.totalDiasEstada
+        estada: res.totalDiasEstada,
+        prom_estada: res.avgStay,
+        mismo_dia_pct: res.sameDayRate,
+        prolongada_pct: res.longStayRate
       };
     });
   }, [censoCleaned, cuadraturaRaw, selectedClinicalService]);
@@ -2277,6 +2308,48 @@ export default function ClosedAttentionDashboard({ onBack, initialTab, initialSu
                     {(() => {
                       const indicatorsConfig = [
                         {
+                          key: 'disponibles',
+                          title: 'Días Cama Disponibles',
+                          shortTitle: 'Días Cama Disp.',
+                          unit: 'días-cama',
+                          formula: 'Sumatoria diaria de camas disponibles (Cuadratura)',
+                          definition: 'Total acumulado de días-cama disponibles registrados diariamente en la Cuadratura de Camas para el servicio y período de monitoreo seleccionado.',
+                          color: '#0d9488',
+                          gradient: 'tealAreaGrad',
+                          value: clinicalStatsMetrics.current.availableBedDays,
+                          valueFormatter: (v) => `${Number(v).toLocaleString('es-CL')} días-cama`,
+                          diff: null,
+                          icon: Bed
+                        },
+                        {
+                          key: 'prom_camas',
+                          title: 'Promedio de Camas Disponibles',
+                          shortTitle: 'Prom. Camas Disp.',
+                          unit: 'camas',
+                          formula: 'Días Cama Disponibles / Días del Periodo',
+                          definition: 'Número promedio de camas que estuvieron en funcionamiento cada día en el período (denominador directo del Índice de Rotación o Giro de Camas).',
+                          color: '#0f766e',
+                          gradient: 'tealAreaGrad',
+                          value: clinicalStatsMetrics.current.camasHabilitadas,
+                          valueFormatter: (v) => `${Number(v).toLocaleString('es-CL')} camas`,
+                          diff: null,
+                          icon: Bed
+                        },
+                        {
+                          key: 'ocupados',
+                          title: 'Días Cama Ocupados',
+                          shortTitle: 'Días Cama Ocup.',
+                          unit: 'días-cama',
+                          formula: 'Sumatoria diaria de camas ocupadas (Cuadratura)',
+                          definition: 'Total acumulado de días-cama ocupados registrados diariamente en la Cuadratura de Camas para el servicio y período de monitoreo seleccionado.',
+                          color: '#0284c7',
+                          gradient: 'blueAreaGrad',
+                          value: clinicalStatsMetrics.current.totalBedDaysInPeriod,
+                          valueFormatter: (v) => `${Number(v).toLocaleString('es-CL')} días-cama`,
+                          diff: clinicalStatsMetrics.diffs.bedDays,
+                          icon: Bed
+                        },
+                        {
                           key: 'ocupacion',
                           title: 'Ocupación de Camas',
                           shortTitle: '% Ocupación',
@@ -2291,11 +2364,83 @@ export default function ClosedAttentionDashboard({ onBack, initialTab, initialSu
                           icon: Activity
                         },
                         {
+                          key: 'egresos',
+                          title: 'Total Egresos Netos',
+                          shortTitle: 'Egresos Netos',
+                          unit: 'pac.',
+                          formula: 'Excluye traslados internos del establecimiento (MINSAL)',
+                          definition: 'Número total de altas definitivas y decesos registrados en el servicio, excluyendo los traslados internos para apegarse a la norma metodológica oficial del MINSAL.',
+                          color: '#2563eb',
+                          gradient: 'blueAreaGrad',
+                          value: clinicalStatsMetrics.current.totalEgresosNetos,
+                          valueFormatter: (v) => `${v.toLocaleString()} pac.`,
+                          diff: clinicalStatsMetrics.diffs.egresos,
+                          icon: TrendingDown
+                        },
+                        {
+                          key: 'estada',
+                          title: 'Total Días de Estada',
+                          shortTitle: 'Días Estada',
+                          unit: 'días',
+                          formula: 'Suma de permanencia de egresados netos (DEIS)',
+                          definition: 'Suma acumulada de los días de permanencia (Fecha Egreso − Fecha Ingreso; mismo día = 1) de todos los pacientes egresados netos durante el periodo.',
+                          color: '#4f46e5',
+                          gradient: 'indigoAreaGrad',
+                          value: clinicalStatsMetrics.current.totalDiasEstada,
+                          valueFormatter: (v) => `${v.toLocaleString()} días`,
+                          diff: clinicalStatsMetrics.diffs.estada,
+                          icon: Calendar
+                        },
+                        {
+                          key: 'prom_estada',
+                          title: 'Promedio Días de Estada',
+                          shortTitle: 'Prom. Días Estada',
+                          unit: 'días',
+                          formula: 'Total Días de Estada / Total Egresos Netos',
+                          definition: 'Número promedio de días de hospitalización por cada paciente egresado en el período (mide cuántos días en promedio permanece hospitalizado un paciente desde su ingreso hasta su egreso).',
+                          color: '#6366f1',
+                          gradient: 'indigoAreaGrad',
+                          value: clinicalStatsMetrics.current.avgStay,
+                          valueFormatter: (v) => `${Number(v).toFixed(1)} días`,
+                          diff: clinicalStatsMetrics.diffs.avgStay,
+                          icon: Clock,
+                          invertDiffColor: true
+                        },
+                        {
+                          key: 'mismo_dia_pct',
+                          title: '% Estadía < 24h (Ingreso y Egreso Mismo Día)',
+                          shortTitle: '% Estadía < 24h',
+                          unit: '%',
+                          formula: '(Egresos Mismo Día / Total Egresos Netos) * 100',
+                          definition: 'Proporción de egresos resueltos en la misma fecha calendario de su ingreso (< 24 horas). Permite evaluar hospitalizaciones abreviadas o potencialmente ambulatorizables.',
+                          color: '#0284c7',
+                          gradient: 'cyanAreaGrad',
+                          value: clinicalStatsMetrics.current.sameDayRate,
+                          valueFormatter: (v) => `${Number(v).toFixed(1)}%`,
+                          diff: clinicalStatsMetrics.diffs.sameDayRate,
+                          icon: Percent
+                        },
+                        {
+                          key: 'prolongada_pct',
+                          title: '% Estadía Prolongada (> 14 días)',
+                          shortTitle: '% Estada > 14 días',
+                          unit: '%',
+                          formula: '(Egresos con Estada > 14 días / Total Egresos Netos) * 100',
+                          definition: 'Proporción de egresos que superaron los 14 días de hospitalización. Identifica el peso de los casos complejos o sociosanitarios (outliers de estancia GRD).',
+                          color: '#d97706',
+                          gradient: 'amberAreaGrad',
+                          value: clinicalStatsMetrics.current.longStayRate,
+                          valueFormatter: (v) => `${Number(v).toFixed(1)}%`,
+                          diff: clinicalStatsMetrics.diffs.longStayRate,
+                          icon: AlertTriangle,
+                          invertDiffColor: true
+                        },
+                        {
                           key: 'rotacion',
                           title: 'Índice de Rotación',
                           shortTitle: 'Rotación (Giro)',
                           unit: 'pac.',
-                          formula: 'Total Egresos Netos / Camas Disponibles',
+                          formula: 'Total Egresos Netos / Prom. Camas Disponibles',
                           definition: 'Giro de cama. Mide el número de pacientes que egresan por cada cama disponible durante el periodo. A mayor rotación, mayor velocidad de atención.',
                           color: '#7c3aed',
                           gradient: 'purpleAreaGrad',
@@ -2335,62 +2480,6 @@ export default function ClosedAttentionDashboard({ onBack, initialTab, initialSu
                           invertDiffColor: true
                         },
                         {
-                          key: 'disponibles',
-                          title: 'Días Cama Disponibles',
-                          shortTitle: 'Días Cama Disp.',
-                          unit: 'días-cama',
-                          formula: 'Sumatoria diaria de camas disponibles (Cuadratura)',
-                          definition: 'Total acumulado de días-cama disponibles registrados diariamente en la Cuadratura de Camas para el servicio y período de monitoreo seleccionado.',
-                          color: '#0d9488',
-                          gradient: 'tealAreaGrad',
-                          value: clinicalStatsMetrics.current.availableBedDays,
-                          valueFormatter: (v) => `${Number(v).toLocaleString('es-CL')} días-cama`,
-                          diff: null,
-                          icon: Bed
-                        },
-                        {
-                          key: 'ocupados',
-                          title: 'Días Cama Ocupados',
-                          shortTitle: 'Días Cama Ocup.',
-                          unit: 'días-cama',
-                          formula: 'Sumatoria diaria de camas ocupadas (Cuadratura)',
-                          definition: 'Total acumulado de días-cama ocupados registrados diariamente en la Cuadratura de Camas para el servicio y período de monitoreo seleccionado.',
-                          color: '#0284c7',
-                          gradient: 'blueAreaGrad',
-                          value: clinicalStatsMetrics.current.totalBedDaysInPeriod,
-                          valueFormatter: (v) => `${Number(v).toLocaleString('es-CL')} días-cama`,
-                          diff: clinicalStatsMetrics.diffs.bedDays,
-                          icon: Bed
-                        },
-                        {
-                          key: 'inhabilitados',
-                          title: 'Días Inhabilitados',
-                          shortTitle: 'Días Inhab.',
-                          unit: 'días',
-                          formula: 'Camas inhabilitadas * Días del Periodo',
-                          definition: 'Total de días-cama que no estuvieron disponibles para su uso debido a mantenimiento, aislamiento, desinfección o reparaciones técnicas.',
-                          color: '#f59e0b',
-                          gradient: 'amberAreaGrad',
-                          value: clinicalStatsMetrics.current.diasInhabilitados,
-                          valueFormatter: (v) => `${v.toLocaleString()} días`,
-                          diff: null,
-                          icon: AlertTriangle
-                        },
-                        {
-                          key: 'egresos',
-                          title: 'Total Egresos Netos',
-                          shortTitle: 'Egresos Netos',
-                          unit: 'pac.',
-                          formula: 'Excluye traslados internos del establecimiento (MINSAL)',
-                          definition: 'Número total de altas definitivas y decesos registrados en el servicio, excluyendo los traslados internos para apegarse a la norma metodológica oficial del MINSAL.',
-                          color: '#2563eb',
-                          gradient: 'blueAreaGrad',
-                          value: clinicalStatsMetrics.current.totalEgresosNetos,
-                          valueFormatter: (v) => `${v.toLocaleString()} pac.`,
-                          diff: clinicalStatsMetrics.diffs.egresos,
-                          icon: TrendingDown
-                        },
-                        {
                           key: 'ingresos',
                           title: 'Total Ingresos',
                           shortTitle: 'Ingresos',
@@ -2405,18 +2494,18 @@ export default function ClosedAttentionDashboard({ onBack, initialTab, initialSu
                           icon: TrendingUp
                         },
                         {
-                          key: 'estada',
-                          title: 'Total Días de Estada',
-                          shortTitle: 'Días Estada',
+                          key: 'inhabilitados',
+                          title: 'Días Inhabilitados',
+                          shortTitle: 'Días Inhab.',
                           unit: 'días',
-                          formula: 'Suma de permanencia de egresados netos',
-                          definition: 'Suma acumulada de los días de permanencia de todos los pacientes egresados netos en el servicio durante el periodo de monitoreo.',
-                          color: '#4f46e5',
-                          gradient: 'indigoAreaGrad',
-                          value: clinicalStatsMetrics.current.totalDiasEstada,
+                          formula: 'Sumatoria diaria de camas inhabilitadas (Cuadratura)',
+                          definition: 'Total de días-cama que no estuvieron disponibles para su uso debido a mantenimiento, aislamiento, desinfección o reparaciones técnicas.',
+                          color: '#f59e0b',
+                          gradient: 'amberAreaGrad',
+                          value: clinicalStatsMetrics.current.diasInhabilitados,
                           valueFormatter: (v) => `${v.toLocaleString()} días`,
-                          diff: clinicalStatsMetrics.diffs.estada,
-                          icon: Calendar
+                          diff: null,
+                          icon: AlertTriangle
                         }
                       ];
 
@@ -2462,6 +2551,10 @@ export default function ClosedAttentionDashboard({ onBack, initialTab, initialSu
                         else if (selectedIndicator === 'inhabilitados') val = d.inhabilitados;
                         else if (selectedIndicator === 'egresos') val = d.egresos;
                         else if (selectedIndicator === 'ingresos') val = d.ingresos;
+                        else if (selectedIndicator === 'prom_estada') val = d.prom_estada;
+                        else if (selectedIndicator === 'prom_camas') val = d.prom_camas;
+                        else if (selectedIndicator === 'mismo_dia_pct') val = d.mismo_dia_pct;
+                        else if (selectedIndicator === 'prolongada_pct') val = d.prolongada_pct;
 
                         const x = nPoints === 1 ? (xStart + xEnd) / 2 : xStart + idx * xStep;
                         const y = 180 - (val - yMinBound) * scale;
