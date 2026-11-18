@@ -1939,14 +1939,11 @@ export default function ClosedAttentionDashboard({ onBack, initialTab, initialSu
         }
       }
 
-      // 5. Días de Estada (solo egresos netos, excluye traslados)
+      // 5. Días de Estada (todos los egresos del servicio: Altas + Traslados a otro Servicio + Fallecidos, según Manual REM 20 DEIS)
       if (inServiceEgreso) {
         const pEgreso = r.parsedEgreso;
         if (!r.isCurrentlyHospitalized && pEgreso && pEgreso >= monitorStart && pEgreso <= monitorEnd) {
-          const cond = r.condicionEgresoClean.toLowerCase();
-          if (!cond.includes('traslado servicio')) {
-            totalDiasEstada += r.calculatedDays;
-          }
+          totalDiasEstada += r.calculatedDays;
         }
       }
     });
@@ -3856,9 +3853,9 @@ export default function ClosedAttentionDashboard({ onBack, initialTab, initialSu
                             </td>
                           </tr>
                           <tr style={{ borderBottom: '1px solid rgba(0,0,0,0.05)', background: '#f8fafc' }}>
-                            <td style={{ padding: '12px 18px', fontWeight: 700, paddingLeft: '30px', color: '#334155' }}>Días de Estada Total de Egresados Netos</td>
+                            <td style={{ padding: '12px 18px', fontWeight: 700, paddingLeft: '30px', color: '#334155' }}>Días de Estada Total de los Egresados</td>
                             <td style={{ padding: '12px 18px', fontWeight: 900, color: '#0891b2', textAlign: 'center' }}>{rem20Data.diasEstadaTotal.toLocaleString()}</td>
-                            <td style={{ padding: '12px 18px', color: '#64748b', fontSize: '0.74rem', fontWeight: 500 }}>Norma DEIS-MINSAL (Fecha Egreso − Fecha Ingreso; mismo día = 1). Excluye traslados internos.</td>
+                            <td style={{ padding: '12px 18px', color: '#64748b', fontSize: '0.74rem', fontWeight: 500 }}>Norma DEIS-MINSAL (Fecha Egreso − Fecha Ingreso; mismo día = 1). Incluye todos los egresos del servicio (Altas, Traslados y Fallecidos).</td>
                           </tr>
                           <tr style={{ borderBottom: '2.5px solid rgba(8, 145, 178, 0.2)', background: 'rgba(8, 145, 178, 0.05)' }}>
                             <td style={{ padding: '14px 18px', fontWeight: 900, color: '#0891b2' }}>DÍAS DE ESTADA DE BENEFICIARIOS (FONASA A/B/C/D)</td>
