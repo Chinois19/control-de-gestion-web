@@ -474,6 +474,118 @@ const searchIndex = [
     action: { view: 'atencion_cerrada', initialTab: 'census', initialSubTab: 'iaas_camas', scrollId: 'iaas-camas-section' }
   },
   {
+    keys: ['principales estadisticos', 'estadisticos atencion cerrada', 'indicadores hospitalarios', 'rendimiento hospitalario', 'indicadores de camas', 'estadisticos cerrada'],
+    title: 'Principales Estadísticos de la Atención Cerrada',
+    path: 'Atención Cerrada ➔ Principales Estadísticos',
+    desc: 'Panel de los 14 indicadores oficiales MINSAL/DEIS de rendimiento hospitalario con comparativa interanual y evolución mensual por servicio.',
+    action: { view: 'atencion_cerrada', initialTab: 'clinical_stats' }
+  },
+  {
+    keys: ['dias cama disponibles', 'camas disponibles', 'dias-cama disponibles', 'dotacion disponible', 'capacidad camas disponibles'],
+    title: 'Días Cama Disponibles — Estadísticos Atención Cerrada',
+    path: 'Atención Cerrada ➔ Principales Estadísticos ➔ Días Cama Disp.',
+    desc: 'Sumatoria diaria de camas disponibles registradas en la Cuadratura de Camas por servicio clínico y período.',
+    action: { view: 'atencion_cerrada', initialTab: 'clinical_stats', initialIndicator: 'disponibles', scrollId: 'indicator-card-disponibles' }
+  },
+  {
+    keys: ['promedio de camas disponibles', 'prom camas disp', 'promedio camas', 'camas en trabajo', 'camas habilitadas promedio'],
+    title: 'Promedio de Camas Disponibles — Estadísticos Atención Cerrada',
+    path: 'Atención Cerrada ➔ Principales Estadísticos ➔ Prom. Camas Disp.',
+    desc: 'Número promedio de camas en funcionamiento diario en el período (Días Cama Disponibles / Días del Período).',
+    action: { view: 'atencion_cerrada', initialTab: 'clinical_stats', initialIndicator: 'prom_camas', scrollId: 'indicator-card-prom_camas' }
+  },
+  {
+    keys: ['dias cama ocupados', 'dias cama ocupadas', 'camas ocupadas', 'dias-cama ocupados', 'censo camas ocupadas'],
+    title: 'Días Cama Ocupados — Estadísticos Atención Cerrada',
+    path: 'Atención Cerrada ➔ Principales Estadísticos ➔ Días Cama Ocup.',
+    desc: 'Total acumulado de días-cama ocupados registrados diariamente en la Cuadratura de Camas.',
+    action: { view: 'atencion_cerrada', initialTab: 'clinical_stats', initialIndicator: 'ocupados', scrollId: 'indicator-card-ocupados' }
+  },
+  {
+    keys: ['porcentaje de ocupacion', '% ocupacion', 'indice ocupacional', 'tasa de ocupacion', 'ocupacion de camas', 'ocupacion hospitalaria'],
+    title: 'Porcentaje de Ocupación de Camas (% Ocupación)',
+    path: 'Atención Cerrada ➔ Principales Estadísticos ➔ % Ocupación',
+    desc: 'Índice ocupacional hospitalario: (Días Cama Ocupados / Días Cama Disponibles) * 100.',
+    action: { view: 'atencion_cerrada', initialTab: 'clinical_stats', initialIndicator: 'ocupacion', scrollId: 'indicator-card-ocupacion' }
+  },
+  {
+    keys: ['egresos netos', 'total egresos netos', 'egresos hospitalarios', 'altas netas'],
+    title: 'Total Egresos Netos — Estadísticos Atención Cerrada',
+    path: 'Atención Cerrada ➔ Principales Estadísticos ➔ Egresos Netos',
+    desc: 'Total de altas definitivas y fallecidos registrados en el período, excluyendo traslados internos según norma MINSAL.',
+    action: { view: 'atencion_cerrada', initialTab: 'clinical_stats', initialIndicator: 'egresos', scrollId: 'indicator-card-egresos' }
+  },
+  {
+    keys: ['dias de estada', 'dias estada', 'total dias de estada', 'estadia hospitalaria', 'permanencia hospitalaria', 'dias de estadia'],
+    title: 'Total Días de Estada — Estadísticos Atención Cerrada',
+    path: 'Atención Cerrada ➔ Principales Estadísticos ➔ Días Estada',
+    desc: 'Suma acumulada de los días de permanencia (Fecha Egreso − Fecha Ingreso; mismo día = 1) de los pacientes egresados según norma REM 20 / DEIS.',
+    action: { view: 'atencion_cerrada', initialTab: 'clinical_stats', initialIndicator: 'estada', scrollId: 'indicator-card-estada' }
+  },
+  {
+    keys: ['promedio dias de estada', 'promedio de dias de estada', 'prom dias estada', 'estada media', 'estadia promedio', 'dias promedio de estada'],
+    title: 'Promedio Días de Estada — Estadísticos Atención Cerrada',
+    path: 'Atención Cerrada ➔ Principales Estadísticos ➔ Prom. Días Estada',
+    desc: 'Número promedio de días de hospitalización por paciente egresado (Total Días de Estada / Total Egresos).',
+    action: { view: 'atencion_cerrada', initialTab: 'clinical_stats', initialIndicator: 'prom_estada', scrollId: 'indicator-card-prom_estada' }
+  },
+  {
+    keys: ['estadia < 24h', 'estadia menor a 24 horas', 'ingreso y egreso mismo dia', 'mismo dia', '% estadia < 24h', 'hospitalizacion abreviada'],
+    title: '% Estadía < 24h (Ingreso y Egreso Mismo Día)',
+    path: 'Atención Cerrada ➔ Principales Estadísticos ➔ % Estadía < 24h',
+    desc: 'Proporción de egresos resueltos en la misma fecha calendario de su ingreso (< 24 horas).',
+    action: { view: 'atencion_cerrada', initialTab: 'clinical_stats', initialIndicator: 'mismo_dia_pct', scrollId: 'indicator-card-mismo_dia_pct' }
+  },
+  {
+    keys: ['estadia prolongada', 'estada > 14 dias', 'estadia mayor a 14 dias', '% estada > 14 dias', 'larga estadia', 'outliers estada'],
+    title: '% Estadía Prolongada (> 14 días) — Estadísticos Atención Cerrada',
+    path: 'Atención Cerrada ➔ Principales Estadísticos ➔ % Estada > 14 días',
+    desc: 'Proporción de egresos hospitalarios que superaron los 14 días de hospitalización.',
+    action: { view: 'atencion_cerrada', initialTab: 'clinical_stats', initialIndicator: 'prolongada_pct', scrollId: 'indicator-card-prolongada_pct' }
+  },
+  {
+    keys: ['indice de rotacion', 'giro de cama', 'rotacion de camas', 'rotacion (giro)', 'giro cama'],
+    title: 'Índice de Rotación (Giro de Cama) — Estadísticos Atención Cerrada',
+    path: 'Atención Cerrada ➔ Principales Estadísticos ➔ Rotación (Giro)',
+    desc: 'Número de pacientes que egresan por cada cama disponible en el período (Total Egresos / Prom. Camas Disponibles).',
+    action: { view: 'atencion_cerrada', initialTab: 'clinical_stats', initialIndicator: 'rotacion', scrollId: 'indicator-card-rotacion' }
+  },
+  {
+    keys: ['intervalo de sustitucion', 'intervalo sustitucion', 'sustitucion de camas', 'tiempo cama vacia'],
+    title: 'Intervalo de Sustitución — Estadísticos Atención Cerrada',
+    path: 'Atención Cerrada ➔ Principales Estadísticos ➔ Intervalo Sust.',
+    desc: 'Tiempo promedio en días que permanece una cama desocupada entre el egreso de un paciente y el ingreso del siguiente.',
+    action: { view: 'atencion_cerrada', initialTab: 'clinical_stats', initialIndicator: 'sustitucion', scrollId: 'indicator-card-sustitucion' }
+  },
+  {
+    keys: ['tasa de letalidad', 'letalidad hospitalaria', 'mortalidad hospitalaria', 'fallecidos hospitalizados', 'letalidad atencion cerrada'],
+    title: 'Tasa de Letalidad — Estadísticos Atención Cerrada',
+    path: 'Atención Cerrada ➔ Principales Estadísticos ➔ Letalidad',
+    desc: 'Proporción de egresos que terminaron en fallecimiento del paciente ((Decesos / Egresos Netos) * 100).',
+    action: { view: 'atencion_cerrada', initialTab: 'clinical_stats', initialIndicator: 'letalidad', scrollId: 'indicator-card-letalidad' }
+  },
+  {
+    keys: ['total ingresos', 'ingresos atencion cerrada', 'admisiones hospitalarias', 'pacientes ingresados'],
+    title: 'Total Ingresos — Estadísticos Atención Cerrada',
+    path: 'Atención Cerrada ➔ Principales Estadísticos ➔ Ingresos',
+    desc: 'Total de admisiones hospitalarias registradas formalmente durante el período de monitoreo.',
+    action: { view: 'atencion_cerrada', initialTab: 'clinical_stats', initialIndicator: 'ingresos', scrollId: 'indicator-card-ingresos' }
+  },
+  {
+    keys: ['dias inhabilitados', 'camas inhabilitadas', 'camas bloqueadas', 'dias-cama inhabilitados'],
+    title: 'Días Inhabilitados — Estadísticos Atención Cerrada',
+    path: 'Atención Cerrada ➔ Principales Estadísticos ➔ Días Inhab.',
+    desc: 'Sumatoria diaria de camas inhabilitadas en Cuadratura por mantenimiento, aislamiento o reparaciones.',
+    action: { view: 'atencion_cerrada', initialTab: 'clinical_stats', initialIndicator: 'inhabilitados', scrollId: 'indicator-card-inhabilitados' }
+  },
+  {
+    keys: ['rem 20', 'rem20', 'censo rem 20', 'movimiento de camas rem 20', 'existencia mes anterior', 'existencia mes siguiente'],
+    title: 'Resumen Estadístico Mensual REM 20 (DEIS / MINSAL)',
+    path: 'Atención Cerrada ➔ Censo y REM 20',
+    desc: 'Tabla oficial del REM 20 por servicio clínico: existencia anterior, ingresos, egresos, días cama y días de estada de los egresados.',
+    action: { view: 'atencion_cerrada', initialTab: 'census' }
+  },
+  {
     keys: ['comges', 'comges 2026', 'compromisos de gestion', 'orientaciones tecnicas', 'ot minsal', 'formulas comges', 'indicadores minsal', 'metas comges', 'ecicep', 'donantes', 'tiempos de espera', 'p75', 'gasto personas naturales', 'ambulatorizacion', 'hospital digital'],
     title: 'Compromisos de Gestión (COMGES) 2026',
     path: 'Indicadores de Gestión ➔ COMGES 2026',
@@ -605,6 +717,7 @@ function App() {
   const [mammographyFilterNsp, setMammographyFilterNsp] = useState(false);
   const [closedAttentionInitialTab, setClosedAttentionInitialTab] = useState(null);
   const [closedAttentionInitialSubTab, setClosedAttentionInitialSubTab] = useState(null);
+  const [closedAttentionInitialIndicator, setClosedAttentionInitialIndicator] = useState(null);
   const [listaEsperaInitialTab, setListaEsperaInitialTab] = useState(null);
   const [programacionInitialSearch, setProgramacionInitialSearch] = useState('');
   const [hoveredIdx, setHoveredIdx] = useState(null);
@@ -645,6 +758,7 @@ function App() {
     setMammographyFilterNsp(false);
     setClosedAttentionInitialTab(null);
     setClosedAttentionInitialSubTab(null);
+    setClosedAttentionInitialIndicator(null);
     setActiveView(view);
     localStorage.setItem('cg_villarrica_active_view', view);
     window.location.hash = view;
@@ -736,6 +850,11 @@ function App() {
       setClosedAttentionInitialSubTab(action.initialSubTab);
     } else {
       setClosedAttentionInitialSubTab(null);
+    }
+    if (action.initialIndicator) {
+      setClosedAttentionInitialIndicator(action.initialIndicator);
+    } else {
+      setClosedAttentionInitialIndicator(null);
     }
 
     setActiveView(action.view);
@@ -1257,10 +1376,11 @@ function App() {
               )}
               {(activeView === 'atencion_cerrada' || activeView === 'censo') && (
                 <ClosedAttentionDashboard 
-                  key={`closed-${closedAttentionInitialTab || 'default'}-${closedAttentionInitialSubTab || 'default'}`}
+                  key={`closed-${closedAttentionInitialTab || 'default'}-${closedAttentionInitialSubTab || 'default'}-${closedAttentionInitialIndicator || 'default'}`}
                   onBack={() => navigateToView('produccion_general')}
                   initialTab={closedAttentionInitialTab}
                   initialSubTab={closedAttentionInitialSubTab}
+                  initialIndicator={closedAttentionInitialIndicator}
                 />
               )}
               {activeView === 'urgencia' && (

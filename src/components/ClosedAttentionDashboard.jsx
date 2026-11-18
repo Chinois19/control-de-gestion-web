@@ -270,7 +270,7 @@ function sumCuadraturaForServices(r, filter) {
   return { disp, ocup, inhab };
 }
 
-export default function ClosedAttentionDashboard({ onBack, initialTab, initialSubTab }) {
+export default function ClosedAttentionDashboard({ onBack, initialTab, initialSubTab, initialIndicator }) {
   const [censoRaw, setCensoRaw] = useState([]);
   const [cuadraturaRaw, setCuadraturaRaw] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -349,8 +349,20 @@ export default function ClosedAttentionDashboard({ onBack, initialTab, initialSu
   });
   const [trendSelectedService, setTrendSelectedService] = useState('todos');
   const [selectedClinicalService, setSelectedClinicalService] = useState(['Todas']);
-  const [selectedIndicator, setSelectedIndicator] = useState('prom_camas');
+  const [selectedIndicator, setSelectedIndicator] = useState(initialIndicator || 'prom_camas');
   const [secondaryIndicator, setSecondaryIndicator] = useState('');
+
+  useEffect(() => {
+    if (initialTab) setActiveTab(initialTab);
+  }, [initialTab]);
+
+  useEffect(() => {
+    if (initialSubTab) setCensusSubTab(initialSubTab);
+  }, [initialSubTab]);
+
+  useEffect(() => {
+    if (initialIndicator) setSelectedIndicator(initialIndicator);
+  }, [initialIndicator]);
   const [hoveredNode, setHoveredNode] = useState(null); 
   const [hoveredTrendNode, setHoveredTrendNode] = useState(null); 
   const [hoveredIndicatorNode, setHoveredIndicatorNode] = useState(null);
@@ -2628,107 +2640,114 @@ export default function ClosedAttentionDashboard({ onBack, initialTab, initialSu
                       });
 
                       return (
-                        <div style={{ display: 'grid', gridTemplateColumns: '275px 1fr', gap: '20px', marginTop: '16px', alignItems: 'start' }}>
-                          {/* Columna izquierda compacta y colorida (gama cromática Tab 1) con scroll vertical */}
-                          <div style={{
-                            display: 'flex',
-                            flexDirection: 'column',
-                            gap: '8px',
-                            maxHeight: '750px',
-                            overflowY: 'auto',
-                            paddingRight: '6px',
-                            paddingBottom: '4px'
-                          }}>
-                            {indicatorsConfig.map(cfg => {
-                              const IconComponent = cfg.icon;
-                              const active = selectedIndicator === cfg.key;
-                              const isSecondary = secondaryCfg && secondaryCfg.key === cfg.key;
-                              const isPositiveGood = !cfg.invertDiffColor;
-                              const diffLabel = cfg.diff && typeof cfg.diff === 'object' ? cfg.diff.label : (typeof cfg.diff === 'number' ? `${cfg.diff >= 0 ? '+' : ''}${cfg.diff.toFixed(1)}%` : null);
-                              const diffPositive = cfg.diff && typeof cfg.diff === 'object' ? cfg.diff.isPositive : (typeof cfg.diff === 'number' ? cfg.diff >= 0 : true);
-                              const diffGood = diffLabel !== null && ((isPositiveGood && diffPositive) || (!isPositiveGood && !diffPositive));
+                        <div style={{ display: 'grid', gridTemplateColumns: '275px 1fr', gap: '20px', marginTop: '16px', alignItems: 'stretch' }}>
+                          {/* Columna izquierda compacta y colorida (gama cromática Tab 1) con scroll vertical hasta el límite inferior de Análisis de Eficiencia */}
+                          <div style={{ position: 'relative', minHeight: '780px' }}>
+                            <div style={{
+                              position: 'absolute',
+                              top: 0,
+                              left: 0,
+                              right: 0,
+                              bottom: 0,
+                              display: 'flex',
+                              flexDirection: 'column',
+                              gap: '8px',
+                              overflowY: 'auto',
+                              paddingRight: '6px',
+                              paddingBottom: '4px'
+                            }}>
+                              {indicatorsConfig.map(cfg => {
+                                const IconComponent = cfg.icon;
+                                const active = selectedIndicator === cfg.key;
+                                const isSecondary = secondaryCfg && secondaryCfg.key === cfg.key;
+                                const isPositiveGood = !cfg.invertDiffColor;
+                                const diffLabel = cfg.diff && typeof cfg.diff === 'object' ? cfg.diff.label : (typeof cfg.diff === 'number' ? `${cfg.diff >= 0 ? '+' : ''}${cfg.diff.toFixed(1)}%` : null);
+                                const diffPositive = cfg.diff && typeof cfg.diff === 'object' ? cfg.diff.isPositive : (typeof cfg.diff === 'number' ? cfg.diff >= 0 : true);
+                                const diffGood = diffLabel !== null && ((isPositiveGood && diffPositive) || (!isPositiveGood && !diffPositive));
 
-                              return (
-                                <div
-                                  key={cfg.key}
-                                  onClick={(e) => {
-                                    if (e.ctrlKey || e.metaKey || e.shiftKey) {
-                                      if (cfg.key === selectedIndicator) return;
-                                      setSecondaryIndicator(prev => prev === cfg.key ? '' : cfg.key);
-                                    } else {
-                                      setSelectedIndicator(cfg.key);
-                                      if (secondaryIndicator === cfg.key) setSecondaryIndicator('');
-                                    }
-                                  }}
-                                  title={`${cfg.formula} (Ctrl+Clic para comparar en 2° eje)`}
-                                  style={{
-                                    padding: '9px 12px',
-                                    background: '#ffffff',
-                                    borderRadius: '13px',
-                                    border: active ? `2px solid ${cfg.color}` : (isSecondary ? `2px dashed ${cfg.color}` : '1px solid #e2e8f0'),
-                                    borderLeft: `4.5px solid ${cfg.color}`,
-                                    cursor: 'pointer',
-                                    transition: 'all 0.18s ease',
-                                    display: 'flex',
-                                    flexDirection: 'column',
-                                    gap: '3px',
-                                    flexShrink: 0,
-                                    boxSizing: 'border-box',
-                                    boxShadow: (active || isSecondary) ? `0 6px 16px -4px ${cfg.color}35` : '0 2px 6px rgba(15, 23, 42, 0.03)'
-                                  }}
-                                >
-                                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '6px' }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '7px', minWidth: 0 }}>
-                                      <div style={{
-                                        background: (active || isSecondary) ? cfg.color : `${cfg.color}20`,
-                                        color: (active || isSecondary) ? '#ffffff' : cfg.color,
-                                        width: '22px',
-                                        height: '22px',
-                                        borderRadius: '6px',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        flexShrink: 0,
-                                        transition: 'all 0.18s'
-                                      }}>
-                                        <IconComponent size={13} />
+                                return (
+                                  <div
+                                    key={cfg.key}
+                                    id={`indicator-card-${cfg.key}`}
+                                    onClick={(e) => {
+                                      if (e.ctrlKey || e.metaKey || e.shiftKey) {
+                                        if (cfg.key === selectedIndicator) return;
+                                        setSecondaryIndicator(prev => prev === cfg.key ? '' : cfg.key);
+                                      } else {
+                                        setSelectedIndicator(cfg.key);
+                                        if (secondaryIndicator === cfg.key) setSecondaryIndicator('');
+                                      }
+                                    }}
+                                    title={`${cfg.formula} (Ctrl+Clic para comparar en 2° eje)`}
+                                    style={{
+                                      padding: '9px 12px',
+                                      background: '#ffffff',
+                                      borderRadius: '13px',
+                                      border: active ? `2px solid ${cfg.color}` : (isSecondary ? `2px dashed ${cfg.color}` : '1px solid #e2e8f0'),
+                                      borderLeft: `4.5px solid ${cfg.color}`,
+                                      cursor: 'pointer',
+                                      transition: 'all 0.18s ease',
+                                      display: 'flex',
+                                      flexDirection: 'column',
+                                      gap: '3px',
+                                      flexShrink: 0,
+                                      boxSizing: 'border-box',
+                                      boxShadow: (active || isSecondary) ? `0 6px 16px -4px ${cfg.color}35` : '0 2px 6px rgba(15, 23, 42, 0.03)'
+                                    }}
+                                  >
+                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '6px' }}>
+                                      <div style={{ display: 'flex', alignItems: 'center', gap: '7px', minWidth: 0 }}>
+                                        <div style={{
+                                          background: (active || isSecondary) ? cfg.color : `${cfg.color}20`,
+                                          color: (active || isSecondary) ? '#ffffff' : cfg.color,
+                                          width: '22px',
+                                          height: '22px',
+                                          borderRadius: '6px',
+                                          display: 'flex',
+                                          alignItems: 'center',
+                                          justifyContent: 'center',
+                                          flexShrink: 0,
+                                          transition: 'all 0.18s'
+                                        }}>
+                                          <IconComponent size={13} />
+                                        </div>
+                                        <span style={{ fontSize: '0.72rem', fontWeight: 850, color: (active || isSecondary) ? '#0f172a' : '#334155', textTransform: 'uppercase', letterSpacing: '0.02em', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                          {cfg.shortTitle}
+                                        </span>
+                                        {isSecondary && (
+                                          <span style={{ fontSize: '0.55rem', fontWeight: 900, background: `${cfg.color}18`, color: cfg.color, padding: '1px 5px', borderRadius: '6px', flexShrink: 0 }}>
+                                            2° EJE
+                                          </span>
+                                        )}
                                       </div>
-                                      <span style={{ fontSize: '0.72rem', fontWeight: 850, color: (active || isSecondary) ? '#0f172a' : '#334155', textTransform: 'uppercase', letterSpacing: '0.02em', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                                        {cfg.shortTitle}
-                                      </span>
-                                      {isSecondary && (
-                                        <span style={{ fontSize: '0.55rem', fontWeight: 900, background: `${cfg.color}18`, color: cfg.color, padding: '1px 5px', borderRadius: '6px', flexShrink: 0 }}>
-                                          2° EJE
+                                      {diffLabel && (
+                                        <span style={{
+                                          fontSize: '0.6rem',
+                                          fontWeight: 800,
+                                          padding: '1.5px 6px',
+                                          borderRadius: '10px',
+                                          background: diffGood ? '#dcfce7' : '#fee2e2',
+                                          color: diffGood ? '#15803d' : '#b91c1c',
+                                          whiteSpace: 'nowrap',
+                                          flexShrink: 0
+                                        }}>
+                                          {diffLabel}
                                         </span>
                                       )}
                                     </div>
-                                    {diffLabel && (
-                                      <span style={{
-                                        fontSize: '0.6rem',
-                                        fontWeight: 800,
-                                        padding: '1.5px 6px',
-                                        borderRadius: '10px',
-                                        background: diffGood ? '#dcfce7' : '#fee2e2',
-                                        color: diffGood ? '#15803d' : '#b91c1c',
-                                        whiteSpace: 'nowrap',
-                                        flexShrink: 0
-                                      }}>
-                                        {diffLabel}
-                                      </span>
-                                    )}
-                                  </div>
 
-                                  <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', paddingLeft: '29px' }}>
-                                    <div style={{ fontSize: '1.08rem', fontWeight: 900, color: cfg.color, letterSpacing: '-0.01em', lineHeight: 1.15 }}>
-                                      {cfg.valueFormatter(cfg.value)}
+                                    <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', paddingLeft: '29px' }}>
+                                      <div style={{ fontSize: '1.08rem', fontWeight: 900, color: cfg.color, letterSpacing: '-0.01em', lineHeight: 1.15 }}>
+                                        {cfg.valueFormatter(cfg.value)}
+                                      </div>
+                                      <span style={{ fontSize: '0.58rem', color: '#64748b', fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '95px' }}>
+                                        {cfg.unit}
+                                      </span>
                                     </div>
-                                    <span style={{ fontSize: '0.58rem', color: '#64748b', fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '95px' }}>
-                                      {cfg.unit}
-                                    </span>
                                   </div>
-                                </div>
-                              );
-                            })}
+                                );
+                              })}
+                            </div>
                           </div>
 
                           {/* Columna derecha: Gráfico + Análisis de Eficiencia */}
