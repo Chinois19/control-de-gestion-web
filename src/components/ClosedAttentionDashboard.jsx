@@ -350,6 +350,7 @@ export default function ClosedAttentionDashboard({ onBack, initialTab, initialSu
   const [trendSelectedService, setTrendSelectedService] = useState('todos');
   const [selectedClinicalService, setSelectedClinicalService] = useState(['Todas']);
   const [selectedIndicator, setSelectedIndicator] = useState('prom_camas');
+  const [secondaryIndicator, setSecondaryIndicator] = useState('');
   const [hoveredNode, setHoveredNode] = useState(null); 
   const [hoveredTrendNode, setHoveredTrendNode] = useState(null); 
   const [hoveredIndicatorNode, setHoveredIndicatorNode] = useState(null);
@@ -1368,8 +1369,35 @@ export default function ClosedAttentionDashboard({ onBack, initialTab, initialSu
       };
     };
 
+    const activeIndividualServices = isAllServicesFilter(selectedClinicalService)
+      ? []
+      : (Array.isArray(selectedClinicalService) ? selectedClinicalService.filter(s => s !== 'Todas') : [selectedClinicalService]);
+
     return monthsList.map(m => {
       const res = computeClinicalMetrics(m.start, m.end, selectedClinicalService);
+      const byService = {};
+      if (activeIndividualServices.length > 1) {
+        activeIndividualServices.forEach((srv, idx) => {
+          const sRes = computeClinicalMetrics(m.start, m.end, [srv]);
+          byService[`s_${idx}`] = {
+            disponibles: sRes.availableBedDays,
+            prom_camas: sRes.camasHabilitadas,
+            ocupados: sRes.occupiedBedDays,
+            estabCamas: sRes.availableBedDays,
+            inhabilitados: sRes.diasInhabilitados,
+            rotacion: sRes.rotationIndex,
+            sustitucion: sRes.subInterval,
+            ocupacion: sRes.occupancyRate,
+            letalidad: sRes.lethalityRate,
+            egresos: sRes.totalEgresosNetos,
+            ingresos: sRes.totalIngresos,
+            estada: sRes.totalDiasEstada,
+            prom_estada: sRes.avgStay,
+            mismo_dia_pct: sRes.sameDayRate,
+            prolongada_pct: sRes.longStayRate
+          };
+        });
+      }
       return {
         key: m.key,
         label: m.shortLabel,
@@ -1388,7 +1416,8 @@ export default function ClosedAttentionDashboard({ onBack, initialTab, initialSu
         estada: res.totalDiasEstada,
         prom_estada: res.avgStay,
         mismo_dia_pct: res.sameDayRate,
-        prolongada_pct: res.longStayRate
+        prolongada_pct: res.longStayRate,
+        byService
       };
     });
   }, [censoCleaned, cuadraturaRaw, selectedClinicalService]);
@@ -2507,59 +2536,96 @@ export default function ClosedAttentionDashboard({ onBack, initialTab, initialSu
                       ];
 
                       const activeCfg = indicatorsConfig.find(cfg => cfg.key === selectedIndicator) || indicatorsConfig[0];
+                      const secondaryCfg = secondaryIndicator && secondaryIndicator !== selectedIndicator
+                        ? indicatorsConfig.find(cfg => cfg.key === secondaryIndicator)
+                        : null;
 
-                      const trendValues = clinicalStatsTrendData.map(d => {
-                        if (selectedIndicator === 'ocupacion') return d.ocupacion;
-                        if (selectedIndicator === 'rotacion') return d.rotacion;
-                        if (selectedIndicator === 'sustitucion') return d.sustitucion;
-                        if (selectedIndicator === 'letalidad') return d.letalidad;
-                        if (selectedIndicator === 'disponibles') return d.disponibles;
-                        if (selectedIndicator === 'inhabilitados') return d.inhabilitados;
-                        if (selectedIndicator === 'egresos') return d.egresos;
-                        if (selectedIndicator === 'ingresos') return d.ingresos;
-                        return d.estada;
+                      const getServiceMeta = (srvName, fallbackColor) => {
+                        const s = String(srvName || '').toLowerCase();
+                        if (s.startsWith('413') || s.includes('neo') || s.includes('cuna')) return { color: '#0d9488', short: '413 · Neonatología' };
+                        if (s.startsWith('410') || s.includes('médico-quirúrgica pediátrica')) return { color: '#ea580c', short: '410 · Ped. Méd.-Quir.' };
+                        if (s.startsWith('408') || s.includes('infan') || s.includes('pediat')) return { color: '#f59e0b', short: '408 · Ped. Médica' };
+                        if (s.startsWith('405') || s.includes('uci') || s.includes('intensivo')) return { color: '#059669', short: '405 · UCI' };
+                        if (s.startsWith('406') || s.includes('uti') || s.includes('intermedio')) return { color: '#7c3aed', short: '406 · UTI' };
+                        if (s.startsWith('416') || s.includes('matern') || s.includes('mujer') || s.includes('obstet')) return { color: '#e11d48', short: '416 · Obstetricia' };
+                        if (s.startsWith('403') || s.includes('basico') || s.includes('básico')) return { color: '#0284c7', short: '403 · Cuid. Básicos' };
+                        if (s.startsWith('404') || s.includes('medio')) return { color: '#1e3a8a', short: '404 · Cuid. Medios' };
+                        return { color: fallbackColor, short: getRemServiceLabel(srvName, endDate) };
+                      };
+
+                      const activeIndividualServices = isAllServicesFilter(selectedClinicalService)
+                        ? []
+                        : (Array.isArray(selectedClinicalService) ? selectedClinicalService.filter(s => s !== 'Todas') : [selectedClinicalService]);
+                      const isMultiService = activeIndividualServices.length > 1;
+
+                      const chartSeries = [];
+                      if (isMultiService) {
+                        activeIndividualServices.forEach((srv, sIdx) => {
+                          const meta = getServiceMeta(srv, activeCfg.color);
+                          chartSeries.push({
+                            dataKey: `srv_${sIdx}_ind1`,
+                            name: secondaryCfg ? `${meta.short} (${activeCfg.shortTitle})` : meta.short,
+                            color: meta.color,
+                            yAxisId: 'left',
+                            dashed: false,
+                            formatValue: activeCfg.valueFormatter
+                          });
+                          if (secondaryCfg) {
+                            chartSeries.push({
+                              dataKey: `srv_${sIdx}_ind2`,
+                              name: `${meta.short} (${secondaryCfg.shortTitle})`,
+                              color: meta.color,
+                              yAxisId: 'right',
+                              dashed: true,
+                              formatValue: secondaryCfg.valueFormatter
+                            });
+                          }
+                        });
+                      } else {
+                        chartSeries.push({
+                          dataKey: 'val',
+                          name: activeCfg.shortTitle,
+                          color: activeCfg.color,
+                          yAxisId: 'left',
+                          dashed: false,
+                          formatValue: activeCfg.valueFormatter
+                        });
+                        if (secondaryCfg) {
+                          const secColor = secondaryCfg.color === activeCfg.color ? '#e11d48' : secondaryCfg.color;
+                          chartSeries.push({
+                            dataKey: 'val2',
+                            name: secondaryCfg.shortTitle,
+                            color: secColor,
+                            yAxisId: 'right',
+                            dashed: true,
+                            formatValue: secondaryCfg.valueFormatter
+                          });
+                        }
+                      }
+
+                      const points = clinicalStatsTrendData.map((d) => {
+                        const val = d[selectedIndicator] ?? d.estada;
+                        const val2 = secondaryCfg ? (d[secondaryCfg.key] ?? 0) : undefined;
+                        const row = {
+                          val,
+                          val2,
+                          estabCamas: d.estabCamas,
+                          label: d.label,
+                          fullLabel: d.fullLabel
+                        };
+                        if (isMultiService && d.byService) {
+                          activeIndividualServices.forEach((_, sIdx) => {
+                            const sObj = d.byService[`s_${sIdx}`];
+                            if (sObj) {
+                              row[`srv_${sIdx}_ind1`] = sObj[selectedIndicator] ?? 0;
+                              if (secondaryCfg) {
+                                row[`srv_${sIdx}_ind2`] = sObj[secondaryCfg.key] ?? 0;
+                              }
+                            }
+                          });
+                        }
+                        return row;
                       });
-
-                      const minVal = Math.min(...trendValues);
-                      const maxVal = Math.max(...trendValues) || 1;
-                      const isSustitucion = selectedIndicator === 'sustitucion';
-                      // Smart Y-axis: zoom into the data range with padding (avoids all values cramped at top)
-                      const dataPadding = (maxVal - minVal) * 0.25 || maxVal * 0.1;
-                      const yMinBound = isSustitucion ? Math.min(-1, minVal - dataPadding) : Math.max(0, minVal - dataPadding);
-                      const yMaxBound = maxVal + dataPadding;
-                      const range = yMaxBound - yMinBound || 1;
-                      const scale = 140 / range;
-
-                      // Dynamic X spacing: distribute evenly across SVG width regardless of number of months
-                      const nPoints = clinicalStatsTrendData.length;
-                      const svgW = 880;
-                      const xStart = 80;
-                      const xEnd = svgW - 40;
-                      const xStep = nPoints > 1 ? (xEnd - xStart) / (nPoints - 1) : 0;
-
-                      const points = clinicalStatsTrendData.map((d, idx) => {
-                        let val = d.estada;
-                        if (selectedIndicator === 'ocupacion') val = d.ocupacion;
-                        else if (selectedIndicator === 'rotacion') val = d.rotacion;
-                        else if (selectedIndicator === 'sustitucion') val = d.sustitucion;
-                        else if (selectedIndicator === 'letalidad') val = d.letalidad;
-                        else if (selectedIndicator === 'disponibles') val = d.disponibles;
-                        else if (selectedIndicator === 'ocupados') val = d.ocupados;
-                        else if (selectedIndicator === 'inhabilitados') val = d.inhabilitados;
-                        else if (selectedIndicator === 'egresos') val = d.egresos;
-                        else if (selectedIndicator === 'ingresos') val = d.ingresos;
-                        else if (selectedIndicator === 'prom_estada') val = d.prom_estada;
-                        else if (selectedIndicator === 'prom_camas') val = d.prom_camas;
-                        else if (selectedIndicator === 'mismo_dia_pct') val = d.mismo_dia_pct;
-                        else if (selectedIndicator === 'prolongada_pct') val = d.prolongada_pct;
-
-                        const x = nPoints === 1 ? (xStart + xEnd) / 2 : xStart + idx * xStep;
-                        const y = 180 - (val - yMinBound) * scale;
-                        return { x, y, val, estabCamas: d.estabCamas, label: d.label, fullLabel: d.fullLabel };
-                      });
-
-                      const pathLine = points.map((p, idx) => `${idx === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ');
-                      const pathArea = `${pathLine} L ${points[points.length - 1].x} 180 L ${points[0].x} 180 Z`;
 
                       return (
                         <div style={{ display: 'grid', gridTemplateColumns: '275px 1fr', gap: '20px', marginTop: '16px', alignItems: 'start' }}>
@@ -2576,6 +2642,7 @@ export default function ClosedAttentionDashboard({ onBack, initialTab, initialSu
                             {indicatorsConfig.map(cfg => {
                               const IconComponent = cfg.icon;
                               const active = selectedIndicator === cfg.key;
+                              const isSecondary = secondaryCfg && secondaryCfg.key === cfg.key;
                               const isPositiveGood = !cfg.invertDiffColor;
                               const diffLabel = cfg.diff && typeof cfg.diff === 'object' ? cfg.diff.label : (typeof cfg.diff === 'number' ? `${cfg.diff >= 0 ? '+' : ''}${cfg.diff.toFixed(1)}%` : null);
                               const diffPositive = cfg.diff && typeof cfg.diff === 'object' ? cfg.diff.isPositive : (typeof cfg.diff === 'number' ? cfg.diff >= 0 : true);
@@ -2584,13 +2651,21 @@ export default function ClosedAttentionDashboard({ onBack, initialTab, initialSu
                               return (
                                 <div
                                   key={cfg.key}
-                                  onClick={() => setSelectedIndicator(cfg.key)}
-                                  title={cfg.formula}
+                                  onClick={(e) => {
+                                    if (e.ctrlKey || e.metaKey || e.shiftKey) {
+                                      if (cfg.key === selectedIndicator) return;
+                                      setSecondaryIndicator(prev => prev === cfg.key ? '' : cfg.key);
+                                    } else {
+                                      setSelectedIndicator(cfg.key);
+                                      if (secondaryIndicator === cfg.key) setSecondaryIndicator('');
+                                    }
+                                  }}
+                                  title={`${cfg.formula} (Ctrl+Clic para comparar en 2° eje)`}
                                   style={{
                                     padding: '9px 12px',
                                     background: '#ffffff',
                                     borderRadius: '13px',
-                                    border: active ? `2px solid ${cfg.color}` : '1px solid #e2e8f0',
+                                    border: active ? `2px solid ${cfg.color}` : (isSecondary ? `2px dashed ${cfg.color}` : '1px solid #e2e8f0'),
                                     borderLeft: `4.5px solid ${cfg.color}`,
                                     cursor: 'pointer',
                                     transition: 'all 0.18s ease',
@@ -2599,14 +2674,14 @@ export default function ClosedAttentionDashboard({ onBack, initialTab, initialSu
                                     gap: '3px',
                                     flexShrink: 0,
                                     boxSizing: 'border-box',
-                                    boxShadow: active ? `0 6px 16px -4px ${cfg.color}35` : '0 2px 6px rgba(15, 23, 42, 0.03)'
+                                    boxShadow: (active || isSecondary) ? `0 6px 16px -4px ${cfg.color}35` : '0 2px 6px rgba(15, 23, 42, 0.03)'
                                   }}
                                 >
                                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '6px' }}>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '7px', minWidth: 0 }}>
                                       <div style={{
-                                        background: active ? cfg.color : `${cfg.color}20`,
-                                        color: active ? '#ffffff' : cfg.color,
+                                        background: (active || isSecondary) ? cfg.color : `${cfg.color}20`,
+                                        color: (active || isSecondary) ? '#ffffff' : cfg.color,
                                         width: '22px',
                                         height: '22px',
                                         borderRadius: '6px',
@@ -2618,9 +2693,14 @@ export default function ClosedAttentionDashboard({ onBack, initialTab, initialSu
                                       }}>
                                         <IconComponent size={13} />
                                       </div>
-                                      <span style={{ fontSize: '0.72rem', fontWeight: 850, color: active ? '#0f172a' : '#334155', textTransform: 'uppercase', letterSpacing: '0.02em', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                      <span style={{ fontSize: '0.72rem', fontWeight: 850, color: (active || isSecondary) ? '#0f172a' : '#334155', textTransform: 'uppercase', letterSpacing: '0.02em', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                                         {cfg.shortTitle}
                                       </span>
+                                      {isSecondary && (
+                                        <span style={{ fontSize: '0.55rem', fontWeight: 900, background: `${cfg.color}18`, color: cfg.color, padding: '1px 5px', borderRadius: '6px', flexShrink: 0 }}>
+                                          2° EJE
+                                        </span>
+                                      )}
                                     </div>
                                     {diffLabel && (
                                       <span style={{
@@ -2657,13 +2737,20 @@ export default function ClosedAttentionDashboard({ onBack, initialTab, initialSu
                               <div className="chart-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '15px', borderBottom: '1px solid rgba(0,0,0,0.05)', paddingBottom: '15px', marginBottom: '15px' }}>
                                 <div>
                                   <h2 className="c-title" style={{ fontSize: '1.1rem', fontWeight: 900, color: '#1a365d', margin: 0 }}>
-                                    Evolución Temporal del Indicador: <span style={{ color: activeCfg.color }}>{activeCfg.title}</span>
+                                    Evolución Temporal: <span style={{ color: activeCfg.color }}>{activeCfg.title}</span>
+                                    {secondaryCfg && (
+                                      <> <span style={{ color: '#94a3b8', fontWeight: 700 }}>vs</span> <span style={{ color: secondaryCfg.color === activeCfg.color ? '#e11d48' : secondaryCfg.color }}>{secondaryCfg.title}</span></>
+                                    )}
                                   </h2>
-                                  <p className="c-subtitle" style={{ fontSize: '0.78rem', color: '#64748b', margin: '2px 0 0 0' }}>Proyección mensual de datos clínicos según criterios oficiales MINSAL</p>
+                                  <p className="c-subtitle" style={{ fontSize: '0.78rem', color: '#64748b', margin: '2px 0 0 0' }}>
+                                    {isMultiService
+                                      ? `Comparativa individual por servicio clínico (${activeIndividualServices.length} servicios seleccionados)`
+                                      : 'Proyección mensual de datos clínicos según criterios oficiales MINSAL'}
+                                  </p>
                                 </div>
                                 
-                                <div className="chart-controls-row" style={{ display: 'flex', alignItems: 'center', gap: '15px', flexWrap: 'wrap' }}>
-                                  <div style={{ minWidth: '250px', maxWidth: '330px' }}>
+                                <div className="chart-controls-row" style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+                                  <div style={{ minWidth: '240px', maxWidth: '310px' }}>
                                     <MultiSelectDropdown
                                       label="Servicio"
                                       selectedValues={selectedClinicalService}
@@ -2678,13 +2765,41 @@ export default function ClosedAttentionDashboard({ onBack, initialTab, initialSu
                                   </div>
 
                                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                    <label style={{ fontSize: '0.7rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase' }}>Indicador:</label>
+                                    <label style={{ fontSize: '0.68rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase' }}>Eje 1:</label>
                                     <select 
                                       value={selectedIndicator} 
-                                      onChange={(e) => setSelectedIndicator(e.target.value)}
-                                      style={{ padding: '6px 10px', borderRadius: '8px', border: '1.5px solid rgba(26, 54, 93, 0.15)', fontSize: '0.74rem', fontWeight: 700, outline: 'none', cursor: 'pointer', background: 'white', color: '#1a365d' }}
+                                      onChange={(e) => {
+                                        const val = e.target.value;
+                                        setSelectedIndicator(val);
+                                        if (secondaryIndicator === val) setSecondaryIndicator('');
+                                      }}
+                                      style={{ padding: '6px 10px', borderRadius: '8px', border: `1.5px solid ${activeCfg.color}55`, fontSize: '0.74rem', fontWeight: 700, outline: 'none', cursor: 'pointer', background: 'white', color: '#1a365d' }}
                                     >
                                       {indicatorsConfig.map(c => (
+                                        <option key={c.key} value={c.key}>{c.shortTitle}</option>
+                                      ))}
+                                    </select>
+                                  </div>
+
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                    <label style={{ fontSize: '0.68rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase' }}>Comparar (Eje 2):</label>
+                                    <select 
+                                      value={secondaryIndicator} 
+                                      onChange={(e) => setSecondaryIndicator(e.target.value)}
+                                      style={{
+                                        padding: '6px 10px',
+                                        borderRadius: '8px',
+                                        border: secondaryCfg ? `1.5px dashed ${secondaryCfg.color}` : '1.5px solid rgba(26, 54, 93, 0.15)',
+                                        fontSize: '0.74rem',
+                                        fontWeight: 700,
+                                        outline: 'none',
+                                        cursor: 'pointer',
+                                        background: secondaryCfg ? `${secondaryCfg.color}08` : 'white',
+                                        color: secondaryCfg ? '#0f172a' : '#64748b'
+                                      }}
+                                    >
+                                      <option value="">— Ninguno (Días-Cama Disp.) —</option>
+                                      {indicatorsConfig.filter(c => c.key !== selectedIndicator).map(c => (
                                         <option key={c.key} value={c.key}>{c.shortTitle}</option>
                                       ))}
                                     </select>
@@ -2702,10 +2817,18 @@ export default function ClosedAttentionDashboard({ onBack, initialTab, initialSu
                                       </span>
                                     )}
                                     <span style={{ fontSize: '0.72rem', fontWeight: 800, color: activeCfg.color, background: 'rgba(0,0,0,0.03)', padding: '2px 8px', borderRadius: '5px', fontFamily: 'monospace' }}>{activeCfg.formula}</span>
+                                    {secondaryCfg && (
+                                      <span style={{ fontSize: '0.72rem', fontWeight: 800, color: secondaryCfg.color === activeCfg.color ? '#e11d48' : secondaryCfg.color, background: 'rgba(0,0,0,0.03)', padding: '2px 8px', borderRadius: '5px', fontFamily: 'monospace' }}>
+                                        2° Eje: {secondaryCfg.formula}
+                                      </span>
+                                    )}
                                   </div>
                                 </div>
                                 <p style={{ margin: '6px 0 0 0', fontSize: '0.76rem', color: '#475569', fontWeight: 600, lineHeight: 1.4 }}>
                                   💡 <strong>Metodología:</strong> {activeCfg.definition}
+                                  {secondaryCfg && (
+                                    <><br />📌 <strong>{secondaryCfg.shortTitle} (2° Eje):</strong> {secondaryCfg.definition}</>
+                                  )}
                                 </p>
                               </div>
 
@@ -2715,6 +2838,11 @@ export default function ClosedAttentionDashboard({ onBack, initialTab, initialSu
                                 unit={activeCfg.unit}
                                 color={activeCfg.color}
                                 formatValue={activeCfg.valueFormatter}
+                                series={chartSeries}
+                                secondaryTitle={secondaryCfg?.shortTitle}
+                                secondaryUnit={secondaryCfg?.unit}
+                                secondaryColor={secondaryCfg ? (secondaryCfg.color === activeCfg.color ? '#e11d48' : secondaryCfg.color) : undefined}
+                                secondaryFormatValue={secondaryCfg?.valueFormatter}
                               />
                             </div>
 

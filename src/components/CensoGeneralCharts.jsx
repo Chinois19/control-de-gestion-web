@@ -354,40 +354,74 @@ export function TendenciaIngresosEgresos({ data = [], servicios = [], selected, 
   );
 }
 
-/* 4) Evolución mensual de indicador clínico (Tab 2) */
-export function EvolucionIndicadorChart({ points = [], title, unit, color = '#0d9488', formatValue }) {
+/* 4) Evolución mensual de indicador clínico (Tab 2) — soporta múltiples servicios y comparación de 2 indicadores con doble eje Y */
+export function EvolucionIndicadorChart({
+  points = [],
+  title,
+  unit,
+  color = '#0d9488',
+  formatValue,
+  series = [],
+  secondaryTitle,
+  secondaryUnit,
+  secondaryColor = '#e11d48',
+  secondaryFormatValue
+}) {
   const fmt = formatValue || ((v) => `${v}`);
+  const fmt2 = secondaryFormatValue || ((v) => `${v}`);
+  const hasMultipleSeries = Array.isArray(series) && series.length > 0;
+  const hasSecondaryAxis = hasMultipleSeries && series.some(s => s.yAxisId === 'right');
+
   const CustomTooltip = ({ active, payload }) => {
     if (!active || !payload || !payload.length) return null;
     const row = payload[0].payload;
     return (
-      <div style={tooltipBox}>
-        <div style={{ fontWeight: 700, color: '#1a365d', marginBottom: 4, borderBottom: '1px solid #e2e8f0', paddingBottom: 4 }}>
+      <div style={{ ...tooltipBox, minWidth: 230 }}>
+        <div style={{ fontWeight: 700, color: '#1a365d', marginBottom: 6, borderBottom: '1px solid #e2e8f0', paddingBottom: 4 }}>
           {row.fullLabel || row.label}
         </div>
-        <Row color={color} label={title} value={fmt(row.val)} strong />
-        {row.estabCamas !== undefined && (
-          <Row color="#94a3b8" label="Total días-cama disp. (mes)" value={`${Number(row.estabCamas).toLocaleString('es-CL')} días-cama`} />
+        {hasMultipleSeries ? (
+          series.map(s => {
+            const val = row[s.dataKey];
+            if (val === undefined || val === null) return null;
+            const formatter = s.formatValue || (s.yAxisId === 'right' ? fmt2 : fmt);
+            return (
+              <Row
+                key={s.dataKey}
+                color={s.color}
+                label={s.name}
+                value={formatter(val)}
+                strong={!s.dashed}
+              />
+            );
+          })
+        ) : (
+          <Row color={color} label={title} value={fmt(row.val)} strong />
+        )}
+        {!hasSecondaryAxis && row.estabCamas !== undefined && (
+          <div style={{ borderTop: '1px dashed #cbd5e1', marginTop: 4, paddingTop: 4 }}>
+            <Row color="#94a3b8" label="Total días-cama disp. (mes)" value={`${Number(row.estabCamas).toLocaleString('es-CL')} días-cama`} />
+          </div>
         )}
       </div>
     );
   };
 
-  const renderBadgeLabel = (props) => {
+  const makeBadgeLabel = (lineColor, formatter) => (props) => {
     const { x, y, value } = props;
     if (value === undefined || value === null) return null;
-    const txt = String(fmt(value)).replace(/\s*(camas|días-cama|días|pac\.)$/i, '').trim();
+    const txt = String(formatter(value)).replace(/\s*(camas|días-cama|días|pac\.)$/i, '').trim();
     return (
       <text
         x={x}
         y={y - 10}
         textAnchor="middle"
-        fill={color}
+        fill={lineColor}
         stroke="#ffffff"
         strokeWidth={3.5}
         paintOrder="stroke"
-        fontSize={11}
-        fontWeight={700}
+        fontSize={10.5}
+        fontWeight={750}
       >
         {txt}
       </text>
@@ -396,19 +430,35 @@ export function EvolucionIndicadorChart({ points = [], title, unit, color = '#0d
 
   return (
     <div style={{ width: '100%', marginTop: 6 }}>
-      <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 18, marginBottom: 8, fontSize: '0.76rem', color: '#475569', fontWeight: 600 }}>
-        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-          <span style={{ width: 12, height: 3, background: color, borderRadius: 2, display: 'inline-block' }} />
-          <span style={{ color }}>{title}</span>
-        </span>
-        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-          <span style={{ width: 10, height: 10, background: 'rgba(148,163,184,0.35)', border: '1px solid #94a3b8', borderRadius: 2, display: 'inline-block' }} />
-          <span style={{ color: '#64748b' }}>Total días-cama disp. (mes)</span>
-        </span>
+      <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', flexWrap: 'wrap', gap: 14, marginBottom: 8, fontSize: '0.74rem', color: '#475569', fontWeight: 600 }}>
+        {hasMultipleSeries ? (
+          series.map(s => (
+            <span key={s.dataKey} style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+              <span style={{
+                width: 16,
+                height: 0,
+                borderTop: s.dashed ? `2.5px dashed ${s.color}` : `3px solid ${s.color}`,
+                display: 'inline-block'
+              }} />
+              <span style={{ color: s.color, fontWeight: 700 }}>{s.name}</span>
+            </span>
+          ))
+        ) : (
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+            <span style={{ width: 14, height: 3, background: color, borderRadius: 2, display: 'inline-block' }} />
+            <span style={{ color, fontWeight: 700 }}>{title}</span>
+          </span>
+        )}
+        {!hasSecondaryAxis && (
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+            <span style={{ width: 10, height: 10, background: 'rgba(148,163,184,0.35)', border: '1px solid #94a3b8', borderRadius: 2, display: 'inline-block' }} />
+            <span style={{ color: '#64748b' }}>Total días-cama disp. (mes)</span>
+          </span>
+        )}
       </div>
       <div style={{ width: '100%', height: 325 }}>
         <ResponsiveContainer>
-          <ComposedChart data={points} margin={{ top: 24, right: 16, left: 6, bottom: 4 }}>
+          <ComposedChart data={points} margin={{ top: 24, right: 18, left: 6, bottom: 4 }}>
             <CartesianGrid stroke={GRID_COLOR} strokeDasharray="3 3" vertical={false} />
             <XAxis dataKey="label" tick={AXIS_TICK} axisLine={{ stroke: '#cbd5e1' }} tickLine={false} />
             <YAxis
@@ -416,47 +466,84 @@ export function EvolucionIndicadorChart({ points = [], title, unit, color = '#0d
               tick={AXIS_TICK}
               axisLine={false}
               tickLine={false}
-              width={52}
+              width={54}
               domain={['auto', 'auto']}
               padding={{ top: 26, bottom: 10 }}
-              label={{ value: unit ? `(${unit})` : '', angle: -90, position: 'insideLeft', fill: '#94a3b8', fontSize: 11, dx: 4 }}
+              label={{ value: unit ? `${title} (${unit})` : title || '', angle: -90, position: 'insideLeft', fill: color, fontSize: 10.5, fontWeight: 700, dx: 4 }}
             />
             <YAxis
               yAxisId="right"
               orientation="right"
-              tick={{ fill: '#94a3b8', fontSize: 11, fontWeight: 500 }}
+              tick={{ fill: hasSecondaryAxis ? secondaryColor : '#94a3b8', fontSize: 11, fontWeight: 600 }}
               axisLine={false}
               tickLine={false}
-              width={52}
-              domain={[0, (dataMax) => Math.ceil((dataMax || 100) * 1.18)]}
-              label={{ value: 'Días-Cama', angle: 90, position: 'insideRight', fill: '#94a3b8', fontSize: 10, dx: -2 }}
+              width={56}
+              domain={hasSecondaryAxis ? ['auto', 'auto'] : [0, (dataMax) => Math.ceil((dataMax || 100) * 1.18)]}
+              padding={hasSecondaryAxis ? { top: 26, bottom: 10 } : undefined}
+              label={{
+                value: hasSecondaryAxis
+                  ? (secondaryUnit ? `${secondaryTitle} (${secondaryUnit})` : secondaryTitle || '')
+                  : 'Días-Cama',
+                angle: 90,
+                position: 'insideRight',
+                fill: hasSecondaryAxis ? secondaryColor : '#94a3b8',
+                fontSize: 10.5,
+                fontWeight: hasSecondaryAxis ? 700 : 500,
+                dx: -2
+              }}
             />
             <Tooltip content={<CustomTooltip />} />
-            <Bar
-              yAxisId="right"
-              dataKey="estabCamas"
-              name="Total días-cama disp. (mes)"
-              fill="#94a3b8"
-              fillOpacity={0.2}
-              stroke="#94a3b8"
-              strokeOpacity={0.35}
-              barSize={32}
-              radius={[6, 6, 0, 0]}
-              isAnimationActive={false}
-            />
-            <Line
-              yAxisId="left"
-              type="monotone"
-              dataKey="val"
-              name={title}
-              stroke={color}
-              strokeWidth={3}
-              dot={{ r: 4.5, fill: color, stroke: '#ffffff', strokeWidth: 2 }}
-              activeDot={{ r: 6.5, fill: color, stroke: '#ffffff', strokeWidth: 2 }}
-              isAnimationActive={false}
-            >
-              {points.length <= 15 && <LabelList dataKey="val" content={renderBadgeLabel} />}
-            </Line>
+            {!hasSecondaryAxis && (
+              <Bar
+                yAxisId="right"
+                dataKey="estabCamas"
+                name="Total días-cama disp. (mes)"
+                fill="#94a3b8"
+                fillOpacity={0.18}
+                stroke="#94a3b8"
+                strokeOpacity={0.32}
+                barSize={32}
+                radius={[6, 6, 0, 0]}
+                isAnimationActive={false}
+              />
+            )}
+            {hasMultipleSeries ? (
+              series.map((s) => {
+                const showLabels = points.length <= 15 && series.length <= 3;
+                const formatter = s.formatValue || (s.yAxisId === 'right' ? fmt2 : fmt);
+                return (
+                  <Line
+                    key={s.dataKey}
+                    yAxisId={s.yAxisId || 'left'}
+                    type="monotone"
+                    dataKey={s.dataKey}
+                    name={s.name}
+                    stroke={s.color}
+                    strokeWidth={s.dashed ? 2.5 : 3}
+                    strokeDasharray={s.dashed ? '6 4' : undefined}
+                    dot={{ r: s.dashed ? 3.8 : 4.5, fill: s.color, stroke: '#ffffff', strokeWidth: 2 }}
+                    activeDot={{ r: 6.5, fill: s.color, stroke: '#ffffff', strokeWidth: 2 }}
+                    isAnimationActive={false}
+                  >
+                    {showLabels && <LabelList dataKey={s.dataKey} content={makeBadgeLabel(s.color, formatter)} />}
+                  </Line>
+                );
+              })
+            ) : (
+              <Line
+                yAxisId="left"
+                type="monotone"
+                dataKey="val"
+                name={title}
+                stroke={color}
+                strokeWidth={3}
+                dot={{ r: 4.5, fill: color, stroke: '#ffffff', strokeWidth: 2 }}
+                activeDot={{ r: 6.5, fill: color, stroke: '#ffffff', strokeWidth: 2 }}
+                isAnimationActive={false}
+              >
+                {points.length <= 15 && <LabelList dataKey="val" content={makeBadgeLabel(color, fmt)} />}
+              </Line>
+            )}
           </ComposedChart>
         </ResponsiveContainer>
       </div>
