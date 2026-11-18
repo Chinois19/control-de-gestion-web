@@ -666,15 +666,15 @@ export default function ClosedAttentionDashboard({ onBack, initialTab, initialSu
           totalIngresos++;
         }
 
-        // B. Egresos during monitoring period (excl. Traslado Servicio)
+        // B. Egresos during monitoring period (excl. Traslado Servicio para conteo neto de pacientes, pero suma días de estada de todos los egresos del servicio como en REM 20)
         if (!r.isCurrentlyHospitalized && r.ymdEgreso && r.ymdEgreso >= start && r.ymdEgreso <= end) {
           const cond = r.condicionEgresoClean.toLowerCase();
+          totalDiasEstada += r.calculatedDays;
           if (cond.includes('traslado servicio')) {
             totalTraslados++;
             totalDiasTraslados += r.calculatedDays;
           } else {
             totalEgresosNetos++;
-            totalDiasEstada += r.calculatedDays;
             if (r.ymdIngreso && r.ymdEgreso && r.ymdIngreso === r.ymdEgreso) sameDayCount++;
             if (r.calculatedDays > 14) longStayCount++;
             if (cond.includes('fallecido') || cond.includes('óbito') || cond.includes('muerte')) {
@@ -1122,15 +1122,15 @@ export default function ClosedAttentionDashboard({ onBack, initialTab, initialSu
           totalIngresos++;
         }
 
-        // B. Egresos in period (net egresos)
+        // B. Egresos in period (net egresos para conteo de pacientes, pero suma días de estada de todos los egresos del servicio como en REM 20)
         if (!r.isCurrentlyHospitalized && r.ymdEgreso && r.ymdEgreso >= start && r.ymdEgreso <= end) {
           const cond = r.condicionEgresoClean.toLowerCase();
+          totalDiasEstada += r.calculatedDays;
           if (cond.includes('traslado servicio')) {
             totalTraslados++;
             totalDiasTraslados += r.calculatedDays;
           } else {
             totalEgresosNetos++;
-            totalDiasEstada += r.calculatedDays;
             if (r.ymdIngreso && r.ymdEgreso && r.ymdIngreso === r.ymdEgreso) sameDayCount++;
             if (r.calculatedDays > 14) longStayCount++;
             if (cond.includes('fallecido') || cond.includes('óbito') || cond.includes('muerte')) {
@@ -1312,9 +1312,9 @@ export default function ClosedAttentionDashboard({ onBack, initialTab, initialSu
 
         if (!r.isCurrentlyHospitalized && r.ymdEgreso && r.ymdEgreso >= start && r.ymdEgreso <= end) {
           const cond = r.condicionEgresoClean.toLowerCase();
+          totalDiasEstada += r.calculatedDays;
           if (!cond.includes('traslado servicio')) {
             totalEgresosNetos++;
-            totalDiasEstada += r.calculatedDays;
             if (r.ymdIngreso && r.ymdEgreso && r.ymdIngreso === r.ymdEgreso) sameDayCount++;
             if (r.calculatedDays > 14) longStayCount++;
             if (cond.includes('fallecido') || cond.includes('óbito') || cond.includes('muerte')) {
@@ -2379,8 +2379,8 @@ export default function ClosedAttentionDashboard({ onBack, initialTab, initialSu
                           title: 'Total Días de Estada',
                           shortTitle: 'Días Estada',
                           unit: 'días',
-                          formula: 'Suma de permanencia de egresados netos (DEIS)',
-                          definition: 'Suma acumulada de los días de permanencia (Fecha Egreso − Fecha Ingreso; mismo día = 1) de todos los pacientes egresados netos durante el periodo.',
+                          formula: 'Suma de permanencia de los egresados (REM 20 / DEIS)',
+                          definition: 'Suma acumulada de los días de permanencia (Fecha Egreso − Fecha Ingreso; mismo día = 1) de todos los pacientes que egresaron del servicio durante el periodo (incluye altas, traslados y fallecidos, igual que el REM 20).',
                           color: '#4f46e5',
                           gradient: 'indigoAreaGrad',
                           value: clinicalStatsMetrics.current.totalDiasEstada,
