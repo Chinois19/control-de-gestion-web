@@ -853,7 +853,7 @@ export default function ClosedAttentionDashboard({ onBack, initialTab, initialSu
         totalIngresos,
         totalEgresosNetos,
         totalDiasEstada,
-        avgStay: totalEgresosNetos > 0 ? (totalDiasEstada / totalEgresosNetos) : 0,
+        avgStay: (totalEgresosNetos + ((!selectedService || selectedService.length === 0 || selectedService.includes('Todas')) ? 0 : totalTraslados)) > 0 ? (totalDiasEstada / (totalEgresosNetos + ((!selectedService || selectedService.length === 0 || selectedService.includes('Todas')) ? 0 : totalTraslados))) : 0,
         sameDayRate: totalEgresosNetos > 0 ? ((sameDayCount / totalEgresosNetos) * 100) : 0,
         longStayRate: totalEgresosNetos > 0 ? ((longStayCount / totalEgresosNetos) * 100) : 0,
         totalTraslados,
@@ -1238,7 +1238,7 @@ export default function ClosedAttentionDashboard({ onBack, initialTab, initialSu
         totalIngresos,
         totalEgresosNetos,
         totalDiasEstada,
-        avgStay: totalEgresosNetos > 0 ? (totalDiasEstada / totalEgresosNetos) : 0,
+        avgStay: (totalEgresosNetos + (isAllServicesFilter(serviceFilter) ? 0 : totalTraslados)) > 0 ? (totalDiasEstada / (totalEgresosNetos + (isAllServicesFilter(serviceFilter) ? 0 : totalTraslados))) : 0,
         sameDayRate: totalEgresosNetos > 0 ? ((sameDayCount / totalEgresosNetos) * 100) : 0,
         longStayRate: totalEgresosNetos > 0 ? ((longStayCount / totalEgresosNetos) * 100) : 0,
         totalTraslados,
@@ -1319,6 +1319,7 @@ export default function ClosedAttentionDashboard({ onBack, initialTab, initialSu
       let sameDayCount = 0;
       let longStayCount = 0;
       let totalBedDaysInPeriod = 0;
+      let totalTrasladosC2 = 0; // egresos por traslado interno (denominador del promedio por servicio)
 
       const monitorStart = new Date(start + 'T00:00:00');
       const monitorEnd = new Date(end + 'T23:59:59');
@@ -1361,6 +1362,7 @@ export default function ClosedAttentionDashboard({ onBack, initialTab, initialSu
         if (!r.isCurrentlyHospitalized && r.ymdEgreso && r.ymdEgreso >= start && r.ymdEgreso <= end) {
           const cond = r.condicionEgresoClean.toLowerCase();
           totalDiasEstada += r.calculatedDays;
+          if (cond.includes('traslado servicio')) totalTrasladosC2++;
           if (!cond.includes('traslado servicio')) {
             totalEgresosNetos++;
             if (r.ymdIngreso && r.ymdEgreso && r.ymdIngreso === r.ymdEgreso) sameDayCount++;
@@ -1413,7 +1415,7 @@ export default function ClosedAttentionDashboard({ onBack, initialTab, initialSu
         totalIngresos,
         totalEgresosNetos,
         totalDiasEstada,
-        avgStay: totalEgresosNetos > 0 ? (totalDiasEstada / totalEgresosNetos) : 0,
+        avgStay: (totalEgresosNetos + (isAllServicesFilter(serviceFilter) ? 0 : totalTrasladosC2)) > 0 ? (totalDiasEstada / (totalEgresosNetos + (isAllServicesFilter(serviceFilter) ? 0 : totalTrasladosC2))) : 0,
         sameDayRate: totalEgresosNetos > 0 ? ((sameDayCount / totalEgresosNetos) * 100) : 0,
         longStayRate: totalEgresosNetos > 0 ? ((longStayCount / totalEgresosNetos) * 100) : 0,
         occupancyRate,
