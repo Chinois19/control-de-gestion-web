@@ -572,7 +572,7 @@ export default function ClosedAttentionDashboard({ onBack, initialTab, initialSu
     });
   }, [censoRaw]);
 
-  // Unique Dropdown Values
+  // Unique Dropdown Values (respeta la vigencia temporal de los servicios según el rango de fechas seleccionado)
   const uniqueDropdowns = useMemo(() => {
     const servicios = new Set();
     const procedencias = new Set();
@@ -580,7 +580,19 @@ export default function ClosedAttentionDashboard({ onBack, initialTab, initialSu
     const grandesGrupos = new Set();
 
     censoCleaned.forEach(r => {
-      if (r.servicioIngresoClean) servicios.add(r.servicioIngresoClean);
+      if (r.servicioIngresoClean) {
+        const sLow = r.servicioIngresoClean.toLowerCase();
+        // 413 - Neonatología se separó a contar de junio de 2026
+        if ((sLow.startsWith('413') || sLow.includes('neo')) && endDate && endDate < '2026-06-01') {
+          // No incluir Neonatología si el período consultado termina antes de junio 2026
+        } else if ((sLow.startsWith('410') || sLow.includes('médico-quirúrgica pediátrica')) && endDate && endDate < '2026-07-01') {
+          // 410 rige desde julio 2026
+        } else if ((sLow.startsWith('408') || sLow.includes('médica pediátrica')) && startDate && startDate >= '2026-07-01') {
+          // 408 rigió hasta junio 2026
+        } else {
+          servicios.add(r.servicioIngresoClean);
+        }
+      }
       if (r.procedenciaClean) procedencias.add(r.procedenciaClean);
       if (r.condicionEgresoClean) condiciones.add(r.condicionEgresoClean);
       if (r.grandes_grupos) grandesGrupos.add(r.grandes_grupos);
@@ -592,7 +604,7 @@ export default function ClosedAttentionDashboard({ onBack, initialTab, initialSu
       condiciones: Array.from(condiciones).sort(),
       grandesGrupos: Array.from(grandesGrupos).sort()
     };
-  }, [censoCleaned]);
+  }, [censoCleaned, startDate, endDate]);
 
   // Filtered Censo Data (Applying Sidebar Dropdown Filters supporting multi-select)
   const filteredCenso = useMemo(() => {
@@ -1090,6 +1102,7 @@ export default function ClosedAttentionDashboard({ onBack, initialTab, initialSu
       let sumOcupadasCamas = 0;
       let sumInhabilCamas = 0;
       let countDays = 0;
+      let activeServiceDays = 0;
       
       cuadraturaRaw.forEach(r => {
         const pDate = parseDDMMYYYY(r.fecha);
@@ -1099,30 +1112,14 @@ export default function ClosedAttentionDashboard({ onBack, initialTab, initialSu
           sumHabilCamas += sums.disp;
           sumOcupadasCamas += sums.ocup;
           sumInhabilCamas += sums.inhab;
+          if (sums.disp > 0 || sums.ocup > 0) activeServiceDays++;
         }
       });
 
-      let camasHabilitadas = 120;
-      let diasInhabilitados = 4 * diffDaysMonitor;
-
-      if (sumHabilCamas > 0) {
-        camasHabilitadas = Math.round(sumHabilCamas / (countDays || 1));
-        diasInhabilitados = sumInhabilCamas;
-      } else {
-        // Fallback to static rules
-        let defaultInhabilitadas = 4;
-        if (!isAllServicesFilter(serviceFilter)) {
-          const first = Array.isArray(serviceFilter) ? serviceFilter[0] : serviceFilter;
-          const s = String(first || '').toLowerCase();
-          if (s.includes('pediat') || s.includes('infantil') || s.startsWith('408') || s.startsWith('410')) { camasHabilitadas = 15; defaultInhabilitadas = 1; }
-          else if (s.includes('mater') || s.includes('mujer') || s.includes('ginec')) { camasHabilitadas = 20; defaultInhabilitadas = 1; }
-          else if (s.includes('intensivo') || s.includes('uci')) { camasHabilitadas = 6; defaultInhabilitadas = 0; }
-          else if (s.includes('intermedio') || s.includes('uti')) { camasHabilitadas = 8; defaultInhabilitadas = 0; }
-          else if (s.includes('básico') || s.includes('basico')) { camasHabilitadas = 25; defaultInhabilitadas = 1; }
-          else { camasHabilitadas = 46; defaultInhabilitadas = 1; }
-        }
-        diasInhabilitados = defaultInhabilitadas * diffDaysMonitor;
-      }
+      const camasHabilitadas = sumHabilCamas > 0
+        ? Math.round(sumHabilCamas / (activeServiceDays || countDays || 1))
+        : 0;
+      const diasInhabilitados = sumInhabilCamas;
 
       censoCleaned.forEach(r => {
         // Apply service filter
@@ -1172,8 +1169,8 @@ export default function ClosedAttentionDashboard({ onBack, initialTab, initialSu
         }
       });
 
-      const availableBedDays = sumHabilCamas > 0 ? sumHabilCamas : (camasHabilitadas * diffDaysMonitor);
-      const occupiedBedDays = sumHabilCamas > 0 ? sumOcupadasCamas : totalBedDaysInPeriod;
+      const availableBedDays = sumHabilCamas;
+      const occupiedBedDays = sumOcupadasCamas;
 
       const occupancyRate = availableBedDays > 0 ? ((occupiedBedDays / availableBedDays) * 100) : 0;
       const rotationIndex = camasHabilitadas > 0 ? (totalEgresosNetos / camasHabilitadas) : 0;
@@ -1280,6 +1277,7 @@ export default function ClosedAttentionDashboard({ onBack, initialTab, initialSu
       let sumOcupadasCamas = 0;
       let sumInhabilCamas = 0;
       let countDays = 0;
+      let activeServiceDays = 0;
       
       cuadraturaRaw.forEach(r => {
         const pDate = parseDDMMYYYY(r.fecha);
@@ -1289,30 +1287,14 @@ export default function ClosedAttentionDashboard({ onBack, initialTab, initialSu
           sumHabilCamas += sums.disp;
           sumOcupadasCamas += sums.ocup;
           sumInhabilCamas += sums.inhab;
+          if (sums.disp > 0 || sums.ocup > 0) activeServiceDays++;
         }
       });
 
-      let camasHabilitadas = 120;
-      let diasInhabilitados = 4 * diffDaysMonitor;
-
-      if (sumHabilCamas > 0) {
-        camasHabilitadas = Math.round(sumHabilCamas / (countDays || 1));
-        diasInhabilitados = sumInhabilCamas;
-      } else {
-        // Fallback to static rules
-        let defaultInhabilitadas = 4;
-        if (!isAllServicesFilter(serviceFilter)) {
-          const first = Array.isArray(serviceFilter) ? serviceFilter[0] : serviceFilter;
-          const s = String(first || '').toLowerCase();
-          if (s.includes('pediat') || s.includes('infantil') || s.startsWith('408') || s.startsWith('410')) { camasHabilitadas = 15; defaultInhabilitadas = 1; }
-          else if (s.includes('mater') || s.includes('mujer') || s.includes('ginec')) { camasHabilitadas = 20; defaultInhabilitadas = 1; }
-          else if (s.includes('intensivo') || s.includes('uci')) { camasHabilitadas = 6; defaultInhabilitadas = 0; }
-          else if (s.includes('intermedio') || s.includes('uti')) { camasHabilitadas = 8; defaultInhabilitadas = 0; }
-          else if (s.includes('básico') || s.includes('basico')) { camasHabilitadas = 25; defaultInhabilitadas = 1; }
-          else { camasHabilitadas = 46; defaultInhabilitadas = 1; }
-        }
-        diasInhabilitados = defaultInhabilitadas * diffDaysMonitor;
-      }
+      const camasHabilitadas = sumHabilCamas > 0
+        ? Math.round(sumHabilCamas / (activeServiceDays || countDays || 1))
+        : 0;
+      const diasInhabilitados = sumInhabilCamas;
 
       censoCleaned.forEach(r => {
         if (!isAllServicesFilter(serviceFilter)) {
@@ -1355,8 +1337,8 @@ export default function ClosedAttentionDashboard({ onBack, initialTab, initialSu
         }
       });
 
-      const availableBedDays = sumHabilCamas > 0 ? sumHabilCamas : (camasHabilitadas * diffDaysMonitor);
-      const occupiedBedDays = sumHabilCamas > 0 ? sumOcupadasCamas : totalBedDaysInPeriod;
+      const availableBedDays = sumHabilCamas;
+      const occupiedBedDays = sumOcupadasCamas;
 
       const occupancyRate = availableBedDays > 0 ? ((occupiedBedDays / availableBedDays) * 100) : 0;
       const rotationIndex = camasHabilitadas > 0 ? (totalEgresosNetos / camasHabilitadas) : 0;
@@ -1999,6 +1981,7 @@ export default function ClosedAttentionDashboard({ onBack, initialTab, initialSu
     let diasCamaDisponibles = 0;
     let diasCamaOcupadas = 0;
     let countCuadraturaDays = 0;
+    let activeRemServiceDays = 0;
 
     cuadraturaRaw.forEach(r => {
       const pDate = parseDDMMYYYY(r.fecha);
@@ -2007,13 +1990,14 @@ export default function ClosedAttentionDashboard({ onBack, initialTab, initialSu
         const sums = sumCuadraturaForServices(r, selectedRemService);
         diasCamaDisponibles += sums.disp;
         diasCamaOcupadas += sums.ocup;
+        if (sums.disp > 0 || sums.ocup > 0) activeRemServiceDays++;
       }
     });
 
     const hasCuadraturaData = countCuadraturaDays > 0;
-    const divisor = (hasCuadraturaData && countCuadraturaDays <= diffDaysMonitor)
-      ? countCuadraturaDays
-      : diffDaysMonitor || 1;
+    const divisor = activeRemServiceDays > 0
+      ? activeRemServiceDays
+      : ((hasCuadraturaData && countCuadraturaDays <= diffDaysMonitor) ? countCuadraturaDays : (diffDaysMonitor || 1));
 
     const camasHabilitadas = (hasCuadraturaData && diasCamaDisponibles > 0)
       ? Math.round(diasCamaDisponibles / divisor)
