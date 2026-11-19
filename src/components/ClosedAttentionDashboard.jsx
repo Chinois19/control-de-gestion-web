@@ -239,6 +239,43 @@ function matchesServiceFilter(srv, filter) {
   return list.includes(srv);
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// DÍAS CAMA OCUPADOS — NORMA DEIS (Manual Censo Diario de Camas y Pacientes, MINSAL)
+// Día censal = día calendario (0 a 24 h, Norma Técnica N°152).
+// Por servicio/nivel de cuidados, cada estadía aporta 1 día cama por cada día en que el
+// paciente permanece a las 24 h (desde el día de ingreso hasta el día ANTERIOR al egreso):
+//   - el día de egreso NO se cuenta (cuenta el servicio de destino en un traslado);
+//   - ingreso y egreso el mismo día se cuenta como 1 día cama ocupado.
+// Pacientes aún hospitalizados cuentan hasta el fin del período (máx. hoy).
+// ─────────────────────────────────────────────────────────────────────────────
+const ymdToDayNum = (ymd) => {
+  if (!ymd || ymd.length < 10) return null;
+  const y = parseInt(ymd.slice(0, 4), 10);
+  const m = parseInt(ymd.slice(5, 7), 10);
+  const d = parseInt(ymd.slice(8, 10), 10);
+  if (isNaN(y) || isNaN(m) || isNaN(d)) return null;
+  return Math.round(Date.UTC(y, m - 1, d) / 86400000);
+};
+
+function deisBedDays(r, startYmd, endYmd) {
+  const s = ymdToDayNum(startYmd);
+  const e = ymdToDayNum(endYmd);
+  const i = ymdToDayNum(r.ymdIngreso);
+  if (s === null || e === null || i === null) return 0;
+  const first = Math.max(i, s);
+  if (r.isCurrentlyHospitalized || !r.ymdEgreso) {
+    const now = new Date();
+    const today = Math.round(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()) / 86400000);
+    const last = Math.min(e, today);
+    return last >= first ? (last - first + 1) : 0;
+  }
+  const eg = ymdToDayNum(r.ymdEgreso);
+  if (eg === null) return 0;
+  if (eg === i) return (i >= s && i <= e) ? 1 : 0; // ingreso y egreso el mismo día = 1 día cama
+  const last = Math.min(eg - 1, e); // el día de egreso no se cuenta
+  return last >= first ? (last - first + 1) : 0;
+}
+
 function sumCuadraturaForServices(r, filter) {
   if (isAllServicesFilter(filter)) {
     return {
@@ -783,7 +820,16 @@ export default function ClosedAttentionDashboard({ onBack, initialTab, initialSu
         ? sumInhabTab1
         : (currentOccupancy.total_camas_inhabilitadas || 4) * diffDaysMonitor;
       const availableDaysTab1 = sumDispTab1 > 0 ? sumDispTab1 : (camasHabilitadas * diffDaysMonitor);
-      const occupiedDaysTab1 = sumDispTab1 > 0 ? sumOcupTab1 : totalBedDaysInPeriod;
+      // Días Cama Ocupados según norma DEIS (desde el censo, por servicio filtrado)
+      let deisBedDaysTab1 = 0;
+      censoCleaned.forEach(r => {
+        if (selectedService && selectedService.length > 0 && !selectedService.includes('Todas')) {
+          if (!selectedService.includes(r.servicioIngresoClean)) return;
+        }
+        deisBedDaysTab1 += deisBedDays(r, start, end);
+      });
+      totalBedDaysInPeriod = deisBedDaysTab1;
+      const occupiedDaysTab1 = deisBedDaysTab1;
 
       // Inpatient indicators calculation (Cuadratura MINSAL)
       const occupancyRate = availableDaysTab1 > 0 ? ((occupiedDaysTab1 / availableDaysTab1) * 100) : 0;
@@ -866,7 +912,7 @@ export default function ClosedAttentionDashboard({ onBack, initialTab, initialSu
       previous,
       diffs
     };
-  }, [filteredCenso, cuadraturaRaw, selectedService, prevPeriod, startDate, endDate, currentOccupancy]);
+  }, [filteredCenso, censoCleaned, cuadraturaRaw, selectedService, prevPeriod, startDate, endDate, currentOccupancy]);
 
   // Donut segment calculations with pointer coordinates
   const donutSegments = useMemo(() => {
@@ -1170,7 +1216,14 @@ export default function ClosedAttentionDashboard({ onBack, initialTab, initialSu
       });
 
       const availableBedDays = sumHabilCamas;
-      const occupiedBedDays = sumOcupadasCamas;
+      // Días Cama Ocupados según norma DEIS (calculados desde el censo, no desde la cuadratura)
+      let occupiedBedDays = 0;
+      censoCleaned.forEach(r => {
+        if (!isAllServicesFilter(serviceFilter)) {
+          if (!matchesServiceFilter(r.servicioIngresoClean, serviceFilter) && !matchesServiceFilter(r.servicioEgresoClean, serviceFilter)) return;
+        }
+        occupiedBedDays += deisBedDays(r, start, end);
+      });
 
       const occupancyRate = availableBedDays > 0 ? ((occupiedBedDays / availableBedDays) * 100) : 0;
       const rotationIndex = camasHabilitadas > 0 ? (totalEgresosNetos / camasHabilitadas) : 0;
@@ -1338,7 +1391,14 @@ export default function ClosedAttentionDashboard({ onBack, initialTab, initialSu
       });
 
       const availableBedDays = sumHabilCamas;
-      const occupiedBedDays = sumOcupadasCamas;
+      // Días Cama Ocupados según norma DEIS (calculados desde el censo, no desde la cuadratura)
+      let occupiedBedDays = 0;
+      censoCleaned.forEach(r => {
+        if (!isAllServicesFilter(serviceFilter)) {
+          if (!matchesServiceFilter(r.servicioIngresoClean, serviceFilter) && !matchesServiceFilter(r.servicioEgresoClean, serviceFilter)) return;
+        }
+        occupiedBedDays += deisBedDays(r, start, end);
+      });
 
       const occupancyRate = availableBedDays > 0 ? ((occupiedBedDays / availableBedDays) * 100) : 0;
       const rotationIndex = camasHabilitadas > 0 ? (totalEgresosNetos / camasHabilitadas) : 0;
@@ -1889,10 +1949,13 @@ export default function ClosedAttentionDashboard({ onBack, initialTab, initialSu
     // Un paciente que pasa por 3 servicios tiene 3 registros, pero solo ocupa
     // 1 cama física por día → necesitamos contar días únicos por RUT.
     const uniquePatientDaySet = new Set();
+    let diasCamaOcupadasDEIS = 0; // Días cama ocupados según norma DEIS (desde el censo)
 
     censoCleaned.forEach(r => {
       const inServiceIngreso = selectedRemService === 'Todas' || r.servicioIngresoClean === selectedRemService;
       const inServiceEgreso  = selectedRemService === 'Todas' || r.servicioEgresoClean  === selectedRemService;
+
+      if (inServiceIngreso) diasCamaOcupadasDEIS += deisBedDays(r, startDate, endDate);
 
       // 1. Existencia Mes Anterior
       if (inServiceIngreso) {
@@ -1989,10 +2052,10 @@ export default function ClosedAttentionDashboard({ onBack, initialTab, initialSu
         countCuadraturaDays++;
         const sums = sumCuadraturaForServices(r, selectedRemService);
         diasCamaDisponibles += sums.disp;
-        diasCamaOcupadas += sums.ocup;
         if (sums.disp > 0 || sums.ocup > 0) activeRemServiceDays++;
       }
     });
+    diasCamaOcupadas = diasCamaOcupadasDEIS;
 
     const hasCuadraturaData = countCuadraturaDays > 0;
     const divisor = activeRemServiceDays > 0
