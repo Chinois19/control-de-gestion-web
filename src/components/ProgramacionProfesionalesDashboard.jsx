@@ -1,7 +1,8 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { ChevronDown, ChevronRight, ArrowLeft, Users, Info, Clock, Activity, BookOpen, AlertTriangle, CheckCircle, Filter, Briefcase } from 'lucide-react';
 import { programacionProfesionales } from '../data/programacionVillarrica2026';
 import GlosaTooltip from './GlosaTooltip';
+import { matchesAllTokens, rebuildProfesional, rebuildGroup } from '../utils/programacionFilters';
 
 // ─── SHARED HELPERS ──────────────────────────────────────────────────────────
 const RR_CONFIG = {
@@ -93,8 +94,9 @@ function ActividadesTable({ actividades, filterRR }) {
   );
 }
 
-function ProfesionalRow({ prof, filterRR }) {
+function ProfesionalRow({ prof, filterRR, autoOpen }) {
   const [open, setOpen] = useState(false);
+  useEffect(() => { if (autoOpen) setOpen(true); }, [autoOpen]);
   const actsR = prof.actividades.filter(a => a.rr === 'R');
   const totalR = actsR.reduce((s, a) => s + a.prod1Sem + a.prod2Sem, 0);
   return (
@@ -129,8 +131,9 @@ function ProfesionalRow({ prof, filterRR }) {
   );
 }
 
-function ProfesionRow({ grp, filterRR, profColor }) {
+function ProfesionRow({ grp, filterRR, profColor, autoOpen }) {
   const [open, setOpen] = useState(false);
+  useEffect(() => { if (autoOpen) setOpen(true); }, [autoOpen]);
   const allActs = grp.profesionales.flatMap(p => p.actividades);
   const totalR = allActs.filter(a => a.rr === 'R').reduce((s, a) => s + a.prod1Sem + a.prod2Sem, 0);
   const pctR = grp.totalProd > 0 ? Math.round((totalR / grp.totalProd) * 100) : 0;
@@ -176,7 +179,7 @@ function ProfesionRow({ grp, filterRR, profColor }) {
             ))}
           </div>
           {grp.profesionales.map(prof => (
-            <ProfesionalRow key={prof.nombre} prof={prof} filterRR={filterRR} />
+            <ProfesionalRow key={prof.nombre} prof={prof} filterRR={filterRR} autoOpen={autoOpen} />
           ))}
         </div>
       )}
@@ -186,6 +189,7 @@ function ProfesionRow({ grp, filterRR, profColor }) {
 
 export default function ProgramacionProfesionalesDashboard({ onBack, initialSearch }) {
   const [searchGrp, setSearchGrp] = useState(initialSearch || '');
+  const [searchProf, setSearchProf] = useState('');
   const [filterRR, setFilterRR] = useState('todos');
   const [filterProceso, setFilterProceso] = useState('todos');
 
@@ -217,29 +221,18 @@ export default function ProgramacionProfesionalesDashboard({ onBack, initialSear
     }
     if (filterProceso !== 'todos') {
       data = data.map(g => {
-        const profesionales = g.profesionales.map(p => {
-          const actividades = p.actividades.filter(a => a.proceso === filterProceso);
-          const horas = actividades.reduce((s, a) => s + (a.horas || 0), 0);
-          const prod1Sem = actividades.reduce((s, a) => s + (a.prod1Sem || 0), 0);
-          const prod2Sem = actividades.reduce((s, a) => s + (a.prod2Sem || 0), 0);
-          return { ...p, actividades, horas, prod1Sem, prod2Sem, totalProd: prod1Sem + prod2Sem };
-        }).filter(p => p.actividades.length > 0);
-        const totalHorasAsignadas = profesionales.reduce((s, p) => s + (p.horas || 0), 0);
-        const prod1Sem = profesionales.reduce((s, p) => s + (p.prod1Sem || 0), 0);
-        const prod2Sem = profesionales.reduce((s, p) => s + (p.prod2Sem || 0), 0);
-        return {
-          ...g,
-          profesionales,
-          numProfesionales: profesionales.length,
-          totalHorasAsignadas,
-          prod1Sem,
-          prod2Sem,
-          totalProd: prod1Sem + prod2Sem,
-        };
+        const profesionales = g.profesionales
+          .map(p => rebuildProfesional(p, p.actividades.filter(a => a.proceso === filterProceso)))
+          .filter(p => p.actividades.length > 0);
+        return rebuildGroup(g, profesionales);
       }).filter(g => g.profesionales.length > 0);
     }
+    if (searchProf.trim()) {
+      data = data.map(g => rebuildGroup(g, g.profesionales.filter(p => matchesAllTokens(p.nombre, searchProf))))
+        .filter(g => g.profesionales.length > 0);
+    }
     return data;
-  }, [searchGrp, filterProceso]);
+  }, [searchGrp, searchProf, filterProceso]);
 
   const kpis = [
     { label: 'Grupos Profesionales', value: totalGrupos, color: '#6366f1' },
@@ -315,6 +308,18 @@ export default function ProgramacionProfesionalesDashboard({ onBack, initialSear
           />
           <Filter size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
         </div>
+        <div style={{ position: 'relative', flex: '1', minWidth: '220px', maxWidth: '340px' }}>
+          <input
+            placeholder="Buscar profesional (nombre o apellido)..."
+            value={searchProf}
+            onChange={e => setSearchProf(e.target.value)}
+            style={{ width: '100%', padding: '10px 34px 10px 40px', borderRadius: '10px', border: searchProf.trim() ? '1px solid #0284c7' : '1px solid #e2e8f0', fontSize: '0.88rem', outline: 'none', background: 'white', boxSizing: 'border-box' }}
+          />
+          <Users size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: searchProf.trim() ? '#0284c7' : '#94a3b8' }} />
+          {searchProf && (
+            <button onClick={() => setSearchProf('')} title="Limpiar" style={{ position: 'absolute', right: '8px', top: '50%', transform: 'translateY(-50%)', border: 'none', background: 'transparent', color: '#94a3b8', cursor: 'pointer', fontSize: '1rem', lineHeight: 1 }}>×</button>
+          )}
+        </div>
         <div style={{ display: 'flex', gap: '6px', background: 'white', padding: '4px', borderRadius: '10px', border: '1px solid #e2e8f0' }}>
           {['todos', 'R', 'NR'].map(v => (
             <button key={v} onClick={() => setFilterRR(v)} style={{
@@ -356,7 +361,7 @@ export default function ProgramacionProfesionalesDashboard({ onBack, initialSear
       {/* Grupos */}
       <div style={{ margin: '0 40px', paddingBottom: '60px' }}>
         {filtered.map(grp => (
-          <ProfesionRow key={grp.nombre} grp={grp} filterRR={filterRR} profColor={PROFESION_COLORS[grp.nombre]} />
+          <ProfesionRow key={grp.nombre} grp={grp} filterRR={filterRR} profColor={PROFESION_COLORS[grp.nombre]} autoOpen={searchProf.trim().length > 0} />
         ))}
       </div>
     </div>

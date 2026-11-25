@@ -1,7 +1,8 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { ChevronDown, ChevronRight, ArrowLeft, Stethoscope, Info, Clock, Activity, Users, BookOpen, AlertTriangle, CheckCircle, XCircle, Filter } from 'lucide-react';
 import { programacionMedica } from '../data/programacionVillarrica2026';
 import GlosaTooltip from './GlosaTooltip';
+import { matchesAllTokens, rebuildProfesional, rebuildGroup } from '../utils/programacionFilters';
 
 // ─── CONSTANTS ──────────────────────────────────────────────────────────────
 const RR_CONFIG = {
@@ -87,8 +88,9 @@ function ActividadesTable({ actividades, filterRR }) {
 }
 
 // ─── PROFESIONAL ROW ─────────────────────────────────────────────────────────
-function ProfesionalRow({ prof, filterRR }) {
+function ProfesionalRow({ prof, filterRR, autoOpen }) {
   const [open, setOpen] = useState(false);
+  useEffect(() => { if (autoOpen) setOpen(true); }, [autoOpen]);
   const actsR = prof.actividades.filter(a => a.rr === 'R');
   const totalR = actsR.reduce((s, a) => s + a.prod1Sem + a.prod2Sem, 0);
   const totalNR = prof.actividades.filter(a => a.rr !== 'R').reduce((s, a) => s + a.prod1Sem + a.prod2Sem, 0);
@@ -128,8 +130,9 @@ function ProfesionalRow({ prof, filterRR }) {
 }
 
 // ─── ESPECIALIDAD ROW ─────────────────────────────────────────────────────────
-function EspecialidadRow({ esp, filterRR }) {
+function EspecialidadRow({ esp, filterRR, autoOpen }) {
   const [open, setOpen] = useState(false);
+  useEffect(() => { if (autoOpen) setOpen(true); }, [autoOpen]);
   const allActs = esp.profesionales.flatMap(p => p.actividades);
   const totalR = allActs.filter(a => a.rr === 'R').reduce((s, a) => s + a.prod1Sem + a.prod2Sem, 0);
   const pctR = esp.totalProd > 0 ? Math.round((totalR / esp.totalProd) * 100) : 0;
@@ -184,7 +187,7 @@ function EspecialidadRow({ esp, filterRR }) {
             ))}
           </div>
           {esp.profesionales.map(prof => (
-            <ProfesionalRow key={prof.nombre} prof={prof} filterRR={filterRR} />
+            <ProfesionalRow key={prof.nombre} prof={prof} filterRR={filterRR} autoOpen={autoOpen} />
           ))}
         </div>
       )}
@@ -195,6 +198,7 @@ function EspecialidadRow({ esp, filterRR }) {
 // ─── MAIN DASHBOARD ──────────────────────────────────────────────────────────
 export default function ProgramacionMedicaDashboard({ onBack, initialSearch }) {
   const [searchEsp, setSearchEsp] = useState(initialSearch || '');
+  const [searchProf, setSearchProf] = useState('');
   const [filterRR, setFilterRR] = useState('todos');
   const [filterProceso, setFilterProceso] = useState('todos');
 
@@ -227,29 +231,18 @@ export default function ProgramacionMedicaDashboard({ onBack, initialSearch }) {
     }
     if (filterProceso !== 'todos') {
       data = data.map(e => {
-        const profesionales = e.profesionales.map(p => {
-          const actividades = p.actividades.filter(a => a.proceso === filterProceso);
-          const horas = actividades.reduce((s, a) => s + (a.horas || 0), 0);
-          const prod1Sem = actividades.reduce((s, a) => s + (a.prod1Sem || 0), 0);
-          const prod2Sem = actividades.reduce((s, a) => s + (a.prod2Sem || 0), 0);
-          return { ...p, actividades, horas, prod1Sem, prod2Sem, totalProd: prod1Sem + prod2Sem };
-        }).filter(p => p.actividades.length > 0);
-        const totalHorasAsignadas = profesionales.reduce((s, p) => s + (p.horas || 0), 0);
-        const prod1Sem = profesionales.reduce((s, p) => s + (p.prod1Sem || 0), 0);
-        const prod2Sem = profesionales.reduce((s, p) => s + (p.prod2Sem || 0), 0);
-        return {
-          ...e,
-          profesionales,
-          numProfesionales: profesionales.length,
-          totalHorasAsignadas,
-          prod1Sem,
-          prod2Sem,
-          totalProd: prod1Sem + prod2Sem,
-        };
+        const profesionales = e.profesionales
+          .map(p => rebuildProfesional(p, p.actividades.filter(a => a.proceso === filterProceso)))
+          .filter(p => p.actividades.length > 0);
+        return rebuildGroup(e, profesionales);
       }).filter(e => e.profesionales.length > 0);
     }
+    if (searchProf.trim()) {
+      data = data.map(e => rebuildGroup(e, e.profesionales.filter(p => matchesAllTokens(p.nombre, searchProf))))
+        .filter(e => e.profesionales.length > 0);
+    }
     return data;
-  }, [searchEsp, filterProceso]);
+  }, [searchEsp, searchProf, filterProceso]);
 
   const kpis = [
     { label: 'Especialidades', value: totalEsp, icon: <Stethoscope size={20} />, color: '#6366f1' },
@@ -338,6 +331,23 @@ export default function ProgramacionMedicaDashboard({ onBack, initialSearch }) {
           <Filter size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
         </div>
 
+        <div style={{ position: 'relative', flex: '1', minWidth: '220px', maxWidth: '340px' }}>
+          <input
+            placeholder="Buscar profesional (nombre o apellido)..."
+            value={searchProf}
+            onChange={e => setSearchProf(e.target.value)}
+            style={{
+              width: '100%', padding: '10px 34px 10px 40px', borderRadius: '10px',
+              border: searchProf.trim() ? '1px solid #6366f1' : '1px solid #e2e8f0', fontSize: '0.88rem', outline: 'none',
+              background: 'white', boxSizing: 'border-box'
+            }}
+          />
+          <Users size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: searchProf.trim() ? '#6366f1' : '#94a3b8' }} />
+          {searchProf && (
+            <button onClick={() => setSearchProf('')} title="Limpiar" style={{ position: 'absolute', right: '8px', top: '50%', transform: 'translateY(-50%)', border: 'none', background: 'transparent', color: '#94a3b8', cursor: 'pointer', fontSize: '1rem', lineHeight: 1 }}>×</button>
+          )}
+        </div>
+
         <div style={{ display: 'flex', gap: '6px', background: 'white', padding: '4px', borderRadius: '10px', border: '1px solid #e2e8f0' }}>
           {['todos', 'R', 'NR'].map(v => (
             <button key={v} onClick={() => setFilterRR(v)} style={{
@@ -365,7 +375,7 @@ export default function ProgramacionMedicaDashboard({ onBack, initialSearch }) {
         </div>
 
         <div style={{ marginLeft: 'auto', fontSize: '0.82rem', color: '#94a3b8', fontWeight: 500 }}>
-          Mostrando {filtered.length} de {totalEsp} especialidades
+          Mostrando {filtered.length} de {totalEsp} especialidades · {filtered.reduce((s, e) => s + e.numProfesionales, 0)} profesionales
         </div>
       </div>
 
@@ -385,7 +395,7 @@ export default function ProgramacionMedicaDashboard({ onBack, initialSearch }) {
       {/* Especialidades */}
       <div style={{ margin: '0 40px', paddingBottom: '60px' }}>
         {filtered.map(esp => (
-          <EspecialidadRow key={esp.nombre} esp={esp} filterRR={filterRR} />
+          <EspecialidadRow key={esp.nombre} esp={esp} filterRR={filterRR} autoOpen={searchProf.trim().length > 0} />
         ))}
         {filtered.length === 0 && (
           <div style={{ textAlign: 'center', padding: '60px', color: '#94a3b8', fontSize: '0.92rem' }}>
