@@ -11,8 +11,11 @@ const RR_CONFIG = {
 };
 
 const PROCESO_COLORS = {
-  Ambulatorio: { color: '#6366f1', bg: 'rgba(99,102,241,0.1)' },
-  Quirúrgico: { color: '#0ea5e9', bg: 'rgba(14,165,233,0.1)' },
+  Ambulatorio: { color: '#6366f1', bg: 'rgba(99,102,241,0.12)' },
+  Hospitalizado: { color: '#10b981', bg: 'rgba(16,185,129,0.12)' },
+  Quirúrgico: { color: '#0ea5e9', bg: 'rgba(14,165,233,0.12)' },
+  Urgencia: { color: '#ef4444', bg: 'rgba(239,68,68,0.12)' },
+  HD: { color: '#8b5cf6', bg: 'rgba(139,92,246,0.12)' },
 };
 
 // ─── HELPER ─────────────────────────────────────────────────────────────────
@@ -205,6 +208,16 @@ export default function ProgramacionMedicaDashboard({ onBack, initialSearch }) {
   const totalR = programacionMedica.flatMap(e => e.profesionales).flatMap(p => p.actividades)
     .filter(a => a.rr === 'R').reduce((s, a) => s + a.prod1Sem + a.prod2Sem, 0);
 
+  // Procesos reales disponibles dinámicamente en la planilla (ordenados por volumen)
+  const availableProcesos = useMemo(() => {
+    const counts = {};
+    programacionMedica.forEach(e => e.profesionales.forEach(p => p.actividades.forEach(a => {
+      const pr = (a.proceso || '').trim();
+      if (pr) counts[pr] = (counts[pr] || 0) + 1;
+    })));
+    return Object.entries(counts).sort((a, b) => b[1] - a[1]).map(([k]) => k);
+  }, []);
+
   // Filtered data
   const filtered = useMemo(() => {
     let data = programacionMedica;
@@ -213,13 +226,27 @@ export default function ProgramacionMedicaDashboard({ onBack, initialSearch }) {
       data = data.filter(e => e.nombre.toLowerCase().includes(q));
     }
     if (filterProceso !== 'todos') {
-      data = data.map(e => ({
-        ...e,
-        profesionales: e.profesionales.map(p => ({
-          ...p,
-          actividades: p.actividades.filter(a => a.proceso === filterProceso)
-        })).filter(p => p.actividades.length > 0)
-      })).filter(e => e.profesionales.length > 0);
+      data = data.map(e => {
+        const profesionales = e.profesionales.map(p => {
+          const actividades = p.actividades.filter(a => a.proceso === filterProceso);
+          const horas = actividades.reduce((s, a) => s + (a.horas || 0), 0);
+          const prod1Sem = actividades.reduce((s, a) => s + (a.prod1Sem || 0), 0);
+          const prod2Sem = actividades.reduce((s, a) => s + (a.prod2Sem || 0), 0);
+          return { ...p, actividades, horas, prod1Sem, prod2Sem, totalProd: prod1Sem + prod2Sem };
+        }).filter(p => p.actividades.length > 0);
+        const totalHorasAsignadas = profesionales.reduce((s, p) => s + (p.horas || 0), 0);
+        const prod1Sem = profesionales.reduce((s, p) => s + (p.prod1Sem || 0), 0);
+        const prod2Sem = profesionales.reduce((s, p) => s + (p.prod2Sem || 0), 0);
+        return {
+          ...e,
+          profesionales,
+          numProfesionales: profesionales.length,
+          totalHorasAsignadas,
+          prod1Sem,
+          prod2Sem,
+          totalProd: prod1Sem + prod2Sem,
+        };
+      }).filter(e => e.profesionales.length > 0);
     }
     return data;
   }, [searchEsp, filterProceso]);
@@ -324,8 +351,8 @@ export default function ProgramacionMedicaDashboard({ onBack, initialSearch }) {
           ))}
         </div>
 
-        <div style={{ display: 'flex', gap: '6px', background: 'white', padding: '4px', borderRadius: '10px', border: '1px solid #e2e8f0' }}>
-          {['todos', 'Ambulatorio', 'Quirúrgico'].map(v => (
+        <div style={{ display: 'flex', gap: '6px', background: 'white', padding: '4px', borderRadius: '10px', border: '1px solid #e2e8f0', flexWrap: 'wrap' }}>
+          {['todos', ...availableProcesos].map(v => (
             <button key={v} onClick={() => setFilterProceso(v)} style={{
               padding: '6px 14px', borderRadius: '7px', border: 'none', cursor: 'pointer',
               fontSize: '0.78rem', fontWeight: 700, transition: 'all 0.2s',

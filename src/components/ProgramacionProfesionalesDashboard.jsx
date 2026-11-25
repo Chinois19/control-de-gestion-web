@@ -11,8 +11,14 @@ const RR_CONFIG = {
 };
 
 const PROCESO_COLORS = {
-  Ambulatorio: { color: '#6366f1', bg: 'rgba(99,102,241,0.1)' },
-  Quirúrgico: { color: '#0ea5e9', bg: 'rgba(14,165,233,0.1)' },
+  Ambulatorio: { color: '#6366f1', bg: 'rgba(99,102,241,0.12)' },
+  Hospitalizado: { color: '#10b981', bg: 'rgba(16,185,129,0.12)' },
+  Quirúrgico: { color: '#0ea5e9', bg: 'rgba(14,165,233,0.12)' },
+  Urgencia: { color: '#ef4444', bg: 'rgba(239,68,68,0.12)' },
+  HD: { color: '#8b5cf6', bg: 'rgba(139,92,246,0.12)' },
+  'UTM-LAB-AP': { color: '#f59e0b', bg: 'rgba(245,158,11,0.12)' },
+  'A. Social': { color: '#ec4899', bg: 'rgba(236,72,153,0.12)' },
+  Farmacia: { color: '#14b8a6', bg: 'rgba(20,184,166,0.12)' },
 };
 
 const PROFESION_COLORS = {
@@ -181,6 +187,18 @@ function ProfesionRow({ grp, filterRR, profColor }) {
 export default function ProgramacionProfesionalesDashboard({ onBack, initialSearch }) {
   const [searchGrp, setSearchGrp] = useState(initialSearch || '');
   const [filterRR, setFilterRR] = useState('todos');
+  const [filterProceso, setFilterProceso] = useState('todos');
+
+  const availableProcesos = useMemo(() => {
+    const counts = {};
+    programacionProfesionales.filter(g => g.nombre !== 'Sin agrupación').forEach(g =>
+      g.profesionales.forEach(p => p.actividades.forEach(a => {
+        const pr = (a.proceso || '').trim();
+        if (pr) counts[pr] = (counts[pr] || 0) + 1;
+      }))
+    );
+    return Object.entries(counts).sort((a, b) => b[1] - a[1]).map(([k]) => k);
+  }, []);
 
   const totalGrupos = programacionProfesionales.filter(g => g.nombre !== 'Sin agrupación').length;
   const totalProfs = programacionProfesionales.reduce((s, g) => s + g.numProfesionales, 0);
@@ -197,8 +215,31 @@ export default function ProgramacionProfesionalesDashboard({ onBack, initialSear
       const q = searchGrp.toLowerCase();
       data = data.filter(g => g.nombre.toLowerCase().includes(q));
     }
+    if (filterProceso !== 'todos') {
+      data = data.map(g => {
+        const profesionales = g.profesionales.map(p => {
+          const actividades = p.actividades.filter(a => a.proceso === filterProceso);
+          const horas = actividades.reduce((s, a) => s + (a.horas || 0), 0);
+          const prod1Sem = actividades.reduce((s, a) => s + (a.prod1Sem || 0), 0);
+          const prod2Sem = actividades.reduce((s, a) => s + (a.prod2Sem || 0), 0);
+          return { ...p, actividades, horas, prod1Sem, prod2Sem, totalProd: prod1Sem + prod2Sem };
+        }).filter(p => p.actividades.length > 0);
+        const totalHorasAsignadas = profesionales.reduce((s, p) => s + (p.horas || 0), 0);
+        const prod1Sem = profesionales.reduce((s, p) => s + (p.prod1Sem || 0), 0);
+        const prod2Sem = profesionales.reduce((s, p) => s + (p.prod2Sem || 0), 0);
+        return {
+          ...g,
+          profesionales,
+          numProfesionales: profesionales.length,
+          totalHorasAsignadas,
+          prod1Sem,
+          prod2Sem,
+          totalProd: prod1Sem + prod2Sem,
+        };
+      }).filter(g => g.profesionales.length > 0);
+    }
     return data;
-  }, [searchGrp]);
+  }, [searchGrp, filterProceso]);
 
   const kpis = [
     { label: 'Grupos Profesionales', value: totalGrupos, color: '#6366f1' },
@@ -283,6 +324,18 @@ export default function ProgramacionProfesionalesDashboard({ onBack, initialSear
               color: filterRR === v ? 'white' : '#64748b'
             }}>
               {v === 'todos' ? 'Todos' : v === 'R' ? '✓ Solo R' : '— Solo NR'}
+            </button>
+          ))}
+        </div>
+        <div style={{ display: 'flex', gap: '6px', background: 'white', padding: '4px', borderRadius: '10px', border: '1px solid #e2e8f0', flexWrap: 'wrap' }}>
+          {['todos', ...availableProcesos].map(v => (
+            <button key={v} onClick={() => setFilterProceso(v)} style={{
+              padding: '6px 12px', borderRadius: '7px', border: 'none', cursor: 'pointer',
+              fontSize: '0.76rem', fontWeight: 700, transition: 'all 0.2s',
+              background: filterProceso === v ? '#0284c7' : 'transparent',
+              color: filterProceso === v ? 'white' : '#64748b'
+            }}>
+              {v === 'todos' ? 'Todo proceso' : v}
             </button>
           ))}
         </div>
