@@ -540,19 +540,22 @@ export default function ProfesionalesApsDashboard({ onBack }) {
       .sort((a, b) => b.total - a.total);
   }, [filteredRecords]);
 
-  // Top Prestaciones
+  // Todas las Actividades Registradas según filtros (sin límite Top 15)
   const topPrestaciones = useMemo(() => {
     const map = {};
+    let total = 0;
     filteredRecords.forEach(r => {
-      const p = r.prestacion_1;
-      if (p) {
-        map[p] = (map[p] || 0) + 1;
-      }
+      const act = (r.actividad || '').trim() || (r.prestacion_1 || '').trim() || 'Sin Actividad Registrada';
+      map[act] = (map[act] || 0) + 1;
+      total++;
     });
     return Object.entries(map)
-      .map(([prestacion, count]) => ({ prestacion, count }))
-      .sort((a, b) => b.count - a.count)
-      .slice(0, 15);
+      .map(([prestacion, count]) => ({
+        prestacion,
+        count,
+        pct: total > 0 ? (count / total) * 100 : 0
+      }))
+      .sort((a, b) => b.count - a.count);
   }, [filteredRecords]);
 
   // CSV Export
@@ -1296,24 +1299,48 @@ export default function ProfesionalesApsDashboard({ onBack }) {
       {/* TAB 3: PRESTACIONES Y DIAGNOSTICOS */}
       {activeTab === 'prestaciones' && (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(420px, 1fr))', gap: 24 }}>
-          {/* Top Prestaciones */}
-          <div style={{ background: '#ffffff', padding: '24px', borderRadius: '16px', border: '1px solid #e2e8f0', boxShadow: '0 4px 20px rgba(0,0,0,0.02)' }}>
-            <h3 style={{ fontSize: '1.05rem', fontWeight: 800, color: '#0f172a', margin: '0 0 16px' }}>
-              📋 Top 15 Prestaciones Realizadas
-            </h3>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              {topPrestaciones.map((pr, i) => (
-                <div key={pr.prestacion} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 12px', background: '#f8fafc', borderRadius: '8px', fontSize: '0.82rem' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, maxWidth: '75%' }}>
-                    <span style={{ width: 22, height: 22, borderRadius: '50%', background: '#e0f2fe', color: '#0369a1', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.72rem', fontWeight: 800 }}>
-                      {i + 1}
-                    </span>
-                    <span style={{ fontWeight: 600, color: '#1e293b' }}>{pr.prestacion}</span>
-                  </div>
-                  <span style={{ fontWeight: 800, color: '#0284c7' }}>{fmt(pr.count)}</span>
-                </div>
-              ))}
+          {/* Detalle completo de Actividades Registradas */}
+          <div style={{ background: '#ffffff', padding: '24px', borderRadius: '16px', border: '1px solid #e2e8f0', boxShadow: '0 4px 20px rgba(0,0,0,0.02)', display: 'flex', flexDirection: 'column' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, gap: 12, flexWrap: 'wrap' }}>
+              <h3 style={{ fontSize: '1.05rem', fontWeight: 800, color: '#0f172a', margin: 0 }}>
+                📋 Detalle de Actividades Registradas
+              </h3>
+              <span style={{ fontSize: '0.78rem', fontWeight: 700, color: '#0369a1', background: '#e0f2fe', padding: '4px 10px', borderRadius: '999px' }}>
+                {fmt(topPrestaciones.length)} actividades · {fmt(filteredRecords.length)} reg.
+              </span>
             </div>
+            {topPrestaciones.length === 0 ? (
+              <div style={{ padding: '32px 16px', textAlign: 'center', color: '#64748b', fontSize: '0.88rem' }}>
+                No hay actividades registradas para los filtros seleccionados.
+              </div>
+            ) : (
+              <div style={{ maxHeight: 520, overflowY: 'auto', border: '1px solid #f1f5f9', borderRadius: '10px' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.82rem' }}>
+                  <thead style={{ position: 'sticky', top: 0, background: '#f8fafc', zIndex: 1 }}>
+                    <tr style={{ borderBottom: '1px solid #e2e8f0', color: '#475569', textTransform: 'uppercase', fontSize: '0.7rem', letterSpacing: '0.4px' }}>
+                      <th style={{ padding: '10px 10px', textAlign: 'center', width: 42 }}>#</th>
+                      <th style={{ padding: '10px 12px', textAlign: 'left' }}>Actividad Registrada</th>
+                      <th style={{ padding: '10px 12px', textAlign: 'right', width: 90 }}>Cantidad</th>
+                      <th style={{ padding: '10px 12px', textAlign: 'right', width: 68 }}>%</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {topPrestaciones.map((pr, i) => (
+                      <tr key={pr.prestacion} style={{ borderBottom: '1px solid #f1f5f9', background: i % 2 === 0 ? '#ffffff' : '#f8fafc' }}>
+                        <td style={{ padding: '8px 10px', textAlign: 'center' }}>
+                          <span style={{ display: 'inline-flex', minWidth: 22, height: 22, padding: '0 6px', borderRadius: '999px', background: '#e0f2fe', color: '#0369a1', alignItems: 'center', justifyContent: 'center', fontSize: '0.7rem', fontWeight: 800 }}>
+                            {i + 1}
+                          </span>
+                        </td>
+                        <td style={{ padding: '8px 12px', fontWeight: 600, color: '#1e293b' }}>{pr.prestacion}</td>
+                        <td style={{ padding: '8px 12px', textAlign: 'right', fontWeight: 800, color: '#0284c7' }}>{fmt(pr.count)}</td>
+                        <td style={{ padding: '8px 12px', textAlign: 'right', color: '#64748b', fontWeight: 600 }}>{pr.pct.toFixed(1)}%</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
 
           {/* Tipos de Consulta */}
