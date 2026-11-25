@@ -1,4 +1,5 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { ChevronDown, ChevronRight, ArrowLeft, Stethoscope, Info, Clock, Activity, Users, BookOpen, AlertTriangle, CheckCircle, XCircle, Filter } from 'lucide-react';
 import { programacionMedica } from '../data/programacionVillarrica2026';
 
@@ -34,20 +35,50 @@ function RRBadge({ rr, size = 'sm' }) {
 }
 
 function GlosaTooltip({ glosa, actividad }) {
-  const [show, setShow] = useState(false);
+  const [coords, setCoords] = useState(null);
+  const triggerRef = useRef(null);
   if (!glosa) return <span style={{ fontSize: '0.82rem', color: '#334155' }}>{actividad}</span>;
+
+  const handleEnter = () => {
+    if (!triggerRef.current) return;
+    const rect = triggerRef.current.getBoundingClientRect();
+    const tooltipW = 340;
+    const left = Math.max(12, Math.min(rect.left, window.innerWidth - tooltipW - 12));
+    const openAbove = rect.top > 220;
+    setCoords({
+      left,
+      top: openAbove ? undefined : rect.bottom + 8,
+      bottom: openAbove ? window.innerHeight - rect.top + 8 : undefined,
+    });
+  };
+
   return (
-    <span style={{ position: 'relative', display: 'inline-block' }}
-      onMouseEnter={() => setShow(true)} onMouseLeave={() => setShow(false)}>
+    <span
+      ref={triggerRef}
+      style={{ position: 'relative', display: 'inline-block' }}
+      onMouseEnter={handleEnter}
+      onMouseLeave={() => setCoords(null)}
+    >
       <span style={{ fontSize: '0.82rem', color: '#334155', cursor: 'help', borderBottom: '1px dashed #6366f1' }}>
         {actividad}
       </span>
-      {show && (
+      {coords && createPortal(
         <div style={{
-          position: 'absolute', bottom: '100%', left: 0, zIndex: 9999, width: '340px',
-          background: '#1e293b', color: '#f1f5f9', borderRadius: '12px', padding: '14px 16px',
-          boxShadow: '0 8px 32px rgba(0,0,0,0.4)', fontSize: '0.75rem', lineHeight: '1.6',
-          marginBottom: '8px',
+          position: 'fixed',
+          left: `${coords.left}px`,
+          top: coords.top !== undefined ? `${coords.top}px` : undefined,
+          bottom: coords.bottom !== undefined ? `${coords.bottom}px` : undefined,
+          zIndex: 99999,
+          width: '340px',
+          maxWidth: 'calc(100vw - 24px)',
+          background: '#1e293b',
+          color: '#f1f5f9',
+          borderRadius: '12px',
+          padding: '14px 16px',
+          boxShadow: '0 12px 32px rgba(0,0,0,0.45)',
+          fontSize: '0.75rem',
+          lineHeight: '1.6',
+          pointerEvents: 'none',
         }}>
           <div style={{ fontWeight: 800, color: '#818cf8', fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '8px' }}>
             📋 Cómo registrar en el aplicativo
@@ -81,7 +112,8 @@ function GlosaTooltip({ glosa, actividad }) {
               {glosa.descripcion.substring(0, 200)}{glosa.descripcion.length > 200 ? '...' : ''}
             </div>
           )}
-        </div>
+        </div>,
+        document.body
       )}
     </span>
   );
