@@ -1,4 +1,5 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { ChevronDown, ChevronRight, ArrowLeft, Filter, AlertTriangle, Clock, Activity, Users } from 'lucide-react';
 import { programacionOdontologia } from '../data/programacionVillarrica2026';
 
@@ -35,28 +36,116 @@ function RRBadge({ rr, size = 'sm' }) {
   );
 }
 
-function GlosaTooltip({ glosa, actividad }) {
-  const [show, setShow] = useState(false);
+function GlosaTooltip({ glosa, actividad, rendimiento }) {
+  const [coords, setCoords] = useState(null);
+  const triggerRef = useRef(null);
   if (!glosa) return <span style={{ fontSize: '0.82rem', color: '#334155' }}>{actividad}</span>;
+
+  const tipoAct = glosa.tipoActRCE && glosa.tipoActRCE !== 'Sin RCE' ? glosa.tipoActRCE : '';
+  const subAct = (glosa.subActRCE || glosa.actRCE) && (glosa.subActRCE || glosa.actRCE) !== 'Sin RCE' ? (glosa.subActRCE || glosa.actRCE) : '';
+  const grupoRce = glosa.grupoRCE && glosa.grupoRCE !== 'Sin RCE' ? glosa.grupoRCE : '';
+  const remVal = glosa.rem && glosa.rem !== 'N/A' ? String(glosa.rem).replace(/\.0$/, '') : '';
+  const rendLabel = rendimiento > 0
+    ? `${rendimiento.toLocaleString('es-CL', { maximumFractionDigits: 2 })} / hora`
+    : (glosa.rendimiento ? `${glosa.rendimiento} / hora (ref. MINSAL)` : '');
+
+  const handleEnter = () => {
+    if (!triggerRef.current) return;
+    const rect = triggerRef.current.getBoundingClientRect();
+    const tooltipW = 380;
+    const left = Math.max(12, Math.min(rect.left, window.innerWidth - tooltipW - 12));
+    const openAbove = rect.top > 280;
+    setCoords({
+      left,
+      top: openAbove ? undefined : rect.bottom + 8,
+      bottom: openAbove ? window.innerHeight - rect.top + 8 : undefined,
+    });
+  };
+
   return (
-    <span style={{ position: 'relative', display: 'inline-block' }}
-      onMouseEnter={() => setShow(true)} onMouseLeave={() => setShow(false)}>
+    <span
+      ref={triggerRef}
+      style={{ position: 'relative', display: 'inline-block' }}
+      onMouseEnter={handleEnter}
+      onMouseLeave={() => setCoords(null)}
+    >
       <span style={{ fontSize: '0.82rem', color: '#334155', cursor: 'help', borderBottom: '1px dashed #6366f1' }}>
         {actividad}
       </span>
-      {show && (
+      {coords && createPortal(
         <div style={{
-          position: 'absolute', bottom: '100%', left: 0, zIndex: 9999, width: '340px',
-          background: '#1e293b', color: '#f1f5f9', borderRadius: '12px', padding: '14px 16px',
-          boxShadow: '0 8px 32px rgba(0,0,0,0.4)', fontSize: '0.75rem', lineHeight: '1.6', marginBottom: '8px',
+          position: 'fixed',
+          left: `${coords.left}px`,
+          top: coords.top !== undefined ? `${coords.top}px` : undefined,
+          bottom: coords.bottom !== undefined ? `${coords.bottom}px` : undefined,
+          zIndex: 99999,
+          width: '380px',
+          maxWidth: 'calc(100vw - 24px)',
+          background: '#0f172a',
+          color: '#f1f5f9',
+          border: '1px solid rgba(148,163,184,0.2)',
+          borderRadius: '12px',
+          padding: '14px 16px',
+          boxShadow: '0 14px 36px rgba(0,0,0,0.48)',
+          fontSize: '0.76rem',
+          lineHeight: '1.55',
+          pointerEvents: 'none',
         }}>
-          <div style={{ fontWeight: 800, color: '#818cf8', fontSize: '0.7rem', textTransform: 'uppercase', marginBottom: '8px' }}>📋 Cómo registrar en el aplicativo</div>
-          {glosa.actPlanilla && <div style={{ marginBottom: '4px' }}><span style={{ color: '#94a3b8' }}>Planilla: </span><span style={{ color: '#e2e8f0', fontWeight: 600 }}>{glosa.actPlanilla}</span></div>}
-          {glosa.grupoRCE && glosa.grupoRCE !== 'Sin RCE' && <div style={{ marginBottom: '4px' }}><span style={{ color: '#94a3b8' }}>Grupo RCE: </span><span style={{ color: '#e2e8f0' }}>{glosa.grupoRCE}</span></div>}
-          {glosa.actRCE && glosa.actRCE !== 'Sin RCE' && <div style={{ marginBottom: '4px' }}><span style={{ color: '#94a3b8' }}>Actividad RCE: </span><span style={{ color: '#a5b4fc', fontWeight: 600 }}>{glosa.actRCE}</span></div>}
-          {glosa.rem && glosa.rem !== 'N/A' && <div><span style={{ color: '#94a3b8' }}>Serie REM: </span><span style={{ color: '#6ee7b7' }}>{glosa.rem}</span></div>}
-          {glosa.descripcion && <div style={{ marginTop: '8px', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '8px', color: '#94a3b8', fontSize: '0.7rem' }}>{glosa.descripcion.substring(0, 200)}{glosa.descripcion.length > 200 ? '...' : ''}</div>}
-        </div>
+          <div style={{ fontWeight: 800, color: '#818cf8', fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '8px' }}>
+            📋 Cómo registrar en el RCE
+          </div>
+          {glosa.actPlanilla && (
+            <div style={{ marginBottom: '6px' }}>
+              <span style={{ color: '#94a3b8' }}>Actividad planilla: </span>
+              <span style={{ color: '#f8fafc', fontWeight: 600 }}>{glosa.actPlanilla}</span>
+            </div>
+          )}
+          {(tipoAct || subAct || grupoRce) && (
+            <div style={{ background: 'rgba(99,102,241,0.14)', border: '1px solid rgba(129,140,248,0.3)', borderRadius: '8px', padding: '8px 10px', marginBottom: '8px' }}>
+              {tipoAct && (
+                <div style={{ marginBottom: subAct || grupoRce ? '4px' : 0 }}>
+                  <span style={{ color: '#f87171', fontWeight: 800 }}>* </span>
+                  <span style={{ color: '#cbd5e1', fontWeight: 700 }}>Tipo Actividad: </span>
+                  <span style={{ color: '#38bdf8', fontWeight: 700 }}>{tipoAct}</span>
+                </div>
+              )}
+              {subAct && (
+                <div style={{ marginBottom: grupoRce ? '4px' : 0 }}>
+                  <span style={{ color: '#f87171', fontWeight: 800 }}>* </span>
+                  <span style={{ color: '#cbd5e1', fontWeight: 700 }}>Sub-Actividad: </span>
+                  <span style={{ color: '#a5b4fc', fontWeight: 700 }}>{subAct}</span>
+                </div>
+              )}
+              {grupoRce && (
+                <div>
+                  <span style={{ color: '#94a3b8' }}>Actividad RCE: </span>
+                  <span style={{ color: '#e2e8f0', fontWeight: 600 }}>{grupoRce}</span>
+                </div>
+              )}
+            </div>
+          )}
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px 16px', marginBottom: '4px' }}>
+            {rendLabel && (
+              <div>
+                <span style={{ color: '#94a3b8' }}>Rendimiento esp.: </span>
+                <span style={{ color: '#fbbf24', fontWeight: 700 }}>{rendLabel}</span>
+              </div>
+            )}
+            {remVal && (
+              <div>
+                <span style={{ color: '#94a3b8' }}>Imputación REM: </span>
+                <span style={{ color: '#34d399', fontWeight: 700 }}>REM {remVal}</span>
+              </div>
+            )}
+          </div>
+          {glosa.descripcion && (
+            <div style={{ marginTop: '8px', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '8px', color: '#cbd5e1', fontSize: '0.71rem' }}>
+              <span style={{ color: '#94a3b8', fontWeight: 700 }}>Definición: </span>
+              {glosa.descripcion.substring(0, 340)}{glosa.descripcion.length > 340 ? '...' : ''}
+            </div>
+          )}
+        </div>,
+        document.body
       )}
     </span>
   );
@@ -80,7 +169,7 @@ function ActividadesTable({ actividades, filterRR }) {
             const procCfg = PROCESO_COLORS[act.proceso] || {};
             return (
               <tr key={i} style={{ borderBottom: '1px solid #f1f5f9', background: i % 2 === 0 ? 'transparent' : 'rgba(248,250,252,0.5)' }}>
-                <td style={{ padding: '8px 12px', maxWidth: '260px' }}><GlosaTooltip glosa={act.glosa} actividad={act.actividad} /></td>
+                <td style={{ padding: '8px 12px', maxWidth: '260px' }}><GlosaTooltip glosa={act.glosa} actividad={act.actividad} rendimiento={act.rendimiento} /></td>
                 <td style={{ padding: '8px 12px' }}>{act.proceso ? <span style={{ background: procCfg.bg, color: procCfg.color, padding: '2px 8px', borderRadius: '20px', fontSize: '0.68rem', fontWeight: 600 }}>{act.proceso}</span> : '—'}</td>
                 <td style={{ padding: '8px 12px', fontWeight: 600, color: '#1e293b' }}>{fmtH(act.horas)}</td>
                 <td style={{ padding: '8px 12px', color: '#64748b' }}>{act.rendimiento || '—'}</td>
