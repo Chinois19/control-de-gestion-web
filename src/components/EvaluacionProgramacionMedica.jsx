@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
+import Select from 'react-select';
 import {
   ChevronDown, ChevronRight, Stethoscope, Users, Clock, Activity,
   CheckCircle, AlertTriangle, XCircle, Filter, Search, BarChart3,
@@ -171,9 +172,9 @@ export default function EvaluacionProgramacionMedica({
   // Controles de evaluación
   const [periodo, setPeriodo] = useState('anual'); // 'anual' (S1+S2) | 's1' (Ene-Jun) | 's2' (Jul-Dic)
   const [modoMeta, setModoMeta] = useState('completa'); // 'completa' | 'devengada'
-  const [filterEstado, setFilterEstado] = useState('HOMOLOGADA'); // 'TODOS' | 'HOMOLOGADA' | 'SIN_RCE' | 'SIN_GLOSA' | 'NR'
-  const [filterActKey, setFilterActKey] = useState('TODAS');
-  const [includeTeleEquiv, setIncludeTeleEquiv] = useState(true);
+  const [filterEstados, setFilterEstados] = useState([]); // [] = Todas las actividades
+  const [filterActKeys, setFilterActKeys] = useState([]); // [] = Todas las actividades
+  const includeTeleEquiv = true; // Siempre activo por defecto sin mostrar check redundante
   const [selectedProfDetail, setSelectedProfDetail] = useState(null);
 
   // Carga del caché RCE de Especialistas
@@ -421,10 +422,10 @@ export default function EvaluacionProgramacionMedica({
           if (filterProceso !== 'todos' && a.proceso !== filterProceso) continue;
           if (filterRR !== 'todos' && a.rr !== filterRR) continue;
           const actCatKey = `${a.id}|${norm(a.actividad)}`;
-          if (filterActKey !== 'TODAS' && actCatKey !== filterActKey) continue;
+          if (filterActKeys.length > 0 && !filterActKeys.includes(actCatKey)) continue;
 
           const estado = classifyAct(a);
-          if (filterEstado !== 'TODOS' && estado !== filterEstado) continue;
+          if (filterEstados.length > 0 && !filterEstados.includes(estado)) continue;
 
           const rk = getActRceKey(a);
           const metaAnual = (a.prod1Sem || 0) + (a.prod2Sem || 0);
@@ -473,9 +474,67 @@ export default function EvaluacionProgramacionMedica({
             pct,
             brecha,
             byMonth,
-            sharedKeyNote,
+            sharedKeyNote: null,
           });
         }
+
+        // Agrupar actividades HOMOLOGADAS que comparten la misma clave RCE en una sola fila resumida desplegable
+        const groupedByRce = new Map();
+        const finalActsEval = [];
+        for (const item of actsEval) {
+          if (item.estado === 'HOMOLOGADA' && item.rceKey) {
+            if (!groupedByRce.has(item.rceKey)) groupedByRce.set(item.rceKey, []);
+            groupedByRce.get(item.rceKey).push(item);
+          } else {
+            finalActsEval.push(item);
+          }
+        }
+        for (const [rk, items] of groupedByRce.entries()) {
+          if (items.length === 1) {
+            finalActsEval.push(items[0]);
+          } else {
+            const st = profEspKeyStats.get(`${np}||${esp.nombre}||${rk}`);
+            const ejec = st ? st.ejec : 0;
+            const nsp = st ? st.nsp : 0;
+            const asig = st ? st.asig : 0;
+            const byMonth = st ? st.byMonth : {};
+            const meta1Sem = items.reduce((s, x) => s + (x.meta1Sem || 0), 0);
+            const meta2Sem = items.reduce((s, x) => s + (x.meta2Sem || 0), 0);
+            const metaAnual = items.reduce((s, x) => s + (x.metaAnual || 0), 0);
+            const metaPeriodo = items.reduce((s, x) => s + (x.metaPeriodo || 0), 0);
+            const metaEval = items.reduce((s, x) => s + (x.metaEval || 0), 0);
+            const horas1Sem = items.reduce((s, x) => s + (x.horas1Sem || 0), 0);
+            const horas2Sem = items.reduce((s, x) => s + (x.horas2Sem || 0), 0);
+            const horas = items.reduce((s, x) => s + (x.horas || 0), 0);
+            const isVisitaSala = rk === 'SALUD MENTAL ESPECIALIDAD/ENLACE|INTERCONSULTA EN SALA';
+            const summaryName = isVisitaSala
+              ? 'Visitas en Sala Hospitalizado (Resumen)'
+              : `${items[0].glosa?.subActRCE || items[0].actividad} (Resumen)`;
+            finalActsEval.push({
+              ...items[0],
+              id: items.map(x => x.id).join('+'),
+              actividad: summaryName,
+              horas1Sem,
+              horas2Sem,
+              horas,
+              meta1Sem,
+              meta2Sem,
+              metaAnual,
+              metaPeriodo,
+              metaEval,
+              ejec,
+              nsp,
+              asig,
+              pct: metaEval > 0 ? (ejec / metaEval) * 100 : null,
+              brecha: ejec - metaEval,
+              byMonth,
+              sharedKeyNote: null,
+              subItems: items,
+            });
+          }
+        }
+        actsEval.length = 0;
+        actsEval.push(...finalActsEval);
 
         if (actsEval.length === 0) continue;
 
@@ -588,8 +647,8 @@ export default function EvaluacionProgramacionMedica({
     searchProf,
     filterProceso,
     filterRR,
-    filterEstado,
-    filterActKey,
+    filterEstados,
+    filterActKeys,
     periodo,
     factorDevengado,
     includeTeleEquiv,
@@ -630,11 +689,11 @@ export default function EvaluacionProgramacionMedica({
                 fontSize: '0.74rem', fontWeight: 700, padding: '3px 10px', borderRadius: '999px',
                 background: '#ecfdf5', color: '#065f46', border: '1px solid #a7f3d0'
               }}>
-                Corte RCE en caché: hasta {rce2026.maxDate} ({fmt(rce2026.records.length)} registros 2026)
+                Datos RCE actualizados al {rce2026.maxDate} · {fmt(rce2026.records.length)} atenciones 2026
               </span>
             </div>
             <div style={{ fontSize: '0.78rem', color: '#64748b', marginTop: '4px' }}>
-              <strong>1° Sem:</strong> Reprogramación 19-03-2026 (2).xlsx · <strong>2° Sem:</strong> Programacion.RRHH.230626.xlsx · <strong>Producción:</strong> Estado Hora = <code>EJECUTADA</code> (NSP complementario)
+              <strong>1° Sem:</strong> Reprogramación marzo 2026 · <strong>2° Sem:</strong> Reprogramación junio 2026 · <strong>Producción:</strong> Atenciones ejecutadas (NSP complementario)
             </div>
           </div>
 
@@ -683,66 +742,106 @@ export default function EvaluacionProgramacionMedica({
           </div>
         </div>
 
-        {/* Segunda fila: Filtros de Estado de Homologación, Actividad específica y equivalencia Teleconsulta */}
+        {/* Segunda fila: Caja delimitada de Filtros de Evaluación */}
         <div style={{
-          display: 'flex', flexWrap: 'wrap', gap: '12px', alignItems: 'center',
-          marginTop: '14px', paddingTop: '14px', borderTop: '1px solid #f1f5f9'
+          marginTop: '14px', padding: '12px 16px',
+          background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '12px',
+          display: 'flex', flexDirection: 'column', gap: '10px'
         }}>
-          <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', alignItems: 'center' }}>
-            <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#64748b' }}>Estado actividad:</span>
-            {[
-              { id: 'HOMOLOGADA', label: '✓ Solo Evaluables RCE (Homologadas)' },
-              { id: 'TODOS', label: 'Todas las actividades' },
-              { id: 'SIN_RCE', label: 'Sin RCE Especialistas' },
-              { id: 'SIN_GLOSA', label: 'Sin Glosa' },
-              { id: 'NR', label: 'No Requiere Rendimiento (NR)' },
-            ].map(st => (
-              <button
-                key={st.id}
-                onClick={() => setFilterEstado(st.id)}
-                style={{
-                  padding: '5px 11px', borderRadius: '8px', cursor: 'pointer',
-                  fontSize: '0.74rem', fontWeight: 700,
-                  border: filterEstado === st.id ? '1.5px solid #4f46e5' : '1px solid #e2e8f0',
-                  background: filterEstado === st.id ? 'rgba(79,70,229,0.08)' : 'white',
-                  color: filterEstado === st.id ? '#4f46e5' : '#64748b'
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.68rem', fontWeight: 800, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+            <Filter size={13} color="#4f46e5" /> Filtros de Evaluación
+          </div>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '14px', alignItems: 'center' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: '280px', flex: '0 1 340px' }}>
+            <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#64748b', whiteSpace: 'nowrap' }}>Estado actividad:</span>
+            <div style={{ flex: 1 }}>
+              <Select
+                isMulti
+                closeMenuOnSelect={false}
+                value={[
+                  { value: 'HOMOLOGADA', label: '✓ Solo Evaluables RCE (Homologadas)' },
+                  { value: 'SIN_RCE', label: 'Sin RCE Especialistas' },
+                  { value: 'SIN_GLOSA', label: 'Sin Glosa' },
+                  { value: 'NR', label: 'No Requiere Rendimiento (NR)' },
+                ].filter(o => filterEstados.includes(o.value))}
+                onChange={opts => setFilterEstados((opts || []).map(o => o.value))}
+                options={[
+                  { value: 'HOMOLOGADA', label: '✓ Solo Evaluables RCE (Homologadas)' },
+                  { value: 'SIN_RCE', label: 'Sin RCE Especialistas' },
+                  { value: 'SIN_GLOSA', label: 'Sin Glosa' },
+                  { value: 'NR', label: 'No Requiere Rendimiento (NR)' },
+                ]}
+                isSearchable
+                placeholder="Todas las actividades"
+                noOptionsMessage={() => 'Sin coincidencias'}
+                styles={{
+                  control: (base) => ({
+                    ...base,
+                    minHeight: '34px',
+                    borderRadius: '8px',
+                    borderColor: '#cbd5e1',
+                    fontSize: '0.75rem',
+                    fontWeight: 600,
+                    boxShadow: 'none',
+                  }),
+                  multiValue: (base) => ({ ...base, backgroundColor: '#eef2ff', borderRadius: '6px' }),
+                  multiValueLabel: (base) => ({ ...base, color: '#4338ca', fontWeight: 700, fontSize: '0.71rem' }),
+                  menu: (base) => ({ ...base, zIndex: 50, fontSize: '0.76rem' }),
+                  option: (base, state) => ({
+                    ...base,
+                    fontWeight: state.isSelected ? 700 : 500,
+                    backgroundColor: state.isSelected ? '#4f46e5' : state.isFocused ? '#eef2ff' : 'white',
+                    color: state.isSelected ? 'white' : '#1e293b',
+                  }),
                 }}
-              >
-                {st.label}
-              </button>
-            ))}
+              />
+            </div>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#64748b' }}>Actividad:</span>
-            <select
-              value={filterActKey}
-              onChange={e => setFilterActKey(e.target.value)}
-              style={{
-                padding: '6px 10px', borderRadius: '8px', border: '1px solid #cbd5e1',
-                fontSize: '0.76rem', fontWeight: 600, color: '#1e293b', background: 'white', maxWidth: '340px'
-              }}
-            >
-              <option value="TODAS">Todas las actividades ({catalogoActividades.length})</option>
-              {catalogoActividades.map(c => (
-                <option key={c.key} value={c.key}>
-                  [{c.id}] {c.actividad} {c.tipoRCE ? `→ ${c.tipoRCE} | ${c.subRCE}` : `(${ESTADO_META[c.estado]?.label})`}
-                </option>
-              ))}
-            </select>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: '320px', flex: '1 1 400px', maxWidth: '560px' }}>
+            <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#64748b', whiteSpace: 'nowrap' }}>Actividad:</span>
+            <div style={{ flex: 1 }}>
+              <Select
+                isMulti
+                closeMenuOnSelect={false}
+                value={catalogoActividades
+                  .filter(c => filterActKeys.includes(c.key))
+                  .map(c => ({
+                    value: c.key,
+                    label: `[${c.id}] ${c.actividad} ${c.tipoRCE ? `→ ${c.tipoRCE} | ${c.subRCE}` : `(${ESTADO_META[c.estado]?.label})`}`,
+                  }))}
+                onChange={opts => setFilterActKeys((opts || []).map(o => o.value))}
+                options={catalogoActividades.map(c => ({
+                  value: c.key,
+                  label: `[${c.id}] ${c.actividad} ${c.tipoRCE ? `→ ${c.tipoRCE} | ${c.subRCE}` : `(${ESTADO_META[c.estado]?.label})`}`,
+                }))}
+                isSearchable
+                placeholder={`Todas las actividades (${catalogoActividades.length})`}
+                noOptionsMessage={() => 'No se encontraron actividades'}
+                styles={{
+                  control: (base) => ({
+                    ...base,
+                    minHeight: '34px',
+                    borderRadius: '8px',
+                    borderColor: '#cbd5e1',
+                    fontSize: '0.75rem',
+                    fontWeight: 600,
+                    boxShadow: 'none',
+                  }),
+                  multiValue: (base) => ({ ...base, backgroundColor: '#eef2ff', borderRadius: '6px' }),
+                  multiValueLabel: (base) => ({ ...base, color: '#4338ca', fontWeight: 700, fontSize: '0.71rem' }),
+                  menu: (base) => ({ ...base, zIndex: 50, fontSize: '0.76rem' }),
+                  option: (base, state) => ({
+                    ...base,
+                    fontWeight: state.isSelected ? 700 : 500,
+                    backgroundColor: state.isSelected ? '#4f46e5' : state.isFocused ? '#eef2ff' : 'white',
+                    color: state.isSelected ? 'white' : '#1e293b',
+                  }),
+                }}
+              />
+            </div>
           </div>
-
-          <label style={{
-            display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '0.75rem',
-            color: '#334155', fontWeight: 600, cursor: 'pointer', marginLeft: 'auto'
-          }} title="En el Glosario, 'Telemedicina: Teleconsulta Control' (cod 113) figura como TELEINTERCONSULTA SINCRONICA CONTROL, pero en el RCE los médicos la registran como TELECONSULTA CONTROL. Al marcar esta opción se contabilizan ambas.">
-            <input
-              type="checkbox"
-              checked={includeTeleEquiv}
-              onChange={e => setIncludeTeleEquiv(e.target.checked)}
-            />
-            Incluir <code>TELECONSULTA CONTROL/NUEVA</code> en Telemedicina (112/113)
-          </label>
+          </div>
         </div>
       </div>
 
@@ -823,7 +922,7 @@ export default function EvaluacionProgramacionMedica({
         <EvalEspecialidadRow
           key={esp.nombre}
           esp={esp}
-          autoOpen={searchProf.trim().length > 0 || filterActKey !== 'TODAS'}
+          autoOpen={searchProf.trim().length > 0 || filterActKeys.length > 0}
           onSelectProf={setSelectedProfDetail}
         />
       ))}
@@ -936,6 +1035,8 @@ function EvalEspecialidadRow({ esp, autoOpen, onSelectProf }) {
 function EvalProfesionalRow({ prof, autoOpen, onSelectProf }) {
   const [open, setOpen] = useState(false);
   const [openNoProg, setOpenNoProg] = useState(false);
+  const [expandedGroups, setExpandedGroups] = useState({});
+  const toggleGroup = (idx) => setExpandedGroups(prev => ({ ...prev, [idx]: !prev[idx] }));
   useEffect(() => { if (autoOpen) setOpen(true); }, [autoOpen]);
   const sem = semaforoColor(prof.pctHom);
   const totalRceProfEjec = prof.realBreakdown.reduce((s, x) => s + x.ejec, 0);
@@ -1042,16 +1143,39 @@ function EvalProfesionalRow({ prof, autoOpen, onSelectProf }) {
               {prof.actividades.map((a, idx) => {
                 const stMeta = ESTADO_META[a.estado] || ESTADO_META.SIN_GLOSA;
                 const aSem = semaforoColor(a.pct);
+                const hasSub = Array.isArray(a.subItems) && a.subItems.length > 1;
+                const isGroupOpen = !!expandedGroups[idx];
                 return (
-                  <tr key={idx} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                  <React.Fragment key={idx}>
+                  <tr
+                    onClick={hasSub ? () => toggleGroup(idx) : undefined}
+                    style={{
+                      borderBottom: '1px solid #f1f5f9',
+                      cursor: hasSub ? 'pointer' : 'default',
+                      background: hasSub ? 'rgba(99,102,241,0.03)' : 'transparent',
+                    }}
+                  >
                     <td style={{ padding: '7px 10px', maxWidth: '270px' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                        <span style={{ fontSize: '0.68rem', color: '#94a3b8', fontWeight: 700 }}>#{a.id}</span>
-                        <GlosaTooltip glosa={a.glosa} actividad={a.actividad} rendimiento={a.rendimiento} />
+                        {hasSub ? (
+                          <span style={{ color: '#4f46e5', display: 'inline-flex', alignItems: 'center' }}>
+                            {isGroupOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+                          </span>
+                        ) : (
+                          <span style={{ fontSize: '0.68rem', color: '#94a3b8', fontWeight: 700 }}>#{a.id}</span>
+                        )}
+                        <span style={{ fontWeight: hasSub ? 700 : 400 }}>
+                          <GlosaTooltip glosa={a.glosa} actividad={a.actividad} rendimiento={a.rendimiento} />
+                        </span>
+                        {hasSub && (
+                          <span style={{
+                            fontSize: '0.65rem', fontWeight: 700, color: '#4f46e5',
+                            background: '#eef2ff', padding: '1px 6px', borderRadius: '999px', whiteSpace: 'nowrap'
+                          }}>
+                            {a.subItems.length} prog.
+                          </span>
+                        )}
                       </div>
-                      {a.sharedKeyNote && (
-                        <div style={{ fontSize: '0.66rem', color: '#6366f1', marginTop: '2px' }}>{a.sharedKeyNote}</div>
-                      )}
                     </td>
                     <td style={{ padding: '7px 10px', color: '#334155', fontSize: '0.73rem' }}>
                       {a.glosa?.tipoActRCE && a.glosa?.subActRCE ? (
@@ -1102,6 +1226,25 @@ function EvalProfesionalRow({ prof, autoOpen, onSelectProf }) {
                       {a.estado === 'HOMOLOGADA' ? fmt(a.nsp) : '—'}
                     </td>
                   </tr>
+                  {hasSub && isGroupOpen && a.subItems.map((sub, sIdx) => (
+                    <tr key={`${idx}-sub-${sIdx}`} style={{ background: '#f8fafc', borderBottom: '1px solid #f1f5f9', fontSize: '0.73rem', color: '#475569' }}>
+                      <td style={{ padding: '5px 10px 5px 30px', maxWidth: '270px' }}>
+                        <span style={{ fontSize: '0.66rem', color: '#94a3b8', fontWeight: 700, marginRight: 6 }}>#{sub.id}</span>
+                        {sub.actividad}
+                      </td>
+                      <td style={{ padding: '5px 10px', color: '#94a3b8', fontSize: '0.69rem' }}>↳ Desglose programado</td>
+                      <td style={{ padding: '5px 10px', textAlign: 'center', color: '#94a3b8' }}>—</td>
+                      <td style={{ padding: '5px 10px', textAlign: 'right' }}>{fmtH(sub.horas1Sem)} / {fmtH(sub.horas2Sem)}</td>
+                      <td style={{ padding: '5px 10px', textAlign: 'right' }}>{fmt(sub.meta1Sem)}</td>
+                      <td style={{ padding: '5px 10px', textAlign: 'right' }}>{fmt(sub.meta2Sem)}</td>
+                      <td style={{ padding: '5px 10px', textAlign: 'right', fontWeight: 600 }}>{fmt(sub.metaEval)}</td>
+                      <td style={{ padding: '5px 10px', textAlign: 'right', color: '#94a3b8' }}>—</td>
+                      <td style={{ padding: '5px 10px', textAlign: 'right', color: '#94a3b8' }}>—</td>
+                      <td style={{ padding: '5px 10px', textAlign: 'right', color: '#94a3b8' }}>—</td>
+                      <td style={{ padding: '5px 10px', textAlign: 'right', color: '#94a3b8' }}>—</td>
+                    </tr>
+                  ))}
+                  </React.Fragment>
                 );
               })}
             </tbody>
