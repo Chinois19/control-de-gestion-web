@@ -166,6 +166,7 @@ export default function EvaluacionProgramacionMedica({
   filterRR,
 }) {
   const [rceData, setRceData] = useState(null);
+  const [usData, setUsData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -174,31 +175,40 @@ export default function EvaluacionProgramacionMedica({
   const [modoMeta, setModoMeta] = useState('completa'); // 'completa' | 'devengada'
   const [filterEstados, setFilterEstados] = useState([]); // [] = Todas las actividades
   const [filterActKeys, setFilterActKeys] = useState([]); // [] = Todas las actividades
+  const [includeComprasServicio, setIncludeComprasServicio] = useState(false); // Excluye compras de servicio / no institucional por defecto
   const includeTeleEquiv = true; // Siempre activo por defecto sin mostrar check redundante
   const [selectedProfDetail, setSelectedProfDetail] = useState(null);
 
-  // Carga del caché RCE de Especialistas
+  // Carga del caché RCE de Especialistas y REDCap Ecografías (Imagenología)
   useEffect(() => {
     let mounted = true;
+    async function fetchGzOrJson(gzUrl, jsonUrl) {
+      try {
+        const resGz = await fetch(gzUrl + '?' + Date.now());
+        if (resGz.ok && typeof DecompressionStream !== 'undefined') {
+          const ds = new DecompressionStream('gzip');
+          return await new Response(resGz.body.pipeThrough(ds)).json();
+        }
+      } catch (e) {
+        console.warn('Fallback a JSON sin comprimir para ' + jsonUrl + ':', e);
+      }
+      const res = await fetch(jsonUrl + '?' + Date.now());
+      if (!res.ok) throw new Error('No se pudo cargar ' + jsonUrl);
+      return await res.json();
+    }
+
     async function load() {
       setLoading(true);
       setError(null);
       try {
-        const resGz = await fetch('data/actividades_medicina_cached.json.gz?' + Date.now());
-        if (resGz.ok && typeof DecompressionStream !== 'undefined') {
-          const ds = new DecompressionStream('gzip');
-          const d = await new Response(resGz.body.pipeThrough(ds)).json();
-          if (mounted) { setRceData(d); setLoading(false); }
-          return;
+        const [rce, us] = await Promise.all([
+          fetchGzOrJson('data/actividades_medicina_cached.json.gz', 'data/actividades_medicina_cached.json'),
+          fetchGzOrJson('data/ultrasound_cached.json.gz', 'data/ultrasound_cached.json').catch(() => null),
+        ]);
+        if (mounted) {
+          setRceData(rce);
+          setUsData(us);
         }
-      } catch (e) {
-        console.warn('Fallback a JSON sin comprimir:', e);
-      }
-      try {
-        const res = await fetch('data/actividades_medicina_cached.json?' + Date.now());
-        if (!res.ok) throw new Error('No se pudo cargar actividades_medicina_cached.json');
-        const d = await res.json();
-        if (mounted) setRceData(d);
       } catch (e) {
         if (mounted) setError(e.message);
       } finally {
@@ -208,6 +218,79 @@ export default function EvaluacionProgramacionMedica({
     load();
     return () => { mounted = false; };
   }, []);
+
+  // Registros REDCap Ecografías (Imagenología) 2026 homologados por apellido
+  const usStats2026 = useMemo(() => {
+    const recs = usData?.records || [];
+    const byProfCode = new Map(); // `${normProf}||${code}` -> { ejec, nsp, byMonth }
+    let unprogrammedEjec = 0;
+
+    const matchRadiologo = (rawFunc) => {
+      const f = norm(rawFunc);
+      if (!f) return null;
+      if (f.includes('SAMUR')) return 'SAMUR JACOB ANDRES FELIPE';
+      if (f.includes('QUIJANES')) return 'QUIJANES IBACACHE NATALIA';
+      if (f.includes('RAVANAL')) return 'RAVANAL PARRA JAVIERA FABIOLA';
+      if (f.includes('RIOS')) return 'RIOS HELDT FABIOLA CHRISTI';
+      if (f.includes('FRANCO') && f.includes('HERNANDEZ')) return 'HERNANDEZ UGALDE FRANCO ANDRE';
+      return null;
+    };
+
+    const isInstitucional = (mod) => {
+      const m = norm(mod);
+      return m === 'INSTITUCIONAL' || m === 'OPERATIVO RADIOLOGICO';
+    };
+
+    const classifyExamCode = (examText, procedencia) => {
+      const t = norm(examText);
+      const isUrg = norm(procedencia) === 'URGENCIA';
+      if (/BIOPSIA|PUNCION|MARCACION/.test(t)) return '295';
+      if (/DOPPLER|VASCULAR/.test(t)) return isUrg ? '292' : '319';
+      return isUrg ? '291' : '318';
+    };
+
+    for (const r of recs) {
+      const f = r.fecha_de_atenci_n || '';
+      if (!f.startsWith('2026-')) continue;
+      const m = parseInt(f.slice(5, 7), 10);
+      if (periodo === 's1' && m > 6) continue;
+      if (periodo === 's2' && m < 7) continue;
+      if (!includeComprasServicio && !isInstitucional(r.modalidad_de_atenci_n)) continue;
+
+      const est = norm(r.estado_de_atenci_n);
+      const isNsp = est.includes('NSP') || est.includes('NO SE PRESENT');
+      const isEjec = !isNsp;
+
+      const exams = [
+        r.descripci_n_del_ex_men,
+        r.descripci_n_del_ex_men_2,
+        r.descripci_n_del_ex_men_3,
+        r.descripci_n_del_ex_men_4,
+      ].filter(x => x && String(x).trim() !== '');
+      const examList = exams.length > 0 ? exams : ['ECOGRAFIA'];
+
+      const progProf = matchRadiologo(r.funcionario_que_atiende);
+      if (!progProf) {
+        if (isEjec) unprogrammedEjec += examList.length;
+        continue;
+      }
+
+      const ym = f.slice(0, 7);
+      for (const ex of examList) {
+        const code = classifyExamCode(ex, r.procedencia_de_derivaci_n);
+        const k = `${progProf}||${code}`;
+        if (!byProfCode.has(k)) byProfCode.set(k, { ejec: 0, nsp: 0, byMonth: {} });
+        const st = byProfCode.get(k);
+        if (isEjec) {
+          st.ejec++;
+          st.byMonth[ym] = (st.byMonth[ym] || 0) + 1;
+        } else {
+          st.nsp++;
+        }
+      }
+    }
+    return { byProfCode, unprogrammedEjec };
+  }, [usData, periodo, includeComprasServicio]);
 
   // Registros RCE solo del año 2026 y dentro del período seleccionado
   const rce2026 = useMemo(() => {
@@ -424,7 +507,8 @@ export default function EvaluacionProgramacionMedica({
           const actCatKey = `${a.id}|${norm(a.actividad)}`;
           if (filterActKeys.length > 0 && !filterActKeys.includes(actCatKey)) continue;
 
-          const estado = classifyAct(a);
+          const isImagenologiaEco = esp.nombre === 'IMAGENOLOGÍA' && ['318', '291', '319', '292', '295'].includes(String(a.id));
+          const estado = isImagenologiaEco ? 'HOMOLOGADA' : classifyAct(a);
           if (filterEstados.length > 0 && !filterEstados.includes(estado)) continue;
 
           const rk = getActRceKey(a);
@@ -438,7 +522,14 @@ export default function EvaluacionProgramacionMedica({
           let byMonth = {};
           let sharedKeyNote = null;
 
-          if (estado === 'HOMOLOGADA' && rk) {
+          if (isImagenologiaEco) {
+            const st = usStats2026.byProfCode.get(`${np}||${String(a.id)}`);
+            if (st) {
+              ejec = st.ejec;
+              nsp = st.nsp;
+              byMonth = st.byMonth;
+            }
+          } else if (estado === 'HOMOLOGADA' && rk) {
             matchedRceKeysForProf.add(rk);
             const st = profEspKeyStats.get(`${np}||${esp.nombre}||${rk}`);
             const totalKeyMeta = keyMetaSum.get(rk) || 0;
@@ -841,6 +932,17 @@ export default function EvaluacionProgramacionMedica({
               />
             </div>
           </div>
+          <label style={{
+            display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '0.74rem',
+            color: '#334155', fontWeight: 600, cursor: 'pointer', marginLeft: 'auto'
+          }} title="Por defecto se excluyen Compras de Servicio, Convenios y Privados en Imagenología (los Operativos Radiológicos sí se consideran institucionales).">
+            <input
+              type="checkbox"
+              checked={includeComprasServicio}
+              onChange={e => setIncludeComprasServicio(e.target.checked)}
+            />
+            Incluir Compras de Servicio / No Institucional (Imagenología)
+          </label>
           </div>
         </div>
       </div>
@@ -895,6 +997,17 @@ export default function EvaluacionProgramacionMedica({
           </div>
           <div style={{ fontSize: '0.72rem', color: '#7c3aed', fontWeight: 700 }}>
             +{fmt(evalModel.totFueraProg)} ejec. no programadas
+          <label style={{
+            display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '0.74rem',
+            color: '#334155', fontWeight: 600, cursor: 'pointer', marginLeft: 'auto'
+          }} title="Por defecto se excluyen Compras de Servicio, Convenios y Privados en Imagenología (los Operativos Radiológicos sí se consideran institucionales).">
+            <input
+              type="checkbox"
+              checked={includeComprasServicio}
+              onChange={e => setIncludeComprasServicio(e.target.checked)}
+            />
+            Incluir Compras de Servicio / No Institucional (Imagenología)
+          </label>
           </div>
         </div>
       </div>
@@ -1521,6 +1634,17 @@ function ProfAuditModal({ prof, periodo, rceMaxDate, onClose }) {
                 </tbody>
               </table>
             )}
+          <label style={{
+            display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '0.74rem',
+            color: '#334155', fontWeight: 600, cursor: 'pointer', marginLeft: 'auto'
+          }} title="Por defecto se excluyen Compras de Servicio, Convenios y Privados en Imagenología (los Operativos Radiológicos sí se consideran institucionales).">
+            <input
+              type="checkbox"
+              checked={includeComprasServicio}
+              onChange={e => setIncludeComprasServicio(e.target.checked)}
+            />
+            Incluir Compras de Servicio / No Institucional (Imagenología)
+          </label>
           </div>
         </div>
       </div>
