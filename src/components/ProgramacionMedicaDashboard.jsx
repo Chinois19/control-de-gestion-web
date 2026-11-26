@@ -1,7 +1,8 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { ChevronDown, ChevronRight, ArrowLeft, Stethoscope, Info, Clock, Activity, Users, BookOpen, AlertTriangle, CheckCircle, XCircle, Filter } from 'lucide-react';
+import { ChevronDown, ChevronRight, ArrowLeft, Stethoscope, Info, Clock, Activity, Users, BookOpen, AlertTriangle, CheckCircle, XCircle, Filter, BarChart3 } from 'lucide-react';
 import { programacionMedica } from '../data/programacionVillarrica2026';
 import GlosaTooltip from './GlosaTooltip';
+import EvaluacionProgramacionMedica from './EvaluacionProgramacionMedica';
 import { matchesAllTokens, rebuildProfesional, rebuildGroup } from '../utils/programacionFilters';
 
 // ─── CONSTANTS ──────────────────────────────────────────────────────────────
@@ -197,6 +198,7 @@ function EspecialidadRow({ esp, filterRR, autoOpen }) {
 
 // ─── MAIN DASHBOARD ──────────────────────────────────────────────────────────
 export default function ProgramacionMedicaDashboard({ onBack, initialSearch }) {
+  const [activeTab, setActiveTab] = useState('evaluacion');
   const [searchEsp, setSearchEsp] = useState(initialSearch || '');
   const [searchProf, setSearchProf] = useState('');
   const [filterRR, setFilterRR] = useState('todos');
@@ -269,20 +271,55 @@ export default function ProgramacionMedicaDashboard({ onBack, initialSearch }) {
         }}>
           <ArrowLeft size={16} /> Volver
         </button>
-        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '20px' }}>
-          <div style={{ background: 'rgba(255,255,255,0.15)', borderRadius: '16px', padding: '16px', backdropFilter: 'blur(10px)' }}>
-            <Stethoscope size={32} />
-          </div>
-          <div>
-            <div style={{ fontSize: '0.8rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '2px', color: 'rgba(255,255,255,0.6)', marginBottom: '6px' }}>
-              Programación Hospital de Villarrica 2026
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '20px', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: '20px' }}>
+            <div style={{ background: 'rgba(255,255,255,0.15)', borderRadius: '16px', padding: '16px', backdropFilter: 'blur(10px)' }}>
+              <Stethoscope size={32} />
             </div>
-            <h1 style={{ fontSize: '2rem', fontWeight: 900, margin: 0, letterSpacing: '-0.5px' }}>
-              Programación Médica
-            </h1>
-            <p style={{ color: 'rgba(255,255,255,0.7)', marginTop: '8px', fontSize: '0.9rem' }}>
-              Programación de especialidades médicas 2026 · Archivo: Programacion.RRHH.230626.xlsx
-            </p>
+            <div>
+              <div style={{ fontSize: '0.8rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '2px', color: 'rgba(255,255,255,0.6)', marginBottom: '6px' }}>
+                Programación Hospital de Villarrica 2026
+              </div>
+              <h1 style={{ fontSize: '2rem', fontWeight: 900, margin: 0, letterSpacing: '-0.5px' }}>
+                Programación Médica
+              </h1>
+              <p style={{ color: 'rgba(255,255,255,0.7)', marginTop: '8px', fontSize: '0.9rem' }}>
+                1° Sem: Reprogramación 19-03-2026 (2).xlsx · 2° Sem: Programacion.RRHH.230626.xlsx · Glosario RCE 2026
+              </p>
+            </div>
+          </div>
+
+          {/* Selector de Pestañas: Programación vs Evaluación */}
+          <div style={{
+            display: 'flex', gap: '10px', background: 'rgba(15,23,42,0.45)', padding: '8px',
+            borderRadius: '16px', border: '1px solid rgba(255,255,255,0.18)', backdropFilter: 'blur(12px)', zIndex: 2
+          }}>
+            <button
+              onClick={() => setActiveTab('programacion')}
+              style={{
+                display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 18px',
+                borderRadius: '12px', border: 'none', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 700,
+                background: activeTab === 'programacion' ? 'linear-gradient(135deg, #6366f1, #4f46e5)' : 'transparent',
+                color: activeTab === 'programacion' ? 'white' : 'rgba(255,255,255,0.75)',
+                boxShadow: activeTab === 'programacion' ? '0 4px 14px rgba(99,102,241,0.4)' : 'none',
+                transition: 'all 0.2s'
+              }}
+            >
+              <BookOpen size={17} /> Programación 2026
+            </button>
+            <button
+              onClick={() => setActiveTab('evaluacion')}
+              style={{
+                display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 18px',
+                borderRadius: '12px', border: 'none', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 700,
+                background: activeTab === 'evaluacion' ? 'linear-gradient(135deg, #10b981, #059669)' : 'transparent',
+                color: activeTab === 'evaluacion' ? 'white' : 'rgba(255,255,255,0.75)',
+                boxShadow: activeTab === 'evaluacion' ? '0 4px 14px rgba(16,185,129,0.4)' : 'none',
+                transition: 'all 0.2s'
+              }}
+            >
+              <BarChart3 size={17} /> Evaluación vs. Producción RCE
+            </button>
           </div>
         </div>
 
@@ -379,30 +416,42 @@ export default function ProgramacionMedicaDashboard({ onBack, initialSearch }) {
         </div>
       </div>
 
-      {/* Tabla header */}
-      <div style={{ margin: '0 40px', marginBottom: '4px' }}>
-        <div style={{
-          display: 'grid', gridTemplateColumns: '1fr 80px 90px 90px 90px 90px 100px',
-          gap: '12px', padding: '8px 16px', background: 'rgba(99,102,241,0.06)',
-          borderRadius: '8px 8px 0 0', border: '1px solid #e2e8f0', borderBottom: 'none'
-        }}>
-          {['Especialidad / Profesional', 'Horas Asig.', '1° Sem', '2° Sem', 'Total', 'Total R', 'R.R.'].map(h => (
-            <span key={h} style={{ fontSize: '0.72rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.3px' }}>{h}</span>
-          ))}
-        </div>
-      </div>
-
-      {/* Especialidades */}
-      <div style={{ margin: '0 40px', paddingBottom: '60px' }}>
-        {filtered.map(esp => (
-          <EspecialidadRow key={esp.nombre} esp={esp} filterRR={filterRR} autoOpen={searchProf.trim().length > 0} />
-        ))}
-        {filtered.length === 0 && (
-          <div style={{ textAlign: 'center', padding: '60px', color: '#94a3b8', fontSize: '0.92rem' }}>
-            No se encontraron especialidades para la búsqueda
+      {activeTab === 'evaluacion' ? (
+        <EvaluacionProgramacionMedica
+          programacionMedica={programacionMedica}
+          searchEsp={searchEsp}
+          searchProf={searchProf}
+          filterProceso={filterProceso}
+          filterRR={filterRR}
+        />
+      ) : (
+        <>
+          {/* Tabla header */}
+          <div style={{ margin: '0 40px', marginBottom: '4px' }}>
+            <div style={{
+              display: 'grid', gridTemplateColumns: '1fr 80px 90px 90px 90px 90px 100px',
+              gap: '12px', padding: '8px 16px', background: 'rgba(99,102,241,0.06)',
+              borderRadius: '8px 8px 0 0', border: '1px solid #e2e8f0', borderBottom: 'none'
+            }}>
+              {['Especialidad / Profesional', 'Horas Asig.', '1° Sem', '2° Sem', 'Total', 'Total R', 'R.R.'].map(h => (
+                <span key={h} style={{ fontSize: '0.72rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.3px' }}>{h}</span>
+              ))}
+            </div>
           </div>
-        )}
-      </div>
+
+          {/* Especialidades */}
+          <div style={{ margin: '0 40px', paddingBottom: '60px' }}>
+            {filtered.map(esp => (
+              <EspecialidadRow key={esp.nombre} esp={esp} filterRR={filterRR} autoOpen={searchProf.trim().length > 0} />
+            ))}
+            {filtered.length === 0 && (
+              <div style={{ textAlign: 'center', padding: '60px', color: '#94a3b8', fontSize: '0.92rem' }}>
+                No se encontraron especialidades para la búsqueda
+              </div>
+            )}
+          </div>
+        </>
+      )}
     </div>
   );
 }
