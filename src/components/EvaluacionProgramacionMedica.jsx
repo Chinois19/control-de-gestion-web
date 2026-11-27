@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import Select from 'react-select';
+import MultiSelectSearch from './MultiSelectSearch';
 import {
   ChevronDown, ChevronRight, Stethoscope, Users, Clock, Activity,
   CheckCircle, AlertTriangle, XCircle, Filter, Search, BarChart3,
@@ -160,13 +160,19 @@ function semaforoColor(pct) {
 
 export default function EvaluacionProgramacionMedica({
   programacionMedica,
-  searchEsp,
-  searchProf,
-  filterProceso,
-  filterRR,
+  searchEsp = '',
+  setSearchEsp,
+  searchProf = '',
+  setSearchProf,
+  filterProceso = 'todos',
+  setFilterProceso,
+  availableProcesos = [],
+  filterRR = 'todos',
+  setFilterRR,
 }) {
   const [rceData, setRceData] = useState(null);
   const [usData, setUsData] = useState(null);
+  const [pabData, setPabData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -178,6 +184,8 @@ export default function EvaluacionProgramacionMedica({
   const [includeComprasServicio, setIncludeComprasServicio] = useState(false); // Excluye compras de servicio / no institucional por defecto
   const includeTeleEquiv = true; // Siempre activo por defecto sin mostrar check redundante
   const [selectedProfDetail, setSelectedProfDetail] = useState(null);
+  const [focusedEsp, setFocusedEsp] = useState(null);
+  const [focusedProf, setFocusedProf] = useState(null);
 
   // Carga del caché RCE de Especialistas y REDCap Ecografías (Imagenología)
   useEffect(() => {
@@ -201,13 +209,15 @@ export default function EvaluacionProgramacionMedica({
       setLoading(true);
       setError(null);
       try {
-        const [rce, us] = await Promise.all([
+        const [rce, us, pab] = await Promise.all([
           fetchGzOrJson('data/actividades_medicina_cached.json.gz', 'data/actividades_medicina_cached.json'),
           fetchGzOrJson('data/ultrasound_cached.json.gz', 'data/ultrasound_cached.json').catch(() => null),
+          fetchGzOrJson('data/libro_pabellon_cached.json.gz', 'data/libro_pabellon_cached.json').catch(() => null),
         ]);
         if (mounted) {
           setRceData(rce);
           setUsData(us);
+          setPabData(pab);
         }
       } catch (e) {
         if (mounted) setError(e.message);
@@ -292,6 +302,70 @@ export default function EvaluacionProgramacionMedica({
     return { byProfCode, unprogrammedEjec };
   }, [usData, periodo, includeComprasServicio]);
 
+  // Registros Libro de Pabellón Electrónico 2026 vinculados por RUT (cirujano y anestesiólogo)
+  const pabStats2026 = useMemo(() => {
+    const recs = pabData?.records || [];
+    const byRutCat = new Map(); // `${rutBase}||${cat}` -> { ejec, byMonth }
+    const byRutAllCats = new Map(); // rutBase -> Map<catKey, { catKey, ejec, byMonth }>
+    const stripRut = (r) => String(r || '').trim().toUpperCase().replace(/\./g, '').split('-')[0];
+
+    const isInstitucionalPab = (tg) => {
+      const m = norm(tg);
+      return !m.includes('COMPRA') && !m.includes('LICITACION');
+    };
+
+    const classifyPab = (r) => {
+      const tiq = norm(r.tipo_iq);
+      if (tiq === 'URGENCIA' || (norm(r.urgencia) === 'SI' && !tiq.includes('DIFERIDA'))) return 'PAB_URG';
+      const esp = norm(r.especialidad);
+      const itv = norm(r.intervencion);
+      if ((esp.includes('OBSTETRIC') || esp.includes('GINECOL')) && /CESAREA|OBSTET|PARTO|LEGRADO/.test(itv)) {
+        return 'PAB_OBST';
+      }
+      const tc = norm(r.tipo_cirugia);
+      if (tc.includes('PROCEDIMIENTO')) return 'PAB_PROC';
+      if (tc.includes('MENOR')) return 'PAB_MENOR';
+      if (tc.includes('AMBULATORIA')) return 'PAB_CMA';
+      if (tc.includes('MAYOR')) return 'PAB_MAYOR';
+      return null;
+    };
+
+    const addCat = (rutBase, catKey, ym) => {
+      const k = `${rutBase}||${catKey}`;
+      if (!byRutCat.has(k)) byRutCat.set(k, { ejec: 0, byMonth: {} });
+      const st = byRutCat.get(k);
+      st.ejec++;
+      st.byMonth[ym] = (st.byMonth[ym] || 0) + 1;
+
+      if (!byRutAllCats.has(rutBase)) byRutAllCats.set(rutBase, new Map());
+      const m = byRutAllCats.get(rutBase);
+      if (!m.has(catKey)) m.set(catKey, { catKey, ejec: 0, byMonth: {} });
+      const st2 = m.get(catKey);
+      st2.ejec++;
+      st2.byMonth[ym] = (st2.byMonth[ym] || 0) + 1;
+    };
+
+    for (const r of recs) {
+      const f = r.fecha_cirugia || '';
+      if (!f.startsWith('2026-')) continue;
+      const m = parseInt(f.slice(5, 7), 10);
+      if (periodo === 's1' && m > 6) continue;
+      if (periodo === 's2' && m < 7) continue;
+      if (!includeComprasServicio && !isInstitucionalPab(r.tipo_gestor || r.tipo_paciente)) continue;
+
+      const cat = classifyPab(r);
+      if (!cat) continue;
+      const ym = f.slice(0, 7);
+
+      const ruts = new Set([stripRut(r.cirujano), stripRut(r.anestesiologo)].filter(Boolean));
+      for (const rutBase of ruts) addCat(rutBase, cat, ym);
+
+      const ruts23 = new Set([stripRut(r.segundo_cirujano), stripRut(r.tercer_cirujano)].filter(Boolean));
+      for (const rutBase of ruts23) addCat(rutBase, `${cat}_23`, ym);
+    }
+    return { byRutCat, byRutAllCats };
+  }, [pabData, periodo, includeComprasServicio]);
+
   // Registros RCE solo del año 2026 y dentro del período seleccionado
   const rce2026 = useMemo(() => {
     const recs = rceData?.records || [];
@@ -342,6 +416,26 @@ export default function EvaluacionProgramacionMedica({
     })));
     return [...map.values()].sort((a, b) => String(a.id).localeCompare(String(b.id), undefined, { numeric: true }));
   }, [programacionMedica]);
+
+  // Mapa inverso: Clave RCE (TIPO|SUB) -> Actividad(es) equivalente(s) en Programación
+  const rceKeyToProgMap = useMemo(() => {
+    const m = new Map();
+    for (const c of catalogoActividades) {
+      if (c.tipoRCE && c.subRCE) {
+        const k = `${norm(c.tipoRCE)}|${norm(c.subRCE)}`;
+        if (!m.has(k)) m.set(k, []);
+        const label = `[#${c.id}] ${c.actividad}`;
+        if (!m.get(k).includes(label)) m.get(k).push(label);
+      }
+    }
+    if (!m.has('TELEMEDICINA CONTROL|TELECONSULTA CONTROL')) {
+      m.set('TELEMEDICINA CONTROL|TELECONSULTA CONTROL', ['[#113] Telemedicina: Teleconsulta Control']);
+    }
+    if (!m.has('TELEMEDICINA NUEVA|TELECONSULTA NUEVA')) {
+      m.set('TELEMEDICINA NUEVA|TELECONSULTA NUEVA', ['[#112] Telemedicina: Teleconsulta Nueva']);
+    }
+    return m;
+  }, [catalogoActividades]);
 
   // Construcción del motor de cruce Planilla (S1 + S2) <-> RCE 2026
   const evalModel = useMemo(() => {
@@ -482,8 +576,22 @@ export default function EvaluacionProgramacionMedica({
         continue;
       }
 
+      // Unificar profesionales duplicados por RUT dentro de la misma especialidad (ej. variantes de tildes/apóstrofos)
+      const profByRut = new Map();
+      for (const rawP of esp.profesionales) {
+        const rutKey = rawP.rut ? String(rawP.rut).trim() : norm(rawP.nombre);
+        if (!profByRut.has(rutKey)) {
+          profByRut.set(rutKey, { ...rawP, actividades: [...(rawP.actividades || [])] });
+        } else {
+          const prev = profByRut.get(rutKey);
+          const cleanName = !/[¿?]/.test(rawP.nombre) && /[¿?]/.test(prev.nombre) ? rawP.nombre : prev.nombre;
+          prev.nombre = cleanName;
+          prev.actividades = [...prev.actividades, ...(rawP.actividades || [])];
+        }
+      }
+
       const profsEval = [];
-      for (const prof of esp.profesionales) {
+      for (const prof of profByRut.values()) {
         if (searchProf.trim() && !matchesAllTokens(prof.nombre, searchProf)) {
           continue;
         }
@@ -500,6 +608,7 @@ export default function EvaluacionProgramacionMedica({
 
         const actsEval = [];
         const matchedRceKeysForProf = new Set();
+        const matchedPabCatsForProf = new Set();
 
         for (const a of prof.actividades) {
           if (filterProceso !== 'todos' && a.proceso !== filterProceso) continue;
@@ -508,10 +617,42 @@ export default function EvaluacionProgramacionMedica({
           if (filterActKeys.length > 0 && !filterActKeys.includes(actCatKey)) continue;
 
           const isImagenologiaEco = esp.nombre === 'IMAGENOLOGÍA' && ['318', '291', '319', '292', '295'].includes(String(a.id));
-          const estado = isImagenologiaEco ? 'HOMOLOGADA' : classifyAct(a);
+          const actN = norm(a.actividad || '');
+          const isSegundoCirujano = actN.includes('SEGUNDO O TERCER CIRUJANO');
+          const basePabCat = actN.startsWith('PABELLON CIRUGIA')
+            ? (actN.includes('URGENCIA') ? 'PAB_URG'
+              : actN.includes('OBSTETRICA') ? 'PAB_OBST'
+              : actN.includes('MENOR') ? 'PAB_MENOR'
+              : actN.includes('AMBULATORIA') ? 'PAB_CMA'
+              : actN.includes('MAYOR') ? 'PAB_MAYOR'
+              : null)
+            : null;
+          const pabCat = basePabCat ? (isSegundoCirujano ? `${basePabCat}_23` : basePabCat) : null;
+          if (pabCat) matchedPabCatsForProf.add(pabCat);
+          const isPsiquiatria = norm(esp.nombre).includes('PSIQUIATRIA');
+          const isGestionCasosNoSM = norm(a.actividad).includes('GESTION DE CASOS') && !isPsiquiatria;
+          const isVisitaSalaNoSM = /visita a sala hospitalizado/i.test(a.actividad || '') && !isPsiquiatria;
+          const effectiveGlosa = pabCat
+            ? {
+                ...(a.glosa || {}),
+                tipoActRCE: 'Libro de Pabellón Electrónico',
+                subActRCE: a.actividad,
+                actRCE: a.actividad,
+              }
+            : isVisitaSalaNoSM
+              ? {
+                  ...(a.glosa || {}),
+                  tipoActRCE: 'ATENCION A HOSPITALIZADOS',
+                  subActRCE: 'ATENCION ESPECIALISTA EN SALA',
+                  actRCE: 'ATENCION ESPECIALISTA EN SALA',
+                }
+              : a.glosa;
+          const estado = (isImagenologiaEco || pabCat) ? 'HOMOLOGADA' : (isGestionCasosNoSM ? 'SIN_RCE' : classifyAct(a));
           if (filterEstados.length > 0 && !filterEstados.includes(estado)) continue;
 
-          const rk = getActRceKey(a);
+          const rk = isGestionCasosNoSM
+            ? null
+            : (isVisitaSalaNoSM ? 'ATENCION A HOSPITALIZADOS|ATENCION ESPECIALISTA EN SALA' : getActRceKey(a));
           const metaAnual = (a.prod1Sem || 0) + (a.prod2Sem || 0);
           const metaPeriodo = getMetaBase(a);
           const metaEval = Math.round(metaPeriodo * factorDevengado);
@@ -522,7 +663,14 @@ export default function EvaluacionProgramacionMedica({
           let byMonth = {};
           let sharedKeyNote = null;
 
-          if (isImagenologiaEco) {
+          if (pabCat) {
+            const rutBase = prof.rut ? String(prof.rut).trim().toUpperCase().replace(/\./g, '').split('-')[0] : '';
+            const st = rutBase ? pabStats2026.byRutCat.get(`${rutBase}||${pabCat}`) : null;
+            if (st) {
+              ejec = st.ejec;
+              byMonth = st.byMonth;
+            }
+          } else if (isImagenologiaEco) {
             const st = usStats2026.byProfCode.get(`${np}||${String(a.id)}`);
             if (st) {
               ejec = st.ejec;
@@ -552,6 +700,8 @@ export default function EvaluacionProgramacionMedica({
 
           actsEval.push({
             ...a,
+            glosa: effectiveGlosa,
+            sourceType: pabCat ? 'PABELLON' : (isImagenologiaEco ? 'REDCAP_ECO' : 'RCE'),
             estado,
             rceKey: rk,
             meta1Sem: a.prod1Sem || 0,
@@ -573,9 +723,10 @@ export default function EvaluacionProgramacionMedica({
         const groupedByRce = new Map();
         const finalActsEval = [];
         for (const item of actsEval) {
-          if (item.estado === 'HOMOLOGADA' && item.rceKey) {
-            if (!groupedByRce.has(item.rceKey)) groupedByRce.set(item.rceKey, []);
-            groupedByRce.get(item.rceKey).push(item);
+          const gk = item.rceKey || (item.sourceType === 'PABELLON' ? `PABELLON|${norm(item.actividad)}` : null);
+          if (item.estado === 'HOMOLOGADA' && gk) {
+            if (!groupedByRce.has(gk)) groupedByRce.set(gk, []);
+            groupedByRce.get(gk).push(item);
           } else {
             finalActsEval.push(item);
           }
@@ -584,11 +735,12 @@ export default function EvaluacionProgramacionMedica({
           if (items.length === 1) {
             finalActsEval.push(items[0]);
           } else {
-            const st = profEspKeyStats.get(`${np}||${esp.nombre}||${rk}`);
-            const ejec = st ? st.ejec : 0;
-            const nsp = st ? st.nsp : 0;
-            const asig = st ? st.asig : 0;
-            const byMonth = st ? st.byMonth : {};
+            const isPabGroup = rk.startsWith('PABELLON|');
+            const st = isPabGroup ? null : profEspKeyStats.get(`${np}||${esp.nombre}||${rk}`);
+            const ejec = isPabGroup ? (items[0].ejec || 0) : (st ? st.ejec : 0);
+            const nsp = isPabGroup ? (items[0].nsp || 0) : (st ? st.nsp : 0);
+            const asig = isPabGroup ? (items[0].asig || 0) : (st ? st.asig : 0);
+            const byMonth = isPabGroup ? (items[0].byMonth || {}) : (st ? st.byMonth : {});
             const meta1Sem = items.reduce((s, x) => s + (x.meta1Sem || 0), 0);
             const meta2Sem = items.reduce((s, x) => s + (x.meta2Sem || 0), 0);
             const metaAnual = items.reduce((s, x) => s + (x.metaAnual || 0), 0);
@@ -598,9 +750,12 @@ export default function EvaluacionProgramacionMedica({
             const horas2Sem = items.reduce((s, x) => s + (x.horas2Sem || 0), 0);
             const horas = items.reduce((s, x) => s + (x.horas || 0), 0);
             const isVisitaSala = rk === 'SALUD MENTAL ESPECIALIDAD/ENLACE|INTERCONSULTA EN SALA';
+            const isAtencionSala = rk === 'ATENCION A HOSPITALIZADOS|ATENCION ESPECIALISTA EN SALA';
             const summaryName = isVisitaSala
               ? 'Visitas en Sala Hospitalizado (Resumen)'
-              : `${items[0].glosa?.subActRCE || items[0].actividad} (Resumen)`;
+              : isAtencionSala
+                ? 'Atención en Sala Hospitalizado (Resumen)'
+                : `${items[0].glosa?.subActRCE || items[0].actividad} (Resumen)`;
             finalActsEval.push({
               ...items[0],
               id: items.map(x => x.id).join('+'),
@@ -629,7 +784,7 @@ export default function EvaluacionProgramacionMedica({
 
         if (actsEval.length === 0) continue;
 
-        // Producción en RCE de este profesional en claves que NO tiene programadas
+        // Producción de este profesional en claves que NO tiene programadas (RCE + Libro de Pabellón)
         const realMap = profEspRealList.get(`${np}||${esp.nombre}`);
         const realBreakdown = realMap ? [...realMap.values()].map(x => {
           const isIngresoSm = norm(x.tipo) === 'SALUD MENTAL ESPECIALIDAD' && norm(x.sub).includes('(INGRESO)');
@@ -643,7 +798,77 @@ export default function EvaluacionProgramacionMedica({
               (x.exactKey.startsWith('SALUD MENTAL ESPECIALIDAD|CONSULTORIA DE SALUD MENTAL ESPECIALIDAD OTORGADA') && matchedRceKeysForProf.has('SALUD MENTAL ESPECIALIDAD|CONSULTORIA DE SALUD MENTAL ESPECIALIDAD OTORGADA')) ||
               (x.exactKey.startsWith('SALUD MENTAL ESPECIALIDAD/ENLACE|') && matchedRceKeysForProf.has(x.exactKey.replace('ESPECIALIDAD/ENLACE', 'ESPECIALDIAD/ENLACE')))
           };
-        }).sort((a, b) => b.ejec - a.ejec) : [];
+        }) : [];
+
+        const PAB_CAT_LABELS = {
+          PAB_URG: 'Pabellon Cirugía Urgencia',
+          PAB_OBST: 'Pabellon Cirugía Obstétrica',
+          PAB_MENOR: 'Pabellon Cirugía Menor',
+          PAB_CMA: 'Pabellon Cirugía Mayor Ambulatoria',
+          PAB_MAYOR: 'Pabellon Cirugía Mayor',
+          PAB_PROC: 'Procedimientos en Pabellón',
+          PAB_URG_23: 'Pabellon Cirugía Urgencia (2do o 3er cirujano)',
+          PAB_OBST_23: 'Pabellon Cirugía Obstétrica (2do o 3er cirujano)',
+          PAB_MENOR_23: 'Pabellon Cirugía Menor (2do o 3er cirujano)',
+          PAB_CMA_23: 'Pabellon Cirugía Mayor Ambulatoria (2do o 3er cirujano)',
+          PAB_MAYOR_23: 'Pabellon Cirugía Mayor (2do o 3er cirujano)',
+          PAB_PROC_23: 'Procedimientos en Pabellón (2do o 3er cirujano)',
+        };
+        const profRutBase = String(prof.rut || '').trim().toUpperCase().replace(/\./g, '').split('-')[0];
+        const profPabCats = pabStats2026.byRutAllCats.get(profRutBase);
+        if (profPabCats) {
+          const pabCatToInfo = new Map();
+          for (const e of (programacionMedica?.especialidades || [])) {
+            for (const p of (e.profesionales || [])) {
+              for (const a of (p.actividades || [])) {
+                if (!a.id || !a.actividad) continue;
+                const an = norm(a.actividad);
+                const is23 = an.includes('SEGUNDO O TERCER CIRUJANO');
+                const bc = an.startsWith('PABELLON CIRUGIA')
+                  ? (an.includes('URGENCIA') ? 'PAB_URG'
+                    : an.includes('OBSTETRICA') ? 'PAB_OBST'
+                    : an.includes('MENOR') ? 'PAB_MENOR'
+                    : an.includes('AMBULATORIA') ? 'PAB_CMA'
+                    : an.includes('MAYOR') ? 'PAB_MAYOR'
+                    : null)
+                  : (an.includes('PROCEDIMIENTO') && an.includes('PABELLON') ? 'PAB_PROC' : null);
+                const pk = bc ? (is23 ? `${bc}_23` : bc) : null;
+                if (pk && !pabCatToInfo.has(pk)) pabCatToInfo.set(pk, { id: a.id, nombre: a.actividad });
+              }
+            }
+          }
+          const PAB_CAT_IDS = {
+            PAB_URG: 192,
+            PAB_OBST: 9,
+            PAB_MENOR: 8,
+            PAB_CMA: 6,
+            PAB_MAYOR: 7,
+            PAB_PROC: 4,
+            PAB_URG_23: 339,
+            PAB_OBST_23: 338,
+            PAB_CMA_23: 337,
+            PAB_MAYOR_23: 336,
+          };
+          for (const [catKey, st] of profPabCats.entries()) {
+            if (!matchedPabCatsForProf.has(catKey) && st.ejec > 0) {
+              const info = pabCatToInfo.get(catKey);
+              const label = info?.nombre || PAB_CAT_LABELS[catKey] || catKey;
+              const actId = info?.id || PAB_CAT_IDS[catKey];
+              realBreakdown.push({
+                exactKey: `PABELLON|${catKey}`,
+                tipo: 'Libro de Pabellón Electrónico',
+                sub: PAB_CAT_LABELS[catKey] || catKey,
+                equivLabel: actId ? `[#${actId}] ${label}` : label,
+                policlinicos: 'Pabellón Quirúrgico',
+                ejec: st.ejec,
+                nsp: 0,
+                isIngresoSm: false,
+                isProgrammed: false,
+              });
+            }
+          }
+        }
+        realBreakdown.sort((a, b) => b.ejec - a.ejec);
 
         const ingresosSm = realBreakdown.filter(x => x.isIngresoSm).reduce((s, x) => s + x.ejec, 0);
         const fueraProgEjec = realBreakdown.filter(x => !x.isProgrammed).reduce((s, x) => s + x.ejec, 0);
@@ -833,58 +1058,112 @@ export default function EvaluacionProgramacionMedica({
           </div>
         </div>
 
-        {/* Segunda fila: Caja delimitada de Filtros de Evaluación */}
+        {/* Segunda fila: Caja unificada de Filtros de Evaluación */}
         <div style={{
-          marginTop: '14px', padding: '12px 16px',
+          marginTop: '14px', padding: '14px 16px',
           background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '12px',
-          display: 'flex', flexDirection: 'column', gap: '10px'
+          display: 'flex', flexDirection: 'column', gap: '12px'
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.68rem', fontWeight: 800, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-            <Filter size={13} color="#4f46e5" /> Filtros de Evaluación
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.68rem', fontWeight: 800, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+              <Filter size={13} color="#4f46e5" /> Filtros de Evaluación
+            </div>
+            <div style={{ fontSize: '0.75rem', color: '#64748b', fontWeight: 600 }}>
+              Mostrando {evalModel.especialidades.length} de {programacionMedica.length} especialidades · {evalModel.especialidades.reduce((s, e) => s + e.profesionales.length, 0)} profesionales
+            </div>
           </div>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '14px', alignItems: 'center' }}>
+
+          {/* Fila A: Especialidad, Profesional, R/NR y Proceso */}
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', alignItems: 'center' }}>
+            {setSearchEsp && (
+              <div style={{ position: 'relative', flex: '1 1 200px', maxWidth: '280px' }}>
+                <input
+                  placeholder="Buscar especialidad..."
+                  value={searchEsp}
+                  onChange={e => setSearchEsp(e.target.value)}
+                  style={{
+                    width: '100%', padding: '7px 28px 7px 32px', borderRadius: '8px',
+                    border: searchEsp.trim() ? '1px solid #4f46e5' : '1px solid #cbd5e1',
+                    fontSize: '0.78rem', outline: 'none', background: 'white', boxSizing: 'border-box'
+                  }}
+                />
+                <Search size={14} style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
+                {searchEsp && (
+                  <button onClick={() => setSearchEsp('')} title="Limpiar" style={{ position: 'absolute', right: '6px', top: '50%', transform: 'translateY(-50%)', border: 'none', background: 'transparent', color: '#94a3b8', cursor: 'pointer', fontSize: '0.95rem', lineHeight: 1 }}>×</button>
+                )}
+              </div>
+            )}
+
+            {setSearchProf && (
+              <div style={{ position: 'relative', flex: '1 1 220px', maxWidth: '300px' }}>
+                <input
+                  placeholder="Buscar profesional (nombre o apellido)..."
+                  value={searchProf}
+                  onChange={e => setSearchProf(e.target.value)}
+                  style={{
+                    width: '100%', padding: '7px 28px 7px 32px', borderRadius: '8px',
+                    border: searchProf.trim() ? '1px solid #4f46e5' : '1px solid #cbd5e1',
+                    fontSize: '0.78rem', outline: 'none', background: 'white', boxSizing: 'border-box'
+                  }}
+                />
+                <Users size={14} style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: searchProf.trim() ? '#4f46e5' : '#94a3b8' }} />
+                {searchProf && (
+                  <button onClick={() => setSearchProf('')} title="Limpiar" style={{ position: 'absolute', right: '6px', top: '50%', transform: 'translateY(-50%)', border: 'none', background: 'transparent', color: '#94a3b8', cursor: 'pointer', fontSize: '0.95rem', lineHeight: 1 }}>×</button>
+                )}
+              </div>
+            )}
+
+            {setFilterRR && (
+              <div
+                style={{ display: 'flex', gap: '4px', background: 'white', padding: '3px', borderRadius: '8px', border: '1px solid #cbd5e1' }}
+                title="Requiere Rendimiento (RR): Solo las actividades marcadas como ✓ R generan compromiso formal de producción evaluable según orientaciones técnicas MINSAL. Las actividades — NR pueden tener producción registrada pero no serán contempladas en la evaluación final del profesional."
+              >
+                {['todos', 'R', 'NR'].map(v => (
+                  <button key={v} onClick={() => setFilterRR(v)} style={{
+                    padding: '4px 10px', borderRadius: '6px', border: 'none', cursor: 'pointer',
+                    fontSize: '0.74rem', fontWeight: 700,
+                    background: filterRR === v ? '#4f46e5' : 'transparent',
+                    color: filterRR === v ? 'white' : '#64748b'
+                  }}>
+                    {v === 'todos' ? 'Todos' : v === 'R' ? '✓ Solo R ⓘ' : '— Solo NR'}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {setFilterProceso && (
+              <div style={{ display: 'flex', gap: '4px', background: 'white', padding: '3px', borderRadius: '8px', border: '1px solid #cbd5e1', flexWrap: 'wrap' }}>
+                {['todos', ...availableProcesos].map(v => (
+                  <button key={v} onClick={() => setFilterProceso(v)} style={{
+                    padding: '4px 10px', borderRadius: '6px', border: 'none', cursor: 'pointer',
+                    fontSize: '0.74rem', fontWeight: 700,
+                    background: filterProceso === v ? '#1e40af' : 'transparent',
+                    color: filterProceso === v ? 'white' : '#64748b'
+                  }}>
+                    {v === 'todos' ? 'Todo proceso' : v}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Fila B: Estado actividad, Actividad (multi-select) y Compras de Servicio */}
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '14px', alignItems: 'center', paddingTop: '8px', borderTop: '1px dashed #e2e8f0' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: '280px', flex: '0 1 340px' }}>
             <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#64748b', whiteSpace: 'nowrap' }}>Estado actividad:</span>
             <div style={{ flex: 1 }}>
-              <Select
-                isMulti
-                closeMenuOnSelect={false}
-                value={[
-                  { value: 'HOMOLOGADA', label: '✓ Solo Evaluables RCE (Homologadas)' },
-                  { value: 'SIN_RCE', label: 'Sin RCE Especialistas' },
-                  { value: 'SIN_GLOSA', label: 'Sin Glosa' },
-                  { value: 'NR', label: 'No Requiere Rendimiento (NR)' },
-                ].filter(o => filterEstados.includes(o.value))}
-                onChange={opts => setFilterEstados((opts || []).map(o => o.value))}
+              <MultiSelectSearch
+                selectedValues={filterEstados}
+                onChange={setFilterEstados}
                 options={[
                   { value: 'HOMOLOGADA', label: '✓ Solo Evaluables RCE (Homologadas)' },
                   { value: 'SIN_RCE', label: 'Sin RCE Especialistas' },
                   { value: 'SIN_GLOSA', label: 'Sin Glosa' },
                   { value: 'NR', label: 'No Requiere Rendimiento (NR)' },
                 ]}
-                isSearchable
                 placeholder="Todas las actividades"
-                noOptionsMessage={() => 'Sin coincidencias'}
-                styles={{
-                  control: (base) => ({
-                    ...base,
-                    minHeight: '34px',
-                    borderRadius: '8px',
-                    borderColor: '#cbd5e1',
-                    fontSize: '0.75rem',
-                    fontWeight: 600,
-                    boxShadow: 'none',
-                  }),
-                  multiValue: (base) => ({ ...base, backgroundColor: '#eef2ff', borderRadius: '6px' }),
-                  multiValueLabel: (base) => ({ ...base, color: '#4338ca', fontWeight: 700, fontSize: '0.71rem' }),
-                  menu: (base) => ({ ...base, zIndex: 50, fontSize: '0.76rem' }),
-                  option: (base, state) => ({
-                    ...base,
-                    fontWeight: state.isSelected ? 700 : 500,
-                    backgroundColor: state.isSelected ? '#4f46e5' : state.isFocused ? '#eef2ff' : 'white',
-                    color: state.isSelected ? 'white' : '#1e293b',
-                  }),
-                }}
+                searchPlaceholder="Buscar estado..."
+                minWidth="220px"
               />
             </div>
           </div>
@@ -892,43 +1171,16 @@ export default function EvaluacionProgramacionMedica({
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: '320px', flex: '1 1 400px', maxWidth: '560px' }}>
             <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#64748b', whiteSpace: 'nowrap' }}>Actividad:</span>
             <div style={{ flex: 1 }}>
-              <Select
-                isMulti
-                closeMenuOnSelect={false}
-                value={catalogoActividades
-                  .filter(c => filterActKeys.includes(c.key))
-                  .map(c => ({
-                    value: c.key,
-                    label: `[${c.id}] ${c.actividad} ${c.tipoRCE ? `→ ${c.tipoRCE} | ${c.subRCE}` : `(${ESTADO_META[c.estado]?.label})`}`,
-                  }))}
-                onChange={opts => setFilterActKeys((opts || []).map(o => o.value))}
+              <MultiSelectSearch
+                selectedValues={filterActKeys}
+                onChange={setFilterActKeys}
                 options={catalogoActividades.map(c => ({
                   value: c.key,
                   label: `[${c.id}] ${c.actividad} ${c.tipoRCE ? `→ ${c.tipoRCE} | ${c.subRCE}` : `(${ESTADO_META[c.estado]?.label})`}`,
                 }))}
-                isSearchable
                 placeholder={`Todas las actividades (${catalogoActividades.length})`}
-                noOptionsMessage={() => 'No se encontraron actividades'}
-                styles={{
-                  control: (base) => ({
-                    ...base,
-                    minHeight: '34px',
-                    borderRadius: '8px',
-                    borderColor: '#cbd5e1',
-                    fontSize: '0.75rem',
-                    fontWeight: 600,
-                    boxShadow: 'none',
-                  }),
-                  multiValue: (base) => ({ ...base, backgroundColor: '#eef2ff', borderRadius: '6px' }),
-                  multiValueLabel: (base) => ({ ...base, color: '#4338ca', fontWeight: 700, fontSize: '0.71rem' }),
-                  menu: (base) => ({ ...base, zIndex: 50, fontSize: '0.76rem' }),
-                  option: (base, state) => ({
-                    ...base,
-                    fontWeight: state.isSelected ? 700 : 500,
-                    backgroundColor: state.isSelected ? '#4f46e5' : state.isFocused ? '#eef2ff' : 'white',
-                    color: state.isSelected ? 'white' : '#1e293b',
-                  }),
-                }}
+                searchPlaceholder="Buscar actividad por nombre, código o RCE..."
+                minWidth="280px"
               />
             </div>
           </div>
@@ -997,17 +1249,6 @@ export default function EvaluacionProgramacionMedica({
           </div>
           <div style={{ fontSize: '0.72rem', color: '#7c3aed', fontWeight: 700 }}>
             +{fmt(evalModel.totFueraProg)} ejec. no programadas
-          <label style={{
-            display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '0.74rem',
-            color: '#334155', fontWeight: 600, cursor: 'pointer', marginLeft: 'auto'
-          }} title="Por defecto se excluyen Compras de Servicio, Convenios y Privados en Imagenología (los Operativos Radiológicos sí se consideran institucionales).">
-            <input
-              type="checkbox"
-              checked={includeComprasServicio}
-              onChange={e => setIncludeComprasServicio(e.target.checked)}
-            />
-            Incluir Compras de Servicio / No Institucional (Imagenología)
-          </label>
           </div>
         </div>
       </div>
@@ -1037,6 +1278,11 @@ export default function EvaluacionProgramacionMedica({
           esp={esp}
           autoOpen={searchProf.trim().length > 0 || filterActKeys.length > 0}
           onSelectProf={setSelectedProfDetail}
+          focusedEsp={focusedEsp}
+          setFocusedEsp={setFocusedEsp}
+          focusedProf={focusedProf}
+          setFocusedProf={setFocusedProf}
+          rceKeyToProgMap={rceKeyToProgMap}
         />
       ))}
 
@@ -1060,20 +1306,50 @@ export default function EvaluacionProgramacionMedica({
 }
 
 // ─── FILA DE ESPECIALIDAD ──────────────────────────────────────────────────
-function EvalEspecialidadRow({ esp, autoOpen, onSelectProf }) {
+function EvalEspecialidadRow({ esp, autoOpen, onSelectProf, focusedEsp, setFocusedEsp, focusedProf, setFocusedProf, rceKeyToProgMap }) {
   const [open, setOpen] = useState(false);
+  const [hovered, setHovered] = useState(false);
   useEffect(() => { if (autoOpen) setOpen(true); }, [autoOpen]);
   const sem = semaforoColor(esp.pctHom);
 
+  const isFocused = focusedEsp === esp.nombre;
+  const isDimmed = Boolean(focusedEsp && !isFocused && !hovered);
+
+  const handleToggle = () => {
+    const next = !open;
+    setOpen(next);
+    if (setFocusedEsp) {
+      if (next) {
+        setFocusedEsp(esp.nombre);
+      } else if (focusedEsp === esp.nombre) {
+        setFocusedEsp(null);
+        if (setFocusedProf) setFocusedProf(null);
+      }
+    }
+  };
+
   return (
-    <div style={{ border: '1px solid #e2e8f0', borderTop: 'none', background: 'white' }}>
+    <div
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{
+        border: isFocused ? '1.5px solid #6366f1' : '1px solid #e2e8f0',
+        borderTop: isFocused ? '1.5px solid #6366f1' : 'none',
+        borderLeft: isFocused ? '4px solid #4f46e5' : '1px solid #e2e8f0',
+        background: 'white',
+        boxShadow: isFocused ? '0 10px 26px rgba(79,70,229,0.12)' : 'none',
+        opacity: isDimmed ? 0.42 : 1,
+        filter: isDimmed ? 'saturate(0.7)' : 'none',
+        transition: 'opacity 0.22s ease, filter 0.22s ease, box-shadow 0.22s ease',
+      }}
+    >
       <div
-        onClick={() => setOpen(!open)}
+        onClick={handleToggle}
         style={{
           display: 'grid',
           gridTemplateColumns: '1fr 75px 88px 88px 98px 98px 88px 135px 75px',
           gap: '10px', padding: '13px 16px', alignItems: 'center', cursor: 'pointer',
-          background: open ? 'linear-gradient(135deg,rgba(99,102,241,0.08),rgba(14,165,233,0.04))' : 'white',
+          background: isFocused ? 'linear-gradient(135deg,rgba(99,102,241,0.12),rgba(14,165,233,0.06))' : (open ? 'linear-gradient(135deg,rgba(99,102,241,0.08),rgba(14,165,233,0.04))' : 'white'),
           borderBottom: open ? '1px solid #e2e8f0' : 'none'
         }}
       >
@@ -1136,6 +1412,10 @@ function EvalEspecialidadRow({ esp, autoOpen, onSelectProf }) {
               prof={prof}
               autoOpen={autoOpen}
               onSelectProf={onSelectProf}
+              espNombre={esp.nombre}
+              focusedProf={focusedProf}
+              setFocusedProf={setFocusedProf}
+              rceKeyToProgMap={rceKeyToProgMap}
             />
           ))}
         </div>
@@ -1145,8 +1425,9 @@ function EvalEspecialidadRow({ esp, autoOpen, onSelectProf }) {
 }
 
 // ─── FILA DE PROFESIONAL ───────────────────────────────────────────────────
-function EvalProfesionalRow({ prof, autoOpen, onSelectProf }) {
+function EvalProfesionalRow({ prof, espNombre, autoOpen, onSelectProf, focusedProf, setFocusedProf, rceKeyToProgMap }) {
   const [open, setOpen] = useState(false);
+  const [hovered, setHovered] = useState(false);
   const [openNoProg, setOpenNoProg] = useState(false);
   const [expandedGroups, setExpandedGroups] = useState({});
   const toggleGroup = (idx) => setExpandedGroups(prev => ({ ...prev, [idx]: !prev[idx] }));
@@ -1154,15 +1435,38 @@ function EvalProfesionalRow({ prof, autoOpen, onSelectProf }) {
   const sem = semaforoColor(prof.pctHom);
   const totalRceProfEjec = prof.realBreakdown.reduce((s, x) => s + x.ejec, 0);
 
+  const profKey = `${espNombre || ''}||${prof.nombre}`;
+  const isProfFocused = focusedProf === profKey;
+  const isProfDimmed = Boolean(focusedProf && !isProfFocused && !hovered);
+
+  const handleToggleProf = () => {
+    const next = !open;
+    setOpen(next);
+    if (setFocusedProf) {
+      if (next) setFocusedProf(profKey);
+      else if (focusedProf === profKey) setFocusedProf(null);
+    }
+  };
+
   return (
-    <div style={{ borderBottom: '1px solid #e2e8f0' }}>
+    <div
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{
+        borderBottom: '1px solid #e2e8f0',
+        borderLeft: isProfFocused ? '4px solid #6366f1' : '4px solid transparent',
+        background: isProfFocused ? 'rgba(99,102,241,0.03)' : 'transparent',
+        opacity: isProfDimmed ? 0.44 : 1,
+        transition: 'opacity 0.2s ease, border-left-color 0.2s ease, background 0.2s ease',
+      }}
+    >
       <div
-        onClick={() => setOpen(!open)}
+        onClick={handleToggleProf}
         style={{
           display: 'grid',
           gridTemplateColumns: '1fr 75px 88px 88px 98px 98px 88px 135px 75px',
           gap: '10px', padding: '10px 16px 10px 28px', alignItems: 'center', cursor: 'pointer',
-          background: open ? 'rgba(79,70,229,0.05)' : 'transparent'
+          background: isProfFocused ? 'rgba(79,70,229,0.08)' : (open ? 'rgba(79,70,229,0.05)' : 'transparent')
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
@@ -1302,13 +1606,23 @@ function EvalProfesionalRow({ prof, autoOpen, onSelectProf }) {
                       )}
                     </td>
                     <td style={{ padding: '7px 10px', textAlign: 'center' }}>
-                      <span style={{
-                        fontSize: '0.67rem', fontWeight: 700, padding: '2px 8px', borderRadius: '999px',
-                        background: stMeta.bg, color: stMeta.color, border: `1px solid ${stMeta.border}`,
-                        whiteSpace: 'nowrap'
-                      }}>
-                        {stMeta.label}
-                      </span>
+                      {a.sourceType === 'PABELLON' ? (
+                        <span style={{
+                          fontSize: '0.67rem', fontWeight: 700, padding: '2px 8px', borderRadius: '999px',
+                          background: '#e0f2fe', color: '#0369a1', border: '1px solid #bae6fd',
+                          whiteSpace: 'nowrap'
+                        }}>
+                          Evaluable en Libro de Pabellón
+                        </span>
+                      ) : (
+                        <span style={{
+                          fontSize: '0.67rem', fontWeight: 700, padding: '2px 8px', borderRadius: '999px',
+                          background: stMeta.bg, color: stMeta.color, border: `1px solid ${stMeta.border}`,
+                          whiteSpace: 'nowrap'
+                        }}>
+                          {stMeta.label}
+                        </span>
+                      )}
                     </td>
                     <td style={{ padding: '7px 10px', textAlign: 'right', color: '#64748b', whiteSpace: 'nowrap' }}>
                       {fmtH(a.horas1Sem)} / {fmtH(a.horas2Sem)}
@@ -1388,7 +1702,7 @@ function EvalProfesionalRow({ prof, autoOpen, onSelectProf }) {
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <ChevronRight size={15} style={{ transform: openNoProg ? 'rotate(90deg)' : 'none', transition: '0.2s', color: '#6d28d9', flexShrink: 0 }} />
                     <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#5b21b6' }}>
-                      Producción RCE 2026 en claves NO programadas ({noProgItems.length} {noProgItems.length === 1 ? 'clave' : 'claves'})
+                      Producción 2026 en claves NO programadas ({noProgItems.length} {noProgItems.length === 1 ? 'clave' : 'claves'})
                     </span>
                     <span style={{ fontSize: '0.68rem', color: '#7c3aed', fontWeight: 600 }}>
                       ({openNoProg ? 'clic para colapsar' : 'clic para ver detalle'})
@@ -1400,7 +1714,7 @@ function EvalProfesionalRow({ prof, autoOpen, onSelectProf }) {
                     </span>
                     {totalRceProfEjec > 0 && (
                       <span style={{ background: '#6d28d9', color: 'white', padding: '2px 9px', borderRadius: '999px' }}>
-                        {fmtPct(pctSobreTotal)} de su RCE total ({fmt(totalRceProfEjec)})
+                        {fmtPct(pctSobreTotal)} de su prod. total ({fmt(totalRceProfEjec)})
                       </span>
                     )}
                   </div>
@@ -1410,12 +1724,14 @@ function EvalProfesionalRow({ prof, autoOpen, onSelectProf }) {
                     <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.75rem', background: 'white' }}>
                       <thead>
                         <tr style={{ background: '#f5f3ff', color: '#5b21b6', textTransform: 'uppercase', fontSize: '0.66rem', borderBottom: '1px solid #ede9fe' }}>
-                          <th style={{ padding: '6px 10px', textAlign: 'left' }}>Tipo Actividad RCE</th>
-                          <th style={{ padding: '6px 10px', textAlign: 'left' }}>Sub-Actividad RCE</th>
-                          <th style={{ padding: '6px 10px', textAlign: 'left' }}>Policlínico(s) RCE</th>
+                          <th style={{ padding: '6px 10px', textAlign: 'left' }}>Actividad Programación (Equivalente)</th>
+                          <th style={{ padding: '6px 10px', textAlign: 'left' }}>Fuente</th>
+                          <th style={{ padding: '6px 10px', textAlign: 'left' }}>Tipo Actividad</th>
+                          <th style={{ padding: '6px 10px', textAlign: 'left' }}>Sub-Actividad / Categoría</th>
+                          <th style={{ padding: '6px 10px', textAlign: 'left' }}>Policlínico / Lugar</th>
                           <th style={{ padding: '6px 10px', textAlign: 'right' }}>Ejecutadas</th>
                           <th style={{ padding: '6px 10px', textAlign: 'right', minWidth: '135px' }}>% del No Prog.</th>
-                          <th style={{ padding: '6px 10px', textAlign: 'right' }}>% del Total RCE</th>
+                          <th style={{ padding: '6px 10px', textAlign: 'right' }}>% del Total Prod.</th>
                           <th style={{ padding: '6px 10px', textAlign: 'right' }}>NSP</th>
                         </tr>
                       </thead>
@@ -1423,9 +1739,21 @@ function EvalProfesionalRow({ prof, autoOpen, onSelectProf }) {
                         {noProgItems.map((x, i) => {
                           const pctNoProg = totalNoProgEjec > 0 ? (x.ejec / totalNoProgEjec) * 100 : 0;
                           const pctTotalRce = totalRceProfEjec > 0 ? (x.ejec / totalRceProfEjec) * 100 : 0;
+                          const rk = `${norm(x.tipo)}|${norm(x.sub)}`;
+                          const equivActs = x.tipo === 'Libro de Pabellón Electrónico'
+                            ? [x.equivLabel || x.sub]
+                            : (rceKeyToProgMap?.get(rk) || []);
                           return (
                             <tr key={i} style={{ borderBottom: '1px solid #f3e8ff', background: i % 2 === 0 ? 'white' : '#fcfaff' }}>
-                              <td style={{ padding: '6px 10px', fontWeight: 700, color: '#4c1d95' }}>{x.tipo}</td>
+                              <td style={{ padding: '6px 10px', fontWeight: 700, color: equivActs.length ? '#312e81' : '#94a3b8', fontSize: '0.72rem', maxWidth: '250px' }}>
+                                {equivActs.length > 0 ? equivActs.join(' / ') : 'Sin equivalente en Glosario'}
+                              </td>
+                              <td style={{ padding: '6px 10px', fontSize: '0.70rem', fontWeight: 700, color: x.tipo === 'Libro de Pabellón Electrónico' ? '#0369a1' : '#6d28d9' }}>
+                                {x.tipo === 'Libro de Pabellón Electrónico' ? 'Libro de Pabellón Electrónico' : 'RCE Especialistas'}
+                              </td>
+                              <td style={{ padding: '6px 10px', fontWeight: 700, color: '#4c1d95' }}>
+                                {x.tipo === 'Libro de Pabellón Electrónico' ? 'Pabellón Quirúrgico' : x.tipo}
+                              </td>
                               <td style={{ padding: '6px 10px', fontWeight: 600, color: '#1e293b' }}>{x.sub}</td>
                               <td style={{ padding: '6px 10px', color: '#64748b', fontSize: '0.71rem' }}>{x.policlinicos || '—'}</td>
                               <td style={{ padding: '6px 10px', textAlign: 'right', fontWeight: 800, color: '#6d28d9' }}>{fmt(x.ejec)}</td>
@@ -1450,7 +1778,7 @@ function EvalProfesionalRow({ prof, autoOpen, onSelectProf }) {
                       {noProgItems.length > 1 && (
                         <tfoot>
                           <tr style={{ background: '#f5f3ff', fontWeight: 800, color: '#4c1d95', borderTop: '1px solid #ddd6fe' }}>
-                            <td colSpan={3} style={{ padding: '6px 10px' }}>Total acciones no programadas</td>
+                            <td colSpan={4} style={{ padding: '6px 10px' }}>Total acciones no programadas</td>
                             <td style={{ padding: '6px 10px', textAlign: 'right' }}>{fmt(totalNoProgEjec)}</td>
                             <td style={{ padding: '6px 10px', textAlign: 'right' }}>100.0%</td>
                             <td style={{ padding: '6px 10px', textAlign: 'right' }}>

@@ -158,7 +158,8 @@ async function fetchFromODBC() {
 
       // Médicos
       const cirujano = [r.NOM_CIRUJANO, r.APEPAT_CIRUJANO, r.APEMAT_CIRUJANO].filter(Boolean).map(s => s.trim()).join(' ') || (r.E140381 || '').trim() || 'SIN REGISTRO';
-      const segundoCirujano = [r.NOM_AYU1_CIR, r.APEPAT_AYU1_CIR, r.APEMAT_AYU1_CIR].filter(Boolean).map(s => s.trim()).join(' ') || '';
+      const segundoCirujano = [r.NOM_AYU1_CIR, r.APEPAT_AYU1_CIR, r.APEMAT_AYU1_CIR].filter(Boolean).map(s => s.trim()).join(' ') || (r.E140386 || '').trim() || '';
+      const tercerCirujano = [r.NOM_AYU2_CIR, r.APEP_AYU2_CIR, r.APEM_AYU2_CIR].filter(Boolean).map(s => s.trim()).join(' ') || (r.E140390 || '').trim() || '';
       const anestesiologo = [r.NOM_ANEST, r.APEPAT_ANEST, r.APEMAT_ANEST].filter(Boolean).map(s => s.trim()).join(' ') || (r.E140394 || '').trim() || '';
 
       // TIPO_CIRUGIA (Cálculo del TIPO DE CIRUGIA 3 según estándar Minsal / Discoverer)
@@ -206,6 +207,7 @@ async function fetchFromODBC() {
         especialidad: (r.ESPECIALIDAD_LE || '').trim(),
         cirujano: cirujano,
         segundo_cirujano: segundoCirujano,
+        tercer_cirujano: tercerCirujano,
         anestesiologo: anestesiologo,
         intervencion: (r.E122488 || '').trim(),
         familia_iq: (r.E122492 || '').trim(),

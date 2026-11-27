@@ -340,19 +340,10 @@ export default function ProgramacionMedicaDashboard({ onBack, initialSearch }) {
         </div>
       </div>
 
-      {/* Nota técnica RR */}
-      <div style={{
-        margin: '24px 40px 0', background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.25)',
-        borderRadius: '12px', padding: '14px 18px', display: 'flex', gap: '12px', alignItems: 'flex-start'
-      }}>
-        <AlertTriangle size={18} color="#f59e0b" style={{ flexShrink: 0, marginTop: '2px' }} />
-        <div style={{ fontSize: '0.82rem', color: '#92400e', lineHeight: '1.6' }}>
-          <strong>Requiere Rendimiento (RR)</strong>: Solo las actividades marcadas como <RRBadge rr="R" size="sm" /> generan compromiso formal de producción evaluable según orientaciones técnicas MINSAL.
-          Las actividades <RRBadge rr="NR" size="sm" /> pueden tener producción registrada pero <strong>no serán contempladas en la evaluación final del profesional</strong>.
-        </div>
-      </div>
+      {/* Nota técnica RR movida como tooltip en el filtro R/NR */}
 
-      {/* Filtros */}
+      {/* Filtros (solo en pestaña Programación; en Evaluación se unifican dentro de Filtros de Evaluación) */}
+      {activeTab !== 'evaluacion' && (
       <div style={{ margin: '20px 40px', display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'center' }}>
         <div style={{ position: 'relative', flex: '1', minWidth: '200px', maxWidth: '320px' }}>
           <input
@@ -385,7 +376,10 @@ export default function ProgramacionMedicaDashboard({ onBack, initialSearch }) {
           )}
         </div>
 
-        <div style={{ display: 'flex', gap: '6px', background: 'white', padding: '4px', borderRadius: '10px', border: '1px solid #e2e8f0' }}>
+        <div
+          style={{ display: 'flex', gap: '6px', background: 'white', padding: '4px', borderRadius: '10px', border: '1px solid #e2e8f0' }}
+          title="Requiere Rendimiento (RR): Solo las actividades marcadas como ✓ R generan compromiso formal de producción evaluable según orientaciones técnicas MINSAL. Las actividades — NR pueden tener producción registrada pero no serán contempladas en la evaluación final del profesional."
+        >
           {['todos', 'R', 'NR'].map(v => (
             <button key={v} onClick={() => setFilterRR(v)} style={{
               padding: '6px 14px', borderRadius: '7px', border: 'none', cursor: 'pointer',
@@ -393,7 +387,7 @@ export default function ProgramacionMedicaDashboard({ onBack, initialSearch }) {
               background: filterRR === v ? '#6366f1' : 'transparent',
               color: filterRR === v ? 'white' : '#64748b'
             }}>
-              {v === 'todos' ? 'Todos' : v === 'R' ? '✓ Solo R' : '— Solo NR'}
+              {v === 'todos' ? 'Todos' : v === 'R' ? '✓ Solo R ⓘ' : '— Solo NR'}
             </button>
           ))}
         </div>
@@ -415,14 +409,20 @@ export default function ProgramacionMedicaDashboard({ onBack, initialSearch }) {
           Mostrando {filtered.length} de {totalEsp} especialidades · {filtered.reduce((s, e) => s + e.numProfesionales, 0)} profesionales
         </div>
       </div>
+      )}
 
       {activeTab === 'evaluacion' ? (
         <EvaluacionProgramacionMedica
           programacionMedica={programacionMedica}
           searchEsp={searchEsp}
+          setSearchEsp={setSearchEsp}
           searchProf={searchProf}
+          setSearchProf={setSearchProf}
           filterProceso={filterProceso}
+          setFilterProceso={setFilterProceso}
+          availableProcesos={availableProcesos}
           filterRR={filterRR}
+          setFilterRR={setFilterRR}
         />
       ) : (
         <>
