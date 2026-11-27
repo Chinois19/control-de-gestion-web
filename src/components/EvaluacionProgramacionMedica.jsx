@@ -434,6 +434,12 @@ export default function EvaluacionProgramacionMedica({
     if (!m.has('TELEMEDICINA NUEVA|TELECONSULTA NUEVA')) {
       m.set('TELEMEDICINA NUEVA|TELECONSULTA NUEVA', ['[#112] Telemedicina: Teleconsulta Nueva']);
     }
+    if (!m.has('ATENCION TELEFONICA - CONTROL|ATENCION TELEFONICA - CONTROL')) {
+      m.set('ATENCION TELEFONICA - CONTROL|ATENCION TELEFONICA - CONTROL', ['[#115] Contacto telefónico: Consulta Control']);
+    }
+    if (!m.has('CONSULTA ABREVIADA POR ATENCION REMOTA|TELECONSULTA ABREVIADA')) {
+      m.set('CONSULTA ABREVIADA POR ATENCION REMOTA|TELECONSULTA ABREVIADA', ['[#117] Contacto telefónico: Consulta Abreviada']);
+    }
     return m;
   }, [catalogoActividades]);
 
@@ -632,6 +638,8 @@ export default function EvaluacionProgramacionMedica({
           const isPsiquiatria = norm(esp.nombre).includes('PSIQUIATRIA');
           const isGestionCasosNoSM = norm(a.actividad).includes('GESTION DE CASOS') && !isPsiquiatria;
           const isVisitaSalaNoSM = /visita a sala hospitalizado/i.test(a.actividad || '') && !isPsiquiatria;
+          const isContactoTelControl = actN.includes('CONTACTO TELEFONICO: CONSULTA CONTROL') || String(a.id) === '115';
+          const isContactoTelAbreviada = actN.includes('CONTACTO TELEFONICO: CONSULTA ABREVIADA') || String(a.id) === '117';
           const effectiveGlosa = pabCat
             ? {
                 ...(a.glosa || {}),
@@ -639,7 +647,23 @@ export default function EvaluacionProgramacionMedica({
                 subActRCE: a.actividad,
                 actRCE: a.actividad,
               }
-            : isVisitaSalaNoSM
+            : isContactoTelControl
+              ? {
+                  ...(a.glosa || {}),
+                  tipoActRCE: 'ATENCION TELEFONICA - CONTROL',
+                  subActRCE: 'ATENCION TELEFONICA - CONTROL',
+                  actRCE: 'ATENCION TELEFONICA - CONTROL',
+                  estadoHomologacion: 'HOMOLOGADA',
+                }
+              : isContactoTelAbreviada
+                ? {
+                    ...(a.glosa || {}),
+                    tipoActRCE: 'CONSULTA ABREVIADA POR ATENCION REMOTA',
+                    subActRCE: 'TELECONSULTA ABREVIADA',
+                    actRCE: 'TELECONSULTA ABREVIADA',
+                    estadoHomologacion: 'HOMOLOGADA',
+                  }
+                : isVisitaSalaNoSM
               ? {
                   ...(a.glosa || {}),
                   tipoActRCE: 'ATENCION A HOSPITALIZADOS',
