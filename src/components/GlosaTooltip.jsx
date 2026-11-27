@@ -276,23 +276,38 @@ export default function GlosaTooltip({ glosa, actividad, rendimiento }) {
                     color: '#94a3b8',
                     marginBottom: '6px',
                   }}>
-                    Registro en RCE Especialistas
+                    {/redcap/i.test(tipoAct)
+                      ? `Registro en ${tipoAct} Hospital de Villarrica`
+                      : /libro de pabell/i.test(tipoAct)
+                        ? 'Registro en Libro de Pabellón Electrónico'
+                        : 'Registro en RCE Especialistas'}
                   </div>
-                  {tipoAct && (
-                    <div style={{ display: 'flex', gap: 6, marginBottom: subAct || grupoRce ? 4 : 0 }}>
-                      <span style={{ color: '#94a3b8', whiteSpace: 'nowrap' }}>
-                        <strong style={{ color: '#f87171' }}>*</strong> Tipo Actividad:
-                      </span>
-                      <span style={{ color: '#38bdf8', fontWeight: 700 }}>{tipoAct}</span>
-                    </div>
-                  )}
-                  {subAct && (
-                    <div style={{ display: 'flex', gap: 6, marginBottom: grupoRce ? 4 : 0 }}>
-                      <span style={{ color: '#94a3b8', whiteSpace: 'nowrap' }}>
-                        <strong style={{ color: '#f87171' }}>*</strong> Sub-Actividad:
-                      </span>
-                      <span style={{ color: '#c4b5fd', fontWeight: 700 }}>{subAct}</span>
-                    </div>
+                  {/redcap/i.test(tipoAct) ? (
+                    subAct && (
+                      <div style={{ display: 'flex', gap: 6 }}>
+                        <span style={{ color: '#94a3b8', whiteSpace: 'nowrap' }}>Descripción del examen:</span>
+                        <span style={{ color: '#c4b5fd', fontWeight: 700 }}>{subAct}</span>
+                      </div>
+                    )
+                  ) : (
+                    <>
+                      {tipoAct && (
+                        <div style={{ display: 'flex', gap: 6, marginBottom: subAct || grupoRce ? 4 : 0 }}>
+                          <span style={{ color: '#94a3b8', whiteSpace: 'nowrap' }}>
+                            <strong style={{ color: '#f87171' }}>*</strong> Tipo Actividad:
+                          </span>
+                          <span style={{ color: '#38bdf8', fontWeight: 700 }}>{tipoAct}</span>
+                        </div>
+                      )}
+                      {subAct && (
+                        <div style={{ display: 'flex', gap: 6, marginBottom: grupoRce ? 4 : 0 }}>
+                          <span style={{ color: '#94a3b8', whiteSpace: 'nowrap' }}>
+                            <strong style={{ color: '#f87171' }}>*</strong> Sub-Actividad:
+                          </span>
+                          <span style={{ color: '#c4b5fd', fontWeight: 700 }}>{subAct}</span>
+                        </div>
+                      )}
+                    </>
                   )}
                   {grupoRce && (
                     <div style={{ display: 'flex', gap: 6 }}>

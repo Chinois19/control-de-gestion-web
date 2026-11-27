@@ -173,6 +173,7 @@ export default function EvaluacionProgramacionMedica({
   const [rceData, setRceData] = useState(null);
   const [usData, setUsData] = useState(null);
   const [pabData, setPabData] = useState(null);
+  const [endoData, setEndoData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -209,15 +210,17 @@ export default function EvaluacionProgramacionMedica({
       setLoading(true);
       setError(null);
       try {
-        const [rce, us, pab] = await Promise.all([
+        const [rce, us, pab, endo] = await Promise.all([
           fetchGzOrJson('data/actividades_medicina_cached.json.gz', 'data/actividades_medicina_cached.json'),
           fetchGzOrJson('data/ultrasound_cached.json.gz', 'data/ultrasound_cached.json').catch(() => null),
           fetchGzOrJson('data/libro_pabellon_cached.json.gz', 'data/libro_pabellon_cached.json').catch(() => null),
+          fetchGzOrJson('data/endoscopy_cached.json.gz', 'data/endoscopy_cached.json').catch(() => null),
         ]);
         if (mounted) {
           setRceData(rce);
           setUsData(us);
           setPabData(pab);
+          setEndoData(endo);
         }
       } catch (e) {
         if (mounted) setError(e.message);
@@ -365,6 +368,81 @@ export default function EvaluacionProgramacionMedica({
     }
     return { byRutCat, byRutAllCats };
   }, [pabData, periodo, includeComprasServicio]);
+
+  // Registros REDCap Procedimientos Endoscópicos 2026 (#144 Gastro, #146 Colono, #149 Cisto)
+  const endoStats2026 = useMemo(() => {
+    const recs = Array.isArray(endoData) ? endoData : (endoData?.records || []);
+    const items = [];
+    for (const r of recs) {
+      const f = String(r.fecha_de_atenci_n || '');
+      if (!f.startsWith('2026-')) continue;
+      const m = parseInt(f.slice(5, 7), 10);
+      if (periodo === 's1' && m > 6) continue;
+      if (periodo === 's2' && m < 7) continue;
+      if (!norm(r.estado_de_atenci_n).includes('SE PRESENTO')) continue;
+      if (!includeComprasServicio) {
+        const mod = norm(r.modalidad_de_atenci_n);
+        if (mod.includes('COMPRA') || mod.includes('LICITACION')) continue;
+      }
+      const examCols = [
+        r.descripci_n_del_ex_men,
+        r.descripci_n_del_ex_men_2,
+        r.descripci_n_del_ex_men_3,
+        r.examen4, r.examen5, r.examen6, r.examen7,
+      ];
+      const rawProf = norm(r.funcionario_que_atiende || '').replace(/\b(DR|DRA|MEDICO)\.?\b/g, ' ').trim();
+      const tokens = rawProf.split(/\s+/).filter(t => t.length >= 2);
+      if (tokens.length === 0) continue;
+      for (const col of examCols) {
+        const ex = norm(col);
+        if (!ex) continue;
+        const cat = /GASTRODUODENOSCOP|ESOFAGOSCOP|18-01-001/.test(ex) ? 'ENDO_144'
+          : /COLONOSCO|SIGMOIDOSCOP|18-01-006|18-01-007/.test(ex) ? 'ENDO_146'
+          : /CISTOSCOP|URETROCISTOSCOP|URETROSCOP|19-01-003|19-01-002/.test(ex) ? 'ENDO_149'
+          : /BIOPSIA PROSTAT|19-01-005/.test(ex) ? 'ENDO_182'
+          : null;
+        if (cat) items.push({ cat, tokens, ym: f.slice(0, 7) });
+      }
+    }
+    return items;
+  }, [endoData, periodo, includeComprasServicio]);
+
+  // Registros REDCap Ecografías 2026 (#188 Obstétrica, #291/#318/#314 US, #292/#319/#366 Doppler, #294/#373 Portátil)
+  const usEcoStats2026 = useMemo(() => {
+    const recs = Array.isArray(usData) ? usData : (usData?.records || []);
+    const items = [];
+    for (const r of recs) {
+      const f = String(r.fecha_de_atenci_n || '');
+      if (!f.startsWith('2026-')) continue;
+      const m = parseInt(f.slice(5, 7), 10);
+      if (periodo === 's1' && m > 6) continue;
+      if (periodo === 's2' && m < 7) continue;
+      if (!norm(r.estado_de_atenci_n).includes('SE PRESENTO')) continue;
+      if (!includeComprasServicio) {
+        const mod = norm(r.modalidad_de_atenci_n);
+        if (mod.includes('COMPRA') || mod.includes('LICITACION')) continue;
+      }
+      const rawProf = norm(r.funcionario_que_atiende || '').replace(/\b(DR|DRA|MEDICO)\.?\b/g, ' ').trim();
+      const tokens = rawProf.split(/\s+/).filter(t => t.length >= 2);
+      if (tokens.length === 0) continue;
+      const examCols = [
+        r.descripci_n_del_ex_men,
+        r.descripci_n_del_ex_men_2,
+        r.descripci_n_del_ex_men_3,
+        r.descripci_n_del_ex_men_4,
+      ];
+      for (const col of examCols) {
+        const ex = norm(col);
+        if (!ex) continue;
+        const cat = /OBSTETRIC|04-04-002|EMBARAZO|TRANSLUCENCIA|PERFIL BIOFISICO/.test(ex) ? 'US_OBST'
+          : /DOPPLER/.test(ex) ? 'US_DOPPLER'
+          : /PORTATIL/.test(ex) ? 'US_PORTATIL'
+          : 'US_GEN';
+        items.push({ cat, tokens, ym: f.slice(0, 7) });
+      }
+    }
+    return items;
+  }, [usData, periodo, includeComprasServicio]);
 
   // Registros RCE solo del año 2026 y dentro del período seleccionado
   const rce2026 = useMemo(() => {
@@ -622,8 +700,19 @@ export default function EvaluacionProgramacionMedica({
           const actCatKey = `${a.id}|${norm(a.actividad)}`;
           if (filterActKeys.length > 0 && !filterActKeys.includes(actCatKey)) continue;
 
-          const isImagenologiaEco = esp.nombre === 'IMAGENOLOGÍA' && ['318', '291', '319', '292', '295'].includes(String(a.id));
           const actN = norm(a.actividad || '');
+          const usCat = (String(a.id) === '188' || actN.includes('ECOGRAFIA OBSTETRICA')) ? 'US_OBST'
+            : (['292', '319', '366'].includes(String(a.id)) || (actN.includes('ULTRASONOGRAFIA') && actN.includes('DOPPLER'))) ? 'US_DOPPLER'
+            : (['294', '373'].includes(String(a.id)) || (actN.includes('ULTRASONOGRAFIA') && actN.includes('PORTATIL'))) ? 'US_PORTATIL'
+            : (['291', '318', '314'].includes(String(a.id)) || (actN.includes('ULTRASONOGRAFIA') && !actN.includes('INTRAOPERATORIA'))) ? 'US_GEN'
+            : null;
+          const US_EXAM_DESC = {
+            US_OBST: 'Ecografía Obstétrica (04-04-002 / Obstetricia)',
+            US_DOPPLER: 'Ultrasonografía Doppler (US)',
+            US_PORTATIL: 'Ultrasonografía Portátil (US)',
+            US_GEN: 'Ecotomografía / Ultrasonografía (US)',
+          };
+          const isImagenologiaEco = Boolean(usCat);
           const isSegundoCirujano = actN.includes('SEGUNDO O TERCER CIRUJANO');
           const basePabCat = actN.startsWith('PABELLON CIRUGIA')
             ? (actN.includes('URGENCIA') ? 'PAB_URG'
@@ -640,6 +729,17 @@ export default function EvaluacionProgramacionMedica({
           const isVisitaSalaNoSM = /visita a sala hospitalizado/i.test(a.actividad || '') && !isPsiquiatria;
           const isContactoTelControl = actN.includes('CONTACTO TELEFONICO: CONSULTA CONTROL') || String(a.id) === '115';
           const isContactoTelAbreviada = actN.includes('CONTACTO TELEFONICO: CONSULTA ABREVIADA') || String(a.id) === '117';
+          const endoCat = (String(a.id) === '144' || actN.includes('GASTRODUODENOSCOPIA')) ? 'ENDO_144'
+            : (String(a.id) === '146' || actN.includes('COLONOSCOPIA')) ? 'ENDO_146'
+            : (String(a.id) === '149' || actN.includes('CISTOSCOPIA')) ? 'ENDO_149'
+            : (String(a.id) === '182' || actN.includes('BIOPSIA DE PROSTATA')) ? 'ENDO_182'
+            : null;
+          const ENDO_EXAM_DESC = {
+            ENDO_144: '18-01-001 Gastroduodenoscopía (Incluye esofagoscopia)',
+            ENDO_146: '18-01-006 Colonoscoía Larga (Incluye sigmoidoscopía y colonoscopía izquierda)',
+            ENDO_149: '19-01-003 Cistoscopia y/o uretrocistoscopia y/ouretroscopía (proc. aut.)',
+            ENDO_182: '19-01-005 Biopsia Prostática transrectal o transperineal con apoyo ecográfico',
+          };
           const effectiveGlosa = pabCat
             ? {
                 ...(a.glosa || {}),
@@ -663,7 +763,23 @@ export default function EvaluacionProgramacionMedica({
                     actRCE: 'TELECONSULTA ABREVIADA',
                     estadoHomologacion: 'HOMOLOGADA',
                   }
-                : isVisitaSalaNoSM
+                : endoCat
+                  ? {
+                      ...(a.glosa || {}),
+                      tipoActRCE: 'REDCap Procedimientos Endoscópicos',
+                      subActRCE: ENDO_EXAM_DESC[endoCat],
+                      actRCE: ENDO_EXAM_DESC[endoCat],
+                      estadoHomologacion: 'HOMOLOGADA',
+                    }
+                  : usCat
+                    ? {
+                        ...(a.glosa || {}),
+                        tipoActRCE: 'REDCap Ecografías',
+                        subActRCE: US_EXAM_DESC[usCat],
+                        actRCE: US_EXAM_DESC[usCat],
+                        estadoHomologacion: 'HOMOLOGADA',
+                      }
+                    : isVisitaSalaNoSM
               ? {
                   ...(a.glosa || {}),
                   tipoActRCE: 'ATENCION A HOSPITALIZADOS',
@@ -671,7 +787,7 @@ export default function EvaluacionProgramacionMedica({
                   actRCE: 'ATENCION ESPECIALISTA EN SALA',
                 }
               : a.glosa;
-          const estado = (isImagenologiaEco || pabCat) ? 'HOMOLOGADA' : (isGestionCasosNoSM ? 'SIN_RCE' : classifyAct(a));
+          const estado = (isImagenologiaEco || pabCat || endoCat) ? 'HOMOLOGADA' : (isGestionCasosNoSM ? 'SIN_RCE' : classifyAct(a));
           if (filterEstados.length > 0 && !filterEstados.includes(estado)) continue;
 
           const rk = isGestionCasosNoSM
@@ -693,6 +809,26 @@ export default function EvaluacionProgramacionMedica({
             if (st) {
               ejec = st.ejec;
               byMonth = st.byMonth;
+            }
+          } else if (endoCat) {
+            const profToks = np.split(/\s+/).filter(t => t.length >= 2);
+            for (const it of endoStats2026) {
+              if (it.cat !== endoCat) continue;
+              const matches = profToks.filter(t => it.tokens.includes(t)).length;
+              if (matches >= Math.min(2, profToks.length)) {
+                ejec++;
+                byMonth[it.ym] = (byMonth[it.ym] || 0) + 1;
+              }
+            }
+          } else if (usCat) {
+            const profToks = np.split(/\s+/).filter(t => t.length >= 2);
+            for (const it of usEcoStats2026) {
+              if (it.cat !== usCat) continue;
+              const matches = profToks.filter(t => it.tokens.includes(t)).length;
+              if (matches >= Math.min(2, profToks.length)) {
+                ejec++;
+                byMonth[it.ym] = (byMonth[it.ym] || 0) + 1;
+              }
             }
           } else if (isImagenologiaEco) {
             const st = usStats2026.byProfCode.get(`${np}||${String(a.id)}`);
@@ -725,7 +861,7 @@ export default function EvaluacionProgramacionMedica({
           actsEval.push({
             ...a,
             glosa: effectiveGlosa,
-            sourceType: pabCat ? 'PABELLON' : (isImagenologiaEco ? 'REDCAP_ECO' : 'RCE'),
+            sourceType: pabCat ? 'PABELLON' : (endoCat ? 'REDCAP_ENDO' : (isImagenologiaEco ? 'REDCAP_ECO' : 'RCE')),
             estado,
             rceKey: rk,
             meta1Sem: a.prod1Sem || 0,
@@ -1637,6 +1773,22 @@ function EvalProfesionalRow({ prof, espNombre, autoOpen, onSelectProf, focusedPr
                           whiteSpace: 'nowrap'
                         }}>
                           Evaluable en Libro de Pabellón
+                        </span>
+                      ) : a.sourceType === 'REDCAP_ENDO' ? (
+                        <span style={{
+                          fontSize: '0.67rem', fontWeight: 700, padding: '2px 8px', borderRadius: '999px',
+                          background: '#f3e8ff', color: '#6b21a8', border: '1px solid #d8b4fe',
+                          whiteSpace: 'nowrap'
+                        }}>
+                          Evaluable en REDCap Endoscopía
+                        </span>
+                      ) : a.sourceType === 'REDCAP_ECO' ? (
+                        <span style={{
+                          fontSize: '0.67rem', fontWeight: 700, padding: '2px 8px', borderRadius: '999px',
+                          background: '#ecfeff', color: '#0e7490', border: '1px solid #a5f3fc',
+                          whiteSpace: 'nowrap'
+                        }}>
+                          Evaluable en REDCap Ecografías
                         </span>
                       ) : (
                         <span style={{
